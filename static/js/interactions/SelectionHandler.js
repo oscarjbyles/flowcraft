@@ -40,6 +40,7 @@ class SelectionHandler {
         
         // emit selection update for ui
         this.state.emit('updateNodeStyles');
+        this.state.emit('updateLinkStyles');
         this.state.emit('updateSidebar');
     }
 
@@ -63,6 +64,7 @@ class SelectionHandler {
         if (!event.shiftKey) {
             this.events.handleCanvasClick(event, coordinates);
             this.state.emit('updateNodeStyles');
+            this.state.emit('updateLinkStyles');
             this.state.emit('updateSidebar');
         }
     }

@@ -149,6 +149,135 @@ class Sidebar {
             this.deleteNodeFromSidebar();
         });
 
+        // create python script modal handlers
+        const createPyBtn = document.getElementById('create_python_script_btn');
+        const createPyModal = document.getElementById('create_python_modal');
+        const closeCreatePyModal = document.getElementById('close_create_python_modal');
+        const cancelCreatePy = document.getElementById('cancel_create_python');
+        const confirmCreatePy = document.getElementById('confirm_create_python');
+        const newPythonNameInput = document.getElementById('new_python_name');
+        // mini explorer elements
+        const miniList = document.getElementById('mini_list');
+        const miniBreadcrumb = document.getElementById('mini_breadcrumb');
+        const miniUpBtn = document.getElementById('mini_up_btn');
+        const miniSelectedPath = document.getElementById('mini_selected_path');
+        const miniCwdDisplay = document.getElementById('mini_cwd_display');
+        const miniNewFolderBtn = document.getElementById('mini_new_folder_btn');
+        let miniCwd = '';
+
+        if (createPyBtn && createPyModal) {
+            createPyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                createPyModal.classList.add('show');
+                newPythonNameInput.value = '';
+                newPythonNameInput.focus();
+                // load mini explorer
+                this.loadMiniExplorer('');
+            });
+        }
+        if (closeCreatePyModal) {
+            closeCreatePyModal.addEventListener('click', () => createPyModal.classList.remove('show'));
+        }
+        if (cancelCreatePy) {
+            cancelCreatePy.addEventListener('click', () => createPyModal.classList.remove('show'));
+        }
+        if (createPyModal) {
+            createPyModal.addEventListener('click', (e) => {
+                if (e.target === createPyModal) createPyModal.classList.remove('show');
+            });
+        }
+        if (confirmCreatePy) {
+            confirmCreatePy.addEventListener('click', async () => {
+                const rawName = (newPythonNameInput.value || '').trim();
+                if (!rawName) {
+                    this.showError('script name is required');
+                    return;
+                }
+                // ensure .py extension
+                const fileName = rawName.toLowerCase().endsWith('.py') ? rawName : `${rawName}.py`;
+                try {
+                    // create file in nodes/
+                    const resp = await fetch('/api/nodes/touch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path: (miniSelectedPath?.value || ''), name: fileName })
+                    });
+                    const data = await resp.json();
+                    if (data.status !== 'success') {
+                        this.showError(data.message || 'failed to create file');
+                        return;
+                    }
+                    // associate the new file with the selected node
+                    const selectedNodes = Array.from(this.state.selectedNodes);
+                    if (selectedNodes.length === 1) {
+                        const nodeId = selectedNodes[0];
+                        this.state.updateNode(nodeId, { pythonFile: `nodes/${fileName}` });
+                        // update the python file input with display path (without nodes/)
+                        const input = document.getElementById('python_file');
+                        if (input) {
+                            input.value = fileName;
+                            input.dataset.fullPath = `nodes/${fileName}`;
+                        }
+                        // refresh dropdown list
+                        await this.loadPythonFiles();
+                        this.showSuccess(`created script: ${fileName}`);
+                    }
+                    createPyModal.classList.remove('show');
+                } catch (err) {
+                    this.showError('error creating file');
+                }
+            });
+        }
+
+        // mini explorer wiring
+        this.loadMiniExplorer = async (path) => {
+            try {
+                const resp = await fetch(`/api/nodes/browse?path=${encodeURIComponent(path || '')}`);
+                const data = await resp.json();
+                if (data.status !== 'success') { miniList.innerHTML = '<div style="padding:10px; opacity:0.7;">failed to load</div>'; return; }
+                miniCwd = data.cwd || '';
+                miniCwdDisplay.textContent = '/' + (miniCwd || '');
+                miniSelectedPath.value = miniCwd; // default select current folder
+                // render breadcrumb
+                miniBreadcrumb.innerHTML = '';
+                const rootCrumb = document.createElement('span'); rootCrumb.className = 'mini_breadcrumb_item'; rootCrumb.textContent = 'nodes'; rootCrumb.onclick = () => this.loadMiniExplorer('');
+                miniBreadcrumb.appendChild(rootCrumb);
+                (data.breadcrumb || []).forEach((b) => {
+                    const sep = document.createElement('span'); sep.className = 'mini_breadcrumb_sep'; sep.textContent = '/'; miniBreadcrumb.appendChild(sep);
+                    const item = document.createElement('span'); item.className = 'mini_breadcrumb_item'; item.textContent = b.name; item.onclick = () => this.loadMiniExplorer(b.path); miniBreadcrumb.appendChild(item);
+                });
+                // render only folders
+                const folders = (data.entries || []).filter(e => e.is_dir && e.name !== '__pycache__');
+                if (folders.length === 0) { miniList.innerHTML = '<div style="padding:10px; opacity:0.7;">no folders</div>'; return; }
+                miniList.innerHTML = '';
+                folders.forEach(f => {
+                    const row = document.createElement('div'); row.className = 'mini_row';
+                    row.innerHTML = `<span class="material-icons" style="font-size:16px; opacity:.9;">folder</span><span>${f.name}</span>`;
+                    row.onclick = () => this.loadMiniExplorer(f.path);
+                    miniList.appendChild(row);
+                });
+            } catch (_) {
+                miniList.innerHTML = '<div style="padding:10px; opacity:0.7;">error loading folders</div>';
+            }
+        };
+        if (miniUpBtn) miniUpBtn.onclick = () => {
+            const parent = (miniCwd || '').split('/').filter(Boolean); parent.pop(); this.loadMiniExplorer(parent.join('/'));
+        };
+
+        if (miniNewFolderBtn) miniNewFolderBtn.onclick = async () => {
+            const name = prompt('new folder name');
+            if (!name) return;
+            try {
+                const resp = await fetch('/api/nodes/mkdir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: miniCwd || '', name })});
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    this.loadMiniExplorer(miniCwd);
+                } else {
+                    alert(data.message || 'failed to create folder');
+                }
+            } catch (_) { alert('error creating folder'); }
+        };
+
         // multi-select form handlers
         document.getElementById('create_group_btn').addEventListener('click', () => {
             this.createGroup();
@@ -207,6 +336,9 @@ class Sidebar {
         // in run mode, only update the selected node details section
         if (this.state.isRunMode && this.contentPanels.execution.classList.contains('active')) {
             this.updateRunModeNodeDetails(selection);
+            // keep footer visibility in sync on selection changes
+            this.updateFooterDelete(selection);
+            this.updateFooterVisibility(selection);
             return;
         }
         
@@ -223,6 +355,10 @@ class Sidebar {
         } else {
             this.showDefaultPanel();
         }
+
+        // ensure footer state updates on any selection change in build mode
+        this.updateFooterDelete(selection);
+        this.updateFooterVisibility(selection);
     }
 
     updateFromState() {
@@ -262,7 +398,13 @@ class Sidebar {
 
         // populate form fields
         this.populateNodeForm(node);
-        this.updateFooterDelete({ nodes: [nodeId], link: null, group: null });
+        // hide delete actions for node selections in run mode
+        if (this.state.isRunMode) {
+            if (this.footerDeleteBtn) this.footerDeleteBtn.style.display = 'none';
+            this.updateFooterVisibility({ nodes: [], link: null, group: null });
+        } else {
+            this.updateFooterDelete({ nodes: [nodeId], link: null, group: null });
+        }
     }
 
     showMultiSelectPanel(nodeIds) {
@@ -274,7 +416,12 @@ class Sidebar {
 
         // populate selected nodes list
         this.updateSelectedNodesList(nodeIds);
-        this.updateFooterDelete({ nodes: nodeIds, link: null, group: null });
+        if (this.state.isRunMode) {
+            if (this.footerDeleteBtn) this.footerDeleteBtn.style.display = 'none';
+            this.updateFooterVisibility({ nodes: [], link: null, group: null });
+        } else {
+            this.updateFooterDelete({ nodes: nodeIds, link: null, group: null });
+        }
     }
 
     showLinkPanel(link) {
@@ -342,9 +489,16 @@ class Sidebar {
     // hide footer container entirely when no selection and not in a context that shows delete
     updateFooterVisibility(selection) {
         if (!this.footerContainer) return;
-        const hasAnySelection = (selection.nodes && selection.nodes.length > 0) || selection.link || selection.group;
-        // show footer only when there is something actionable
-        this.footerContainer.style.display = hasAnySelection ? 'flex' : 'none';
+        // determine if there is an actionable control visible
+        let shouldShow = false;
+        if (this.footerDeleteBtn) {
+            // show only when the delete button itself is visible
+            shouldShow = this.footerDeleteBtn.style.display !== 'none';
+        } else {
+            const hasAnySelection = (selection.nodes && selection.nodes.length > 0) || selection.link || selection.group;
+            shouldShow = !!hasAnySelection;
+        }
+        this.footerContainer.style.display = shouldShow ? 'flex' : 'none';
     }
 
     handleFooterDelete() {
@@ -997,6 +1151,19 @@ class Sidebar {
                 this.createNewFlowchart();
             }
         });
+
+        // if requested via url param, auto-open the create flowchart modal
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('openCreateFlowchart') === '1') {
+                this.showCreateFlowchartModal();
+                // remove the param from url without reloading
+                params.delete('openCreateFlowchart');
+                const newQuery = params.toString();
+                const newUrl = window.location.pathname + (newQuery ? `?${newQuery}` : '');
+                window.history.replaceState(null, '', newUrl);
+            }
+        } catch (_) {}
     }
 
     async initializeFlowchartDropdown() {
@@ -1797,6 +1964,13 @@ class Sidebar {
         // prefill existing
         this.renderIfConditions(link);
 
+        // hide combiner for first condition
+        const combinerContainer = document.getElementById('if_combiner_container');
+        if (combinerContainer) {
+            const existing = this.getIfConditionsForLink(link);
+            combinerContainer.style.display = existing.length === 0 ? 'none' : 'block';
+        }
+
         // handlers
         addBtn.onclick = () => {
             const varDropdown = document.getElementById('if_variables_dropdown');
@@ -1807,7 +1981,9 @@ class Sidebar {
             const variable = varDropdown.value;
             const operator = operatorDropdown.value;
             const compareValue = valueInput.value;
-            const combiner = combinerDropdown.value || 'and';
+            // first condition should not use a combiner
+            const existingBefore = this.getIfConditionsForLink(link);
+            const combiner = existingBefore.length === 0 ? undefined : (combinerDropdown.value || 'and');
 
             if (!variable || !operator) {
                 this.showError('select a variable and operator');
@@ -1816,7 +1992,7 @@ class Sidebar {
 
             // read current conditions from state
             const existing = this.getIfConditionsForLink(link);
-            const newCondition = { variable, operator, value: compareValue, combiner };
+            const newCondition = existing.length === 0 ? { variable, operator, value: compareValue } : { variable, operator, value: compareValue, combiner };
             const updated = [...existing, newCondition];
             this.setIfConditionsForLink(link, updated);
 
@@ -1825,6 +2001,8 @@ class Sidebar {
 
             // re-render list
             this.renderIfConditions(link);
+            // show combiner after first condition is added
+            if (combinerContainer) combinerContainer.style.display = 'block';
             this.showSuccess('condition added');
         };
     }
@@ -1866,7 +2044,8 @@ class Sidebar {
             row.style.cssText = 'display:flex; align-items:center; gap:8px; background: var(--surface); border:1px solid var(--border-color); border-radius:4px; padding:8px; margin-bottom:6px;';
             const text = document.createElement('div');
             text.style.cssText = 'font-family: monospace; font-size:.9em; flex:1;';
-            text.textContent = `${idx === 0 ? '' : c.combiner} ${c.variable} ${c.operator} ${c.value}`.trim();
+            const prefix = idx === 0 ? '' : (c.combiner || 'and');
+            text.textContent = `${prefix} ${c.variable} ${c.operator} ${c.value}`.trim();
             const del = document.createElement('button');
             del.className = 'btn btn_danger';
             del.innerHTML = '<span class="material-icons" style="font-size:16px;">delete</span>';

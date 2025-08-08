@@ -468,6 +468,16 @@ class FlowchartBuilder {
             this.startExecution();
             }
         });
+
+        // clear button for run mode
+        const clearRunBtn = document.getElementById('execute_clear_btn');
+        if (clearRunBtn) {
+            clearRunBtn.addEventListener('click', () => {
+                this.resetNodeStates();
+                this.clearOutput();
+                this.updateExecutionStatus('info', 'cleared');
+            });
+        }
         
         // refresh history button
         document.getElementById('refresh_history_btn').addEventListener('click', () => {
@@ -899,8 +909,18 @@ class FlowchartBuilder {
             // now load the initial data with correct flowchart
             await this.loadInitialData();
             
-            // initialize in build mode
-            this.updateModeUI('build', null);
+            // set initial mode from url if provided (e.g., ?mode=run or ?mode=history)
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+            if (mode === 'run') {
+                this.switchToRunMode();
+            } else if (mode === 'history') {
+                this.switchToHistoryMode();
+            } else if (mode === 'settings') {
+                this.switchToSettingsMode();
+            } else {
+                this.updateModeUI('build', null);
+            }
         } catch (error) {
             console.error('failed to initialize app:', error);
             this.updateStatusBar('failed to initialize application');
@@ -1446,14 +1466,7 @@ class FlowchartBuilder {
             const executionPanel = document.getElementById('run_execution_properties');
             executionPanel.classList.add('active');
             
-            // setup clear output button (only once)
-            const clearBtn = document.getElementById('clear_output_btn');
-            if (clearBtn && !clearBtn.hasAttribute('data-listener-added')) {
-                clearBtn.addEventListener('click', () => {
-                    this.clearOutput();
-                });
-                clearBtn.setAttribute('data-listener-added', 'true');
-            }
+            // clear output button removed
         }
     }
 

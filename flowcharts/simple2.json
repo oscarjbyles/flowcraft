@@ -44,45 +44,13 @@
     {
       "description": "",
       "groupId": null,
-      "id": 1754557376625.8308,
-      "name": "add all together",
-      "pythonFile": "nodes/node1.py",
-      "type": "python_file",
-      "width": 136.9499969482422,
-      "x": 815.8629150390625,
-      "y": -105.57908248901367
-    },
-    {
-      "description": "input parameters",
-      "groupId": null,
-      "id": 1754557397227.906,
-      "inputValues": {
-        "num1": "2",
-        "num2": "3"
-      },
-      "name": "Input Node",
-      "parameters": [
-        "num1",
-        "num2"
-      ],
-      "pythonFile": "nodes/node1.py",
-      "skipInputCheck": true,
-      "targetNodeId": 1754557376625.8308,
-      "type": "input_node",
-      "width": 300,
-      "x": 483.3682861328125,
-      "y": -108.62628602981567
-    },
-    {
-      "description": "",
-      "groupId": null,
       "id": 1754559850176.4702,
       "name": "another number",
-      "pythonFile": "nodes/sidenode.py",
+      "pythonFile": "nodes/TEST1.py",
       "type": "python_file",
       "width": 139.03333282470703,
-      "x": 1128,
-      "y": -212.88026428222656
+      "x": 1207.34619140625,
+      "y": -233.0128936767578
     },
     {
       "description": "",
@@ -104,7 +72,7 @@
       "type": "python_file",
       "width": 120,
       "x": 1194.6910400390625,
-      "y": 136.68106079101562
+      "y": 135.51309204101562
     },
     {
       "description": "",
@@ -129,15 +97,36 @@
       "y": 102
     },
     {
-      "id": 1754611964126.9265,
-      "x": 1459,
-      "y": -286,
-      "name": "python node",
-      "type": "python_file",
-      "pythonFile": "",
       "description": "",
       "groupId": null,
-      "width": 120
+      "id": 1754646735053.426,
+      "name": "python node",
+      "pythonFile": "nodes/node1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 825.6038818359375,
+      "y": -127.60265350341797
+    },
+    {
+      "description": "input parameters",
+      "groupId": null,
+      "id": 1754646773379.522,
+      "inputValues": {
+        "num1": "",
+        "num2": ""
+      },
+      "name": "Input Node",
+      "parameters": [
+        "num1",
+        "num2"
+      ],
+      "pythonFile": "nodes/node1.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1754646735053.426,
+      "type": "input_node",
+      "width": 300,
+      "x": 509.5452880859375,
+      "y": -119.31275939941406
     }
   ],
   "links": [
@@ -149,30 +138,17 @@
       "type": "input_connection"
     },
     {
-      "selectable": false,
-      "source": 1754557397227.906,
-      "style": "dashed",
-      "target": 1754557376625.8308,
-      "type": "input_connection"
-    },
-    {
-      "source": 1754557300491.1255,
-      "target": 1754557376625.8308
-    },
-    {
-      "source": 1754559850176.4702,
-      "target": 1754557376625.8308
-    },
-    {
-      "source": 1754557376625.8308,
-      "target": 1754592052289.3586
-    },
-    {
       "source": 1754592052289.3586,
       "target": 1754485128247.5793
     },
     {
-      "conditions": [],
+      "conditions": [
+        {
+          "operator": "==",
+          "value": "",
+          "variable": "result"
+        }
+      ],
       "source": 1754592052289.3586,
       "target": 1754592498999.7505
     },
@@ -183,6 +159,21 @@
     {
       "source": 1754592498999.7505,
       "target": 1754593440044.931
+    },
+    {
+      "source": 1754646735053.426,
+      "target": 1754592052289.3586
+    },
+    {
+      "source": 1754557300491.1255,
+      "target": 1754646735053.426
+    },
+    {
+      "selectable": false,
+      "source": 1754646773379.522,
+      "style": "dashed",
+      "target": 1754646735053.426,
+      "type": "input_connection"
     }
   ],
   "groups": [

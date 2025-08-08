@@ -100,12 +100,16 @@ class StateManager extends EventEmitter {
             throw new Error(`invalid node update: ${validation.errors.join(', ')}`);
         }
 
-        // check if pythonFile was updated and create input node if needed
-        if (updates.pythonFile && 
-            updates.pythonFile !== previousPythonFile && 
-            node.type === 'python_file' && 
-            updates.pythonFile.trim() !== '') {
-            this.checkAndCreateInputNode(node);
+        // when a python node's python file changes, ensure only one fresh input node exists
+        if (typeof updates.pythonFile !== 'undefined' && node.type === 'python_file') {
+            // remove existing associated input nodes
+            const existingInputs = this.nodes.filter(n => n.type === 'input_node' && n.targetNodeId === node.id);
+            existingInputs.forEach(inputNode => this.removeNode(inputNode.id, true));
+
+            // create a new input node only if the new python file is non-empty
+            if (updates.pythonFile && updates.pythonFile.trim() !== '') {
+                this.checkAndCreateInputNode(node);
+            }
         }
 
         this.emit('nodeUpdated', node);
@@ -649,6 +653,15 @@ class StateManager extends EventEmitter {
         if (!mainNode.pythonFile) return;
         
         try {
+            // enforce at most one input node
+            const existingInputs = this.nodes.filter(n => n.type === 'input_node' && n.targetNodeId === mainNode.id);
+            if (existingInputs.length >= 1) {
+                // keep only the first if multiple exist
+                for (let i = 1; i < existingInputs.length; i++) {
+                    this.removeNode(existingInputs[i].id, true);
+                }
+                return;
+            }
             // analyze the python file to check for function parameters
             const response = await fetch('/api/analyze-python-function', {
                 method: 'POST',
