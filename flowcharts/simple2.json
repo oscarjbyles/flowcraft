@@ -19,7 +19,7 @@
       "pythonFile": "nodes/example.py",
       "type": "python_file",
       "width": 190.73333740234375,
-      "x": 826.282470703125,
+      "x": 827.4667358398438,
       "y": -289.60028076171875
     },
     {
@@ -27,11 +27,13 @@
       "groupId": null,
       "id": 1754557341635.2678,
       "inputValues": {
+        "variable2": "",
         "variableA": "4"
       },
       "name": "Input Node",
       "parameters": [
-        "variableA"
+        "variableA",
+        "variable2"
       ],
       "pythonFile": "nodes/example.py",
       "skipInputCheck": true,
@@ -49,7 +51,7 @@
       "pythonFile": "nodes/TEST1.py",
       "type": "python_file",
       "width": 139.03333282470703,
-      "x": 1207.34619140625,
+      "x": 1208.3743896484375,
       "y": -233.0128936767578
     },
     {
@@ -60,8 +62,8 @@
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
-      "x": 818.0886840820312,
-      "y": 50.197702407836914
+      "x": 807.078125,
+      "y": 66.47300910949707
     },
     {
       "description": "",
@@ -104,8 +106,8 @@
       "pythonFile": "nodes/node1.py",
       "type": "python_file",
       "width": 120,
-      "x": 825.6038818359375,
-      "y": -127.60265350341797
+      "x": 826.7881469726562,
+      "y": -114.77458190917969
     },
     {
       "description": "input parameters",

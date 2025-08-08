@@ -42,8 +42,12 @@ class EventManager {
                 
             case 'a':
                 if (event.ctrlKey) {
-                    event.preventDefault();
-                    this.handleSelectAll();
+                    // only handle shortcut when not focused on form fields
+                    if (this.shouldHandleShortcut(event)) {
+                        event.preventDefault();
+                        this.handleSelectAll();
+                    }
+                    // else: allow native select-all in inputs/textareas
                 }
                 break;
                 
@@ -177,6 +181,11 @@ class EventManager {
         const clickedNode = this.state.findNodeAtPosition(coordinates.x, coordinates.y);
         
         if (!clickedNode) {
+            // if a group drag just completed, suppress this click to avoid unintended node creation
+            if (this.state.suppressNextCanvasClick) {
+                this.state.suppressNextCanvasClick = false;
+                return;
+            }
             // only allow node creation in build mode
             if (this.state.isBuildMode) {
                 // clicked on empty space - add new node

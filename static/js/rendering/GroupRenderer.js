@@ -50,12 +50,13 @@ class GroupRenderer {
             .attr('class', 'group_container')
             .attr('rx', 12);
 
-        // add group label
+        // add group label (also acts as a drag handle)
         groupEnter.append('text')
             .attr('class', 'group_label')
-            .attr('dy', '-8px');
+            .attr('dy', '-8px')
+            .style('cursor', this.state.isRunMode ? 'default' : 'move');
 
-        // add resize handles (optional)
+        // add resize handles (kept in dom but hidden always)
         this.addResizeHandles(groupEnter);
         
         // setup group interactions
@@ -75,7 +76,8 @@ class GroupRenderer {
 
         const handleGroup = groupEnter.append('g')
             .attr('class', 'resize-handles')
-            .style('opacity', 0);
+            .style('opacity', 0)
+            .style('pointer-events', 'none');
 
         handles.forEach(handle => {
             handleGroup.append('rect')
@@ -188,9 +190,10 @@ class GroupRenderer {
             groupElement.select('.group_container')
                 .classed('selected', isSelected);
             
-            // update label styles using CSS classes
+            // update label styles using CSS classes and cursor by mode
             groupElement.select('.group_label')
-                .classed('selected', isSelected);
+                .classed('selected', isSelected)
+                .style('cursor', this.state.isRunMode ? 'default' : 'move');
         });
     }
 
@@ -202,23 +205,78 @@ class GroupRenderer {
                 this.state.selectGroup(d.id);
             })
             .on('mouseenter', (event, d) => {
-                this.showResizeHandles(d.id);
+                // keep handles hidden per request
+                this.hideResizeHandles(d.id);
                 this.highlightGroupNodes(d.id, true);
             })
             .on('mouseleave', (event, d) => {
                 this.hideResizeHandles(d.id);
                 this.highlightGroupNodes(d.id, false);
             });
+
+        // clicking and dragging the label should move the whole group (its member nodes)
+        groupElement.select('.group_label')
+            .on('mousedown', (event, d) => {
+                // start a synthetic multi-node drag using existing drag handler logic conventions
+                event.stopPropagation();
+                if (this.state.isRunMode) return;
+                // disable zoom during drag
+                this.state.emit('disableZoom');
+                // mark dragging state to help suppress click-to-add-node
+                this.state.setDragging(true, null);
+                // capture initial pointer position as the anchor to avoid snapping
+                const startPointer = d3.pointer(event, this.container.node());
+                d.dragStartX = startPointer[0];
+                d.dragStartY = startPointer[1];
+                d.startPositions = new Map();
+                const groupNodes = this.state.getGroupNodes(d.id);
+                groupNodes.forEach(node => {
+                    d.startPositions.set(node.id, { x: node.x, y: node.y });
+                });
+
+                const moveHandler = (moveEvt) => {
+                    const [mx, my] = d3.pointer(moveEvt, this.container.node());
+                    const offsetX = mx - d.dragStartX;
+                    const offsetY = my - d.dragStartY;
+                    // update all group node positions live
+                    this.state.getGroupNodes(d.id).forEach(node => {
+                        const startPos = d.startPositions.get(node.id);
+                        if (startPos) {
+                            node.x = startPos.x + offsetX;
+                            node.y = startPos.y + offsetY;
+                            this.state.emit('updateNodePosition', { nodeId: node.id, x: node.x, y: node.y });
+                            this.state.emit('updateLinksForNode', node.id);
+                        }
+                    });
+                    // update outline live
+                    this.updateGroupBounds(d.id);
+                };
+
+                const upHandler = () => {
+                    // finalize and persist
+                    this.state.getGroupNodes(d.id).forEach(node => {
+                        this.state.updateNode(node.id, { x: node.x, y: node.y });
+                    });
+                    this.state.emit('updateGroupBounds', d.id);
+                    // re-enable zoom and cleanup
+                    this.state.emit('enableZoom');
+                    // suppress the next canvas click to avoid accidental node creation
+                    this.state.suppressNextCanvasClick = true;
+                    // clear dragging state
+                    this.state.setDragging(false);
+                    d3.select(window).on('mousemove.groupdrag', null).on('mouseup.groupdrag', null);
+                    delete d.dragStartX; delete d.dragStartY; delete d.startPositions;
+                };
+
+                d3.select(window)
+                    .on('mousemove.groupdrag', moveHandler)
+                    .on('mouseup.groupdrag', upHandler);
+            });
     }
 
     showResizeHandles(groupId) {
-        this.groupsGroup
-            .selectAll('.group-container')
-            .filter(d => d.id === groupId)
-            .select('.resize-handles')
-            .transition()
-            .duration(200)
-            .style('opacity', 1);
+        // keep hidden per request
+        this.hideResizeHandles(groupId);
     }
 
     hideResizeHandles(groupId) {

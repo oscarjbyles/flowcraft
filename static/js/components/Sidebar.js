@@ -161,6 +161,7 @@ class Sidebar {
         const miniBreadcrumb = document.getElementById('mini_breadcrumb');
         const miniUpBtn = document.getElementById('mini_up_btn');
         const miniSelectedPath = document.getElementById('mini_selected_path');
+        // optional display element for current working directory (may not exist in dom)
         const miniCwdDisplay = document.getElementById('mini_cwd_display');
         const miniNewFolderBtn = document.getElementById('mini_new_folder_btn');
         let miniCwd = '';
@@ -211,15 +212,17 @@ class Sidebar {
                     const selectedNodes = Array.from(this.state.selectedNodes);
                     if (selectedNodes.length === 1) {
                         const nodeId = selectedNodes[0];
-                        this.state.updateNode(nodeId, { pythonFile: `nodes/${fileName}` });
-                        // update the python file input with display path (without nodes/)
+                        const relDir = (miniSelectedPath?.value || '').trim();
+                        const relDisplay = (relDir ? `${relDir}/` : '') + fileName;
+                        const fullPath = `nodes/${relDisplay}`;
+                        this.state.updateNode(nodeId, { pythonFile: fullPath });
+                        // update the python file input with display path (relative to nodes/)
                         const input = document.getElementById('python_file');
                         if (input) {
-                            input.value = fileName;
-                            input.dataset.fullPath = `nodes/${fileName}`;
+                            input.value = relDisplay;
+                            input.dataset.fullPath = fullPath;
                         }
-                        // refresh dropdown list
-                        await this.loadPythonFiles();
+                        // no dropdown reload needed with explorer ui
                         this.showSuccess(`created script: ${fileName}`);
                     }
                     createPyModal.classList.remove('show');
@@ -236,7 +239,10 @@ class Sidebar {
                 const data = await resp.json();
                 if (data.status !== 'success') { miniList.innerHTML = '<div style="padding:10px; opacity:0.7;">failed to load</div>'; return; }
                 miniCwd = data.cwd || '';
-                miniCwdDisplay.textContent = '/' + (miniCwd || '');
+                // update cwd display if present
+                if (miniCwdDisplay) {
+                    miniCwdDisplay.textContent = '/' + (miniCwd || '');
+                }
                 miniSelectedPath.value = miniCwd; // default select current folder
                 // render breadcrumb
                 miniBreadcrumb.innerHTML = '';
@@ -292,9 +298,12 @@ class Sidebar {
         });
 
         // group form handlers
-        document.getElementById('save_group_properties').addEventListener('click', () => {
-            this.saveGroupProperties();
-        });
+        const saveGroupBtn = document.getElementById('save_group_properties');
+        if (saveGroupBtn) {
+            saveGroupBtn.addEventListener('click', () => {
+                this.saveGroupProperties();
+            });
+        }
         
         document.getElementById('ungroup_nodes').addEventListener('click', () => {
             this.ungroupNodes();
@@ -471,16 +480,16 @@ class Sidebar {
         }
         if (selection.link) {
             this.footerDeleteBtn.style.display = 'block';
-            this.footerDeleteBtn.innerHTML = '<span class="material-icons">delete</span> delete connection';
+            this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete connection</span>';
         } else if (selection.group) {
             this.footerDeleteBtn.style.display = 'block';
-            this.footerDeleteBtn.innerHTML = '<span class="material-icons">delete</span> delete group';
+            this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete group</span>';
         } else if (numNodes === 1) {
             this.footerDeleteBtn.style.display = 'block';
-            this.footerDeleteBtn.innerHTML = '<span class="material-icons">delete</span> delete node';
+            this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete node</span>';
         } else if (numNodes > 1) {
             this.footerDeleteBtn.style.display = 'block';
-            this.footerDeleteBtn.innerHTML = `<span class="material-icons">delete</span> delete ${numNodes} nodes`;
+            this.footerDeleteBtn.innerHTML = `<span class=\"material-icons delete_button_icon_1\">delete</span> <span class=\"delete_button_text_inner\">delete ${numNodes} nodes</span>`;
         } else {
             this.footerDeleteBtn.style.display = 'none';
         }
@@ -920,8 +929,37 @@ class Sidebar {
 
     updateStatus(message) {
         const statusElement = document.getElementById('status_text');
-        if (statusElement) {
-            statusElement.textContent = message;
+        const statusBar = document.querySelector('.status_bar');
+        if (!statusElement || !statusBar) return;
+
+        // capture default status text once for reset behavior
+        if (!this._defaultStatusTextCaptured) {
+            this._defaultStatusText = statusElement.textContent || 'ready';
+            this._defaultStatusTextCaptured = true;
+        }
+
+        // always set the message text
+        statusElement.textContent = message;
+
+        // special handling for warnings (no associated python file)
+        const isWarning = /warning:/i.test(message) || /no python file assigned/i.test(message);
+        if (isWarning) {
+            // apply warning background color and schedule auto reset
+            const originalBg = statusBar.style.backgroundColor;
+            // set warning background
+            statusBar.style.backgroundColor = '#2A0E0E';
+
+            // clear any pending reset
+            if (this._statusResetTimeout) {
+                clearTimeout(this._statusResetTimeout);
+            }
+
+            // auto-reset after 3 seconds
+            this._statusResetTimeout = setTimeout(() => {
+                statusBar.style.backgroundColor = originalBg || 'var(--surface-color)';
+                statusElement.textContent = this._defaultStatusText || 'ready';
+                this._statusResetTimeout = null;
+            }, 3000);
         }
     }
 
@@ -934,10 +972,102 @@ class Sidebar {
         return this.propertiesSidebar.style.display !== 'none';
     }
 
-    // python file dropdown functionality
+    // python file selection via popup explorer
     async initializePythonFileDropdown() {
-        await this.loadPythonFiles();
-        this.setupDropdownEvents();
+        // cache elements
+        const input = document.getElementById('python_file');
+        const modal = document.getElementById('select_python_modal');
+        const listEl = document.getElementById('fe_list');
+        const breadcrumbEl = document.getElementById('fe_breadcrumb');
+        const upBtn = document.getElementById('fe_up_btn');
+        const cancelBtn = document.getElementById('fe_cancel');
+        const confirmBtn = document.getElementById('fe_confirm');
+        const closeBtn = document.getElementById('fe_close_btn');
+        const cwdDisplay = document.getElementById('fe_cwd_display');
+
+        if (!input || !modal || !listEl || !breadcrumbEl || !upBtn || !cancelBtn || !confirmBtn) return;
+
+        let explorerCwd = '';
+        let selectedRelFile = '';
+
+        const renderBreadcrumb = (cwd) => {
+            breadcrumbEl.innerHTML = '';
+            const root = document.createElement('span');
+            root.className = 'mini_breadcrumb_item';
+            root.textContent = 'nodes';
+            root.onclick = () => loadExplorer('');
+            breadcrumbEl.appendChild(root);
+            const parts = (cwd || '').split('/').filter(Boolean);
+            let accum = [];
+            parts.forEach(p => {
+                const sep = document.createElement('span'); sep.className = 'mini_breadcrumb_sep'; sep.textContent = '/'; breadcrumbEl.appendChild(sep);
+                accum.push(p);
+                const item = document.createElement('span'); item.className = 'mini_breadcrumb_item'; item.textContent = p; item.onclick = () => loadExplorer(accum.join('/')); breadcrumbEl.appendChild(item);
+            });
+        };
+
+        const highlightSelection = () => {
+            listEl.querySelectorAll('.mini_row').forEach(row => {
+                row.style.background = (row.dataset.type === 'file' && row.dataset.path === selectedRelFile) ? 'var(--hover-color)' : '';
+            });
+        };
+
+        const loadExplorer = async (path) => {
+            try {
+                const resp = await fetch(`/api/nodes/browse?path=${encodeURIComponent(path || '')}`);
+                const data = await resp.json();
+                if (data.status !== 'success') { listEl.innerHTML = '<div style="padding:10px; opacity:0.7;">failed to load</div>'; return; }
+                explorerCwd = data.cwd || '';
+                if (cwdDisplay) cwdDisplay.textContent = '/' + (explorerCwd || '');
+                selectedRelFile = '';
+                renderBreadcrumb(explorerCwd);
+                // separate folders and .py files
+                const folders = (data.entries || []).filter(e => e.is_dir && e.name !== '__pycache__');
+                const files = (data.entries || []).filter(e => !e.is_dir && e.ext === '.py');
+                listEl.innerHTML = '';
+                if (folders.length === 0 && files.length === 0) {
+                    listEl.innerHTML = '<div style="padding:10px; opacity:0.7;">empty</div>';
+                    return;
+                }
+                folders.forEach(f => {
+                    const row = document.createElement('div'); row.className = 'mini_row'; row.dataset.type = 'dir'; row.dataset.path = f.path;
+                    row.innerHTML = `<span class="material-icons" style="font-size:16px; opacity:.9;">folder</span><span>${f.name}</span>`;
+                    row.onclick = () => loadExplorer(f.path);
+                    listEl.appendChild(row);
+                });
+                files.forEach(file => {
+                    const row = document.createElement('div'); row.className = 'mini_row'; row.dataset.type = 'file'; row.dataset.path = file.path;
+                    row.innerHTML = `<span class="material-icons" style="font-size:16px; opacity:.9;">description</span><span>${file.name}</span><span style="margin-left:auto; opacity:.7; font-family:monospace;">/${file.path}</span>`;
+                    row.onclick = () => { selectedRelFile = file.path; highlightSelection(); };
+                    listEl.appendChild(row);
+                });
+            } catch (_) {
+                listEl.innerHTML = '<div style="padding:10px; opacity:0.7;">error loading</div>';
+            }
+        };
+
+        // wire buttons
+        upBtn.onclick = () => { const parent = (explorerCwd || '').split('/').filter(Boolean); parent.pop(); loadExplorer(parent.join('/')); };
+        const closeModal = () => { modal.classList.remove('show'); };
+        cancelBtn.onclick = closeModal;
+        if (closeBtn) closeBtn.onclick = closeModal;
+        confirmBtn.onclick = () => {
+            if (!selectedRelFile) { this.showError('select a python file'); return; }
+            // set input and update node
+            input.value = selectedRelFile; // relative to nodes/
+            input.dataset.fullPath = `nodes/${selectedRelFile}`;
+            closeModal();
+            this.debounceNodeSave();
+        };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        // open explorer on input click
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.classList.add('show');
+            loadExplorer('');
+        });
+        // close on outside click of container handled above
     }
 
     async loadPythonFiles() {
@@ -2125,17 +2255,39 @@ class Sidebar {
 
     updateRunModeNodeDetails(selection) {
         const nodeFileContent = document.getElementById('node_file_content');
-        const executionTimeGroup = document.getElementById('execution_time_group');
+        const executionTimeRow = document.getElementById('execution_time_row');
         const executionTimeText = document.getElementById('execution_time_text');
         const executionTimestamp = document.getElementById('execution_timestamp');
-        const variablesContent = document.getElementById('variables_content');
+        const nodeInputContent = document.getElementById('node_input_content');
+        const nodeOutputContent = document.getElementById('node_output_content');
         const consoleContent = document.getElementById('console_content');
+        const progressText = document.getElementById('execution_progress_text');
+        const executionStatusGroup = document.getElementById('execution_status')?.closest('.form_group');
+        const nodeFileInfoGroup = document.getElementById('node_file_info')?.closest('.form_group');
+        const nodeInputGroup = document.getElementById('node_input_log')?.closest('.form_group');
+        const nodeOutputGroup = document.getElementById('node_output_log')?.closest('.form_group');
+        const consoleGroup = document.getElementById('console_output_log')?.closest('.form_group');
+        const progressGroup = document.getElementById('execution_progress_group');
         
         if (selection.nodes.length === 1) {
+            // show all detailed groups in single selection
+            if (executionStatusGroup) executionStatusGroup.style.display = '';
+            if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
+            if (nodeInputGroup) nodeInputGroup.style.display = '';
+            if (nodeOutputGroup) nodeOutputGroup.style.display = '';
+            if (consoleGroup) consoleGroup.style.display = '';
             const nodeId = selection.nodes[0];
             const node = this.state.getNode(nodeId);
             
             if (node) {
+                // hide global progress when a python node is selected
+                if (progressGroup) {
+                    if (node.type === 'python_file') {
+                        progressGroup.style.display = 'none';
+                    } else {
+                        progressGroup.style.display = '';
+                    }
+                }
                 // show simplified file info
                 this.displayNodeFileInfo(node, nodeFileContent);
                 
@@ -2143,45 +2295,57 @@ class Sidebar {
                 const executionResult = window.flowchartApp?.nodeExecutionResults?.get(nodeId);
                 
                 if (executionResult) {
-                    // show execution time block
-                    executionTimeGroup.style.display = 'block';
+                    // show execution time row
+                    if (executionTimeRow) executionTimeRow.style.display = 'flex';
                     executionTimeText.textContent = `${executionResult.runtime}ms`;
                     executionTimestamp.textContent = executionResult.timestamp;
                     
                     if (executionResult.success) {
-                        // populate variables section
-                        let variablesText = '';
-                        
-                        // show input arguments if any
-                        if (executionResult.input_args && Object.keys(executionResult.input_args).length > 0) {
-                            variablesText += `input arguments:\n${JSON.stringify(executionResult.input_args, null, 2)}\n\n`;
+                        // populate input section
+                        if (nodeInputContent) {
+                            if (executionResult.input_args && Object.keys(executionResult.input_args).length > 0) {
+                                nodeInputContent.textContent = JSON.stringify(executionResult.input_args, null, 2);
+                            } else {
+                                nodeInputContent.textContent = 'no inputs';
+                            }
                         }
                         
-                        // show return value if any
-                        if (executionResult.return_value !== null && executionResult.return_value !== undefined) {
-                            variablesText += `return value:\n${JSON.stringify(executionResult.return_value, null, 2)}`;
+                        // populate output section
+                        if (nodeOutputContent) {
+                            if (executionResult.return_value !== null && executionResult.return_value !== undefined) {
+                                nodeOutputContent.textContent = JSON.stringify(executionResult.return_value, null, 2);
+                            } else {
+                                nodeOutputContent.textContent = 'no returns';
+                            }
                         }
-                        
-                        variablesContent.textContent = variablesText || 'no variables returned';
                         
                         // populate console section
                         consoleContent.textContent = executionResult.output || 'no console output';
                         
                     } else {
-                        variablesContent.innerHTML = `<span style="color: #f44336;">execution failed</span>`;
+                        if (nodeInputContent) nodeInputContent.innerHTML = `<span style="color: #f44336;">execution failed</span>`;
+                        if (nodeOutputContent) nodeOutputContent.innerHTML = `<span style="color: #f44336;">execution failed</span>`;
                         consoleContent.innerHTML = `<span style="color: #f44336;">${executionResult.error || 'unknown error'}</span>`;
                     }
                     
                 } else {
-                    // hide execution time block
-                    executionTimeGroup.style.display = 'none';
+                    // hide execution time row
+                    if (executionTimeRow) executionTimeRow.style.display = 'none';
                     
                     // clear outputs
-                    variablesContent.textContent = 'no variables - node not executed';
+                    if (nodeInputContent) nodeInputContent.textContent = 'no inputs - node not executed';
+                    if (nodeOutputContent) nodeOutputContent.textContent = 'no returns - node not executed';
                     consoleContent.textContent = 'no console output - node not executed';
                 }
             }
         } else if (selection.nodes.length > 1) {
+            // show status + progress + minimal guidance
+            if (executionStatusGroup) executionStatusGroup.style.display = '';
+            if (progressGroup) progressGroup.style.display = '';
+            if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
+            if (nodeInputGroup) nodeInputGroup.style.display = 'none';
+            if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
+            if (consoleGroup) consoleGroup.style.display = 'none';
             nodeFileContent.innerHTML = `
                 <div style="margin-bottom: 8px;">
                     <strong>${selection.nodes.length} nodes selected</strong>
@@ -2191,27 +2355,32 @@ class Sidebar {
                 </div>
             `;
             
-            // hide execution time block
-            executionTimeGroup.style.display = 'none';
+            // hide execution time row
+            if (executionTimeRow) executionTimeRow.style.display = 'none';
             
             // show general output
-            variablesContent.textContent = 'select a single node to view variables';
+            if (nodeInputContent) nodeInputContent.textContent = 'select a single node to view inputs';
+            if (nodeOutputContent) nodeOutputContent.textContent = 'select a single node to view returns';
             consoleContent.textContent = 'select a single node to view console output';
             
         } else {
-            nodeFileContent.innerHTML = `
-                <p style="opacity: 0.7; text-align: center; padding: 20px;">select a node to view file details</p>
-            `;
-            
-            // hide execution time block
-            executionTimeGroup.style.display = 'none';
-            
-            // show general output (all nodes)
-            variablesContent.textContent = 'select a node to view variables';
-            if (window.flowchartApp?.globalExecutionLog) {
-                consoleContent.textContent = window.flowchartApp.globalExecutionLog;
-            } else {
-                consoleContent.textContent = 'no execution output yet - start execution to see results';
+            // nothing selected: only show execution status and progress, hide everything else
+            if (executionStatusGroup) executionStatusGroup.style.display = '';
+            if (progressGroup) progressGroup.style.display = '';
+            if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
+            if (nodeInputGroup) nodeInputGroup.style.display = 'none';
+            if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
+            if (consoleGroup) consoleGroup.style.display = 'none';
+
+            // hide execution time row until running
+            if (executionTimeRow) executionTimeRow.style.display = 'none';
+
+            // update global progress if available
+            if (progressText && window.flowchartApp) {
+                const order = window.flowchartApp.calculateNodeOrder ? window.flowchartApp.calculateNodeOrder() : [];
+                const total = order.length;
+                const executed = window.flowchartApp.nodeExecutionResults ? window.flowchartApp.nodeExecutionResults.size : 0;
+                progressText.textContent = `${executed} of ${total}`;
             }
         }
     }

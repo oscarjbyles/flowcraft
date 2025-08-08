@@ -19,6 +19,7 @@ class StateManager extends EventEmitter {
         this.draggedNode = null;
         this.sourceNode = null;
         this.currentEditingNode = null;
+        this.suppressNextCanvasClick = false;
         
         // application modes
         this.currentMode = 'build'; // 'build' or 'run'
@@ -284,7 +285,7 @@ class StateManager extends EventEmitter {
         const groupId = Date.now() + Math.random();
         const group = {
             id: groupId,
-            name: groupData.name || `group_${++this.groupCounter}`,
+            name: groupData.name || 'group name',
             description: groupData.description || '',
             nodeIds: [...nodeIds],
             ...groupData

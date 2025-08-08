@@ -482,9 +482,13 @@
 
         .group_label {
             fill: var(--primary-color);
-            font-size: 12px;
+            font-size: 14px; /* match python node title size */
             font-weight: 500;
             font-family: 'Roboto', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            cursor: move;
         }
 
         .group_label.selected {
@@ -546,6 +550,9 @@
         .run_mode .node-group:hover .connection_dot {
             opacity: 0;
         }
+
+        /* ensure group label doesn't change cursor in run mode */
+        .run_mode .group_label { cursor: default; }
 
         /* node execution states */
         .node.running {
@@ -650,16 +657,46 @@
 
         /* play button styles */
         .play_button {
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            transition: opacity 0.2s ease;
             transform-origin: center;
+            transform-box: fill-box;
         }
 
-        .play_button:hover {
+        /* scale inner elements on hover to avoid shifting the positioned group */
+        .play_button_bg,
+        .play_button_icon {
+            transition: transform 0.2s ease, fill 0.2s ease;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        .play_button:hover .play_button_bg,
+        .play_button:hover .play_button_icon {
+            transform: scale(1.1);
+        }
+        /* apply the same hover scale effect to refresh and pen buttons */
+        .refresh_button,
+        .pen_button {
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+        .refresh_button_bg,
+        .refresh_button_text,
+        .pen_button_bg,
+        .pen_button_text {
+            transition: transform 0.2s ease;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+        .refresh_button:hover .refresh_button_bg,
+        .refresh_button:hover .refresh_button_text,
+        .pen_button:hover .pen_button_bg,
+        .pen_button:hover .pen_button_text {
             transform: scale(1.1);
         }
 
         .play_button_bg {
-            transition: fill 0.2s ease;
+            transition: transform 0.2s ease, fill 0.2s ease;
         }
 
         .play_button:hover .play_button_bg {
@@ -758,6 +795,7 @@
 
         .coordinate_input[type=number] {
             -moz-appearance: textfield;
+            appearance: textfield; /* add standard property for compatibility */
         }
 
         /* context menu */
@@ -1123,6 +1161,17 @@
             margin-top: 24px;
         }
 
+        .delete_button_icon_1 {
+            position: relative;
+            top:1px;
+        }
+
+        .delete_button_text_inner {
+            position: relative;
+            top:-2px;
+            margin-left: 5px;
+        }
+
         .btn_modal {
             padding: 10px 20px;
             border: none;
@@ -1185,12 +1234,39 @@
             margin-top: -50px;
         }
 
+        /* fixed width for select/create python modals */
+        #create_python_modal .modal_content,
+        #select_python_modal .modal_content {
+            width: 550px;
+            min-width: 550px;
+            max-width: 550px;
+        }
+
         /* mini folder explorer styles */
         .mini_explorer { border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-variant); padding: 10px; }
-        .mini_explorer_toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; }
-        .mini_btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border-color); background: var(--surface-variant); color: var(--on-surface); border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .mini_explorer_toolbar { 
+            display: flex; gap: 8px; 
+            align-items: center; 
+            margin-bottom: 8px; 
+            background: transparent; 
+            border: 0px solid var(--border-color); 
+            border-radius: 6px; 
+            padding: 0px; 
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            border-radius: 0px;
+        }
+        .mini_btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--on-surface); border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
         .mini_btn:hover { background: var(--hover-color); }
-        .mini_breadcrumb { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; margin-bottom: 6px; }
+        .mini_breadcrumb { 
+            display: flex; 
+            gap: 6px; 
+            align-items: 
+            center; flex-wrap: wrap; 
+            font-size: 0.85rem; 
+            margin-bottom: 8px; 
+            margin-left: 2px;
+        }
         .mini_breadcrumb_item { cursor: pointer; color: #90caf9; }
         .mini_breadcrumb_sep { opacity: 0.6; }
         .mini_list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; background: var(--surface-color); }
@@ -1399,7 +1475,7 @@
                     START
                 </button>
                 <div class="loading_wheel" id="execution_loading_wheel" style="display: none;"></div>
-                <button class="btn btn_secondary" id="execute_clear_btn" title="clear" style="margin-top:-40px; margin-left: 245px;">
+                <button class="btn btn_secondary" id="execute_clear_btn" title="clear" style="margin-top:-34px; margin-left: 245px; margin-bottom: -8px;">
                     <span class="material-icons">brush</span>
                     CLEAR
                 </button>
@@ -1502,7 +1578,7 @@
         <!-- default state -->
         <div class="properties_content active" id="default_properties">
             <div class="sidebar_content">
-                <div style="text-align: center; padding: 40px 20px; color: var(--on-surface); opacity: 0.7;">
+                <div style="text-align: center; padding: 40px 20px; color: var(--on-surface); opacity: 0.7; margin-top: -60px;">
                     <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">info</span>
                     <p>select nodes to view properties</p>
                     <p style="font-size: 0.8em; margin-top: 8px;">shift+click for multi-select</p>
@@ -1522,11 +1598,8 @@
                 <div class="form_group">
                     <label class="form_label" for="python_file">python file</label>
                     <div class="dropdown_container">
-                        <input type="text" id="python_file" class="form_input dropdown_input" placeholder="search python files..." readonly>
-                        <span class="dropdown_arrow material-icons">arrow_drop_down</span>
-                        <div class="dropdown_menu" id="python_file_dropdown">
-                            <div class="dropdown_loading">loading files...</div>
-                        </div>
+                        <input type="text" id="python_file" class="form_input dropdown_input" placeholder="click to browse..." readonly>
+                        <span class="dropdown_arrow material-icons">folder_open</span>
                     </div>
                     <div class="create_flowchart_link_container" style="margin-top: 8px; text-align: left;">
                         <button type="button" id="create_python_script_btn" class="create_flowchart_link" style="background: none; border: none; cursor: pointer; margin-top: -6px;">
@@ -1762,10 +1835,6 @@
                     </div>
                 </div>
                 <div class="form_group">
-                    <button class="btn btn_primary" id="save_group_properties" style="width: 100%; margin-bottom: 8px;">
-                        <span class="material-icons">save</span>
-                        save group
-                    </button>
                     <button class="btn btn_secondary" id="ungroup_nodes" style="width: 100%; margin-bottom: 8px;">
                         <span class="material-icons">ungroup</span>
                         ungroup
@@ -1781,14 +1850,7 @@
         <!-- run mode execution panel -->
         <div class="properties_content" id="run_execution_properties">
             <div class="sidebar_content">
-                <div class="form_group">
-                    <label class="form_label">console output</label>
-                    <div id="console_output_log" style="max-height: 600px; overflow-y: auto; background: #1a1a1a; color: #00ff00; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
-                        <div id="console_content">
-                            <!-- console output will be displayed here -->
-                        </div>
-                    </div>
-                </div>
+                <!-- 1. execution status -->
                 <div class="form_group">
                     <label class="form_label">execution status</label>
                     <div id="execution_status" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
@@ -1796,9 +1858,17 @@
                             <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">info</span>
                             <span id="execution_status_text">ready to start execution</span>
                         </div>
+                        <!-- execution time inline with status -->
+                        <div id="execution_time_row" style="display:none; margin-top:8px; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-icons" style="color: #4caf50; font-size: 18px;">schedule</span>
+                            <span id="execution_time_text">0ms</span>
+                            <div style="flex: 1;"></div>
+                            <span id="execution_timestamp" style="font-size: 0.8em; opacity: 0.7;">--:--:--</span>
+                        </div>
                     </div>
                 </div>
-                
+
+                <!-- 2. node file info -->
                 <div class="form_group">
                     <label class="form_label">node file info</label>
                     <div id="node_file_info" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
@@ -1808,23 +1878,39 @@
                     </div>
                 </div>
 
-                <div class="form_group" id="execution_time_group" style="display: none;">
-                    <label class="form_label">execution time</label>
-                    <div id="execution_time_block" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="material-icons" style="color: #4caf50; font-size: 18px;">schedule</span>
-                            <span id="execution_time_text">0ms</span>
-                            <div style="flex: 1;"></div>
-                            <span id="execution_timestamp" style="font-size: 0.8em; opacity: 0.7;">--:--:--</span>
+                <!-- global execution progress for default/no selection -->
+                <div class="form_group" id="execution_progress_group">
+                    <label class="form_label">progress</label>
+                    <div id="execution_progress" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">timeline</span>
+                            <span id="execution_progress_text">0 of 0</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- 3. node input (arguments, inputs) -->
                 <div class="form_group">
-                    <label class="form_label">node output (variables)</label>
-                    <div id="node_variables_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #ffa726; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
-                        <div id="variables_content">
-                            <!-- node variables will be displayed here -->
+                    <label class="form_label">node input (arguments, inputs)</label>
+                    <div id="node_input_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #90caf9; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
+                        <div id="node_input_content"></div>
+                    </div>
+                </div>
+
+                <!-- 4. node output (returns) -->
+                <div class="form_group">
+                    <label class="form_label">node output (returns)</label>
+                    <div id="node_output_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #ffa726; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
+                        <div id="node_output_content"></div>
+                    </div>
+                </div>
+
+                <!-- 5. console output -->
+                <div class="form_group">
+                    <label class="form_label">console output</label>
+                    <div id="console_output_log" style="max-height: 600px; overflow-y: auto; background: #1a1a1a; color: #00ff00; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
+                        <div id="console_content">
+                            <!-- console output will be displayed here -->
                         </div>
                     </div>
                 </div>
@@ -1912,7 +1998,6 @@
                     <input type="text" id="new_python_name" class="form_input" placeholder="enter script name" maxlength="100">
                     <span class="input_suffix">.py</span>
                 </div>
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">the file will be created under nodes/</div>
             </div>
             <div class="form_group">
                 <label class="form_label">choose folder (under nodes/)</label>
@@ -1920,17 +2005,42 @@
                     <div class="mini_explorer_toolbar">
                         <button type="button" class="mini_btn" id="mini_up_btn"><span class="material-icons" style="font-size:16px">arrow_upward</span> Up</button>
                         <button type="button" class="mini_btn" id="mini_new_folder_btn"><span class="material-icons" style="font-size:16px">create_new_folder</span> New Folder</button>
-                        <div style="font-size:0.8rem; opacity:0.8;">path: <span id="mini_cwd_display">/</span></div>
                     </div>
                     <div class="mini_breadcrumb" id="mini_breadcrumb"></div>
                     <div class="mini_list" id="mini_list"><div style="padding:10px; opacity:0.7;">loading...</div></div>
                     <input type="hidden" id="mini_selected_path" value="">
                 </div>
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">files will be ignored here; pick a folder. default is root of nodes/.</div>
-            </div>
+               </div>
             <div class="modal_actions">
                 <button class="btn_modal btn_modal_secondary" id="cancel_create_python">CANCEL</button>
                 <button class="btn_modal btn_modal_primary" id="confirm_create_python">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- select python file modal (popup explorer) -->
+    <div class="modal_overlay" id="select_python_modal">
+        <div class="modal_content">
+            <div class="modal_header">
+                <h2 class="modal_title">SELECT PYTHON FILE</h2>
+                <button class="modal_close" id="fe_close_btn">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="form_group">
+                <label class="form_label">browse under nodes/</label>
+                <div class="mini_explorer">
+                    <div class="mini_explorer_toolbar">
+                        <button type="button" class="mini_btn" id="fe_up_btn"><span class="material-icons" style="font-size:16px">arrow_upward</span> up</button>
+                        <div id="fe_cwd_display" style="margin-left:auto; opacity:.8; font-family: monospace; font-size:.85rem;">/</div>
+                    </div>
+                    <div class="mini_breadcrumb" id="fe_breadcrumb"></div>
+                    <div class="mini_list" id="fe_list"><div style="padding:10px; opacity:0.7;">loading...</div></div>
+                </div>
+            </div>
+            <div class="modal_actions">
+                <button class="btn_modal btn_modal_secondary" id="fe_cancel">cancel</button>
+                <button class="btn_modal btn_modal_primary" id="fe_confirm">select</button>
             </div>
         </div>
     </div>

@@ -2,6 +2,13 @@
 class URLManager {
     constructor() {
         this.params = new URLSearchParams(window.location.search);
+        // ensure a universal mode is always present; default to build
+        if (!this.params.get('mode')) {
+            this.params.set('mode', 'build');
+            const newSearch = this.params.toString();
+            const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
+            window.history.replaceState(null, '', newURL);
+        }
     }
 
     /**
@@ -28,6 +35,8 @@ class URLManager {
         
         // update url parameter
         const newParams = new URLSearchParams(window.location.search);
+        // preserve existing mode; default to build if missing
+        const currentMode = newParams.get('mode') || 'build';
         
         if (displayName === 'default') {
             // remove parameter for default flowchart to keep url clean
@@ -37,6 +46,7 @@ class URLManager {
         }
 
         // build new url
+        newParams.set('mode', currentMode);
         const newSearch = newParams.toString();
         const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
         
@@ -62,6 +72,8 @@ class URLManager {
      */
     setParam(key, value) {
         this.params.set(key, value);
+        // always keep mode present
+        if (!this.params.get('mode')) this.params.set('mode', 'build');
         this.updateURL();
     }
 
@@ -70,6 +82,8 @@ class URLManager {
      */
     removeParam(key) {
         this.params.delete(key);
+        // never allow mode to be removed; restore default if removed
+        if (key === 'mode') this.params.set('mode', 'build');
         this.updateURL();
     }
 
@@ -77,6 +91,7 @@ class URLManager {
      * update browser url with current parameters
      */
     updateURL() {
+        if (!this.params.get('mode')) this.params.set('mode', 'build');
         const newSearch = this.params.toString();
         const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
         window.history.replaceState(null, '', newURL);

@@ -405,6 +405,10 @@ class FlowchartBuilder {
         // main sidebar buttons
         document.getElementById('build_btn').addEventListener('click', () => {
             this.switchToBuildMode();
+            // persist mode in url
+            const u = new URL(window.location.href);
+            u.searchParams.set('mode', 'build');
+            window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
         });
         
         // navigate to scripts interface
@@ -416,7 +420,7 @@ class FlowchartBuilder {
                 let url = '/scripts';
                 if (currentFlow) {
                     const display = String(currentFlow).replace(/\.json$/i, '');
-                    url = `/scripts?flowchart=${encodeURIComponent(display)}`;
+                    url = `/scripts?flowchart=${encodeURIComponent(display)}&mode=build`;
                 }
                 window.location.href = url;
             });
@@ -424,10 +428,16 @@ class FlowchartBuilder {
 
         document.getElementById('run_btn').addEventListener('click', () => {
             this.switchToRunMode();
+            const u = new URL(window.location.href);
+            u.searchParams.set('mode', 'run');
+            window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
         });
         
         document.getElementById('history_btn').addEventListener('click', () => {
             this.switchToHistoryMode();
+            const u = new URL(window.location.href);
+            u.searchParams.set('mode', 'history');
+            window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
         });
 
         // settings button
@@ -435,6 +445,9 @@ class FlowchartBuilder {
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
                 this.switchToSettingsMode();
+                const u = new URL(window.location.href);
+                u.searchParams.set('mode', 'settings');
+                window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
             });
         }
         
@@ -758,7 +771,8 @@ class FlowchartBuilder {
     updateStats() {
         const stats = this.state.getStats();
         if (this.nodeCount) {
-            this.nodeCount.textContent = `nodes: ${stats.nodeCount} | groups: ${stats.groupCount}`;
+            // use interpunct with extra spacing around it
+            this.nodeCount.textContent = `nodes: ${stats.nodeCount}  ·  groups: ${stats.groupCount}`;
         }
     }
 
@@ -1447,8 +1461,14 @@ class FlowchartBuilder {
         this.nodeRenderer.updateNodeStyles();
         this.linkRenderer.updateLinkStyles();
         
-        // clear properties sidebar
-        this.sidebar.showDefaultPanel();
+        // update properties sidebar depending on mode
+        if (this.state.isRunMode) {
+            // keep execution panel visible and show run-mode default (status + progress)
+            this.showExecutionPanel();
+            this.state.emit('updateSidebar');
+        } else {
+            this.sidebar.showDefaultPanel();
+        }
         
         this.updateStatusBar('all selections cleared');
     }
@@ -1465,8 +1485,10 @@ class FlowchartBuilder {
             // show execution panel
             const executionPanel = document.getElementById('run_execution_properties');
             executionPanel.classList.add('active');
-            
-            // clear output button removed
+
+            // force sidebar to render default run view (status + progress only)
+            this.state.clearSelection();
+            this.state.emit('updateSidebar');
         }
     }
 
@@ -1562,6 +1584,8 @@ class FlowchartBuilder {
                 
             const node = executionOrder[i];
                 const success = await this.executeNodeLive(node, i + 1, executionOrder.length);
+                // update sidebar progress each step
+                this.updateExecutionStatus('running', `executing ${i + 1} of ${executionOrder.length}`);
                 
                 // if node failed, stop execution immediately
                 if (!success) {
@@ -2563,6 +2587,9 @@ class FlowchartBuilder {
     updateExecutionStatus(type, message) {
         const statusElement = document.getElementById('execution_status_text');
         const iconElement = document.querySelector('#execution_status .material-icons');
+        const timeRow = document.getElementById('execution_time_row');
+        const timeText = document.getElementById('execution_time_text');
+        const progressText = document.getElementById('execution_progress_text');
         
         statusElement.textContent = message;
         
@@ -2571,18 +2598,46 @@ class FlowchartBuilder {
             case 'running':
                 iconElement.textContent = 'play_arrow';
                 iconElement.style.color = '#2196f3';
+                // show elapsed timer
+                this.executionStartTimestamp = this.executionStartTimestamp || Date.now();
+                if (timeRow) timeRow.style.display = 'flex';
+                if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                this._elapsedTimer = setInterval(() => {
+                    const elapsed = Date.now() - this.executionStartTimestamp;
+                    if (timeText) timeText.textContent = `${elapsed}ms`;
+                }, 100);
                 break;
             case 'completed':
                 iconElement.textContent = 'check_circle';
                 iconElement.style.color = '#4caf50';
+                if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                if (timeRow) timeRow.style.display = 'flex';
                 break;
             case 'error':
                 iconElement.textContent = 'error';
                 iconElement.style.color = '#f44336';
+                if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                if (timeRow) timeRow.style.display = 'flex';
+                break;
+            case 'stopped':
+                iconElement.textContent = 'stop';
+                iconElement.style.color = '#ff9800';
+                if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                if (timeRow) timeRow.style.display = 'flex';
                 break;
             default:
                 iconElement.textContent = 'info';
                 iconElement.style.color = 'var(--on-surface)';
+                if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                if (timeRow) timeRow.style.display = 'none';
+        }
+
+        // update global progress when status updates
+        if (progressText) {
+            const order = this.calculateNodeOrder ? this.calculateNodeOrder() : [];
+            const total = order.length;
+            const executed = this.nodeExecutionResults ? this.nodeExecutionResults.size : 0;
+            progressText.textContent = `${executed} of ${total}`;
         }
     }
 
@@ -2854,11 +2909,15 @@ class FlowchartBuilder {
 
     clearOutput() {
         // clear the separate output sections
-        const variablesContent = document.getElementById('variables_content');
+        const nodeInputContent = document.getElementById('node_input_content');
+        const nodeOutputContent = document.getElementById('node_output_content');
         const consoleContent = document.getElementById('console_content');
         
-        if (variablesContent) {
-            variablesContent.textContent = 'output cleared';
+        if (nodeInputContent) {
+            nodeInputContent.textContent = 'output cleared';
+        }
+        if (nodeOutputContent) {
+            nodeOutputContent.textContent = 'output cleared';
         }
         if (consoleContent) {
             consoleContent.textContent = 'output cleared';

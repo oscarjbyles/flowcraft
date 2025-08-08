@@ -57,20 +57,21 @@ class LinkRenderer {
     }
 
     renderDoubleLines() {
-        // find links that go from if nodes to python nodes
-        const ifToPythonLinks = this.state.links.filter(link => {
+        // find links that should render as double lines (if→python and python→if)
+        const doubleLineLinks = this.state.links.filter(link => {
             const sourceNode = this.state.getNode(link.source);
             const targetNode = this.state.getNode(link.target);
-            return sourceNode && targetNode && 
-                   sourceNode.type === 'if_node' && 
-                   targetNode.type === 'python_file';
+            if (!sourceNode || !targetNode) return false;
+            const isIfToPython = sourceNode.type === 'if_node' && targetNode.type === 'python_file';
+            const isPythonToIf = sourceNode.type === 'python_file' && targetNode.type === 'if_node';
+            return isIfToPython || isPythonToIf;
         });
 
         // remove existing double lines
         this.linkGroup.selectAll('.double-line').remove();
 
-        // create double lines for if-to-python connections
-        ifToPythonLinks.forEach(link => {
+        // create double lines for targeted connections
+        doubleLineLinks.forEach(link => {
             const sourceNode = this.state.getNode(link.source);
             const targetNode = this.state.getNode(link.target);
             
@@ -213,12 +214,13 @@ class LinkRenderer {
             .style('stroke-dasharray', d => d.style === 'dashed' ? '5,5' : null)
             .style('marker-end', d => d.type === 'input_connection' ? 'none' : null)
             .style('stroke', d => {
-                // hide original line for if-to-python connections
+                // hide original line for double-line connections
                 const sourceNode = this.state.getNode(d.source);
                 const targetNode = this.state.getNode(d.target);
-                if (sourceNode && targetNode && 
-                    sourceNode.type === 'if_node' && 
-                    targetNode.type === 'python_file') {
+                if (sourceNode && targetNode && (
+                    (sourceNode.type === 'if_node' && targetNode.type === 'python_file') ||
+                    (sourceNode.type === 'python_file' && targetNode.type === 'if_node')
+                )) {
                     return 'transparent';
                 }
                 return null; // use default stroke
@@ -339,12 +341,13 @@ class LinkRenderer {
             .style('stroke-dasharray', link.style === 'dashed' ? '5,5' : null)
             .style('marker-end', link.type === 'input_connection' ? 'none' : null)
             .style('stroke', () => {
-                // hide original line for if-to-python connections
+                // hide original line for double-line connections
                 const sourceNode = this.state.getNode(link.source);
                 const targetNode = this.state.getNode(link.target);
-                if (sourceNode && targetNode && 
-                    sourceNode.type === 'if_node' && 
-                    targetNode.type === 'python_file') {
+                if (sourceNode && targetNode && (
+                    (sourceNode.type === 'if_node' && targetNode.type === 'python_file') ||
+                    (sourceNode.type === 'python_file' && targetNode.type === 'if_node')
+                )) {
                     return 'transparent';
                 }
                 return null; // use default stroke
@@ -370,12 +373,13 @@ class LinkRenderer {
             
         this.animateLinkCreation(linkElement);
         
-        // render double lines if this is an if-to-python connection
+        // render double lines if this is a targeted connection
         const sourceNode = this.state.getNode(link.source);
         const targetNode = this.state.getNode(link.target);
-        if (sourceNode && targetNode && 
-            sourceNode.type === 'if_node' && 
-            targetNode.type === 'python_file') {
+        if (sourceNode && targetNode && (
+            (sourceNode.type === 'if_node' && targetNode.type === 'python_file') ||
+            (sourceNode.type === 'python_file' && targetNode.type === 'if_node')
+        )) {
             this.renderDoubleLines();
         }
         
@@ -389,7 +393,7 @@ class LinkRenderer {
                 .remove();
         }
         
-        // render if-to-python nodes if this is an if-to-python connection
+        // render if-to-python nodes only for if-to-python connections
         if (sourceNode && targetNode && 
             sourceNode.type === 'if_node' && 
             targetNode.type === 'python_file') {
@@ -442,11 +446,9 @@ class LinkRenderer {
             .filter(d => d.source === nodeId || d.target === nodeId)
             .attr('d', d => this.calculateLinkPath(d));
         
-        // also update arrows for these links
-        this.renderLinkArrows();
-        
-        // also update double lines
+        // ensure draw order: double lines first, arrows on top
         this.renderDoubleLines();
+        this.renderLinkArrows();
         
         // also update if-to-python nodes
         this.renderIfToPythonNodes();
@@ -456,24 +458,141 @@ class LinkRenderer {
         // render arrow markers at the middle of each link (excluding input connections)
         const linksWithArrows = this.state.links.filter(link => link.type !== 'input_connection');
         
+        // prepare persistent background polygons for python→if arrows so the background is always #121212
+        const pythonToIfLinks = this.state.links.filter(link => {
+            const sourceNode = this.state.getNode(link.source);
+            const targetNode = this.state.getNode(link.target);
+            return sourceNode && targetNode &&
+                sourceNode.type === 'python_file' && targetNode.type === 'if_node';
+        });
+        
+        // add a resilient bar under the arrow to mask double lines during movement
+        const bgLineSelection = this.linkGroup
+            .selectAll('.link_arrow_bg_line')
+            .data(pythonToIfLinks, d => `${d.source}-${d.target}`);
+
+        const bgLineEnter = bgLineSelection.enter()
+            .append('line')
+            .attr('class', 'link_arrow_bg_line')
+            .attr('vector-effect', 'non-scaling-stroke')
+            .style('stroke', '#121212')
+            .style('stroke-width', '10px')
+            .style('stroke-linecap', 'round')
+            .style('opacity', '1')
+            .style('pointer-events', 'none')
+            .attr('stroke', '#121212')
+            .attr('stroke-width', '10')
+            .attr('stroke-linecap', 'round');
+
+        const bgLineMerge = bgLineEnter.merge(bgLineSelection);
+        this.updateArrowBackgroundLineElements(bgLineMerge);
+
+        const bgSelection = this.linkGroup
+            .selectAll('.link_arrow_bg')
+            .data(pythonToIfLinks, d => `${d.source}-${d.target}`);
+        
+        const bgEnter = bgSelection.enter()
+            .append('polygon')
+            .attr('class', 'link_arrow_bg')
+            .style('fill', '#121212')
+            .style('stroke', '#121212')
+            .style('stroke-width', '4px')
+            .style('pointer-events', 'none');
+        
+        const bgMerge = bgEnter.merge(bgSelection);
+        this.updateArrowBackgroundElements(bgMerge);
+        
         const arrowSelection = this.linkGroup
             .selectAll('.link-arrow')
             .data(linksWithArrows, d => `${d.source}-${d.target}`);
 
-        // enter new arrows
+        // enter new arrows with explicit base styles to prevent inherited transparency
         const arrowEnter = arrowSelection.enter()
             .append('polygon')
-            .attr('class', 'link-arrow');
+            .attr('class', 'link-arrow')
+            .style('fill', 'var(--border-color)')
+            .style('stroke', 'none')
+            .style('stroke-width', null)
+            .style('fill-opacity', '1')
+            .style('pointer-events', 'none');
 
         // update all arrows
         const arrowMerge = arrowEnter.merge(arrowSelection);
         this.updateArrowElements(arrowMerge);
+        // ensure z-order: double lines (bottom) < bg line < bg polygon < arrow (top)
+        bgLineMerge.raise();
+        bgMerge.raise();
+        arrowMerge.raise();
         
         // remove old arrows
         arrowSelection.exit().remove();
+        // remove old backgrounds
+        bgSelection.exit().remove();
+        bgLineSelection.exit().remove();
         
         // render small nodes for if-to-python connections instead of arrows
         this.renderIfToPythonNodes();
+    }
+
+    updateArrowBackgroundElements(bgMerge) {
+        // update background polygons for python→if arrows
+        bgMerge.each((d, i, nodes) => {
+            const bg = d3.select(nodes[i]);
+            const midPoint = this.getLinkMidpoint(d);
+            const angle = this.getLinkAngle(d);
+
+            if (!midPoint) return;
+
+            // geometry mirrors the python→if arrow
+            const arrowWidth = 10;
+            const arrowHeight = 12;
+            const points = [
+                [arrowWidth, 0],
+                [-arrowWidth / 2, -arrowHeight / 2],
+                [-arrowWidth / 2, arrowHeight / 2]
+            ];
+            const pointsStr = points.map(p => p.join(',')).join(' ');
+
+            bg
+                .attr('points', pointsStr)
+                .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
+                .attr('data-link-id', `${d.source}-${d.target}`)
+                .style('fill', '#121212')
+                .style('stroke', '#121212')
+                .style('stroke-width', '4px')
+                .style('pointer-events', 'none')
+                .attr('fill', '#121212')
+                .attr('stroke', '#121212')
+                .attr('opacity', '1');
+        });
+    }
+
+    updateArrowBackgroundLineElements(bgLineMerge) {
+        // draw a short thick bar under the arrow to guarantee a solid #121212 backdrop
+        const halfLength = 9; // total ~18px long bar under arrow
+        bgLineMerge.each((d, i, nodes) => {
+            const line = d3.select(nodes[i]);
+            const midPoint = this.getLinkMidpoint(d);
+            const angleRad = this.getLinkAngle(d) * Math.PI / 180;
+            if (!midPoint) return;
+
+            const dx = Math.cos(angleRad) * halfLength;
+            const dy = Math.sin(angleRad) * halfLength;
+
+            line
+                .attr('x1', midPoint.x - dx)
+                .attr('y1', midPoint.y - dy)
+                .attr('x2', midPoint.x + dx)
+                .attr('y2', midPoint.y + dy)
+                .style('stroke', '#121212')
+                .style('stroke-width', '10px')
+                .attr('stroke', '#121212')
+                .attr('stroke-width', '10')
+                .attr('opacity', '1')
+                .style('opacity', '1')
+                .style('pointer-events', 'none')
+                .attr('data-link-id', `${d.source}-${d.target}`);
+        });
     }
 
     updateArrowElements(arrowMerge) {
@@ -491,31 +610,116 @@ class LinkRenderer {
                 return; // skip arrow rendering for if-to-python connections
             }
             
+            // customize arrow specifically for python→if connections
+            const isPythonToIf = sourceNode && targetNode &&
+                sourceNode.type === 'python_file' && targetNode.type === 'if_node';
+            
             if (midPoint) {
-                // create arrow shape (triangle pointing in direction of link)
-                const arrowSize = 9; // increased from 6 to 9 (50% larger)
-                const points = [
-                    [arrowSize, 0],
-                    [-arrowSize/2, -arrowSize/2],
-                    [-arrowSize/2, arrowSize/2]
-                ];
-                
-                const pointsStr = points.map(p => p.join(',')).join(' ');
-                
-                // determine arrow color based on link selection state
-                const isSelected = this.state.selectedLink && 
-                    d.source === this.state.selectedLink.source && 
-                    d.target === this.state.selectedLink.target;
-                
-                const arrowColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
-                
-                arrow
-                    .attr('points', pointsStr)
-                    .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
-                    .style('fill', arrowColor)
-                    .style('stroke', 'none')
-                    .style('pointer-events', 'none')
-                    .attr('data-link-id', `${d.source}-${d.target}`); // add identifier for hover handling
+                if (isPythonToIf) {
+                    // create a wider, less tall arrow for python→if
+                    // shorter length (arrowWidth) and 2x larger cross width (arrowHeight)
+                    const arrowWidth = 10; // shorter along the line
+                    const arrowHeight = 12; // wider across the double lines
+                    const points = [
+                        [arrowWidth, 0],
+                        [-arrowWidth / 2, -arrowHeight / 2],
+                        [-arrowWidth / 2, arrowHeight / 2]
+                    ];
+                    const pointsStr = points.map(p => p.join(',')).join(' ');
+                    
+                    // sync/update background beneath the arrow to ensure constant #121212 backdrop
+                    const bg = this.linkGroup
+                        .selectAll('.link_arrow_bg')
+                        .filter(e => e.source === d.source && e.target === d.target);
+                    if (!bg.empty()) {
+                        bg
+                            .attr('points', pointsStr)
+                            .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
+                            .attr('data-link-id', `${d.source}-${d.target}`)
+                            .style('fill', '#121212')
+                            .style('stroke', '#121212')
+                            .style('stroke-width', '4px')
+                            .style('pointer-events', 'none')
+                            .attr('fill', '#121212')
+                            .attr('stroke', '#121212')
+                            .attr('opacity', '1');
+                    }
+
+                    // update the resilient bar under the arrow as well
+                    const bgLine = this.linkGroup
+                        .selectAll('.link_arrow_bg_line')
+                        .filter(e => e.source === d.source && e.target === d.target);
+                    if (!bgLine.empty()) {
+                        const angleRad = angle * Math.PI / 180;
+                        const halfLength = 9;
+                        const dx = Math.cos(angleRad) * halfLength;
+                        const dy = Math.sin(angleRad) * halfLength;
+                        bgLine
+                            .attr('x1', midPoint.x - dx)
+                            .attr('y1', midPoint.y - dy)
+                            .attr('x2', midPoint.x + dx)
+                            .attr('y2', midPoint.y + dy)
+                            .style('stroke', '#121212')
+                            .style('stroke-width', '10px')
+                            .attr('stroke', '#121212')
+                            .attr('stroke-width', '10')
+                            .attr('opacity', '1')
+                            .style('opacity', '1')
+                            .style('pointer-events', 'none')
+                            .attr('data-link-id', `${d.source}-${d.target}`);
+                    }
+
+                    arrow
+                        .attr('points', pointsStr)
+                        .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
+                        .style('fill', '#121212')
+                        .style('stroke', '#666666')
+                        .style('stroke-width', '1px')
+                        .style('pointer-events', 'none')
+                        // force styles in case of prior transitions
+                        .attr('data-force-fill', '#121212')
+                        .attr('data-force-stroke', '#666666')
+                        .attr('data-force-stroke-width', '1px')
+                        .style('pointer-events', 'none')
+                        .attr('fill', '#121212')
+                        .attr('stroke', '#666666')
+                        .attr('opacity', '1')
+                        .attr('data-link-id', `${d.source}-${d.target}`);
+                } else {
+                    // default arrow style
+                    const arrowSize = 9; // standard arrow
+                    const points = [
+                        [arrowSize, 0],
+                        [-arrowSize/2, -arrowSize/2],
+                        [-arrowSize/2, arrowSize/2]
+                    ];
+                    const pointsStr = points.map(p => p.join(',')).join(' ');
+                    
+                    const isSelected = this.state.selectedLink && 
+                        d.source === this.state.selectedLink.source && 
+                        d.target === this.state.selectedLink.target;
+                    const arrowColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
+                    
+                    // ensure any lingering background for this link is removed if not python→if
+                    this.linkGroup
+                        .selectAll('.link_arrow_bg')
+                        .filter(e => e.source === d.source && e.target === d.target)
+                        .remove();
+                    this.linkGroup
+                        .selectAll('.link_arrow_bg_line')
+                        .filter(e => e.source === d.source && e.target === d.target)
+                        .remove();
+
+                    arrow
+                        .attr('points', pointsStr)
+                        .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
+                        .style('fill', arrowColor)
+                        .style('stroke', 'none')
+                        .attr('fill', arrowColor)
+                        .attr('opacity', '1')
+                        .style('pointer-events', 'none')
+                        .attr('data-link-id', `${d.source}-${d.target}`);
+                }
             }
         });
     }
@@ -614,19 +818,28 @@ class LinkRenderer {
             .filter(d => d.source === link.source && d.target === link.target);
         
         if (!arrow.empty()) {
-            // determine arrow color based on selection and hover state
+            // determine color based on selection and hover state
             const isSelected = this.state.selectedLink && 
                 link.source === this.state.selectedLink.source && 
                 link.target === this.state.selectedLink.target;
-            
-            let arrowColor;
-            if (isSelected || isHovered) {
-                arrowColor = 'var(--primary-color)';
+            const sourceNode = this.state.getNode(link.source);
+            const targetNode = this.state.getNode(link.target);
+            const isPythonToIf = sourceNode && targetNode &&
+                sourceNode.type === 'python_file' && targetNode.type === 'if_node';
+
+            const activeColor = (isSelected || isHovered) ? 'var(--primary-color)' : 'var(--border-color)';
+            if (isPythonToIf) {
+                // python→if: keep fill constant and fixed stroke (also force opacity)
+                arrow.style('fill', '#121212')
+                     .style('stroke', '#666666')
+                     .style('stroke-width', '1px')
+                     .style('fill-opacity', '1');
             } else {
-                arrowColor = 'var(--border-color)';
+                // default: update fill color
+                arrow.style('fill', activeColor)
+                     .style('stroke', 'none')
+                     .style('fill-opacity', '1');
             }
-            
-            arrow.style('fill', arrowColor);
         }
     }
 

@@ -292,6 +292,21 @@ class NodeRenderer {
 
         // update connection dot positions
         this.updateConnectionDotPositions(nodeMerge);
+
+        // position buttons from the left edge with 10px gaps
+        nodeMerge.each((d, i, nodes) => {
+            const group = d3.select(nodes[i]);
+            const width = d.width || 120;
+            const height = Geometry.getNodeHeight(d);
+            const rowY = -height / 2 - 20;
+            const r = 12;
+            const gap = 10;
+            const spacing = r * 2 + gap; // 34 px center spacing
+            const baseX = -width / 2 + r;
+            group.select('.refresh_button').attr('transform', `translate(${baseX}, ${rowY})`);
+            group.select('.pen_button').attr('transform', `translate(${baseX + spacing}, ${rowY})`);
+            group.select('.play_button').attr('transform', `translate(${baseX + spacing * 2}, ${rowY})`);
+        });
         
         // reapply interactions to ensure drag behavior works
         this.reapplyNodeInteractions(nodeMerge);
@@ -651,10 +666,15 @@ class NodeRenderer {
     }
 
     addPlayButtonToNode(nodeGroup, node) {
-        // position play button above the node in a horizontal row (right-most)
+        // position buttons in a row starting from the left edge with 10px gaps
         const nodeHeightForPlay = Geometry.getNodeHeight(node);
         const buttonRowYForPlay = -nodeHeightForPlay / 2 - 20; // above the node
-        const playButtonX = 28; // right position in the row
+        const widthForPlay = node.width || 120;
+        const r = 12; // circle radius
+        const gap = 10; // gap between buttons
+        const spacing = r * 2 + gap; // center-to-center spacing
+        const baseX = -widthForPlay / 2 + r; // first button center
+        const playButtonX = baseX + spacing * 2; // third button in the row
 
         const playButton = nodeGroup.append('g')
             .attr('class', 'play_button')
@@ -717,16 +737,19 @@ class NodeRenderer {
     }
 
     addRefreshButtonToNode(nodeGroup, node) {
-        // position refresh button above the node in a horizontal row (left-most)
+        // position refresh button as the first button in the row aligned to left edge
         const nodeHeightForRefresh = Geometry.getNodeHeight(node);
         const buttonRowYForRefresh = -nodeHeightForRefresh / 2 - 20; // above the node
-        const refreshButtonX = -28; // left position in the row
+        const widthForRefresh = node.width || 120;
+        const r = 12;
+        const refreshButtonX = -widthForRefresh / 2 + r; // first button center
 
         const refreshButton = nodeGroup.append('g')
             .attr('class', 'refresh_button')
             .attr('transform', () => `translate(${refreshButtonX}, ${buttonRowYForRefresh})`)
             .style('cursor', 'pointer')
             .style('opacity', 0)
+            .style('transform-origin', 'center')
             .on('click', (event) => {
                 event.stopPropagation();
                 // for newly created nodes, ensure python file analysis works even if pythonFile isn't set yet
@@ -744,6 +767,7 @@ class NodeRenderer {
             .attr('class', 'refresh_button_text')
             .attr('text-anchor', 'middle')
             .attr('dy', '.35em')
+            .style('font-size', '14px')
             .text('⟳');
     }
 
@@ -756,16 +780,22 @@ class NodeRenderer {
     }
 
     addPenButtonToNode(nodeGroup, node) {
-        // position pen button above the node in a horizontal row (center)
+        // position pen button as the second button with 10px gap
         const nodeHeightForPen = Geometry.getNodeHeight(node);
         const buttonRowYForPen = -nodeHeightForPen / 2 - 20; // above the node
-        const penButtonX = 0; // center position in the row
+        const widthForPen = node.width || 120;
+        const r = 12;
+        const gap = 10;
+        const spacing = r * 2 + gap;
+        const baseX = -widthForPen / 2 + r;
+        const penButtonX = baseX + spacing; // second button center
 
         const penButton = nodeGroup.append('g')
             .attr('class', 'pen_button')
             .attr('transform', () => `translate(${penButtonX}, ${buttonRowYForPen})`)
             .style('cursor', 'pointer')
             .style('opacity', 0)
+            .style('transform-origin', 'center')
             .on('click', (event) => {
                 event.stopPropagation();
                 this.handlePenButtonClick(node);
@@ -783,13 +813,23 @@ class NodeRenderer {
             .attr('class', 'pen_button_text')
             .attr('text-anchor', 'middle')
             .attr('dy', '.35em')
+            .style('font-size', '12px')
             .style('fill', '#ffffff') // white icon
             .text('✎');
     }
 
     async handlePenButtonClick(node) {
         // open the associated python file in the editor
-        if (!node || !node.pythonFile) return;
+        // if node has no associated file, surface a warning via the existing status bar
+        if (!node) return;
+        if (!node.pythonFile) {
+            try {
+                if (this.state && this.state.emit) {
+                    this.state.emit('statusUpdate', 'warning: no python file assigned to this node');
+                }
+            } catch (_) { /* no-op */ }
+            return;
+        }
         try {
             // show quick progress while opening
             this.state.emit && this.state.emit('statusUpdate', 'opening file...');
@@ -885,7 +925,12 @@ class NodeRenderer {
         );
         
         if (inputNodes.length === 0) {
-            console.log('No input nodes found for this Python node');
+            // if no input node exists yet, try to create one via the standard check
+            try {
+                await this.state.checkAndCreateInputNode(node);
+            } catch (e) {
+                console.error('failed to create input node on refresh:', e);
+            }
             return;
         }
 

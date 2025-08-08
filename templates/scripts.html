@@ -26,6 +26,11 @@
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Roboto', sans-serif; background-color: var(--background-color); color: var(--on-background); height:100vh; overflow:hidden; }
+        /* ensure most ui text uses roboto identically to the main app to keep font weights consistent */
+        html, body, .app_container, .sidebar, .sidebar_content, .main_content,
+        .sidebar_item, .sidebar_section_title, .sidebar_title, .status_bar,
+        button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .dropdown_no_results,
+        .modal_title, .btn { font-family: 'Roboto', sans-serif; }
         .app_container { display:flex; height:100vh; }
         .sidebar { width:320px; height:100vh; background: linear-gradient(180deg, var(--surface-color) 0%, var(--surface-variant) 100%); border-right:1px solid var(--border-color); display:flex; flex-direction:column; transition: width .3s ease; box-shadow:2px 0 8px rgba(0,0,0,0.15); }
         .sidebar_header { padding:24px 20px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:16px; }
@@ -39,7 +44,8 @@
         .sidebar_section.disabled { opacity: 0.4; pointer-events: none; }
         .sidebar_section.disabled .sidebar_item { cursor: not-allowed; }
         .sidebar_section_title { font-size:.875rem; font-weight:500; color: var(--on-surface); margin-bottom:12px; text-transform:uppercase; letter-spacing:.5px; opacity:.8; }
-        .sidebar_item { display:flex; align-items:center; justify-content:flex-start; text-align:left; padding:12px 18px 12px 14px; margin-bottom:10px; background:transparent; border-radius:8px; cursor:pointer; transition: all .3s ease; border:none; width:100%; color: var(--on-surface); font-size:.875rem; font-weight:500; text-transform:capitalize; letter-spacing:.5px; opacity:.95; }
+        /* match index.html sidebar_item sizing and typography exactly */
+        .sidebar_item { display:flex; align-items:center; justify-content:flex-start; text-align:left; padding-left:14px; padding-right:18px; padding-bottom:12px; padding-top:12px; margin-bottom:10px; background:transparent; border-radius:8px; cursor:pointer; transition: all .3s ease; border:none; width:100%; color: var(--on-surface); font-size:.875rem; font-weight:500; text-transform:capitalize; letter-spacing:.5px; opacity:.95; }
         .sidebar_item:hover { background: linear-gradient(135deg, var(--hover-color) 0%, rgba(51,51,51,.9) 100%); }
         .sidebar_item.active, .sidebar_item.run_mode_active { background:#484848; color: var(--on-primary); }
         .sidebar_item .material-icons { margin-right:12px; font-size:20px; width:26px; }
@@ -75,7 +81,29 @@
         .unselectable_text { user-select:none; -webkit-user-select:none; -ms-user-select:none; }
 
         /* dark mode styling for row selection checkboxes */
-        .explorer_select_cb { width:16px; height:16px; accent-color:#4caf50; }
+        .explorer_select_cb {
+            width:16px; height:16px;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            display: inline-grid; place-content: center;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            background: var(--surface-color);
+            outline: none;
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+        }
+        .explorer_select_cb:hover { box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15); }
+        .explorer_select_cb:checked {
+            background-color: #4caf50; border-color: #4caf50;
+        }
+        .explorer_select_cb:checked::after {
+            content: '\2713';
+            color: #ffffff; font-size: 12px; line-height: 1; transform: translateY(-1px);
+        }
+
+        /* align the checkbox column to the left */
+        .explorer_table thead th:nth-child(2),
+        .explorer_table tbody td:nth-child(2) { text-align: left; }
 
         /* form + dropdown styles (match index) */
         .form_group { margin-bottom: 16px; }
@@ -256,12 +284,23 @@
         // preserve flowchart param and provide functional dropdown in scripts view
         (function(){
             const params = new URLSearchParams(window.location.search);
+            // ensure mode param exists in scripts page urls
+            if (!params.get('mode')) {
+                params.set('mode', 'build');
+                const newUrl = window.location.pathname + '?' + params.toString();
+                window.history.replaceState(null, '', newUrl);
+            }
             const flowchartParam = params.get('flowchart');
 
             function withFlowchart(href){
                 const u = new URL(href, window.location.origin);
                 if (flowchartParam) {
                     u.searchParams.set('flowchart', flowchartParam);
+                }
+                // carry mode from target if provided, otherwise preserve current (default build)
+                const currentMode = (new URLSearchParams(window.location.search)).get('mode') || 'build';
+                if (!u.searchParams.get('mode')) {
+                    u.searchParams.set('mode', currentMode);
                 }
                 return u.pathname + (u.search ? u.search : '');
             }
@@ -323,10 +362,12 @@
                     item.addEventListener('click', () => {
                         selector.value = item.dataset.name;
                         toggleDropdown(false);
-                        // navigate back to main with selected flowchart
+                        // navigate back to main with selected flowchart and preserve current mode
                         const selected = item.dataset.filename.replace(/\.json$/i, '');
                         const url = new URL('/', window.location.origin);
                         url.searchParams.set('flowchart', selected);
+                        const currentMode = (new URLSearchParams(window.location.search)).get('mode') || 'build';
+                        url.searchParams.set('mode', currentMode);
                         window.location.href = url.pathname + '?' + url.searchParams.toString();
                     });
                 });

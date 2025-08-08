@@ -170,7 +170,16 @@ def scripts_page():
 
 @app.route('/api/open-file', methods=['POST'])
 def open_file_in_editor():
-    """open a python file in the default editor, preferring an already open editor window if possible (windows-focused)."""
+    """open a python file in a real editor.
+
+    strategy (windows-focused but cross-platform safe):
+    1) if a preferred editor executable path is provided, use it.
+    2) otherwise, try well-known editors (cursor, vscode, windsurf, notepad++, sublime) by full paths when detectable.
+    3) then try editor cli commands (code, cursor, windsurf, sublime_text, notepad++).
+    4) finally, fall back to the operating system's default association (start/open/xdg-open).
+
+    this ordering avoids the windows "choose an app" dialog when .py is associated with the python interpreter rather than an editor.
+    """
     try:
         data = request.json or {}
         python_file = data.get('python_file', '')
@@ -197,50 +206,105 @@ def open_file_in_editor():
                 'error': f'python file not found: {python_file}'
             }), 404
 
-        # if a specific editor executable path is provided (from settings), try it first
-        launched = False
-        if preferred_editor_path:
+        # helper to try spawning an editor executable or cli
+        def _try_launch_executable(executable_path_or_cmd, args):
             try:
-                subprocess.Popen([preferred_editor_path, file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=os.getcwd())
-                launched = True
+                subprocess.Popen([executable_path_or_cmd] + args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=os.getcwd())
+                return True
+            except Exception:
+                return False
+
+        launched = False
+
+        # 1) use explicitly provided preferred editor first
+        if preferred_editor_path:
+            launched = _try_launch_executable(preferred_editor_path, [file_path])
+
+        # 2) try well-known editors by full path on windows (detect installs)
+        if not launched and sys.platform.startswith('win'):
+            # resolve common install roots
+            program_files = os.environ.get('ProgramFiles', r'C:\Program Files')
+            program_files_x86 = os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')
+            local_app_data = os.environ.get('LOCALAPPDATA', os.path.expanduser(r'~\AppData\Local'))
+            windows_dir = os.environ.get('WINDIR', r'C:\Windows')
+
+            def first_existing_path(candidates):
+                for p in candidates:
+                    if p and os.path.exists(p):
+                        return p
+                return None
+
+            editor_paths_in_order = [
+                # cursor
+                first_existing_path([
+                    os.path.join(local_app_data, 'Programs', 'Cursor', 'Cursor.exe'),
+                    os.path.join(program_files, 'Cursor', 'Cursor.exe')
+                ]),
+                # vscode
+                first_existing_path([
+                    os.path.join(local_app_data, 'Programs', 'Microsoft VS Code', 'Code.exe'),
+                    os.path.join(program_files, 'Microsoft VS Code', 'Code.exe')
+                ]),
+                # windsurf
+                first_existing_path([
+                    os.path.join(local_app_data, 'Programs', 'Windsurf', 'Windsurf.exe'),
+                    os.path.join(program_files, 'Windsurf', 'Windsurf.exe')
+                ]),
+                # notepad++
+                first_existing_path([
+                    os.path.join(program_files, 'Notepad++', 'notepad++.exe'),
+                    os.path.join(program_files_x86, 'Notepad++', 'notepad++.exe')
+                ]),
+                # sublime text
+                first_existing_path([
+                    os.path.join(program_files, 'Sublime Text', 'sublime_text.exe'),
+                    os.path.join(program_files_x86, 'Sublime Text', 'sublime_text.exe')
+                ]),
+                # notepad (always present)
+                first_existing_path([
+                    os.path.join(windows_dir, 'system32', 'notepad.exe'),
+                    os.path.join(windows_dir, 'notepad.exe')
+                ])
+            ]
+
+            # launch the first detected editor
+            for editor_exe in [p for p in editor_paths_in_order if p]:
+                exe_name = os.path.basename(editor_exe).lower()
+                if 'code' in exe_name or 'cursor' in exe_name or 'windsurf' in exe_name:
+                    launched = _try_launch_executable(editor_exe, ['--reuse-window', file_path])
+                else:
+                    launched = _try_launch_executable(editor_exe, [file_path])
+                if launched:
+                    break
+
+        # 3) try editor cli commands available on path
+        if not launched:
+            launched = (
+                _try_launch_executable('cursor', ['--reuse-window', file_path]) or
+                _try_launch_executable('code', ['--reuse-window', file_path]) or
+                _try_launch_executable('windsurf', ['--reuse-window', file_path]) or
+                _try_launch_executable('sublime_text', [file_path]) or
+                _try_launch_executable('notepad++', [file_path])
+            )
+
+        # 4) last resort: use the os default handler
+        if not launched:
+            try:
+                if sys.platform.startswith('win'):
+                    try:
+                        subprocess.Popen(f'start "" "{file_path}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        launched = True
+                    except Exception:
+                        os.startfile(file_path)  # type: ignore[attr-defined]
+                        launched = True
+                elif sys.platform == 'darwin':
+                    subprocess.Popen(['open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    launched = True
+                else:
+                    subprocess.Popen(['xdg-open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    launched = True
             except Exception:
                 launched = False
-
-        # prefer system default handler next for correctness
-        try:
-            if sys.platform.startswith('win'):
-                # use cmd start to respect current default app association and avoid some shell execute quirks
-                try:
-                    subprocess.Popen(f'start "" "{file_path}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    launched = True
-                except Exception:
-                    os.startfile(file_path)  # type: ignore[attr-defined]
-                    launched = True
-            elif sys.platform == 'darwin':
-                subprocess.Popen(['open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                launched = True
-            else:
-                subprocess.Popen(['xdg-open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                launched = True
-        except Exception:
-            launched = False
-
-        # fallback to known editor clis only if default open failed
-        if not launched:
-            def try_launch(cmd, args):
-                try:
-                    subprocess.Popen([cmd] + args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=os.getcwd())
-                    return True
-                except Exception:
-                    return False
-
-            launched = (
-                try_launch('code', ['--reuse-window', file_path]) or
-                try_launch('cursor', ['--reuse-window', file_path]) or
-                try_launch('windsurf', ['--reuse-window', file_path]) or
-                try_launch('sublime_text', [file_path]) or
-                try_launch('notepad++', [file_path])
-            )
 
         return jsonify({'success': True, 'launched': launched, 'file_path': file_path})
     except Exception as e:
@@ -509,38 +573,42 @@ def run_flowchart():
 
 @app.route('/api/python-files', methods=['GET'])
 def get_python_files():
-    """get list of python files in the nodes directory"""
+    """get list of python files in the nodes directory (recursive)"""
     nodes_dir = 'nodes'
     python_files = []
-    
+
     try:
         if os.path.exists(nodes_dir):
-            for filename in os.listdir(nodes_dir):
-                if filename.endswith('.py'):
-                    file_path = os.path.join(nodes_dir, filename)
-                    # get file info
-                    stat = os.stat(file_path)
-                    python_files.append({
-                        'filename': filename,
-                        'name': filename[:-3],  # remove .py extension
-                        'path': f"nodes/{filename}",
-                        'size': stat.st_size,
-                        'modified': stat.st_mtime
-                    })
-        
-        # sort by filename
-        python_files.sort(key=lambda x: x['filename'])
-        
+            # walk nodes recursively and include any .py file
+            for root, dirs, files in os.walk(nodes_dir):
+                # skip python cache dirs
+                dirs[:] = [d for d in dirs if d != '__pycache__']
+                for filename in files:
+                    if filename.endswith('.py'):
+                        file_path = os.path.join(root, filename)
+                        rel_path = os.path.relpath(file_path, start=nodes_dir).replace('\\', '/')
+                        stat_info = os.stat(file_path)
+                        python_files.append({
+                            'filename': filename,
+                            'name': filename[:-3],
+                            'path': f"nodes/{rel_path}",
+                            'size': stat_info.st_size,
+                            'modified': stat_info.st_mtime
+                        })
+
+        # sort by path for stable order
+        python_files.sort(key=lambda x: x['path'].lower())
+
         return jsonify({
-            "status": "success",
-            "files": python_files,
-            "count": len(python_files)
+            'status': 'success',
+            'files': python_files,
+            'count': len(python_files)
         })
-    
+
     except Exception as e:
         return jsonify({
-            "status": "error",
-            "message": f"failed to list python files: {str(e)}"
+            'status': 'error',
+            'message': f'failed to list python files: {str(e)}'
         }), 500
 
 @app.route('/api/nodes/browse', methods=['GET'])
