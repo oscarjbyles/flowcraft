@@ -1,0 +1,88 @@
+{
+  "execution_id": "e9f36c83-abf7-4252-9494-15beab93f036",
+  "timestamp": "2025-08-06T23:37:59.328043",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754427638513.267,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754427638513.267,
+        "node_name": "NODE 1",
+        "python_file": "nodes/node1.py",
+        "success": true,
+        "output": "Enter number: 12\ncalculation result: 750\nfruits:\n  - apple\n  - banana\n  - cherry",
+        "error": null,
+        "runtime": 3339,
+        "timestamp": "23:37:59",
+        "return_value": 750,
+        "function_name": "calculate_and_print_result",
+        "input_args": {
+          "number_": "12"
+        }
+      },
+      {
+        "node_id": 1754485128247.5793,
+        "node_name": "node 3",
+        "python_file": "nodes/node3.py",
+        "success": false,
+        "output": "",
+        "error": "missing required arguments: result",
+        "runtime": 59,
+        "timestamp": "23:37:59",
+        "return_value": null
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 1,
+    "error_message": "execution stopped at node: node 3",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754427638513.267,
+          "name": "NODE 1",
+          "x": 844.1933898925781,
+          "y": 148.4884490966797,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 830.4906311035156,
+          "y": 373.20941162109375,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754506805606.9465,
+          "name": "Input Node",
+          "x": 604.1098785400391,
+          "y": 119.3224868774414,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754506805606.9465,
+          "style": "dashed",
+          "target": 1754427638513.267,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754427638513.267,
+          "target": 1754485128247.5793
+        }
+      ],
+      "groups": []
+    }
+  }
+}

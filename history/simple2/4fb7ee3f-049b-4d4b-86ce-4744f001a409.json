@@ -1,0 +1,122 @@
+{
+  "execution_id": "4fb7ee3f-049b-4d4b-86ce-4744f001a409",
+  "timestamp": "2025-08-07T10:29:48.590961",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754557300491.1255,
+      1754557376625.8308,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754557300491.1255,
+        "node_name": "example",
+        "python_file": "nodes/example.py",
+        "success": true,
+        "output": "Enter a number: 4\n16.0",
+        "error": null,
+        "runtime": 2157,
+        "timestamp": "10:29:48",
+        "return_value": 16,
+        "function_name": "get_user_input",
+        "input_args": {
+          "variableA": "4"
+        }
+      },
+      {
+        "node_id": 1754557376625.8308,
+        "node_name": "node 1",
+        "python_file": "nodes/node1.py",
+        "success": false,
+        "output": "Enter number: 16\nEnter number:",
+        "error": "could not convert string to float: ''",
+        "runtime": 133,
+        "timestamp": "10:29:48",
+        "return_value": null,
+        "function_name": "calculate_and_print_result",
+        "input_args": {
+          "variableC": 16
+        }
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 1,
+    "error_message": "execution stopped at node: node 1",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 767.8866882324219,
+          "y": 149.89205932617188,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557300491.1255,
+          "name": "example",
+          "x": 783.438232421875,
+          "y": -205.794921875,
+          "pythonFile": "nodes/example.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557341635.2678,
+          "name": "Input Node",
+          "x": 558,
+          "y": -209,
+          "pythonFile": "nodes/example.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754557376625.8308,
+          "name": "node 1",
+          "x": 765.2791748046875,
+          "y": -51.151885986328125,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557397227.906,
+          "name": "Input Node",
+          "x": 493.9757995605469,
+          "y": -54.27716255187988,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754557341635.2678,
+          "style": "dashed",
+          "target": 1754557300491.1255,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754557397227.906,
+          "style": "dashed",
+          "target": 1754557376625.8308,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754557300491.1255,
+          "target": 1754557376625.8308
+        },
+        {
+          "source": 1754557376625.8308,
+          "target": 1754485128247.5793
+        }
+      ],
+      "groups": []
+    }
+  }
+}

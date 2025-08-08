@@ -1,0 +1,118 @@
+{
+  "execution_id": "6d8833b2-2b04-4572-9c25-aeef9b899950",
+  "timestamp": "2025-08-07T12:08:56.158530",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "error",
+    "execution_order": [
+      1754557300491.1255,
+      1754559850176.4702,
+      1754557376625.8308,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754557300491.1255,
+        "node_name": "example",
+        "python_file": "nodes/example.py",
+        "success": true,
+        "output": "Enter a number: 4\n16.0",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "12:08:56",
+        "return_value": 16,
+        "function_name": "get_user_input"
+      }
+    ],
+    "total_nodes": 4,
+    "successful_nodes": 1,
+    "error_message": "this.appendToExecutionLog is not a function",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 771.7048034667969,
+          "y": 129.7800064086914,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557300491.1255,
+          "name": "example",
+          "x": 795.438232421875,
+          "y": -204.794921875,
+          "pythonFile": "nodes/example.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557341635.2678,
+          "name": "Input Node",
+          "x": 513,
+          "y": -218,
+          "pythonFile": "nodes/example.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754557376625.8308,
+          "name": "node 1",
+          "x": 776.159423828125,
+          "y": -54.03215026855469,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557397227.906,
+          "name": "Input Node",
+          "x": 493.9757995605469,
+          "y": -69.27716255187988,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754559850176.4702,
+          "name": "side node",
+          "x": 1092,
+          "y": -210.88026428222656,
+          "pythonFile": "nodes/sidenode.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754557341635.2678,
+          "style": "dashed",
+          "target": 1754557300491.1255,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754557397227.906,
+          "style": "dashed",
+          "target": 1754557376625.8308,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754557300491.1255,
+          "target": 1754557376625.8308
+        },
+        {
+          "source": 1754557376625.8308,
+          "target": 1754485128247.5793
+        },
+        {
+          "source": 1754559850176.4702,
+          "target": 1754557376625.8308
+        }
+      ],
+      "groups": []
+    }
+  }
+}

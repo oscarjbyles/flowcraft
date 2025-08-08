@@ -1,0 +1,112 @@
+{
+  "execution_id": "6b44020d-b471-4344-8950-739c21a2a51b",
+  "timestamp": "2025-08-06T21:35:55.663269",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "error",
+    "execution_order": [
+      1754427626171.5173,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754427626171.5173,
+        "node_name": "NODE 2",
+        "python_file": "node2.py",
+        "success": false,
+        "output": "",
+        "error": "execution failed: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\\\Users\\\\oscar\\\\AppData\\\\Local\\\\Temp\\\\tmp4ysckgwg.py'",
+        "runtime": 0,
+        "timestamp": "21:35:55",
+        "return_value": null
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 0,
+    "error_message": "this.appendToExecutionLog is not a function",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754427626171.5173,
+          "name": "NODE 2",
+          "x": 508.9715881347656,
+          "y": 250.5601348876953,
+          "pythonFile": "node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754427638513.267,
+          "name": "NODE 1",
+          "x": 524.1933898925781,
+          "y": 88.48844909667969,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 512.4906311035156,
+          "y": 532.2094116210938,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754506805589.9832,
+          "name": "Input Node",
+          "x": 254.07989501953125,
+          "y": 231.97767639160156,
+          "pythonFile": "node2.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754506805606.9465,
+          "name": "Input Node",
+          "x": 240.60987854003906,
+          "y": -23.677513122558594,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754427638513.267,
+          "target": 1754427626171.5173
+        },
+        {
+          "source": 1754427626171.5173,
+          "target": 1754485128247.5793
+        },
+        {
+          "selectable": false,
+          "source": 1754506805589.9832,
+          "style": "dashed",
+          "target": 1754427626171.5173,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754506805606.9465,
+          "style": "dashed",
+          "target": 1754427638513.267,
+          "type": "input_connection"
+        }
+      ],
+      "groups": [
+        {
+          "description": "",
+          "id": 1754486476309.396,
+          "name": "group_1",
+          "nodeIds": [
+            1754427638513.267,
+            1754427626171.5173
+          ]
+        }
+      ]
+    }
+  }
+}

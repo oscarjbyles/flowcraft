@@ -1,0 +1,97 @@
+{
+  "execution_id": "f55490cb-b816-4e57-8741-c557901ab754",
+  "timestamp": "2025-08-06T23:19:28.279423",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754427638513.267,
+      1754518728859.3188
+    ],
+    "results": [
+      {
+        "node_id": 1754427638513.267,
+        "node_name": "NODE 1",
+        "python_file": "nodes/node1.py",
+        "success": true,
+        "output": "Enter number: 12\ncalculation result: 750\nfruits:\n  - apple\n  - banana\n  - cherry",
+        "error": null,
+        "runtime": 10260,
+        "timestamp": "23:19:28",
+        "return_value": 750,
+        "function_name": "calculate_and_print_result",
+        "input_args": {
+          "number_": "12"
+        }
+      },
+      {
+        "node_id": 1754518728859.3188,
+        "node_name": "node 2",
+        "python_file": "nodes/node2.py",
+        "success": false,
+        "output": "",
+        "error": "execution failed: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\\\Users\\\\oscar\\\\AppData\\\\Local\\\\Temp\\\\tmp5pzsutzk.py'",
+        "runtime": 63,
+        "timestamp": "23:19:28",
+        "return_value": null
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 1,
+    "error_message": "execution stopped at node: node 2",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754427638513.267,
+          "name": "NODE 1",
+          "x": 524.1933898925781,
+          "y": 88.48844909667969,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 512.4906311035156,
+          "y": 532.2094116210938,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754506805606.9465,
+          "name": "Input Node",
+          "x": 208.60987854003906,
+          "y": 1.3224868774414062,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754518728859.3188,
+          "name": "node 2",
+          "x": 496,
+          "y": 234,
+          "pythonFile": "nodes/node2.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754506805606.9465,
+          "style": "dashed",
+          "target": 1754427638513.267,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754427638513.267,
+          "target": 1754518728859.3188
+        }
+      ],
+      "groups": []
+    }
+  }
+}

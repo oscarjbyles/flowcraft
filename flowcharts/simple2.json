@@ -1,0 +1,200 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754485128247.5793,
+      "name": "node 3",
+      "pythonFile": "nodes/node3.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 705.6159973144531,
+      "y": 310.3932800292969
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754557300491.1255,
+      "name": "assign variable + sqaure",
+      "pythonFile": "nodes/example.py",
+      "type": "python_file",
+      "width": 190.73333740234375,
+      "x": 826.282470703125,
+      "y": -289.60028076171875
+    },
+    {
+      "description": "input parameters",
+      "groupId": null,
+      "id": 1754557341635.2678,
+      "inputValues": {
+        "variableA": "4"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "variableA"
+      ],
+      "pythonFile": "nodes/example.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1754557300491.1255,
+      "type": "input_node",
+      "width": 300,
+      "x": 484.8334655761719,
+      "y": -288.69109058380127
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754557376625.8308,
+      "name": "add all together",
+      "pythonFile": "nodes/node1.py",
+      "type": "python_file",
+      "width": 136.9499969482422,
+      "x": 815.8629150390625,
+      "y": -105.57908248901367
+    },
+    {
+      "description": "input parameters",
+      "groupId": null,
+      "id": 1754557397227.906,
+      "inputValues": {
+        "num1": "2",
+        "num2": "3"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "num1",
+        "num2"
+      ],
+      "pythonFile": "nodes/node1.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1754557376625.8308,
+      "type": "input_node",
+      "width": 300,
+      "x": 483.3682861328125,
+      "y": -108.62628602981567
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754559850176.4702,
+      "name": "another number",
+      "pythonFile": "nodes/sidenode.py",
+      "type": "python_file",
+      "width": 139.03333282470703,
+      "x": 1128,
+      "y": -212.88026428222656
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754592052289.3586,
+      "name": "girl boy?",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 818.0886840820312,
+      "y": 50.197702407836914
+    },
+    {
+      "description": "",
+      "groupId": 1754608357871.8955,
+      "id": 1754592498999.7505,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1194.6910400390625,
+      "y": 136.68106079101562
+    },
+    {
+      "description": "",
+      "groupId": 1754608357871.8955,
+      "id": 1754593440044.931,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1442,
+      "y": 235
+    },
+    {
+      "description": "",
+      "groupId": 1754608357871.8955,
+      "id": 1754593440510.8223,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1448,
+      "y": 102
+    },
+    {
+      "id": 1754611964126.9265,
+      "x": 1459,
+      "y": -286,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "selectable": false,
+      "source": 1754557341635.2678,
+      "style": "dashed",
+      "target": 1754557300491.1255,
+      "type": "input_connection"
+    },
+    {
+      "selectable": false,
+      "source": 1754557397227.906,
+      "style": "dashed",
+      "target": 1754557376625.8308,
+      "type": "input_connection"
+    },
+    {
+      "source": 1754557300491.1255,
+      "target": 1754557376625.8308
+    },
+    {
+      "source": 1754559850176.4702,
+      "target": 1754557376625.8308
+    },
+    {
+      "source": 1754557376625.8308,
+      "target": 1754592052289.3586
+    },
+    {
+      "source": 1754592052289.3586,
+      "target": 1754485128247.5793
+    },
+    {
+      "conditions": [],
+      "source": 1754592052289.3586,
+      "target": 1754592498999.7505
+    },
+    {
+      "source": 1754592498999.7505,
+      "target": 1754593440510.8223
+    },
+    {
+      "source": 1754592498999.7505,
+      "target": 1754593440044.931
+    }
+  ],
+  "groups": [
+    {
+      "description": "",
+      "id": 1754608357871.8955,
+      "name": "final",
+      "nodeIds": [
+        1754592498999.7505,
+        1754593440510.8223,
+        1754593440044.931
+      ]
+    }
+  ]
+}

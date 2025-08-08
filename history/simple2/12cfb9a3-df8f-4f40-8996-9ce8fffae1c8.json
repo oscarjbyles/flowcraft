@@ -1,0 +1,154 @@
+{
+  "execution_id": "12cfb9a3-df8f-4f40-8996-9ce8fffae1c8",
+  "timestamp": "2025-08-07T19:05:06.951033",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1754557300491.1255,
+      1754559850176.4702,
+      1754557376625.8308,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754557300491.1255,
+        "node_name": "example",
+        "python_file": "nodes/example.py",
+        "success": true,
+        "output": "Enter a number: 4\n16.0",
+        "error": null,
+        "runtime": 2135,
+        "timestamp": "19:05:03",
+        "return_value": 16,
+        "function_name": "get_user_input"
+      },
+      {
+        "node_id": 1754559850176.4702,
+        "node_name": "side node",
+        "python_file": "nodes/sidenode.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 124,
+        "timestamp": "19:05:03",
+        "return_value": 4,
+        "function_name": "side_node"
+      },
+      {
+        "node_id": 1754557376625.8308,
+        "node_name": "node 1",
+        "python_file": "nodes/node1.py",
+        "success": true,
+        "output": "Enter number: 2\nEnter number: 3\n2\n3\ncalculation result: 25.0\nfruits:\n  - apple\n  - banana\n  - cherry",
+        "error": null,
+        "runtime": 3113,
+        "timestamp": "19:05:06",
+        "return_value": 25,
+        "function_name": "calculate_and_print_result"
+      },
+      {
+        "node_id": 1754485128247.5793,
+        "node_name": "node 3",
+        "python_file": "nodes/node3.py",
+        "success": true,
+        "output": "25",
+        "error": null,
+        "runtime": 112,
+        "timestamp": "19:05:06",
+        "return_value": null,
+        "function_name": "print_result"
+      }
+    ],
+    "total_nodes": 4,
+    "successful_nodes": 4,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 771.7048034667969,
+          "y": 129.7800064086914,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557300491.1255,
+          "name": "example",
+          "x": 779.438232421875,
+          "y": -206.794921875,
+          "pythonFile": "nodes/example.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557341635.2678,
+          "name": "Input Node",
+          "x": 496.7216796875,
+          "y": -218.10096740722656,
+          "pythonFile": "nodes/example.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754557376625.8308,
+          "name": "node 1",
+          "x": 775.159423828125,
+          "y": -56.03215026855469,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557397227.906,
+          "name": "Input Node",
+          "x": 488.9757995605469,
+          "y": -62.27716255187988,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754559850176.4702,
+          "name": "side node",
+          "x": 1138,
+          "y": -214.88026428222656,
+          "pythonFile": "nodes/sidenode.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754557341635.2678,
+          "style": "dashed",
+          "target": 1754557300491.1255,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754557397227.906,
+          "style": "dashed",
+          "target": 1754557376625.8308,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754557300491.1255,
+          "target": 1754557376625.8308
+        },
+        {
+          "source": 1754557376625.8308,
+          "target": 1754485128247.5793
+        },
+        {
+          "source": 1754559850176.4702,
+          "target": 1754557376625.8308
+        }
+      ],
+      "groups": []
+    }
+  }
+}

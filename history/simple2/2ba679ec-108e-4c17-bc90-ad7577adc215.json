@@ -1,0 +1,101 @@
+{
+  "execution_id": "2ba679ec-108e-4c17-bc90-ad7577adc215",
+  "timestamp": "2025-08-07T00:16:43.254524",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1754427638513.267,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754427638513.267,
+        "node_name": "NODE 1",
+        "python_file": "nodes/node1.py",
+        "success": true,
+        "output": "Enter number: 12\ncalculation result: 750\nfruits:\n  - apple\n  - banana\n  - cherry",
+        "error": null,
+        "runtime": 3232,
+        "timestamp": "00:16:42",
+        "return_value": 750,
+        "function_name": "calculate_and_print_result",
+        "input_args": {
+          "number_": "12"
+        }
+      },
+      {
+        "node_id": 1754485128247.5793,
+        "node_name": "node 3",
+        "python_file": "nodes/node3.py",
+        "success": true,
+        "output": "750",
+        "error": null,
+        "runtime": 257,
+        "timestamp": "00:16:43",
+        "return_value": null,
+        "function_name": "print_result",
+        "input_args": {
+          "result": 750
+        }
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 2,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754427638513.267,
+          "name": "NODE 1",
+          "x": 798.1933898925781,
+          "y": 29.488449096679688,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 760.4906311035156,
+          "y": 306.20941162109375,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754506805606.9465,
+          "name": "Input Node",
+          "x": 586.1098785400391,
+          "y": 6.322486877441406,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754520423158.054,
+          "name": "python_file_-Infinity.py",
+          "x": 1156,
+          "y": 221,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754506805606.9465,
+          "style": "dashed",
+          "target": 1754427638513.267,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754427638513.267,
+          "target": 1754485128247.5793
+        }
+      ],
+      "groups": []
+    }
+  }
+}

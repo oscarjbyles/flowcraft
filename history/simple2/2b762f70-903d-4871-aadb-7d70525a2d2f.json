@@ -1,0 +1,81 @@
+{
+  "execution_id": "2b762f70-903d-4871-aadb-7d70525a2d2f",
+  "timestamp": "2025-08-06T19:12:28.388283",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754427638513.267,
+      1754427626171.5173,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754427638513.267,
+        "node_name": "NODE 1",
+        "python_file": "node1.py",
+        "success": false,
+        "output": "",
+        "error": "execution was cancelled by user",
+        "runtime": 1125,
+        "timestamp": "19:12:28",
+        "return_value": null
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 0,
+    "error_message": "execution stopped at node: NODE 1",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754427626171.5173,
+          "name": "NODE 2",
+          "x": 434.1366271972656,
+          "y": 333.3573455810547,
+          "pythonFile": "node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754427638513.267,
+          "name": "NODE 1",
+          "x": 559.1366271972656,
+          "y": 92.35734558105469,
+          "pythonFile": "node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 351.4906311035156,
+          "y": 640.2094116210938,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754427638513.267,
+          "target": 1754427626171.5173
+        },
+        {
+          "source": 1754427626171.5173,
+          "target": 1754485128247.5793
+        }
+      ],
+      "groups": [
+        {
+          "description": "",
+          "id": 1754486476309.396,
+          "name": "group_1",
+          "nodeIds": [
+            1754427638513.267,
+            1754427626171.5173
+          ]
+        }
+      ]
+    }
+  }
+}

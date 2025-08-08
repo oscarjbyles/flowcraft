@@ -1,0 +1,111 @@
+{
+  "execution_id": "e26f8f82-c6c7-415c-965d-0a77a57c267f",
+  "timestamp": "2025-08-06T19:14:17.345589",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1754427638513.267,
+      1754427626171.5173,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754427638513.267,
+        "node_name": "NODE 1",
+        "python_file": "node1.py",
+        "success": true,
+        "output": "calculation result: 750\nfruits:\n  - apple\n  - banana\n  - cherry",
+        "error": null,
+        "runtime": 10128,
+        "timestamp": "19:14:17",
+        "return_value": 750,
+        "function_name": "calculate_and_print_result",
+        "input_args": {}
+      },
+      {
+        "node_id": 1754427626171.5173,
+        "node_name": "NODE 2",
+        "python_file": "node2.py",
+        "success": true,
+        "output": "750",
+        "error": null,
+        "runtime": 117,
+        "timestamp": "19:14:17",
+        "return_value": null,
+        "function_name": "print_result",
+        "input_args": {
+          "result": 750
+        }
+      },
+      {
+        "node_id": 1754485128247.5793,
+        "node_name": "node 3",
+        "python_file": "nodes/node3.py",
+        "success": true,
+        "output": "hello world",
+        "error": null,
+        "runtime": 113,
+        "timestamp": "19:14:17",
+        "return_value": null,
+        "function_name": "print_hello_world",
+        "input_args": {}
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 3,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754427626171.5173,
+          "name": "NODE 2",
+          "x": 434.1366271972656,
+          "y": 333.3573455810547,
+          "pythonFile": "node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754427638513.267,
+          "name": "NODE 1",
+          "x": 521.1366271972656,
+          "y": 108.35734558105469,
+          "pythonFile": "node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 351.4906311035156,
+          "y": 640.2094116210938,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754427638513.267,
+          "target": 1754427626171.5173
+        },
+        {
+          "source": 1754427626171.5173,
+          "target": 1754485128247.5793
+        }
+      ],
+      "groups": [
+        {
+          "description": "",
+          "id": 1754486476309.396,
+          "name": "group_1",
+          "nodeIds": [
+            1754427638513.267,
+            1754427626171.5173
+          ]
+        }
+      ]
+    }
+  }
+}

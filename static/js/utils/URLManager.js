@@ -1,0 +1,128 @@
+// url parameter management utility
+class URLManager {
+    constructor() {
+        this.params = new URLSearchParams(window.location.search);
+    }
+
+    /**
+     * get flowchart name from url parameter
+     */
+    getFlowchartFromURL() {
+        const flowchart = this.params.get('flowchart');
+        return flowchart ? `${flowchart}.json` : 'default.json';
+    }
+
+    /**
+     * get flowchart display name from url parameter
+     */
+    getFlowchartDisplayName() {
+        return this.params.get('flowchart') || 'default';
+    }
+
+    /**
+     * update url with current flowchart
+     */
+    updateFlowchartInURL(flowchartName) {
+        // remove .json extension for cleaner urls
+        const displayName = flowchartName.replace('.json', '');
+        
+        // update url parameter
+        const newParams = new URLSearchParams(window.location.search);
+        
+        if (displayName === 'default') {
+            // remove parameter for default flowchart to keep url clean
+            newParams.delete('flowchart');
+        } else {
+            newParams.set('flowchart', displayName);
+        }
+
+        // build new url
+        const newSearch = newParams.toString();
+        const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
+        
+        // update browser url without page reload
+        window.history.pushState({ flowchart: displayName }, '', newURL);
+        
+        console.log(`[URLManager] Updated URL to flowchart: ${displayName}`);
+    }
+
+    /**
+     * get all url parameters
+     */
+    getAllParams() {
+        const params = {};
+        for (const [key, value] of this.params.entries()) {
+            params[key] = value;
+        }
+        return params;
+    }
+
+    /**
+     * set url parameter
+     */
+    setParam(key, value) {
+        this.params.set(key, value);
+        this.updateURL();
+    }
+
+    /**
+     * remove url parameter
+     */
+    removeParam(key) {
+        this.params.delete(key);
+        this.updateURL();
+    }
+
+    /**
+     * update browser url with current parameters
+     */
+    updateURL() {
+        const newSearch = this.params.toString();
+        const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
+        window.history.replaceState(null, '', newURL);
+    }
+
+    /**
+     * handle browser back/forward navigation
+     */
+    setupPopstateHandler(callback) {
+        window.addEventListener('popstate', (event) => {
+            console.log('[URLManager] Browser navigation detected');
+            
+            // update internal params from current url
+            this.params = new URLSearchParams(window.location.search);
+            
+            // get flowchart from new url
+            const flowchartName = this.getFlowchartFromURL();
+            const displayName = this.getFlowchartDisplayName();
+            
+            // notify callback
+            if (callback) {
+                callback(flowchartName, displayName);
+            }
+        });
+    }
+
+    /**
+     * validate flowchart name for url safety
+     */
+    static validateFlowchartName(name) {
+        // remove .json extension
+        const cleanName = name.replace('.json', '');
+        
+        // allow only alphanumeric, hyphens, underscores
+        return /^[a-zA-Z0-9_-]+$/.test(cleanName);
+    }
+
+    /**
+     * sanitize flowchart name for url
+     */
+    static sanitizeFlowchartName(name) {
+        return name
+            .replace('.json', '')
+            .replace(/[^a-zA-Z0-9_-]/g, '_')
+            .toLowerCase();
+    }
+}
+
+window.URLManager = URLManager;
