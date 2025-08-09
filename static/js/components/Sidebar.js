@@ -2319,8 +2319,43 @@ class Sidebar {
                             }
                         }
                         
-                        // populate console section
-                        consoleContent.textContent = executionResult.output || 'no console output';
+                        // populate console section with a new block per line of output
+                        if (consoleContent) {
+                            const rawOutput = executionResult.output || '';
+                            const lines = rawOutput.split(/\r?\n/).filter(l => l.trim().length > 0);
+                            if (lines.length === 0) {
+                                consoleContent.textContent = 'no console output';
+                            } else {
+                                const escapeHtml = (txt) => {
+                                    try {
+                                        return window.flowchartApp && typeof window.flowchartApp.escapeHtml === 'function'
+                                            ? window.flowchartApp.escapeHtml(txt)
+                                            : String(txt)
+                                                .replaceAll('&', '&amp;')
+                                                .replaceAll('<', '&lt;')
+                                                .replaceAll('>', '&gt;')
+                                                .replaceAll('"', '&quot;')
+                                                .replaceAll("'", '&#39;');
+                                    } catch (e) {
+                                        return String(txt);
+                                    }
+                                };
+
+                                consoleContent.innerHTML = lines.map(line => `
+<div style="
+    margin-bottom: 8px;
+    background: var(--surface-variant);
+    border-left: 3px solid var(--secondary);
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: var(--on-surface);
+    border-radius: 0 6px 6px 0;
+    opacity: 0.9;
+    white-space: pre-wrap;
+">${escapeHtml(line)}</div>`).join('');
+                            }
+                        }
                         
                     } else {
                         if (nodeInputContent) nodeInputContent.innerHTML = `<span style="color: #f44336;">execution failed</span>`;

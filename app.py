@@ -14,6 +14,8 @@ import tempfile
 import glob
 import shutil
 import sys
+import socket
+import platform
 
 app = Flask(__name__)
 CORS(app)
@@ -218,7 +220,15 @@ def open_file_in_editor():
 
         # 1) use explicitly provided preferred editor first
         if preferred_editor_path:
-            launched = _try_launch_executable(preferred_editor_path, [file_path])
+            if sys.platform == 'darwin' and (preferred_editor_path.endswith('.app') or os.path.isdir(preferred_editor_path)):
+                # support launching mac .app bundles directly via 'open -a'
+                try:
+                    subprocess.Popen(['open', '-a', preferred_editor_path, file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    launched = True
+                except Exception:
+                    launched = False
+            else:
+                launched = _try_launch_executable(preferred_editor_path, [file_path])
 
         # 2) try well-known editors by full path on windows (detect installs)
         if not launched and sys.platform.startswith('win'):
@@ -298,7 +308,11 @@ def open_file_in_editor():
                         os.startfile(file_path)  # type: ignore[attr-defined]
                         launched = True
                 elif sys.platform == 'darwin':
-                    subprocess.Popen(['open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # if a specific app bundle was detected earlier, 'preferred_editor_path' may contain it
+                    if preferred_editor_path and (preferred_editor_path.endswith('.app') or os.path.isdir(preferred_editor_path)):
+                        subprocess.Popen(['open', '-a', preferred_editor_path, file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    else:
+                        subprocess.Popen(['open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     launched = True
                 else:
                     subprocess.Popen(['xdg-open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -808,7 +822,11 @@ def nodes_delete():
 
 @app.route('/api/editors', methods=['GET'])
 def list_text_editors():
-    """enumerate common text/code editors installed on the host system (best-effort, windows-focused)"""
+    """enumerate common text/code editors installed on the host system.
+    on macos, scan /Applications and ~/Applications for known .app bundles.
+    on windows, probe typical install locations.
+    linux returns empty and relies on cli detection/open fallback.
+    """
     try:
         editors = []
         checked_paths = []
@@ -829,58 +847,90 @@ def list_text_editors():
                     return p
             return None
 
-        # environment folders
-        program_files = os.environ.get('ProgramFiles', r'C:\Program Files')
-        program_files_x86 = os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')
-        local_app_data = os.environ.get('LOCALAPPDATA', os.path.expanduser(r'~\AppData\Local'))
-        windows_dir = os.environ.get('WINDIR', r'C:\Windows')
+        if sys.platform == 'darwin':
+            # macos: scan common applications folders for .app bundles
+            app_dirs = [
+                '/Applications',
+                os.path.expanduser('~/Applications')
+            ]
+            known_apps = {
+                'cursor': ['Cursor.app'],
+                'visual studio code': ['Visual Studio Code.app', 'VSCodium.app'],
+                'windsurf': ['Windsurf.app'],
+                'sublime text': ['Sublime Text.app'],
+                'nova': ['Nova.app'],
+                'bbedit': ['BBEdit.app']
+            }
 
-        # cursor
-        add_editor('cursor', first_existing_path([
-            os.path.join(local_app_data, 'Programs', 'Cursor', 'Cursor.exe'),
-            os.path.join(program_files, 'Cursor', 'Cursor.exe')
-        ]))
+            for name, app_names in known_apps.items():
+                found_path = None
+                for base in app_dirs:
+                    for app_name in app_names:
+                        candidate = os.path.join(base, app_name)
+                        if os.path.exists(candidate):
+                            found_path = candidate
+                            break
+                    if found_path:
+                        break
+                if found_path:
+                    editors.append({'name': name, 'path': found_path})
 
-        # visual studio code
-        add_editor('visual studio code', first_existing_path([
-            os.path.join(local_app_data, 'Programs', 'Microsoft VS Code', 'Code.exe'),
-            os.path.join(program_files, 'Microsoft VS Code', 'Code.exe')
-        ]))
+        elif sys.platform.startswith('win'):
+            # environment folders
+            program_files = os.environ.get('ProgramFiles', r'C:\\Program Files')
+            program_files_x86 = os.environ.get('ProgramFiles(x86)', r'C:\\Program Files (x86)')
+            local_app_data = os.environ.get('LOCALAPPDATA', os.path.expanduser(r'~\\AppData\\Local'))
+            windows_dir = os.environ.get('WINDIR', r'C:\\Windows')
 
-        # visual studio (community/professional enterprise)
-        vs_candidates = glob.glob(os.path.join(program_files, 'Microsoft Visual Studio', '*', '*', 'Common7', 'IDE', 'devenv.exe'))
-        vs_candidates += glob.glob(os.path.join(program_files_x86, 'Microsoft Visual Studio', '*', '*', 'Common7', 'IDE', 'devenv.exe'))
-        add_editor('visual studio', vs_candidates[0] if vs_candidates else None)
+            # cursor
+            add_editor('cursor', first_existing_path([
+                os.path.join(local_app_data, 'Programs', 'Cursor', 'Cursor.exe'),
+                os.path.join(program_files, 'Cursor', 'Cursor.exe')
+            ]))
 
-        # windsurf
-        add_editor('windsurf', first_existing_path([
-            os.path.join(local_app_data, 'Programs', 'Windsurf', 'Windsurf.exe'),
-            os.path.join(program_files, 'Windsurf', 'Windsurf.exe')
-        ]))
+            # visual studio code
+            add_editor('visual studio code', first_existing_path([
+                os.path.join(local_app_data, 'Programs', 'Microsoft VS Code', 'Code.exe'),
+                os.path.join(program_files, 'Microsoft VS Code', 'Code.exe')
+            ]))
 
-        # notepad++
-        add_editor('notepad++', first_existing_path([
-            os.path.join(program_files, 'Notepad++', 'notepad++.exe'),
-            os.path.join(program_files_x86, 'Notepad++', 'notepad++.exe')
-        ]))
+            # visual studio (community/professional enterprise)
+            vs_candidates = glob.glob(os.path.join(program_files, 'Microsoft Visual Studio', '*', '*', 'Common7', 'IDE', 'devenv.exe'))
+            vs_candidates += glob.glob(os.path.join(program_files_x86, 'Microsoft Visual Studio', '*', '*', 'Common7', 'IDE', 'devenv.exe'))
+            add_editor('visual studio', vs_candidates[0] if vs_candidates else None)
 
-        # sublime text
-        add_editor('sublime text', first_existing_path([
-            os.path.join(program_files, 'Sublime Text', 'sublime_text.exe'),
-            os.path.join(program_files_x86, 'Sublime Text', 'sublime_text.exe')
-        ]))
+            # windsurf
+            add_editor('windsurf', first_existing_path([
+                os.path.join(local_app_data, 'Programs', 'Windsurf', 'Windsurf.exe'),
+                os.path.join(program_files, 'Windsurf', 'Windsurf.exe')
+            ]))
 
-        # atom (legacy)
-        add_editor('atom', first_existing_path([
-            os.path.join(program_files, 'Atom', 'atom.exe'),
-            os.path.join(program_files_x86, 'Atom', 'atom.exe')
-        ]))
+            # notepad++
+            add_editor('notepad++', first_existing_path([
+                os.path.join(program_files, 'Notepad++', 'notepad++.exe'),
+                os.path.join(program_files_x86, 'Notepad++', 'notepad++.exe')
+            ]))
 
-        # notepad (always available on windows)
-        add_editor('notepad', first_existing_path([
-            os.path.join(windows_dir, 'system32', 'notepad.exe'),
-            os.path.join(windows_dir, 'notepad.exe')
-        ]))
+            # sublime text
+            add_editor('sublime text', first_existing_path([
+                os.path.join(program_files, 'Sublime Text', 'sublime_text.exe'),
+                os.path.join(program_files_x86, 'Sublime Text', 'sublime_text.exe')
+            ]))
+
+            # atom (legacy)
+            add_editor('atom', first_existing_path([
+                os.path.join(program_files, 'Atom', 'atom.exe'),
+                os.path.join(program_files_x86, 'Atom', 'atom.exe')
+            ]))
+
+            # notepad (always available on windows)
+            add_editor('notepad', first_existing_path([
+                os.path.join(windows_dir, 'system32', 'notepad.exe'),
+                os.path.join(windows_dir, 'notepad.exe')
+            ]))
+        else:
+            # linux/unix: no gui scan; rely on cli + fallback
+            pass
 
         # remove duplicates by path while preserving order
         unique = []
@@ -2022,5 +2072,46 @@ def stop_execution():
         'message': f'terminated {terminated_count} running processes, cleaned up {cleaned_files} temporary files'
     })
 
+def _is_port_open(port):
+    """check if a port is open (a process is already listening)."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.2)
+        return sock.connect_ex(('127.0.0.1', int(port))) == 0
+
+def _find_next_available_port(start_port, max_port):
+    """find the first available port in a range; returns none if not found."""
+    for candidate in range(int(start_port), int(max_port) + 1):
+        if not _is_port_open(candidate):
+            return candidate
+    return None
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # prefer port from env when provided
+    default_port = int(os.environ.get('PORT', '5000'))
+    host = '0.0.0.0'
+
+    # on macos, airplay receiver often occupies 5000; pick the next free port automatically
+    chosen_port = default_port
+    if platform.system() == 'Darwin' and _is_port_open(default_port):
+        alt = _find_next_available_port(default_port + 1, default_port + 50)
+        if alt is not None:
+            print(f"info: port {default_port} busy on macos, using {alt} instead")
+            chosen_port = alt
+        else:
+            # fall back to 0 (ephemeral) if no port in range is available
+            print(f"warning: ports {default_port}-{default_port+50} busy on macos, selecting ephemeral port")
+            chosen_port = 0
+
+    try:
+        app.run(debug=True, host=host, port=chosen_port)
+    except OSError as e:
+        # handle race or unexpected bind error by retrying with an alternate port on macos
+        addr_in_use = ('address already in use' in str(e).lower())
+        if platform.system() == 'Darwin' and addr_in_use:
+            alt = _find_next_available_port(default_port + 1, default_port + 50)
+            if alt is None:
+                alt = 0
+            print(f"warning: port {chosen_port} failed to bind, retrying on {alt if alt else 'ephemeral'}")
+            app.run(debug=True, host=host, port=alt)
+        else:
+            raise

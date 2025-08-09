@@ -1270,6 +1270,7 @@ class FlowchartBuilder {
         const historyBtn = document.getElementById('history_btn');
         const settingsBtn = document.getElementById('settings_btn');
         const floatingToolbar = document.getElementById('floating_toolbar');
+        const buildToolbar = document.getElementById('build_toolbar');
         const startButtonContainer = document.getElementById('start_button_container');
         const mainContent = document.querySelector('.main_content');
         const propertiesSidebar = document.querySelector('.properties_sidebar');
@@ -1297,6 +1298,7 @@ class FlowchartBuilder {
             // activate build mode
             buildBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // show floating toolbar
+            if (buildToolbar) buildToolbar.style.display = 'flex'; // show build toolbar
             
             // enable add node section in build mode
             if (addNodeSection) {
@@ -1327,6 +1329,7 @@ class FlowchartBuilder {
             // activate run mode
             runBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // keep floating toolbar visible in run mode
+            if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in run
             
             // disable add node section in run mode
             if (addNodeSection) {
@@ -1344,7 +1347,7 @@ class FlowchartBuilder {
             }
             
             // show start button
-            startButtonContainer.style.display = 'block';
+            startButtonContainer.style.display = 'flex';
             
             // expand properties sidebar to run view width
             mainContent.classList.add('run_mode');
@@ -1385,6 +1388,7 @@ class FlowchartBuilder {
             // set history-specific width
             mainContent.classList.add('history_mode');
             propertiesSidebar.classList.add('history_mode');
+            if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in history
             
             // switch to history panel
             this.hideExecutionPanel();
@@ -1395,6 +1399,7 @@ class FlowchartBuilder {
             // activate settings mode as full page view
             if (settingsBtn) settingsBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'none';
+            if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in settings
             if (addNodeSection) addNodeSection.classList.add('disabled');
             // hide start button if visible
             startButtonContainer.style.display = 'none';
