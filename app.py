@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 import os
@@ -164,6 +164,13 @@ def delete_execution_history(flowchart_name, execution_id):
 def index():
     """main page"""
     return render_template('index.html')
+
+# serve css assets located under templates/assets/css
+@app.route('/assets/css/<path:filename>')
+def assets_css(filename):
+    """serve css files from templates/assets/css to keep styling externalized without changing functionality"""
+    base_dir = os.path.join(app.root_path, 'templates', 'assets', 'css')
+    return send_from_directory(base_dir, filename)
 
 @app.route('/scripts')
 def scripts_page():
