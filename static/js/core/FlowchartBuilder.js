@@ -94,6 +94,8 @@ class FlowchartBuilder {
         this.groupRenderer = new GroupRenderer(this.state, this.zoomGroup);
         this.linkRenderer = new LinkRenderer(this.state, this.zoomGroup);
         this.nodeRenderer = new NodeRenderer(this.state, this.zoomGroup);
+        // annotations above nodes
+        this.annotationRenderer = new AnnotationRenderer(this.state, this.zoomGroup);
     }
 
     initializeInteractions() {
@@ -186,6 +188,10 @@ class FlowchartBuilder {
         // update coordinates when selection changes
         this.state.on('selectionChanged', () => {
             this.updateNodeCoordinates();
+            // re-render annotations to apply selected class
+            if (this.annotationRenderer && this.annotationRenderer.render) {
+                this.annotationRenderer.render();
+            }
         });
         
         // handle link clicks
@@ -227,7 +233,8 @@ class FlowchartBuilder {
         this.zoom = d3.zoom()
             .scaleExtent([0.1, 4])
             .filter((event) => {
-                // only allow zoom/pan when not dragging, connecting, or in group select mode
+                // allow wheel zoom always; block panning during drags/selections
+                if (event.type === 'wheel') return true;
                 return !this.state.isDragging && !this.state.isConnecting && !this.isGroupSelectMode && event.button !== 2;
             })
             .on('zoom', (event) => {
@@ -293,7 +300,7 @@ class FlowchartBuilder {
     }
 
     setupCanvasInteractions() {
-        // canvas mouse down handler for group selection
+        // canvas mouse down handler for group selection and annotation deselect
         this.svg.on('mousedown', (event) => {
             // check if clicking on empty canvas area (not on nodes, links, etc.)
             const clickedOnCanvas = event.target === this.svg.node() || 
@@ -307,6 +314,11 @@ class FlowchartBuilder {
                     event.preventDefault();
                     event.stopPropagation();
                 }
+            }
+            // clear annotation selection when clicking empty canvas
+            if (clickedOnCanvas && this.state.selectedAnnotation) {
+                this.state.clearSelection();
+                this.state.emit('updateSidebar');
             }
         });
 
@@ -326,6 +338,11 @@ class FlowchartBuilder {
                         }
                     }
                 } else {
+                    // if a drag operation or annotation drag just occurred, suppress node creation
+                    if (this.state.suppressNextCanvasClick) {
+                        this.state.suppressNextCanvasClick = false;
+                        return;
+                    }
                     this.events.handleCanvasClick(event, { x: coordinates[0], y: coordinates[1] });
                 }
             }
@@ -482,6 +499,14 @@ class FlowchartBuilder {
             this.addIfNode();
         });
         
+        // annotation toolbar buttons
+        const addTextBtn = document.getElementById('add_text_btn');
+        if (addTextBtn) {
+            addTextBtn.addEventListener('click', () => {
+                this.addTextAnnotation();
+            });
+        }
+        
         // start/stop button for execution
         document.getElementById('execute_start_btn').addEventListener('click', () => {
             if (this.isExecuting) {
@@ -623,6 +648,23 @@ class FlowchartBuilder {
             this.updateStatusBar(`added if node: ${node.name}`);
         } catch (error) {
             this.updateStatusBar(`error adding if node: ${error.message}`);
+        }
+    }
+
+    addTextAnnotation() {
+        // only in build mode
+        if (!this.state.isBuildMode) {
+            this.updateStatusBar('text annotation only available in build mode');
+            return;
+        }
+        const centerX = this.state.canvasWidth / 2;
+        const centerY = this.state.canvasHeight / 2;
+        const [wx, wy] = this.state.transform.invert([centerX, centerY]);
+        try {
+            const ann = this.state.addAnnotation({ x: wx, y: wy, text: 'text' });
+            this.updateStatusBar('added text');
+        } catch (e) {
+            this.updateStatusBar('error adding text');
         }
     }
 
@@ -1240,24 +1282,24 @@ class FlowchartBuilder {
                     nodeWidth = d.width;
                 }
                 
-                // add circle background
+                // add circle background (no border, orange, radius 12)
                 nodeGroup.append('circle')
                     .attr('class', 'node_order_circle')
-                    .attr('cx', nodeWidth / 2 + 15)
-                    .attr('cy', -25)
+                    .attr('cx', nodeWidth / 2 + 18)
+                    .attr('cy', -18) // moved down slightly for spacing
                     .attr('r', 12)
-                    .style('fill', 'var(--primary-color)')
-                    .style('stroke', 'var(--on-primary)')
-                    .style('stroke-width', '2px');
+                    .style('fill', '#ff9800')
+                    .style('stroke', 'none')
+                    .style('stroke-width', '0');
                 
                 // add order number text
                 nodeGroup.append('text')
                     .attr('class', 'node_order_text')
-                    .attr('x', nodeWidth / 2 + 15)
-                    .attr('y', -25)
+                    .attr('x', nodeWidth / 2 + 18)
+                    .attr('y', -18)
                     .attr('text-anchor', 'middle')
-                    .attr('dominant-baseline', 'middle')
-                    .style('fill', 'var(--on-primary)')
+                    .attr('dominant-baseline', 'central')
+                    .style('fill', '#000000')
                     .style('font-size', '12px')
                     .style('font-weight', 'bold')
                     .style('pointer-events', 'none')
@@ -1339,6 +1381,11 @@ class FlowchartBuilder {
             this.updateStatusBar('build mode - create and edit your flowchart');
             
         } else if (mode === 'run') {
+            // hide multiselect button in run mode
+            const groupSelectBtn = document.getElementById('group_select_btn');
+            if (groupSelectBtn) {
+                groupSelectBtn.style.display = 'none';
+            }
             // activate run mode
             runBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // keep floating toolbar visible in run mode
@@ -1378,6 +1425,11 @@ class FlowchartBuilder {
             this.updateStatusBar('run mode - interface locked for execution');
             
         } else if (mode === 'history') {
+            // hide multiselect button in history mode
+            const groupSelectBtn = document.getElementById('group_select_btn');
+            if (groupSelectBtn) {
+                groupSelectBtn.style.display = 'none';
+            }
             // activate history mode
             historyBtn.classList.add('run_mode_active');
             // keep floating toolbar visible in history mode
@@ -1442,6 +1494,14 @@ class FlowchartBuilder {
             // show full page settings
             this.showSettingsPage();
             this.updateStatusBar('settings');
+        }
+        
+        // ensure multiselect button is visible again only in build mode
+        if (mode === 'build') {
+            const groupSelectBtn = document.getElementById('group_select_btn');
+            if (groupSelectBtn) {
+                groupSelectBtn.style.display = '';
+            }
         }
     }
 
@@ -1571,6 +1631,9 @@ class FlowchartBuilder {
     }
 
     async startExecution() {
+        // clear all selections when starting execution (same as deselect button)
+        this.deselectAll();
+
         // get execution order
         const executionOrder = this.calculateNodeOrder();
         

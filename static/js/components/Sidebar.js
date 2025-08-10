@@ -20,6 +20,7 @@ class Sidebar {
             multi: document.getElementById('multi_select_properties'),
             group: document.getElementById('group_properties'),
             link: document.getElementById('link_properties'),
+            annotation: document.getElementById('annotation_properties'),
             execution: document.getElementById('run_execution_properties'),
             history: document.getElementById('execution_history_properties')
         };
@@ -141,6 +142,12 @@ class Sidebar {
         this.state.on('statusUpdate', (message) => this.updateStatus(message));
         // ensure sidebar updates when mode changes (e.g., hide delete in run mode)
         this.state.on('modeChanged', () => this.updateFromState());
+
+        // handle quick add if condition button click (delegated)
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('#add_if_condition_btn');
+            if (btn) this.handleAddIfCondition();
+        });
     }
 
     setupFormHandlers() {
@@ -353,7 +360,9 @@ class Sidebar {
         
         this.hideAllPanels();
 
-        if (selection.nodes.length === 1) {
+        if (selection.annotation) {
+            this.showAnnotationPanel(selection.annotation);
+        } else if (selection.nodes.length === 1) {
             this.showSingleNodePanel(selection.nodes[0]);
         } else if (selection.nodes.length > 1) {
             this.showMultiSelectPanel(selection.nodes);
@@ -368,13 +377,79 @@ class Sidebar {
         // ensure footer state updates on any selection change in build mode
         this.updateFooterDelete(selection);
         this.updateFooterVisibility(selection);
+
+        // toggle quick actions visibility
+        const quickBtn = document.getElementById('add_if_condition_btn');
+        if (quickBtn) {
+            const one = selection.nodes.length === 1 ? this.state.getNode(selection.nodes[0]) : null;
+            quickBtn.style.display = (one && one.type === 'python_file' && !this.state.isRunMode) ? 'flex' : 'none';
+        }
+    }
+
+    // quick action: add if node magnetised to selected python node
+    handleAddIfCondition() {
+        const selected = Array.from(this.state.selectedNodes);
+        if (selected.length !== 1) return;
+        const py = this.state.getNode(selected[0]);
+        if (!py || py.type !== 'python_file') return;
+
+        const pyHeight = 60;
+        const ifHeight = 60;
+        const gap = 20;
+        const ifNode = this.state.addNode({
+            x: py.x,
+            y: py.y + pyHeight / 2 + gap + ifHeight / 2,
+            name: 'if condition',
+            type: 'if_node'
+        });
+
+        // create association link and magnetize
+        try { this.state.addLink(py.id, ifNode.id); } catch (_) {}
+        this.state.setMagnetPair(ifNode.id, py.id);
+
+        // select the new if node for convenience
+        this.state.selectNode(ifNode.id);
+        this.state.emit('statusUpdate', '+ if condition added');
+    }
+
+    showAnnotationPanel(annotation) {
+        this.currentView = 'annotation';
+        const panel = this.contentPanels.annotation;
+        if (!panel) return;
+        panel.classList.add('active');
+        const input = document.getElementById('annotation_text_input');
+        if (input) {
+            input.value = annotation.text || '';
+            input.oninput = () => {
+                this.state.updateAnnotation(annotation.id, { text: input.value });
+            };
+        }
+        // font size control
+        const fontSizeInput = document.getElementById('annotation_font_size_input');
+        if (fontSizeInput) {
+            const currentSize = parseInt(annotation.fontSize || 14, 10);
+            fontSizeInput.value = !Number.isNaN(currentSize) ? currentSize : 14;
+            fontSizeInput.oninput = () => {
+                const size = parseInt(fontSizeInput.value, 10);
+                if (!Number.isNaN(size)) {
+                    this.state.updateAnnotation(annotation.id, { fontSize: size });
+                }
+            };
+        }
+
+        // show delete button for annotation selection in footer
+        if (this.footerDeleteBtn) {
+            this.footerDeleteBtn.style.display = 'block';
+            this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete text</span>';
+        }
     }
 
     updateFromState() {
         const selection = {
             nodes: Array.from(this.state.selectedNodes),
             link: this.state.selectedLink,
-            group: this.state.selectedGroup
+            group: this.state.selectedGroup,
+            annotation: this.state.selectedAnnotation
         };
         this.updateContent(selection);
         this.updateFooterDelete(selection);
@@ -481,6 +556,9 @@ class Sidebar {
         if (selection.link) {
             this.footerDeleteBtn.style.display = 'block';
             this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete connection</span>';
+        } else if (selection.annotation) {
+            this.footerDeleteBtn.style.display = 'block';
+            this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete text</span>';
         } else if (selection.group) {
             this.footerDeleteBtn.style.display = 'block';
             this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete group</span>';
@@ -520,6 +598,12 @@ class Sidebar {
         if (this.state.selectedLink) {
             this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
             this.showSuccess('connection deleted');
+            return;
+        }
+        if (this.state.selectedAnnotation) {
+            const id = this.state.selectedAnnotation.id;
+            this.state.removeAnnotation(id);
+            this.showSuccess('deleted text');
             return;
         }
         if (this.state.selectedGroup) {
@@ -641,8 +725,13 @@ class Sidebar {
         document.getElementById('link_source_file').textContent = sourceNode ? (sourceNode.pythonFile || 'no file') : 'unknown';
         document.getElementById('link_target_file').textContent = targetNode ? (targetNode.pythonFile || 'no file') : 'unknown';
         
-        // analyze variables
-        this.analyzeConnectionVariables(link, sourceNode, targetNode);
+        // for python→python links, show target arguments with green/red based on source returns
+        if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'python_file') {
+            this.analyzeArgumentCoverageForLink(link, sourceNode, targetNode);
+        } else {
+            // fallback to existing shared variable analysis
+            this.analyzeConnectionVariables(link, sourceNode, targetNode);
+        }
     }
 
     populateGroupForm(group) {
@@ -1600,6 +1689,111 @@ class Sidebar {
         } catch (error) {
             console.error('error analyzing connection:', error);
             this.showVariablesError('failed to connect to analysis service');
+        }
+    }
+
+    // show all target arguments, colored by whether source returns include them
+    async analyzeArgumentCoverageForLink(link, sourceNode, targetNode) {
+        const listDiv = document.getElementById('variables_list');
+        const loadingDiv = document.getElementById('variables_loading');
+        const errorDiv = document.getElementById('variables_error');
+        const emptyDiv = document.getElementById('variables_empty');
+        
+        // set loading ui
+        this.showVariablesState('loading');
+        
+        // guard required files
+        if (!sourceNode?.pythonFile || !targetNode?.pythonFile) {
+            this.showVariablesError('both nodes must have python files assigned');
+            return;
+        }
+        
+        try {
+            // fetch return vars for source
+            const [srcResp, tgtResp] = await Promise.all([
+                fetch('/api/analyze-python-function', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ python_file: sourceNode.pythonFile })
+                }),
+                fetch('/api/analyze-python-function', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ python_file: targetNode.pythonFile })
+                })
+            ]);
+            const [srcData, tgtData] = [await srcResp.json(), await tgtResp.json()];
+            if (!srcData.success || !tgtData.success) {
+                this.showVariablesError('failed to analyze functions');
+                return;
+            }
+            
+            // collect source return variable names (expand tuples/dicts)
+            const sourceReturns = [];
+            (srcData.returns || []).forEach(r => {
+                if (!r) return;
+                if (r.type === 'variable' && typeof r.name === 'string') {
+                    sourceReturns.push(r.name);
+                } else if (r.type === 'tuple' && Array.isArray(r.items)) {
+                    r.items.forEach(it => {
+                        if (it && typeof it.name === 'string') sourceReturns.push(it.name);
+                    });
+                } else if (r.type === 'dict' && Array.isArray(r.items)) {
+                    r.items.forEach(it => {
+                        if (it && typeof it.key === 'string') sourceReturns.push(it.key);
+                    });
+                }
+            });
+            const sourceReturnSet = new Set(sourceReturns);
+            
+            // collect target argument names: use formal_parameters only (arguments from previous nodes)
+            let targetArgs = Array.isArray(tgtData.formal_parameters) ? [...tgtData.formal_parameters] : [];
+            // filter out common implicit params
+            targetArgs = targetArgs.filter(n => typeof n === 'string' && n !== 'self' && n !== 'cls');
+            
+            listDiv.innerHTML = '';
+            
+            if (!targetArgs || targetArgs.length === 0) {
+                this.showVariablesState('empty');
+                return;
+            }
+            
+            let hasMissing = false;
+            targetArgs.forEach(arg => {
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    background: var(--surface-color);
+                    border: 1px solid var(--border-color);
+                    border-radius: 4px;
+                    padding: 8px 10px;
+                    margin-bottom: 6px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+                const isCovered = sourceReturnSet.has(arg);
+                const color = isCovered ? '#4caf50' : '#f44336';
+                const icon = isCovered ? 'check_circle' : 'cancel';
+                const statusText = isCovered ? 'provided by source' : 'not provided by source';
+                item.innerHTML = `
+                    <span class="material-icons" style="font-size: 16px; color: ${color};">${icon}</span>
+                    <span style="font-family: monospace; font-weight: 600; color: ${color};">${arg}</span>
+                    <span style="font-size: 0.75rem; opacity: 0.7; margin-left: auto;">${statusText}</span>
+                `;
+                listDiv.appendChild(item);
+                if (!isCovered) hasMissing = true;
+            });
+            
+            this.showVariablesState('list');
+            // signal renderer to show/hide coverage alert for the link at midpoint
+            if (this.state && typeof this.state.emit === 'function') {
+                // clear any legacy node alerts
+                this.state.emit('clearNodeCoverageAlerts');
+                this.state.emit('updateLinkCoverageAlert', { sourceId: sourceNode.id, targetId: targetNode.id, hasMissing });
+            }
+        } catch (e) {
+            console.error('error analyzing argument coverage:', e);
+            this.showVariablesError('network error');
         }
     }
 

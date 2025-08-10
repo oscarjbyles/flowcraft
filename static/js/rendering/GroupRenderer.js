@@ -219,7 +219,7 @@ class GroupRenderer {
             .on('mousedown', (event, d) => {
                 // start a synthetic multi-node drag using existing drag handler logic conventions
                 event.stopPropagation();
-                if (this.state.isRunMode) return;
+                if (this.state.isRunMode || this.state.isHistoryMode) return;
                 // disable zoom during drag
                 this.state.emit('disableZoom');
                 // mark dragging state to help suppress click-to-add-node

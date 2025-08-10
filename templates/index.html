@@ -844,6 +844,11 @@
             pointer-events: none;
         }
 
+        /* annotation styles */
+        .annotation_text { user-select: none; cursor: move; }
+        .annotation_box { fill: transparent; stroke: transparent; rx: 4px; ry: 4px; }
+        .annotation_item.selected .annotation_box { stroke: var(--primary-color); stroke-width: 2px; }
+
         /* run view styles */
         .sidebar_item.flow_view_active {
             background-color: #484848;
@@ -984,8 +989,20 @@
         }
 
         /* icon-only buttons, match height of build toolbar buttons via shared .btn styles */
-        .annotation_toolbar .toolbar_icon_btn { width: 40px; }
-        .annotation_toolbar .material-icons { font-size: 18px; }
+        .annotation_toolbar .toolbar_icon_btn {
+            width: 40px;
+            height: 40px;
+            padding: 0; /* remove default .btn padding so centering is exact */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0; /* avoid font metrics affecting centering */
+        }
+        .annotation_toolbar .material-icons {
+            font-size: 18px;
+            line-height: 1; /* keep glyph box tight */
+            display: block; /* prevent inline baseline shifts */
+        }
         .build_toolbar .material-icons { font-size: 18px; }
 
         /* force equal heights across both toolbars */
@@ -1618,6 +1635,14 @@
                     </div>
                 </div>
 
+                <!-- quick action to add an if node magnetised to this python node -->
+                <div class="form_group" id="python_quick_actions">
+                    <button class="btn btn_primary" id="add_if_condition_btn" style="width: 100%; display: none;">
+                        <span class="material-icons">alt_route</span>
+                        <span class="btn_label">+ if condition</span>
+                    </button>
+                </div>
+
                 <div class="form_group" id="arguments_section" style="display: none; flex: 1;">
                     <label class="form_label">arguments (data in)</label>
                     <div id="arguments_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
@@ -1683,6 +1708,20 @@
             </div>
         </div>
 
+        <!-- annotation properties -->
+        <div class="properties_content" id="annotation_properties">
+            <div class="sidebar_content">
+                <div class="form_group">
+                    <label class="form_label" for="annotation_text_input">text</label>
+                    <input type="text" id="annotation_text_input" class="form_input" placeholder="enter text">
+                </div>
+                <div class="form_group">
+                    <label class="form_label" for="annotation_font_size_input">font size</label>
+                    <input type="number" min="8" max="72" step="1" id="annotation_font_size_input" class="form_input" placeholder="14">
+                </div>
+            </div>
+        </div>
+
         <!-- multi-select properties -->
         <div class="properties_content" id="multi_select_properties">
             <div class="sidebar_content">
@@ -1715,13 +1754,16 @@
                 <div class="form_group">
                     <label class="form_label">connection</label>
                     <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <span id="link_source_name" style="font-weight: 500;">source node</span>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <span id="link_source_name" style="font-weight: 500;">source node</span>
+                                <span id="link_source_file" style="font-size: 0.8em; opacity: 0.7; margin-top: 2px;">source_file.py</span>
+                            </div>
                             <span class="material-icons" style="color: var(--primary-color);">arrow_downward</span>
-                            <span id="link_target_name" style="font-weight: 500;">target node</span>
-                        </div>
-                        <div style="font-size: 0.8em; opacity: 0.7;">
-                            <span id="link_source_file">source_file.py</span> → <span id="link_target_file">target_file.py</span>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <span id="link_target_name" style="font-weight: 500;">target node</span>
+                                <span id="link_target_file" style="font-size: 0.8em; opacity: 0.7; margin-top: 2px;">target_file.py</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1816,7 +1858,7 @@
                 <div class="form_group">
                     <button class="btn btn_secondary" id="refresh_variables_btn" style="width: 100%; margin-bottom: 8px;">
                         <span class="material-icons">refresh</span>
-                        refresh analysis
+                        <span class="delete_button_text_inner">refresh analysis</span>
                     </button>
                     <button class="btn btn_secondary btn_danger_subtle" id="delete_link_btn" style="width: 100%;">
                         <span class="material-icons">delete</span>
@@ -2096,6 +2138,7 @@
     <script src="/static/js/rendering/NodeRenderer.js"></script>
     <script src="/static/js/rendering/LinkRenderer.js"></script>
     <script src="/static/js/rendering/GroupRenderer.js"></script>
+    <script src="/static/js/rendering/AnnotationRenderer.js"></script>
 
     <!-- component modules -->
     <script src="/static/js/components/Sidebar.js"></script>

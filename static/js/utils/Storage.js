@@ -73,7 +73,8 @@ class Storage {
                     data: {
                         nodes: data.nodes || [],
                         links: data.links || [],
-                        groups: data.groups || []
+                        groups: data.groups || [],
+                        annotations: data.annotations || []
                     },
                     message: 'flowchart loaded successfully'
                 };

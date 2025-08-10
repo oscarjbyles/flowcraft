@@ -6,9 +6,60 @@ class NodeRenderer {
         
         // create node group
         this.nodeGroup = this.container.append('g').attr('class', 'nodes');
+        // create snap preview layer above nodes but below links rendered later
+        this.snapPreviewLayer = this.container.append('g').attr('class', 'snap_preview_layer');
         
         // setup event listeners
         this.setupEventListeners();
+    }
+
+    updateCoverageAlerts(data = null) {
+        // data: { sourceNodeId, hasMissing }
+        const alertClass = 'coverage_alert';
+        if (data && typeof data.sourceNodeId !== 'undefined') {
+            const nodeSel = this.nodeGroup.selectAll('.node-group').filter(d => d.id === data.sourceNodeId);
+            if (nodeSel.empty()) return;
+            const g = nodeSel;
+            const existing = g.selectAll(`.${alertClass}`);
+            if (data.hasMissing) {
+                // create or update alert circle with '!'
+                let alert = existing;
+                if (alert.empty()) {
+                    alert = g.append('g').attr('class', alertClass).style('pointer-events', 'none');
+                    alert.append('circle').attr('r', 12).style('fill', '#f44336').style('stroke', '#ffffff').style('stroke-width', 2);
+                    alert.append('text').attr('class', 'alert_mark').attr('dy', '0.35em').attr('text-anchor', 'middle').text('!')
+                        .style('font-weight', '700').style('fill', '#ffffff').style('font-size', '14px');
+                }
+                // position to the left of the top-left corner of node rect
+                g.each((d, i, nodes) => {
+                    const width = d.width || 120;
+                    const height = Geometry.getNodeHeight(d);
+                    const topLeftX = -width / 2;
+                    const topLeftY = -height / 2;
+                    const offsetX = -14; // a bit left outside
+                    const offsetY = -14; // a bit above
+                    g.select(`.${alertClass}`).attr('transform', `translate(${topLeftX + offsetX}, ${topLeftY + offsetY})`);
+                });
+            } else {
+                existing.remove();
+            }
+            return;
+        }
+
+        // general pass: keep alerts aligned after layout/resize
+        const groups = this.nodeGroup.selectAll(`.node-group`).filter(d => !d || d.type !== 'input_node');
+        groups.each((d, i, nodes) => {
+            const g = d3.select(nodes[i]);
+            const alert = g.selectAll(`.${alertClass}`);
+            if (alert.empty()) return;
+            const width = d.width || 120;
+            const height = Geometry.getNodeHeight(d);
+            const topLeftX = -width / 2;
+            const topLeftY = -height / 2;
+            const offsetX = -14;
+            const offsetY = -14;
+            alert.attr('transform', `translate(${topLeftX + offsetX}, ${topLeftY + offsetY})`);
+        });
     }
 
     setupEventListeners() {
@@ -21,6 +72,11 @@ class NodeRenderer {
         this.state.on('addNodeClass', (data) => this.addNodeClass(data));
         this.state.on('removeNodeClass', (data) => this.removeNodeClass(data));
         this.state.on('stateChanged', () => this.render());
+        // custom event to update coverage alerts
+        this.state.on('updateCoverageAlerts', (data) => this.updateCoverageAlerts(data));
+        // snap preview events
+        this.state.on('updateSnapPreview', (data) => this.updateSnapPreview(data));
+        this.state.on('clearSnapPreview', () => this.clearSnapPreview());
     }
 
     render() {
@@ -39,6 +95,57 @@ class NodeRenderer {
         nodeSelection.exit().remove();
         
         this.updateNodeStyles();
+        // apply any pending coverage alerts
+        this.updateCoverageAlerts();
+    }
+
+    // snap preview management
+    updateSnapPreview(data) {
+        // data: { x, y, width, height }
+        if (!data || typeof data.x !== 'number' || typeof data.y !== 'number') return;
+        const width = Math.max(40, data.width || 120);
+        const height = Math.max(20, data.height || 60);
+        // ensure a single preview group exists
+        let g = this.snapPreviewLayer.selectAll('.snap_preview').data([0]);
+        const gEnter = g.enter().append('g').attr('class', 'snap_preview');
+        g = gEnter.merge(g);
+        g.attr('transform', `translate(${data.x},${data.y})`);
+        // rectangle outline centered at (x,y)
+        let rect = g.selectAll('.snap_preview_rect').data([0]);
+        const rectEnter = rect.enter().append('rect').attr('class', 'snap_preview_rect');
+        rect = rectEnter.merge(rect);
+        rect
+            .attr('x', -width / 2)
+            .attr('y', -height / 2)
+            .attr('width', width)
+            .attr('height', height)
+            .attr('rx', 8)
+            .style('fill', 'none')
+            .style('stroke', 'var(--primary-color, #1976d2)')
+            .style('stroke-width', '2px')
+            .style('stroke-dasharray', '6,4')
+            .style('opacity', 0.35)
+            .style('pointer-events', 'none');
+        // add a subtle top-corner rounding indicator above python node bottom
+        let topArc = g.selectAll('.snap_preview_top_arc').data([0]);
+        const topArcEnter = topArc.enter().append('line').attr('class', 'snap_preview_top_arc');
+        topArc = topArcEnter.merge(topArc);
+        // short horizontal line across the top edge of the preview for extra visibility on dark backgrounds
+        topArc
+            .attr('x1', -width / 2 + 8)
+            .attr('y1', -height / 2)
+            .attr('x2', width / 2 - 8)
+            .attr('y2', -height / 2)
+            .style('stroke', 'var(--primary-color, #1976d2)')
+            .style('stroke-width', '1.5px')
+            .style('opacity', 0.35)
+            .style('pointer-events', 'none');
+        // keep preview above nodes and links
+        this.snapPreviewLayer.raise();
+    }
+
+    clearSnapPreview() {
+        this.snapPreviewLayer.selectAll('.snap_preview').remove();
     }
 
     createNodeElements(enterSelection) {
@@ -310,6 +417,8 @@ class NodeRenderer {
         
         // reapply interactions to ensure drag behavior works
         this.reapplyNodeInteractions(nodeMerge);
+        // keep coverage alerts positioned
+        this.updateCoverageAlerts();
     }
 
     updateConnectionDotPositions(nodeMerge) {
@@ -363,6 +472,7 @@ class NodeRenderer {
         // use setTimeout to ensure the DOM element is fully created before setting up interactions
         setTimeout(() => {
             this.state.emit('nodeInteractionNeeded', node);
+            this.updateCoverageAlerts();
         }, 0);
     }
     

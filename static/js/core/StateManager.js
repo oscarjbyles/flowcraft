@@ -8,10 +8,14 @@ class StateManager extends EventEmitter {
         this.links = [];
         this.groups = [];
         
+        // annotations (text labels, braces, etc.)
+        this.annotations = [];
+        
         // selection state
         this.selectedNodes = new Set();
         this.selectedLink = null;
         this.selectedGroup = null;
+        this.selectedAnnotation = null;
         
         // interaction state
         this.isDragging = false;
@@ -42,6 +46,10 @@ class StateManager extends EventEmitter {
         
         // storage
         this.storage = new Storage();
+
+        // magnetized node pairing (if<->python)
+        // we store partner ids directly on nodes; this map is a helper for quick checks
+        this.magnetPairs = new Map(); // key: nodeId -> partnerId
     }
 
     // node management
@@ -120,6 +128,110 @@ class StateManager extends EventEmitter {
         return true;
     }
 
+    // magnet helpers
+    setMagnetPair(nodeAId, nodeBId) {
+        // ensure both nodes exist
+        const a = this.getNode(nodeAId);
+        const b = this.getNode(nodeBId);
+        if (!a || !b) return false;
+        // set partner ids on nodes
+        a.magnet_partner_id = b.id;
+        b.magnet_partner_id = a.id;
+        // update helper map
+        this.magnetPairs.set(a.id, b.id);
+        this.magnetPairs.set(b.id, a.id);
+        // emit update for rendering
+        this.emit('nodeUpdated', a);
+        this.emit('nodeUpdated', b);
+        this.emit('stateChanged');
+        return true;
+    }
+
+    clearMagnetForNode(nodeId) {
+        const node = this.getNode(nodeId);
+        if (!node) return false;
+        const partnerId = node.magnet_partner_id;
+        if (partnerId) {
+            const partner = this.getNode(partnerId);
+            if (partner) {
+                delete partner.magnet_partner_id;
+                this.magnetPairs.delete(partner.id);
+                this.emit('nodeUpdated', partner);
+            }
+            delete node.magnet_partner_id;
+            this.magnetPairs.delete(node.id);
+            this.emit('nodeUpdated', node);
+            this.emit('stateChanged');
+            return true;
+        }
+        return false;
+    }
+
+    getMagnetPartner(nodeId) {
+        // try map first
+        let partnerId = this.magnetPairs.get(nodeId);
+        if (!partnerId) {
+            // fallback to persisted property for hydration after reload
+            const n = this.getNode(nodeId);
+            if (n && n.magnet_partner_id) {
+                partnerId = n.magnet_partner_id;
+                // lazily hydrate the map for both directions
+                this.magnetPairs.set(nodeId, partnerId);
+                this.magnetPairs.set(partnerId, nodeId);
+            }
+        }
+        if (!partnerId) return null;
+        return this.getNode(partnerId) || null;
+    }
+
+    // rebuild magnet pairs from nodes (used after load/import)
+    rebuildMagnetPairsFromNodes() {
+        this.magnetPairs.clear();
+        this.nodes.forEach(n => {
+            const pid = n.magnet_partner_id;
+            if (!pid) return;
+            const partner = this.getNode(pid);
+            if (!partner) return;
+            this.magnetPairs.set(n.id, pid);
+            this.magnetPairs.set(pid, n.id);
+            if (partner.magnet_partner_id !== n.id) {
+                partner.magnet_partner_id = n.id;
+            }
+        });
+    }
+
+    // association helpers
+    getAssociatedPythonForIf(ifNodeId) {
+        const ifNode = this.getNode(ifNodeId);
+        if (!ifNode || ifNode.type !== 'if_node') return null;
+        // find a linked python_file node (either direction)
+        for (const link of this.links) {
+            if (link.source === ifNodeId) {
+                const n = this.getNode(link.target);
+                if (n && n.type === 'python_file') return n;
+            } else if (link.target === ifNodeId) {
+                const n = this.getNode(link.source);
+                if (n && n.type === 'python_file') return n;
+            }
+        }
+        return null;
+    }
+
+    getAssociatedIfForPython(pythonNodeId) {
+        const pyNode = this.getNode(pythonNodeId);
+        if (!pyNode || pyNode.type !== 'python_file') return null;
+        for (const link of this.links) {
+            if (link.source === pythonNodeId) {
+                const n = this.getNode(link.target);
+                if (n && n.type === 'if_node') return n;
+            } else if (link.target === pythonNodeId) {
+                const n = this.getNode(link.source);
+                if (n && n.type === 'if_node') return n;
+            }
+        }
+        return null;
+    }
+
     removeNode(nodeId, force = false) {
         const nodeIndex = this.nodes.findIndex(n => n.id === nodeId);
         if (nodeIndex === -1) return false;
@@ -189,6 +301,13 @@ class StateManager extends EventEmitter {
         if (exists) return null;
 
         const link = { source: sourceId, target: targetId };
+        
+        // make python→if links non-selectable
+        const sourceNode = this.getNode(sourceId);
+        const targetNode = this.getNode(targetId);
+        if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
+            link.selectable = false;
+        }
         
         // validate link
         const validation = Validation.validateLink(link, this.nodes);
@@ -396,11 +515,14 @@ class StateManager extends EventEmitter {
         
         this.selectedLink = null;
         this.selectedGroup = null;
+        // also clear any selected annotation when selecting nodes
+        this.selectedAnnotation = null;
         
         this.emit('selectionChanged', {
             nodes: Array.from(this.selectedNodes),
             link: this.selectedLink,
-            group: this.selectedGroup
+            group: this.selectedGroup,
+            annotation: null
         });
     }
 
@@ -408,11 +530,14 @@ class StateManager extends EventEmitter {
         this.selectedNodes.clear();
         this.selectedLink = link;
         this.selectedGroup = null;
+        // also clear any selected annotation when selecting a link
+        this.selectedAnnotation = null;
         
         this.emit('selectionChanged', {
             nodes: [],
             link: this.selectedLink,
-            group: this.selectedGroup
+            group: this.selectedGroup,
+            annotation: null
         });
     }
 
@@ -420,6 +545,8 @@ class StateManager extends EventEmitter {
         this.selectedNodes.clear();
         this.selectedLink = null;
         this.selectedGroup = this.getGroup(groupId);
+        // also clear any selected annotation when selecting a group
+        this.selectedAnnotation = null;
         
         this.emit('selectionChanged', {
             nodes: [],
@@ -433,11 +560,28 @@ class StateManager extends EventEmitter {
         this.selectedLink = null;
         this.selectedGroup = null;
         this.currentEditingNode = null;
+        this.selectedAnnotation = null;
         
         this.emit('selectionChanged', {
             nodes: [],
             link: null,
-            group: null
+            group: null,
+            annotation: null
+        });
+
+    }
+
+    // annotation selection management
+    selectAnnotation(annotationId) {
+        this.selectedNodes.clear();
+        this.selectedLink = null;
+        this.selectedGroup = null;
+        this.selectedAnnotation = this.annotations.find(a => a.id === annotationId) || null;
+        this.emit('selectionChanged', {
+            nodes: [],
+            link: null,
+            group: null,
+            annotation: this.selectedAnnotation
         });
     }
 
@@ -516,7 +660,8 @@ class StateManager extends EventEmitter {
         const data = {
             nodes: this.nodes,
             links: this.links,
-            groups: this.groups
+            groups: this.groups,
+            annotations: this.annotations
         };
 
         const result = await this.storage.save(data, isAutosave);
@@ -537,9 +682,12 @@ class StateManager extends EventEmitter {
             this.nodes = result.data.nodes || [];
             this.links = result.data.links || [];
             this.groups = result.data.groups || [];
+            this.annotations = result.data.annotations || [];
             
             // update counters
             this.updateCounters();
+            // hydrate magnet pairs after load
+            this.rebuildMagnetPairsFromNodes();
             
             // check and create input nodes for loaded python_file nodes
             await this.checkLoadedNodesForInputs();
@@ -551,6 +699,59 @@ class StateManager extends EventEmitter {
         }
         
         return result;
+    }
+
+    // annotation management
+    addAnnotation(annotationData) {
+        const annotation = {
+            id: Date.now() + Math.random(),
+            x: annotationData.x || 0,
+            y: annotationData.y || 0,
+            text: Validation.sanitizeString(annotationData.text || 'text', 200),
+            type: 'text',
+            // default font size for text annotations
+            fontSize: Math.max(8, Math.min(72, parseInt(annotationData.fontSize || 14, 10))) || 14,
+            ...annotationData
+        };
+
+        this.annotations.push(annotation);
+        this.emit('annotationAdded', annotation);
+        this.emit('stateChanged');
+        this.scheduleAutosave();
+        return annotation;
+    }
+
+    updateAnnotation(annotationId, updates) {
+        const ann = this.annotations.find(a => a.id === annotationId);
+        if (!ann) return false;
+        if (typeof updates.text === 'string') {
+            updates.text = Validation.sanitizeString(updates.text, 200);
+        }
+        // normalize font size if provided
+        if (typeof updates.fontSize !== 'undefined') {
+            const size = parseInt(updates.fontSize, 10);
+            if (!Number.isNaN(size)) {
+                updates.fontSize = Math.max(8, Math.min(72, size));
+            } else {
+                delete updates.fontSize;
+            }
+        }
+        Object.assign(ann, updates);
+        this.emit('annotationUpdated', ann);
+        this.emit('stateChanged');
+        this.scheduleAutosave();
+        return true;
+    }
+
+    removeAnnotation(annotationId) {
+        const idx = this.annotations.findIndex(a => a.id === annotationId);
+        if (idx === -1) return false;
+        const ann = this.annotations[idx];
+        this.annotations.splice(idx, 1);
+        this.emit('annotationRemoved', ann);
+        this.emit('stateChanged');
+        this.scheduleAutosave();
+        return true;
     }
 
     updateCounters() {
@@ -621,6 +822,8 @@ class StateManager extends EventEmitter {
         } else {
             this.updateCounters();
         }
+        // hydrate magnet pairs after import
+        this.rebuildMagnetPairsFromNodes();
         
         this.clearSelection();
         this.emit('dataImported', data);

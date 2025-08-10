@@ -13,6 +13,9 @@ class LinkRenderer {
         
         // setup event listeners
         this.setupEventListeners();
+
+        // storage for link alert states
+        this.linkAlerts = new Map(); // key: `${source}-${target}` -> boolean
     }
 
     setupEventListeners() {
@@ -22,11 +25,33 @@ class LinkRenderer {
         this.state.on('nodeUpdated', () => this.render()); // re-render links when nodes move
         this.state.on('stateChanged', () => this.render());
         this.state.on('updateLinksForNode', (nodeId) => this.updateLinksForNode(nodeId));
+        // position alerts during live updates
+        this.state.on('updateLinksForNode', () => this.updateLinkCoverageAlerts());
+        
+        // recompute coverage when data or topology changes
+        this.state.on('dataLoaded', () => this.computeLinkCoverageFromAnalysis());
+        this.state.on('nodeUpdated', () => this.computeLinkCoverageFromAnalysis());
+        this.state.on('linkAdded', () => this.computeLinkCoverageFromAnalysis());
+        this.state.on('linkRemoved', () => this.computeLinkCoverageFromAnalysis());
         
         // connection line events
         this.state.on('createConnectionLine', (data) => this.createConnectionLine(data));
         this.state.on('updateConnectionLine', (data) => this.updateConnectionLine(data));
         this.state.on('removeConnectionLine', () => this.removeConnectionLine());
+
+        // coverage alert events from sidebar analysis
+        this.state.on('updateLinkCoverageAlert', ({ sourceId, targetId, hasMissing }) => {
+            const key = `${sourceId}-${targetId}`;
+            if (hasMissing) {
+                this.linkAlerts.set(key, true);
+            } else {
+                this.linkAlerts.delete(key);
+            }
+            this.updateLinkCoverageAlerts();
+        });
+        this.state.on('clearNodeCoverageAlerts', () => {
+            // nothing to do here; kept for legacy compatibility
+        });
     }
 
     render() {
@@ -54,6 +79,9 @@ class LinkRenderer {
         this.renderLinkArrows();
         
         this.updateLinkStyles();
+        // after full render, ensure coverage alerts are drawn
+        this.computeLinkCoverageFromAnalysis();
+        this.updateLinkCoverageAlerts();
     }
 
     renderDoubleLines() {
@@ -210,7 +238,12 @@ class LinkRenderer {
                 }
                 return classes;
             })
-            .style('cursor', d => d.selectable === false ? 'default' : 'pointer')
+            .style('cursor', d => {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                return (d.selectable === false || isPyToIf) ? 'default' : 'pointer';
+            })
             .style('stroke-dasharray', d => d.style === 'dashed' ? '5,5' : null)
             .style('marker-end', d => d.type === 'input_connection' ? 'none' : null)
             .style('stroke', d => {
@@ -227,19 +260,28 @@ class LinkRenderer {
             })
             .on('click', (event, d) => {
                 // only handle clicks for selectable links
-                if (d.selectable !== false) {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                if (d.selectable !== false && !isPyToIf) {
                     this.state.emit('linkClicked', { event, link: d });
                 }
             })
             .on('mouseenter', (event, d) => {
                 // update arrow color on hover
-                if (d.selectable !== false && d.type !== 'input_connection') {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
                     this.updateArrowColor(d, true);
                 }
             })
             .on('mouseleave', (event, d) => {
                 // reset arrow color when not hovering
-                if (d.selectable !== false && d.type !== 'input_connection') {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
                     this.updateArrowColor(d, false);
                 }
             });
@@ -326,6 +368,12 @@ class LinkRenderer {
     }
 
     renderSingleLink(link) {
+        // determine if this link is from a python node to an if node
+        const sourceNodeForSelect = this.state.getNode(link.source);
+        const targetNodeForSelect = this.state.getNode(link.target);
+        const isPythonToIf = !!(sourceNodeForSelect && targetNodeForSelect &&
+            sourceNodeForSelect.type === 'python_file' && targetNodeForSelect.type === 'if_node');
+
         const linkElement = this.linkGroup
             .append('path')
             .datum(link)
@@ -337,7 +385,7 @@ class LinkRenderer {
                 return classes;
             })
             .attr('d', this.calculateLinkPath(link))
-            .style('cursor', link.selectable === false ? 'default' : 'pointer')
+            .style('cursor', (link.selectable === false || isPythonToIf) ? 'default' : 'pointer')
             .style('stroke-dasharray', link.style === 'dashed' ? '5,5' : null)
             .style('marker-end', link.type === 'input_connection' ? 'none' : null)
             .style('stroke', () => {
@@ -354,19 +402,28 @@ class LinkRenderer {
             })
             .on('click', (event, d) => {
                 // only handle clicks for selectable links
-                if (d.selectable !== false) {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                if (d.selectable !== false && !isPyToIf) {
                     this.state.emit('linkClicked', { event, link: d });
                 }
             })
             .on('mouseenter', (event, d) => {
                 // update arrow color on hover
-                if (d.selectable !== false && d.type !== 'input_connection') {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
                     this.updateArrowColor(d, true);
                 }
             })
             .on('mouseleave', (event, d) => {
                 // reset arrow color when not hovering
-                if (d.selectable !== false && d.type !== 'input_connection') {
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
                     this.updateArrowColor(d, false);
                 }
             });
@@ -438,6 +495,8 @@ class LinkRenderer {
         
         // also update if-to-python node colors when link selection changes
         this.updateIfToPythonNodeStyles();
+        // maintain coverage alert positions
+        this.updateLinkCoverageAlerts();
     }
 
     updateLinksForNode(nodeId) {
@@ -452,19 +511,27 @@ class LinkRenderer {
         
         // also update if-to-python nodes
         this.renderIfToPythonNodes();
+        // refresh alert positions
+        this.updateLinkCoverageAlerts();
     }
 
     renderLinkArrows() {
-        // render arrow markers at the middle of each link (excluding input connections)
-        const linksWithArrows = this.state.links.filter(link => link.type !== 'input_connection');
-        
-        // prepare persistent background polygons for python→if arrows so the background is always #121212
-        const pythonToIfLinks = this.state.links.filter(link => {
+        // render arrow markers at the middle of each link
+        // exclude: input connections and python→if connections (no triangle arrow requested)
+        const linksWithArrows = this.state.links.filter(link => {
+            if (link.type === 'input_connection') return false;
             const sourceNode = this.state.getNode(link.source);
             const targetNode = this.state.getNode(link.target);
-            return sourceNode && targetNode &&
-                sourceNode.type === 'python_file' && targetNode.type === 'if_node';
+            // remove triangle arrowhead for python→if connections
+            if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
+                return false;
+            }
+            return true;
         });
+        
+        // do not render background polygons/bars for python→if arrows anymore (we removed triangle arrow)
+        // bind empty data so any existing backgrounds are cleaned up
+        const pythonToIfLinks = [];
         
         // add a resilient bar under the arrow to mask double lines during movement
         const bgLineSelection = this.linkGroup
@@ -532,6 +599,121 @@ class LinkRenderer {
         
         // render small nodes for if-to-python connections instead of arrows
         this.renderIfToPythonNodes();
+    }
+
+    updateLinkCoverageAlerts() {
+        // draw alert circle with exclamation at the midpoint for any link flagged in linkAlerts
+        const entries = Array.from(this.linkAlerts.entries());
+        const data = entries.map(([key]) => {
+            const [s, t] = key.split('-');
+            return { source: Number(s), target: Number(t) };
+        });
+
+        const alertSel = this.linkGroup.selectAll('.link-coverage-alert').data(data, d => `${d.source}-${d.target}`);
+
+        const alertEnter = alertSel.enter().append('g')
+            .attr('class', 'link-coverage-alert')
+            .style('pointer-events', 'all')
+            .style('cursor', 'pointer')
+            .on('click', (event, d) => {
+                const link = this.state.getLink(d.source, d.target);
+                if (link) {
+                    this.state.emit('linkClicked', { event, link });
+                }
+            });
+
+        alertEnter.append('circle')
+            .attr('r', 12)
+            .style('fill', '#f44336');
+
+        alertEnter.append('text')
+            .attr('class', 'alert_mark')
+            .attr('dy', '0.35em')
+            .attr('text-anchor', 'middle')
+            .text('!')
+            .style('font-weight', '700')
+            .style('fill', '#ffffff')
+            .style('font-size', '14px');
+
+        const alertMerge = alertEnter.merge(alertSel);
+        alertMerge
+            .style('pointer-events', 'all')
+            .style('cursor', 'pointer')
+            .on('click', (event, d) => {
+                const link = this.state.getLink(d.source, d.target);
+                if (link) {
+                    this.state.emit('linkClicked', { event, link });
+                }
+            });
+        alertMerge.each((d, i, nodes) => {
+            const g = d3.select(nodes[i]);
+            const mid = this.getLinkMidpoint(d);
+            const sourceNode = this.state.getNode(d.source);
+            const targetNode = this.state.getNode(d.target);
+            // position only for python→python; otherwise remove
+            if (!sourceNode || !targetNode || sourceNode.type !== 'python_file' || targetNode.type !== 'python_file' || !mid) {
+                g.remove();
+                return;
+            }
+            // align to the right of the line (perpendicular offset from the line direction)
+            const angleRad = this.getLinkAngle(d) * Math.PI / 180;
+            const offset = 20; // px perpendicular shift to the right side (slightly more)
+            // right-hand normal of (cos, sin) is (sin, -cos)
+            const nx = Math.sin(angleRad);
+            const ny = -Math.cos(angleRad);
+            const ox = nx * offset;
+            const oy = ny * offset;
+            g.attr('transform', `translate(${mid.x + ox}, ${mid.y + oy})`);
+        });
+
+        alertSel.exit().remove();
+    }
+
+    computeLinkCoverageFromAnalysis() {
+        // compute coverage for all python→python links using available analysis endpoint
+        // note: to keep ui responsive, only compute when both files exist
+        const pyPyLinks = this.state.links.filter(l => {
+            const s = this.state.getNode(l.source);
+            const t = this.state.getNode(l.target);
+            return s && t && s.type === 'python_file' && t.type === 'python_file' && s.pythonFile && t.pythonFile;
+        });
+        // clear alerts before recomputation
+        this.linkAlerts.clear();
+        // fire off computations sequentially to avoid flooding; best-effort only
+        const run = async () => {
+            for (const link of pyPyLinks) {
+                try {
+                    const respSrc = await fetch('/api/analyze-python-function', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ python_file: this.state.getNode(link.source).pythonFile })
+                    });
+                    const respTgt = await fetch('/api/analyze-python-function', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ python_file: this.state.getNode(link.target).pythonFile })
+                    });
+                    const srcData = await respSrc.json();
+                    const tgtData = await respTgt.json();
+                    if (!srcData.success || !tgtData.success) continue;
+                    // returns set
+                    const returns = [];
+                    (srcData.returns || []).forEach(r => {
+                        if (!r) return;
+                        if (r.type === 'variable' && typeof r.name === 'string') returns.push(r.name);
+                        else if (r.type === 'tuple' && Array.isArray(r.items)) r.items.forEach(it => { if (it?.name) returns.push(it.name); });
+                        else if (r.type === 'dict' && Array.isArray(r.items)) r.items.forEach(it => { if (it?.key) returns.push(it.key); });
+                    });
+                    const retSet = new Set(returns);
+                    const args = Array.isArray(tgtData.formal_parameters) ? tgtData.formal_parameters.filter(n => n !== 'self' && n !== 'cls') : [];
+                    const hasMissing = args.some(a => !retSet.has(a));
+                    const key = `${link.source}-${link.target}`;
+                    if (hasMissing) this.linkAlerts.set(key, true);
+                } catch (_) {
+                    // ignore network errors; no alert
+                }
+            }
+            this.updateLinkCoverageAlerts();
+        };
+        run();
     }
 
     updateArrowBackgroundElements(bgMerge) {
@@ -604,10 +786,15 @@ class LinkRenderer {
             // check if this is an if-to-python connection - if so, don't render arrow
             const sourceNode = this.state.getNode(d.source);
             const targetNode = this.state.getNode(d.target);
-            if (sourceNode && targetNode && 
-                sourceNode.type === 'if_node' && 
-                targetNode.type === 'python_file') {
-                return; // skip arrow rendering for if-to-python connections
+            if (sourceNode && targetNode) {
+                // no triangle arrows for python→if
+                if (sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
+                    return;
+                }
+                // still skip for if→python (handled by special circle elsewhere)
+                if (sourceNode.type === 'if_node' && targetNode.type === 'python_file') {
+                    return;
+                }
             }
             
             // customize arrow specifically for python→if connections
@@ -616,75 +803,16 @@ class LinkRenderer {
             
             if (midPoint) {
                 if (isPythonToIf) {
-                    // create a wider, less tall arrow for python→if
-                    // shorter length (arrowWidth) and 2x larger cross width (arrowHeight)
-                    const arrowWidth = 10; // shorter along the line
-                    const arrowHeight = 12; // wider across the double lines
-                    const points = [
-                        [arrowWidth, 0],
-                        [-arrowWidth / 2, -arrowHeight / 2],
-                        [-arrowWidth / 2, arrowHeight / 2]
-                    ];
-                    const pointsStr = points.map(p => p.join(',')).join(' ');
-                    
-                    // sync/update background beneath the arrow to ensure constant #121212 backdrop
-                    const bg = this.linkGroup
+                    // removed triangle arrow for python→if; ensure any lingering elems are cleaned
+                    this.linkGroup
                         .selectAll('.link_arrow_bg')
-                        .filter(e => e.source === d.source && e.target === d.target);
-                    if (!bg.empty()) {
-                        bg
-                            .attr('points', pointsStr)
-                            .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
-                            .attr('data-link-id', `${d.source}-${d.target}`)
-                            .style('fill', '#121212')
-                            .style('stroke', '#121212')
-                            .style('stroke-width', '4px')
-                            .style('pointer-events', 'none')
-                            .attr('fill', '#121212')
-                            .attr('stroke', '#121212')
-                            .attr('opacity', '1');
-                    }
-
-                    // update the resilient bar under the arrow as well
-                    const bgLine = this.linkGroup
+                        .filter(e => e.source === d.source && e.target === d.target)
+                        .remove();
+                    this.linkGroup
                         .selectAll('.link_arrow_bg_line')
-                        .filter(e => e.source === d.source && e.target === d.target);
-                    if (!bgLine.empty()) {
-                        const angleRad = angle * Math.PI / 180;
-                        const halfLength = 9;
-                        const dx = Math.cos(angleRad) * halfLength;
-                        const dy = Math.sin(angleRad) * halfLength;
-                        bgLine
-                            .attr('x1', midPoint.x - dx)
-                            .attr('y1', midPoint.y - dy)
-                            .attr('x2', midPoint.x + dx)
-                            .attr('y2', midPoint.y + dy)
-                            .style('stroke', '#121212')
-                            .style('stroke-width', '10px')
-                            .attr('stroke', '#121212')
-                            .attr('stroke-width', '10')
-                            .attr('opacity', '1')
-                            .style('opacity', '1')
-                            .style('pointer-events', 'none')
-                            .attr('data-link-id', `${d.source}-${d.target}`);
-                    }
-
-                    arrow
-                        .attr('points', pointsStr)
-                        .attr('transform', `translate(${midPoint.x},${midPoint.y}) rotate(${angle})`)
-                        .style('fill', '#121212')
-                        .style('stroke', '#666666')
-                        .style('stroke-width', '1px')
-                        .style('pointer-events', 'none')
-                        // force styles in case of prior transitions
-                        .attr('data-force-fill', '#121212')
-                        .attr('data-force-stroke', '#666666')
-                        .attr('data-force-stroke-width', '1px')
-                        .style('pointer-events', 'none')
-                        .attr('fill', '#121212')
-                        .attr('stroke', '#666666')
-                        .attr('opacity', '1')
-                        .attr('data-link-id', `${d.source}-${d.target}`);
+                        .filter(e => e.source === d.source && e.target === d.target)
+                        .remove();
+                    arrow.remove();
                 } else {
                     // default arrow style
                     const arrowSize = 9; // standard arrow

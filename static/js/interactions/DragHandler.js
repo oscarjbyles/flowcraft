@@ -17,6 +17,8 @@ class DragHandler {
 
     createDragBehavior(container) {
         return d3.drag()
+            // disallow dragging in run or history modes
+            .filter(() => !this.state.isRunMode && !this.state.isHistoryMode)
             .container(container)
             .on('start', this.handleDragStart)
             .on('drag', this.handleDragging)
@@ -24,11 +26,13 @@ class DragHandler {
     }
 
     handleDragStart(event, d) {
-        // prevent dragging in run mode
-        if (this.state.isRunMode) {
+        // prevent dragging in run or history mode
+        if (this.state.isRunMode || this.state.isHistoryMode) {
             event.sourceEvent.preventDefault();
             return;
         }
+        // clear any existing snap preview at the start of a drag
+        this.state.emit('clearSnapPreview');
         
         // disable zoom during drag
         this.state.emit('disableZoom');
@@ -97,6 +101,27 @@ class DragHandler {
                 this.updateGroupDraggedPositions();
             } else {
                 this.updateDraggedNodePosition(d);
+                // if this node is magnetized to a partner, move partner accordingly during drag
+                const partner = this.state.getMagnetPartner(d.id);
+                if (partner) {
+                    // if the dragged node is the python, keep the if node aligned beneath it
+                    if (d.type === 'python_file' && partner.type === 'if_node') {
+                        const py = d;
+                        const ifn = partner;
+                        const pyHeight = 60;
+                        const ifHeight = 60;
+                        const gap = 20;
+                        const desiredY = py.y + pyHeight / 2 + gap + ifHeight / 2;
+                        const desiredX = py.x;
+                        ifn.x = desiredX;
+                        ifn.y = desiredY;
+                        this.updateDraggedNodePosition(ifn);
+                    }
+                    // if the dragged node is the if node, allow free movement (potentially detaching on drop)
+                }
+
+                // show snap preview if dragging an if node near a candidate python node
+                this.updateSnapPreviewDuringDrag(d);
             }
             this.dragAnimationFrame = null;
         });
@@ -139,6 +164,10 @@ class DragHandler {
                 });
             }
             
+            // if positions actually changed during a group drag, suppress the next canvas click
+            if (positionChanged) {
+                this.state.suppressNextCanvasClick = true;
+            }
             // cleanup
             this.groupDragStartPositions = null;
             this.isDraggingGroup = false;
@@ -152,7 +181,23 @@ class DragHandler {
             // update node data in state manager and trigger autosave if position changed
             if (positionChanged) {
                 this.state.updateNode(d.id, { x: d.x, y: d.y });
+                // suppress next canvas click if a real drag occurred to prevent accidental node creation
+                this.state.suppressNextCanvasClick = true;
             }
+
+            // detach if dragged if node moves away from its magnet partner
+            const partner = this.state.getMagnetPartner(d.id);
+            if (partner && d.type === 'if_node' && partner.type === 'python_file') {
+                const shouldKeep = this.isNearSnapZone(d, partner);
+                if (!shouldKeep) {
+                    this.state.clearMagnetForNode(d.id);
+                }
+            }
+
+            // magnetize on drop: if an if node is dropped near its associated python node, snap and pair
+            this.tryMagnetizeOnDrop(d);
+            // clear any snap preview
+            this.state.emit('clearSnapPreview');
             
             // update groups if node belongs to one
             if (d.groupId) {
@@ -242,6 +287,99 @@ class DragHandler {
             x: Math.max(bounds.minX, Math.min(bounds.maxX, x)),
             y: Math.max(bounds.minY, Math.min(bounds.maxY, y))
         };
+    }
+
+    // magnet drop logic
+    tryMagnetizeOnDrop(node) {
+        const SNAP_X_TOL = 80; // px allowed horizontal offset before snapping
+        const SNAP_Y_TOL = 100; // px distance below python to consider a snap
+        const GAP = 20; // vertical gap below python when snapped
+
+        // determine if there is an if<->python association via existing links
+        let pythonNode = null;
+        let ifNode = null;
+        if (node.type === 'if_node') {
+            ifNode = node;
+            pythonNode = this.state.getAssociatedPythonForIf(node.id);
+        } else if (node.type === 'python_file') {
+            pythonNode = node;
+            ifNode = this.state.getAssociatedIfForPython(node.id);
+        }
+
+        if (!pythonNode || !ifNode) return;
+
+        // compute desired position: if under python, centered, with spacing between node borders
+        const pyHeight = 60;
+        const ifHeight = 60;
+        const desiredX = pythonNode.x;
+        const desiredY = pythonNode.y + pyHeight / 2 + GAP + ifHeight / 2;
+
+        // see if the dropping node is close enough to snap
+        const dx = (node.type === 'if_node' ? node.x : ifNode.x) - desiredX;
+        const dy = (node.type === 'if_node' ? node.y : ifNode.y) - desiredY;
+        const nearHoriz = Math.abs(dx) <= SNAP_X_TOL;
+        const nearVert = Math.abs(dy) <= SNAP_Y_TOL;
+
+        if (nearHoriz && nearVert) {
+            // snap if node to desired position and set magnet pair both ways
+            ifNode.x = desiredX;
+            ifNode.y = desiredY;
+            this.state.updateNode(ifNode.id, { x: ifNode.x, y: ifNode.y });
+            this.updateDraggedNodePosition(ifNode);
+            this.state.setMagnetPair(ifNode.id, pythonNode.id);
+        }
+    }
+
+    // helper to test if an if node is within snap zone of a given python node
+    isNearSnapZone(ifNode, pythonNode) {
+        const SNAP_X_TOL = 80;
+        const SNAP_Y_TOL = 100;
+        const GAP = 20;
+        const pyHeight = 60;
+        const ifHeight = 60;
+        const desiredX = pythonNode.x;
+        const desiredY = pythonNode.y + pyHeight / 2 + GAP + ifHeight / 2;
+        const dx = ifNode.x - desiredX;
+        const dy = ifNode.y - desiredY;
+        const nearHoriz = Math.abs(dx) <= SNAP_X_TOL;
+        const nearVert = Math.abs(dy) <= SNAP_Y_TOL;
+        return nearHoriz && nearVert;
+    }
+
+    updateSnapPreviewDuringDrag(node) {
+        // only preview when dragging an if node and it has a linked python node
+        if (node.type !== 'if_node') {
+            this.state.emit('clearSnapPreview');
+            return;
+        }
+        const pythonNode = this.state.getAssociatedPythonForIf(node.id);
+        if (!pythonNode) {
+            this.state.emit('clearSnapPreview');
+            return;
+        }
+        const GAP = 20;
+        const pyHeight = 60;
+        const ifHeight = 60;
+        const desiredX = pythonNode.x;
+        const desiredY = pythonNode.y + pyHeight / 2 + GAP + ifHeight / 2;
+
+        const SNAP_X_TOL = 80;
+        const SNAP_Y_TOL = 100;
+        const nearHoriz = Math.abs(node.x - desiredX) <= SNAP_X_TOL;
+        const nearVert = Math.abs(node.y - desiredY) <= SNAP_Y_TOL;
+        if (nearHoriz && nearVert) {
+            // preview should match the python node width and regular node height
+            const previewWidth = pythonNode.width || 120;
+            const previewHeight = 60;
+            this.state.emit('updateSnapPreview', {
+                x: desiredX,
+                y: desiredY,
+                width: previewWidth,
+                height: previewHeight
+            });
+        } else {
+            this.state.emit('clearSnapPreview');
+        }
     }
 }
 
