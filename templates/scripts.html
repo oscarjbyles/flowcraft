@@ -248,6 +248,19 @@
                 if (el) el.onclick = () => window.location.href = withFlowchart(href);
             });
 
+            // ensure the scripts item is visibly active on the scripts page
+            // (clear any previous state from other buttons first)
+            const sidebar_btn_ids = ['build_btn','scripts_btn','run_btn','history_btn','settings_btn','export_btn'];
+            sidebar_btn_ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('active');
+                    el.classList.remove('run_mode_active');
+                }
+            });
+            const scripts_btn = document.getElementById('scripts_btn');
+            if (scripts_btn) scripts_btn.classList.add('active');
+
             // flowchart dropdown behavior
             const selector = document.getElementById('flowchart_selector');
             const dropdown = document.getElementById('flowchart_dropdown');

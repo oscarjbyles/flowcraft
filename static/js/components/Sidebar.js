@@ -2256,6 +2256,7 @@ class Sidebar {
     updateRunModeNodeDetails(selection) {
         const nodeFileContent = document.getElementById('node_file_content');
         const executionTimeRow = document.getElementById('execution_time_row');
+        const executionTimeGroup = document.getElementById('execution_time_group');
         const executionTimeText = document.getElementById('execution_time_text');
         const executionTimestamp = document.getElementById('execution_timestamp');
         const nodeInputContent = document.getElementById('node_input_content');
@@ -2268,14 +2269,21 @@ class Sidebar {
         const nodeOutputGroup = document.getElementById('node_output_log')?.closest('.form_group');
         const consoleGroup = document.getElementById('console_output_log')?.closest('.form_group');
         const progressGroup = document.getElementById('execution_progress_group');
+        const failureInfo = document.getElementById('execution_failure_info');
+        const failedTitle = document.getElementById('failed_node_title');
+        const failedPath = document.getElementById('failed_node_path');
+        const failedError = document.getElementById('failed_node_error');
+        const gotoBtn = document.getElementById('go_to_failed_node_btn');
         
         if (selection.nodes.length === 1) {
             // show all detailed groups in single selection
             if (executionStatusGroup) executionStatusGroup.style.display = '';
+            if (executionTimeGroup) executionTimeGroup.style.display = '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
             if (nodeInputGroup) nodeInputGroup.style.display = '';
             if (nodeOutputGroup) nodeOutputGroup.style.display = '';
             if (consoleGroup) consoleGroup.style.display = '';
+            if (failureInfo) failureInfo.style.display = 'none';
             const nodeId = selection.nodes[0];
             const node = this.state.getNode(nodeId);
             
@@ -2297,7 +2305,8 @@ class Sidebar {
                 if (executionResult) {
                     // show execution time row
                     if (executionTimeRow) executionTimeRow.style.display = 'flex';
-                    executionTimeText.textContent = `${executionResult.runtime}ms`;
+                    const _rt = executionResult.runtime || 0;
+                    executionTimeText.textContent = `${_rt}ms (${(_rt/1000).toFixed(3)}s)`;
                     executionTimestamp.textContent = executionResult.timestamp;
                     
                     if (executionResult.success) {
@@ -2376,11 +2385,13 @@ class Sidebar {
         } else if (selection.nodes.length > 1) {
             // show status + progress + minimal guidance
             if (executionStatusGroup) executionStatusGroup.style.display = '';
+            if (executionTimeGroup) executionTimeGroup.style.display = '';
             if (progressGroup) progressGroup.style.display = '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
             if (nodeInputGroup) nodeInputGroup.style.display = 'none';
             if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
             if (consoleGroup) consoleGroup.style.display = 'none';
+            if (failureInfo) failureInfo.style.display = 'none';
             nodeFileContent.innerHTML = `
                 <div style="margin-bottom: 8px;">
                     <strong>${selection.nodes.length} nodes selected</strong>
@@ -2401,14 +2412,18 @@ class Sidebar {
         } else {
             // nothing selected: only show execution status and progress, hide everything else
             if (executionStatusGroup) executionStatusGroup.style.display = '';
+            if (executionTimeGroup) executionTimeGroup.style.display = '';
             if (progressGroup) progressGroup.style.display = '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
             if (nodeInputGroup) nodeInputGroup.style.display = 'none';
             if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
             if (consoleGroup) consoleGroup.style.display = 'none';
 
-            // hide execution time row until running
-            if (executionTimeRow) executionTimeRow.style.display = 'none';
+            // keep total time visible while running or after completion
+            const app = window.flowchartApp;
+            const isRunning = !!(app && app._elapsedTimer);
+            const hasLast = !!(app && (app.lastExecutionElapsedMs || app.lastExecutionElapsedMs === 0));
+            if (executionTimeRow && (isRunning || hasLast)) executionTimeRow.style.display = 'flex';
 
             // update global progress if available
             if (progressText && window.flowchartApp) {
@@ -2416,6 +2431,24 @@ class Sidebar {
                 const total = order.length;
                 const executed = window.flowchartApp.nodeExecutionResults ? window.flowchartApp.nodeExecutionResults.size : 0;
                 progressText.textContent = `${executed} of ${total}`;
+            }
+
+            // show failure block if last run failed and we know which node
+            if (failureInfo && window.flowchartApp && window.flowchartApp.lastExecutionStatus === 'failed' && window.flowchartApp.lastFailedNode) {
+                const { id, name, pythonFile, error } = window.flowchartApp.lastFailedNode;
+                if (failedTitle) failedTitle.textContent = `node: ${name}`;
+                if (failedPath) failedPath.textContent = `path: ${pythonFile || '-'}`;
+                if (failedError) failedError.textContent = error || '';
+                failureInfo.style.display = '';
+                if (gotoBtn) {
+                    gotoBtn.onclick = () => {
+                        if (window.flowchartApp && typeof window.flowchartApp.centerOnNode === 'function') {
+                            window.flowchartApp.centerOnNode(id);
+                        }
+                    };
+                }
+            } else if (failureInfo) {
+                failureInfo.style.display = 'none';
             }
         }
     }

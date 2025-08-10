@@ -39,6 +39,9 @@ class FlowchartBuilder {
         // execution state
         this.isExecuting = false;
         this.executionAborted = false;
+        // last execution snapshot for no-selection run view
+        this.lastExecutionStatus = 'idle'; // 'running' | 'completed' | 'failed' | 'stopped' | 'error' | 'idle'
+        this.lastFailedNode = null; // { id, name, pythonFile, error }
         
         // group select mode state
         this.isGroupSelectMode = false;
@@ -143,6 +146,12 @@ class FlowchartBuilder {
             this.updateStats();
             // try to restore viewport after data loads (handles initial load and flowchart switches)
             this.restoreViewportFromStorage();
+            // if currently in history mode, refresh the history list for the newly loaded flowchart
+            try {
+                if (this.state.isHistoryMode) {
+                    this.loadExecutionHistory();
+                }
+            } catch (_) {}
         });
         
         // error events
@@ -1271,6 +1280,8 @@ class FlowchartBuilder {
         const settingsBtn = document.getElementById('settings_btn');
         const floatingToolbar = document.getElementById('floating_toolbar');
         const buildToolbar = document.getElementById('build_toolbar');
+        const annotationToolbar = document.getElementById('annotation_toolbar');
+        const topToolbars = document.getElementById('top_toolbars');
         const startButtonContainer = document.getElementById('start_button_container');
         const mainContent = document.querySelector('.main_content');
         const propertiesSidebar = document.querySelector('.properties_sidebar');
@@ -1298,7 +1309,9 @@ class FlowchartBuilder {
             // activate build mode
             buildBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // show floating toolbar
+            if (topToolbars) topToolbars.style.display = 'flex';
             if (buildToolbar) buildToolbar.style.display = 'flex'; // show build toolbar
+            if (annotationToolbar) annotationToolbar.style.display = 'flex'; // show annotation toolbar
             
             // enable add node section in build mode
             if (addNodeSection) {
@@ -1329,7 +1342,9 @@ class FlowchartBuilder {
             // activate run mode
             runBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // keep floating toolbar visible in run mode
+            if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in run
+            if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in run
             
             // disable add node section in run mode
             if (addNodeSection) {
@@ -1365,7 +1380,8 @@ class FlowchartBuilder {
         } else if (mode === 'history') {
             // activate history mode
             historyBtn.classList.add('run_mode_active');
-            floatingToolbar.style.display = 'none'; // hide floating toolbar in history mode
+            // keep floating toolbar visible in history mode
+            floatingToolbar.style.display = 'flex';
             
             // disable add node section in history mode
             if (addNodeSection) {
@@ -1388,18 +1404,24 @@ class FlowchartBuilder {
             // set history-specific width
             mainContent.classList.add('history_mode');
             propertiesSidebar.classList.add('history_mode');
+            if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in history
+            if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in history
             
             // switch to history panel
             this.hideExecutionPanel();
             this.showHistoryPanel();
+            // always (re)load history when entering history mode
+            this.loadExecutionHistory();
             
             this.updateStatusBar('history mode - view past executions');
         } else if (mode === 'settings') {
             // activate settings mode as full page view
             if (settingsBtn) settingsBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'none';
+            if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in settings
+            if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in settings
             if (addNodeSection) addNodeSection.classList.add('disabled');
             // hide start button if visible
             startButtonContainer.style.display = 'none';
@@ -1595,6 +1617,8 @@ class FlowchartBuilder {
                 // if node failed, stop execution immediately
                 if (!success) {
                     this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
+                    // ensure sidebar refresh picks up failure info in no-selection view
+                    this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
                     await this.saveExecutionHistory('failed', executionOrder, `execution stopped at node: ${node.name}`);
                     return;
                 }
@@ -1670,9 +1694,20 @@ class FlowchartBuilder {
 
     
     getCurrentFlowchartName() {
-        // get current flowchart name from the selector
+        // prefer the canonical filename from storage to avoid ui sync issues
+        try {
+            const filename = this.state && this.state.storage && typeof this.state.storage.getCurrentFlowchart === 'function'
+                ? this.state.storage.getCurrentFlowchart()
+                : '';
+            if (filename) {
+                // strip .json extension for history api which expects folder name
+                return filename.endsWith('.json') ? filename.slice(0, -5) : filename;
+            }
+        } catch (_) {}
+
+        // fallback to the selector's display name
         const selector = document.getElementById('flowchart_selector');
-        return selector.value || 'default';
+        return (selector && selector.value) ? selector.value : 'default';
     }
 
     async saveExecutionHistory(status, executionOrder, errorMessage = null) {
@@ -2045,6 +2080,7 @@ class FlowchartBuilder {
                 } else {
                     // if node failed, stop execution immediately
                     this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
+                    this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
                     await this.saveExecutionHistory('failed', nodesToExecute, `execution stopped at node: ${node.name}`);
                     return;
                 }
@@ -2231,7 +2267,7 @@ class FlowchartBuilder {
                 this.appendOutput(`[${node.name}] execution completed in ${runtime}ms${returnValueText}\n${result.output || ''}\n`);
                 return true; // success
             } else {
-                // store execution result
+                // store execution result and remember failed node for no-selection view
                 this.nodeExecutionResults.set(node.id, {
                     node: node,
                     success: false,
@@ -2243,6 +2279,7 @@ class FlowchartBuilder {
                     function_name: result.function_name,
                     input_args: result.input_args
                 });
+                this.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: result.error || 'unknown error' };
                 
                 // set node to error state (red)
                 this.setNodeState(node.id, 'error');
@@ -2261,6 +2298,7 @@ class FlowchartBuilder {
                 runtime: 0,
                 timestamp: new Date().toLocaleTimeString()
             });
+            this.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: error.message };
             
             this.removeNodeLoadingAnimation(node.id);
             this.setNodeState(node.id, 'error');
@@ -2593,8 +2631,11 @@ class FlowchartBuilder {
         const statusElement = document.getElementById('execution_status_text');
         const iconElement = document.querySelector('#execution_status .material-icons');
         const timeRow = document.getElementById('execution_time_row');
+        const timeGroup = document.getElementById('execution_time_group');
         const timeText = document.getElementById('execution_time_text');
+        const timestampEl = document.getElementById('execution_timestamp');
         const progressText = document.getElementById('execution_progress_text');
+        const failureInfo = document.getElementById('execution_failure_info');
         
         statusElement.textContent = message;
         
@@ -2604,37 +2645,140 @@ class FlowchartBuilder {
                 iconElement.textContent = 'play_arrow';
                 iconElement.style.color = '#2196f3';
                 // show elapsed timer
-                this.executionStartTimestamp = this.executionStartTimestamp || Date.now();
+                if (!this.executionStartTimestamp) {
+                    this.executionStartTimestamp = Date.now();
+                }
+                // clear last execution snapshot when starting a new run
+                this.lastExecutionElapsedMs = null;
+                this.lastExecutionTimestampString = '';
                 if (timeRow) timeRow.style.display = 'flex';
+                if (timeGroup) timeGroup.style.display = '';
+                if (failureInfo) failureInfo.style.display = 'none';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 this._elapsedTimer = setInterval(() => {
                     const elapsed = Date.now() - this.executionStartTimestamp;
-                    if (timeText) timeText.textContent = `${elapsed}ms`;
+                    if (timeText) {
+                        const seconds = (elapsed / 1000).toFixed(3);
+                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                    }
                 }, 100);
+                this.lastExecutionStatus = 'running';
                 break;
             case 'completed':
                 iconElement.textContent = 'check_circle';
                 iconElement.style.color = '#4caf50';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                {
+                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    this.lastExecutionElapsedMs = elapsed;
+                    if (timeText) {
+                        const seconds = (elapsed / 1000).toFixed(3);
+                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                    }
+                    if (timestampEl) {
+                        const now = new Date();
+                        const hh = String(now.getHours()).padStart(2, '0');
+                        const mm = String(now.getMinutes()).padStart(2, '0');
+                        const ss = String(now.getSeconds()).padStart(2, '0');
+                        const ts = `${hh}:${mm}:${ss}`;
+                        timestampEl.textContent = ts;
+                        this.lastExecutionTimestampString = ts;
+                    }
+                }
                 if (timeRow) timeRow.style.display = 'flex';
+                if (timeGroup) timeGroup.style.display = '';
+                if (failureInfo) failureInfo.style.display = 'none';
+                this.executionStartTimestamp = null;
+                this.lastExecutionStatus = 'completed';
                 break;
             case 'error':
                 iconElement.textContent = 'error';
                 iconElement.style.color = '#f44336';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                {
+                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    this.lastExecutionElapsedMs = elapsed;
+                    if (timeText) {
+                        const seconds = (elapsed / 1000).toFixed(3);
+                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                    }
+                    if (timestampEl) {
+                        const now = new Date();
+                        const hh = String(now.getHours()).padStart(2, '0');
+                        const mm = String(now.getMinutes()).padStart(2, '0');
+                        const ss = String(now.getSeconds()).padStart(2, '0');
+                        const ts = `${hh}:${mm}:${ss}`;
+                        timestampEl.textContent = ts;
+                        this.lastExecutionTimestampString = ts;
+                    }
+                }
                 if (timeRow) timeRow.style.display = 'flex';
+                if (timeGroup) timeGroup.style.display = '';
+                if (failureInfo) failureInfo.style.display = 'none';
+                this.executionStartTimestamp = null;
+                this.lastExecutionStatus = 'error';
                 break;
             case 'stopped':
                 iconElement.textContent = 'stop';
                 iconElement.style.color = '#ff9800';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                {
+                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    this.lastExecutionElapsedMs = elapsed;
+                    if (timeText) {
+                        const seconds = (elapsed / 1000).toFixed(3);
+                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                    }
+                    if (timestampEl) {
+                        const now = new Date();
+                        const hh = String(now.getHours()).padStart(2, '0');
+                        const mm = String(now.getMinutes()).padStart(2, '0');
+                        const ss = String(now.getSeconds()).padStart(2, '0');
+                        const ts = `${hh}:${mm}:${ss}`;
+                        timestampEl.textContent = ts;
+                        this.lastExecutionTimestampString = ts;
+                    }
+                }
                 if (timeRow) timeRow.style.display = 'flex';
+                if (timeGroup) timeGroup.style.display = '';
+                if (failureInfo) failureInfo.style.display = 'none';
+                this.executionStartTimestamp = null;
+                this.lastExecutionStatus = 'stopped';
+                break;
+            case 'failed':
+                iconElement.textContent = 'error';
+                iconElement.style.color = '#f44336';
+                if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+                {
+                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    this.lastExecutionElapsedMs = elapsed;
+                    if (timeText) {
+                        const seconds = (elapsed / 1000).toFixed(3);
+                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                    }
+                    if (timestampEl) {
+                        const now = new Date();
+                        const hh = String(now.getHours()).padStart(2, '0');
+                        const mm = String(now.getMinutes()).padStart(2, '0');
+                        const ss = String(now.getSeconds()).padStart(2, '0');
+                        const ts = `${hh}:${mm}:${ss}`;
+                        timestampEl.textContent = ts;
+                        this.lastExecutionTimestampString = ts;
+                    }
+                }
+                if (timeRow) timeRow.style.display = 'flex';
+                if (timeGroup) timeGroup.style.display = '';
+                this.executionStartTimestamp = null;
+                this.lastExecutionStatus = 'failed';
                 break;
             default:
                 iconElement.textContent = 'info';
                 iconElement.style.color = 'var(--on-surface)';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
-                if (timeRow) timeRow.style.display = 'none';
+                // keep last visible time; do not hide the row here
+                // default resets failure info visibility
+                if (failureInfo) failureInfo.style.display = 'none';
+                this.lastExecutionStatus = 'idle';
         }
 
         // update global progress when status updates
@@ -2644,6 +2788,20 @@ class FlowchartBuilder {
             const executed = this.nodeExecutionResults ? this.nodeExecutionResults.size : 0;
             progressText.textContent = `${executed} of ${total}`;
         }
+    }
+
+    // smooth center on a node by id
+    centerOnNode(nodeId) {
+        const node = this.state.getNode(nodeId);
+        if (!node) return;
+        const padding = 0;
+        const scale = this.state.transform.k || 1;
+        const targetX = this.state.canvasWidth / 2 - (node.x + (node.width || 120) / 2 + padding) * scale;
+        const targetY = this.state.canvasHeight / 2 - (node.y + 40 /* approx node height mid */) * scale;
+        this.svg.transition()
+            .duration(600)
+            .ease(d3.easeCubicOut)
+            .call(this.zoom.transform, d3.zoomIdentity.translate(targetX, targetY).scale(scale));
     }
 
     updateNodeDetails(node, state, runtime, output = '') {
@@ -2909,6 +3067,23 @@ class FlowchartBuilder {
             if (consoleLog) {
                 consoleLog.scrollTop = consoleLog.scrollHeight;
             }
+        }
+    }
+
+    appendToExecutionLog(message) {
+        // append a line to the global execution log and update the console view
+        try {
+            const text = (typeof message === 'string') ? message : JSON.stringify(message);
+            if (this.globalExecutionLog && this.globalExecutionLog.length > 0) {
+                this.globalExecutionLog += `\n${text}`;
+            } else {
+                this.globalExecutionLog = text;
+            }
+            this.showGlobalExecutionLog();
+        } catch (_) {
+            // best-effort fallback without breaking execution
+            this.globalExecutionLog += `\n${String(message)}`;
+            this.showGlobalExecutionLog();
         }
     }
 

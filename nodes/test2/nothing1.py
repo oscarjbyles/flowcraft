@@ -1,3 +1,3 @@
-def my_function(valueB):
+def my_function(valueB, valueA):
 
-    print(valueC)
+    print(valueA)

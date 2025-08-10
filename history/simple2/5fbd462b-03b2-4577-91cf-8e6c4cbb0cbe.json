@@ -1,0 +1,198 @@
+{
+  "execution_id": "5fbd462b-03b2-4577-91cf-8e6c4cbb0cbe",
+  "timestamp": "2025-08-10T12:29:13.495336",
+  "flowchart_name": "simple2",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754557300491.1255,
+      1754646735053.426,
+      1754592052289.3586,
+      1754592498999.7505,
+      1754593440510.8223,
+      1754593440044.931,
+      1754485128247.5793
+    ],
+    "results": [
+      {
+        "node_id": 1754557300491.1255,
+        "node_name": "assign variable + sqaure",
+        "python_file": "nodes/example.py",
+        "success": true,
+        "output": "Enter a number: 4\nEnter a number: \n16.0",
+        "error": null,
+        "runtime": 2159,
+        "timestamp": "12:29:13",
+        "return_value": 16,
+        "function_name": "get_user_input"
+      },
+      {
+        "node_id": 1754646735053.426,
+        "node_name": "python node",
+        "python_file": "nodes/node1.py",
+        "success": false,
+        "output": "",
+        "error": "missing required function arguments: num45",
+        "runtime": 10,
+        "timestamp": "12:29:13",
+        "return_value": null
+      }
+    ],
+    "total_nodes": 7,
+    "successful_nodes": 1,
+    "error_message": "execution stopped at node: python node",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754485128247.5793,
+          "name": "node 3",
+          "x": 705.6159973144531,
+          "y": 310.3932800292969,
+          "pythonFile": "nodes/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557300491.1255,
+          "name": "assign variable + sqaure",
+          "x": 827.4667358398438,
+          "y": -289.60028076171875,
+          "pythonFile": "nodes/example.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754557341635.2678,
+          "name": "Input Node",
+          "x": 484.8334655761719,
+          "y": -288.69109058380127,
+          "pythonFile": "nodes/example.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754559850176.4702,
+          "name": "another number",
+          "x": 1208.3743896484375,
+          "y": -233.0128936767578,
+          "pythonFile": "nodes/TEST1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754592052289.3586,
+          "name": "girl boy?",
+          "x": 786.6928100585938,
+          "y": 70.29525184631348,
+          "pythonFile": "",
+          "description": "",
+          "type": "if_node"
+        },
+        {
+          "id": 1754592498999.7505,
+          "name": "python node",
+          "x": 1194.6910400390625,
+          "y": 135.51309204101562,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754593440044.931,
+          "name": "python node",
+          "x": 1442,
+          "y": 235,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754593440510.8223,
+          "name": "python node",
+          "x": 1448,
+          "y": 102,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754646735053.426,
+          "name": "python node",
+          "x": 826.7881469726562,
+          "y": -114.77458190917969,
+          "pythonFile": "nodes/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754646773379.522,
+          "name": "Input Node",
+          "x": 509.5452880859375,
+          "y": -119.31275939941406,
+          "pythonFile": "nodes/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        }
+      ],
+      "links": [
+        {
+          "selectable": false,
+          "source": 1754557341635.2678,
+          "style": "dashed",
+          "target": 1754557300491.1255,
+          "type": "input_connection"
+        },
+        {
+          "source": 1754592052289.3586,
+          "target": 1754485128247.5793
+        },
+        {
+          "conditions": [
+            {
+              "operator": "==",
+              "value": "",
+              "variable": "result"
+            }
+          ],
+          "source": 1754592052289.3586,
+          "target": 1754592498999.7505
+        },
+        {
+          "source": 1754592498999.7505,
+          "target": 1754593440510.8223
+        },
+        {
+          "source": 1754592498999.7505,
+          "target": 1754593440044.931
+        },
+        {
+          "source": 1754646735053.426,
+          "target": 1754592052289.3586
+        },
+        {
+          "source": 1754557300491.1255,
+          "target": 1754646735053.426
+        },
+        {
+          "selectable": false,
+          "source": 1754646773379.522,
+          "style": "dashed",
+          "target": 1754646735053.426,
+          "type": "input_connection"
+        }
+      ],
+      "groups": [
+        {
+          "description": "",
+          "id": 1754608357871.8955,
+          "name": "final",
+          "nodeIds": [
+            1754592498999.7505,
+            1754593440510.8223,
+            1754593440044.931
+          ]
+        }
+      ]
+    }
+  }
+}
