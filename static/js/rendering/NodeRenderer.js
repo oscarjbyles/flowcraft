@@ -15,6 +15,16 @@ class NodeRenderer {
 
     updateCoverageAlerts(data = null) {
         // data: { sourceNodeId, hasMissing }
+        // hide coverage alerts unless error view is enabled
+        try {
+            if (!this.state.isErrorView) {
+                console.log('[error_view] removing coverage alerts (disabled)');
+                this.nodeGroup.selectAll('.coverage_alert').remove();
+                return;
+            }
+        } catch (e) {
+            console.warn('[error_view] updateCoverageAlerts guard failed', e);
+        }
         const alertClass = 'coverage_alert';
         if (data && typeof data.sourceNodeId !== 'undefined') {
             const nodeSel = this.nodeGroup.selectAll('.node-group').filter(d => d.id === data.sourceNodeId);
@@ -175,20 +185,38 @@ class NodeRenderer {
         const d = nodeEnter.datum();
         const nodeHeight = Geometry.getNodeHeight(d);
         
-        // add rectangle
-        const rect = nodeEnter.append('rect')
-            .attr('class', 'node')
-            .attr('height', nodeHeight)
-            .attr('y', -nodeHeight/2)
-            .attr('rx', 8);
+        // add base shape: rectangle for most nodes; capsule for data_save
+        let baseShape;
+        if (d.type === 'data_save') {
+            const width = d.width || Geometry.getDataSaveNodeWidth(d.name || 'data save');
+            baseShape = nodeEnter.append('rect')
+                .attr('class', 'node data_save_node')
+                .attr('height', nodeHeight)
+                .attr('y', -nodeHeight/2)
+                .attr('width', width)
+                .attr('x', -width/2)
+                .attr('rx', nodeHeight/2)
+                .style('fill', 'rgb(62, 32, 0)');
+        } else {
+            baseShape = nodeEnter.append('rect')
+                .attr('class', 'node')
+                .attr('height', nodeHeight)
+                .attr('y', -nodeHeight/2)
+                .attr('rx', 8);
+        }
 
         // add special styling for if nodes
-        rect.each(function(d) {
+        baseShape.each(function(d) {
             if (d.type === 'if_node') {
                 d3.select(this)
                     // set dark cyan background for if nodes (dark mode)
                     .style('fill', '#091516')
                     .style('stroke-dasharray', '5,5')
+                    .style('stroke-width', '2');
+            } else if (d.type === 'data_save') {
+                // keep orange fill and solid stroke for data_save
+                d3.select(this)
+                    .style('fill', 'rgb(62, 32, 0)')
                     .style('stroke-width', '2');
             }
         });
@@ -199,8 +227,10 @@ class NodeRenderer {
             .attr('dy', '0.15em')
             .text(d => d.name);
 
-        // add connection dots
-        this.addConnectionDots(nodeEnter);
+        // add connection dots (skip for data_save nodes so they don't show on hover)
+        if (d.type !== 'data_save') {
+            this.addConnectionDots(nodeEnter);
+        }
 
         // add play button for run mode (initially hidden)
         this.addPlayButton(nodeEnter);
@@ -374,25 +404,39 @@ class NodeRenderer {
             } else {
                 // for regular nodes, update text and dimensions
                 nodeSelection.select('.node_text').text(d.name);
-                
-                // update rectangle width and height
+
                 if (!d.width) {
-                    d.width = Geometry.getNodeWidth(d.name);
+                    d.width = (d.type === 'data_save')
+                        ? Geometry.getDataSaveNodeWidth(d.name)
+                        : Geometry.getNodeWidth(d.name);
                 }
                 const nodeHeight = Geometry.getNodeHeight(d);
-                const nodeRect = nodeSelection.select('.node')
-                    .attr('width', d.width)
-                    .attr('x', -d.width/2)
-                    .attr('height', nodeHeight)
-                    .attr('y', -nodeHeight/2);
-                
+
+                if (d.type === 'data_save') {
+                    // update capsule rect attributes
+                    const width = d.width || Geometry.getDataSaveNodeWidth(d.name);
+                    nodeSelection.select('rect.node')
+                        .attr('width', width)
+                        .attr('x', -width/2)
+                        .attr('height', nodeHeight)
+                        .attr('y', -nodeHeight/2)
+                        .attr('rx', nodeHeight/2)
+                        .style('fill', 'rgb(62, 32, 0)');
+                } else {
+                    nodeSelection.select('rect.node')
+                        .attr('width', d.width)
+                        .attr('x', -d.width/2)
+                        .attr('height', nodeHeight)
+                        .attr('y', -nodeHeight/2);
+                }
+
                 // maintain special styling for if nodes
                 if (d.type === 'if_node') {
-                    nodeRect
-                           // ensure dark cyan background persists for if nodes (dark mode)
-                           .style('fill', '#091516')
-                           .style('stroke-dasharray', '5,5')
-                           .style('stroke-width', '2');
+                    nodeSelection.select('.node')
+                        // ensure dark cyan background persists for if nodes (dark mode)
+                        .style('fill', '#091516')
+                        .style('stroke-dasharray', '5,5')
+                        .style('stroke-width', '2');
                 }
             }
         });
@@ -480,18 +524,31 @@ class NodeRenderer {
         // calculate height for this node
         const nodeHeight = Geometry.getNodeHeight(node);
         
-        // add rectangle
-        const rect = nodeGroup.append('rect')
-            .attr('class', 'node')
-            .attr('height', nodeHeight)
-            .attr('y', -nodeHeight/2)
-            .attr('rx', 8)
-            .attr('width', node.width || 120)
-            .attr('x', -(node.width || 120)/2);
+        // add base shape
+        let shapeSel;
+        if (node.type === 'data_save') {
+            const width = node.width || Geometry.getDataSaveNodeWidth(node.name || 'data save');
+            shapeSel = nodeGroup.append('rect')
+                .attr('class', 'node data_save_node')
+                .attr('height', nodeHeight)
+                .attr('y', -nodeHeight/2)
+                .attr('width', width)
+                .attr('x', -width/2)
+                .attr('rx', nodeHeight/2)
+                .style('fill', 'rgb(62, 32, 0)');
+        } else {
+            shapeSel = nodeGroup.append('rect')
+                .attr('class', 'node')
+                .attr('height', nodeHeight)
+                .attr('y', -nodeHeight/2)
+                .attr('rx', 8)
+                .attr('width', node.width || 120)
+                .attr('x', -(node.width || 120)/2);
+        }
 
         // add special styling for if nodes
         if (node.type === 'if_node') {
-            rect
+            shapeSel
                 // set dark cyan background for if nodes (dark mode)
                 .style('fill', '#091516')
                 .style('stroke-dasharray', '5,5')
@@ -504,23 +561,25 @@ class NodeRenderer {
             .attr('dy', '0.15em')
             .text(node.name);
 
-        // add connection dots
-        const dotData = [
-            { side: 'top', x: 0, y: -nodeHeight/2 },
-            { side: 'right', x: (node.width || 120)/2, y: 0 },
-            { side: 'bottom', x: 0, y: nodeHeight/2 },
-            { side: 'left', x: -(node.width || 120)/2, y: 0 }
-        ];
+        // add connection dots for non data_save nodes only
+        if (node.type !== 'data_save') {
+            const dotData = [
+                { side: 'top', x: 0, y: -nodeHeight/2 },
+                { side: 'right', x: (node.width || 120)/2, y: 0 },
+                { side: 'bottom', x: 0, y: nodeHeight/2 },
+                { side: 'left', x: -(node.width || 120)/2, y: 0 }
+            ];
 
-        dotData.forEach((dotInfo) => {
-            nodeGroup.append('circle')
-                .attr('class', 'connection_dot')
-                .attr('r', 6)
-                .attr('cx', dotInfo.x)
-                .attr('cy', dotInfo.y)
-                .attr('data-side', dotInfo.side)
-                .style('cursor', 'crosshair');
-        });
+            dotData.forEach((dotInfo) => {
+                nodeGroup.append('circle')
+                    .attr('class', 'connection_dot')
+                    .attr('r', 6)
+                    .attr('cx', dotInfo.x)
+                    .attr('cy', dotInfo.y)
+                    .attr('data-side', dotInfo.side)
+                    .style('cursor', 'crosshair');
+            });
+        }
 
         // add play button for run mode (initially hidden)
         this.addPlayButtonToNode(nodeGroup, node);
@@ -676,6 +735,11 @@ class NodeRenderer {
                 rect.style('stroke', null);
                 // restore dashed outline for if_node
                 rect.style('stroke-dasharray', '5,5');
+                rect.style('stroke-width', '2');
+            } else if (d.type === 'data_save') {
+                rect.style('fill', 'rgb(62, 32, 0)');
+                rect.style('stroke', null);
+                rect.style('stroke-dasharray', null);
                 rect.style('stroke-width', '2');
             } else {
                 // clear inline styles for standard nodes to allow css theme

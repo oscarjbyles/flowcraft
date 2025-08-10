@@ -33,6 +33,10 @@ class LinkRenderer {
         this.state.on('nodeUpdated', () => this.computeLinkCoverageFromAnalysis());
         this.state.on('linkAdded', () => this.computeLinkCoverageFromAnalysis());
         this.state.on('linkRemoved', () => this.computeLinkCoverageFromAnalysis());
+        this.state.on('linkUpdated', () => {
+            this.computeLinkCoverageFromAnalysis();
+            this.updateLinkCoverageAlerts();
+        });
         
         // connection line events
         this.state.on('createConnectionLine', (data) => this.createConnectionLine(data));
@@ -79,9 +83,13 @@ class LinkRenderer {
         this.renderLinkArrows();
         
         this.updateLinkStyles();
-        // after full render, ensure coverage alerts are drawn
-        this.computeLinkCoverageFromAnalysis();
-        this.updateLinkCoverageAlerts();
+        // after full render, ensure coverage alerts are drawn only if error view is enabled
+        if (this.state.isErrorView) {
+            this.computeLinkCoverageFromAnalysis();
+            this.updateLinkCoverageAlerts();
+        } else {
+            this.linkGroup.selectAll('.link-coverage-alert').remove();
+        }
     }
 
     renderDoubleLines() {
@@ -488,7 +496,10 @@ class LinkRenderer {
             .classed('selected', d => 
                 this.state.selectedLink && 
                 d.source === this.state.selectedLink.source && 
-                d.target === this.state.selectedLink.target);
+                d.target === this.state.selectedLink.target)
+            // ensure visual style like dashedness is applied dynamically
+            .style('stroke-dasharray', d => d.style === 'dashed' ? '5,5' : null)
+            .style('marker-end', d => d.type === 'input_connection' ? 'none' : null);
         
         // also update arrow colors when link selection changes
         this.renderLinkArrows();
@@ -524,6 +535,10 @@ class LinkRenderer {
             const targetNode = this.state.getNode(link.target);
             // remove triangle arrowhead for python→if connections
             if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
+                return false;
+            }
+            // no arrow heads for connections into data_save nodes (e.g., python_file → data_save)
+            if (targetNode && targetNode.type === 'data_save') {
                 return false;
             }
             return true;
@@ -604,11 +619,19 @@ class LinkRenderer {
     updateLinkCoverageAlerts() {
         // draw alert circle with exclamation at the midpoint for any link flagged in linkAlerts
         const entries = Array.from(this.linkAlerts.entries());
-        const data = entries.map(([key]) => {
+        let data = entries.map(([key]) => {
             const [s, t] = key.split('-');
             return { source: Number(s), target: Number(t) };
         });
 
+        // guard: hide link coverage alerts when error view is disabled
+        if (!this.state.isErrorView) {
+            try {
+                console.log('[error_view] removing link coverage alerts (disabled)');
+            } catch (_) {}
+            this.linkGroup && this.linkGroup.selectAll('.link-coverage-alert').remove();
+            data = [];
+        }
         const alertSel = this.linkGroup.selectAll('.link-coverage-alert').data(data, d => `${d.source}-${d.target}`);
 
         const alertEnter = alertSel.enter().append('g')
@@ -617,9 +640,14 @@ class LinkRenderer {
             .style('cursor', 'pointer')
             .on('click', (event, d) => {
                 const link = this.state.getLink(d.source, d.target);
-                if (link) {
-                    this.state.emit('linkClicked', { event, link });
+                if (!link) return;
+                // if this is an input→python alert, swallow the click and do nothing
+                if (link.type === 'input_connection') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
                 }
+                this.state.emit('linkClicked', { event, link });
             });
 
         alertEnter.append('circle')
@@ -638,27 +666,38 @@ class LinkRenderer {
         const alertMerge = alertEnter.merge(alertSel);
         alertMerge
             .style('pointer-events', 'all')
-            .style('cursor', 'pointer')
+            .style('cursor', (d) => {
+                const link = this.state.getLink(d.source, d.target);
+                return (link && link.type === 'input_connection') ? 'default' : 'pointer';
+            })
             .on('click', (event, d) => {
                 const link = this.state.getLink(d.source, d.target);
-                if (link) {
-                    this.state.emit('linkClicked', { event, link });
+                if (!link) return;
+                if (link.type === 'input_connection') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
                 }
+                this.state.emit('linkClicked', { event, link });
             });
         alertMerge.each((d, i, nodes) => {
             const g = d3.select(nodes[i]);
             const mid = this.getLinkMidpoint(d);
             const sourceNode = this.state.getNode(d.source);
             const targetNode = this.state.getNode(d.target);
-            // position only for python→python; otherwise remove
-            if (!sourceNode || !targetNode || sourceNode.type !== 'python_file' || targetNode.type !== 'python_file' || !mid) {
+            const linkObj = this.state.getLink(d.source, d.target);
+            // allow alerts for python→python, input→python, and if→python links
+            const isPyPy = sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'python_file';
+            const isInputToPython = !!(linkObj && linkObj.type === 'input_connection');
+            const isIfToPython = sourceNode && targetNode && sourceNode.type === 'if_node' && targetNode.type === 'python_file';
+            if (!sourceNode || !targetNode || !(isPyPy || isInputToPython || isIfToPython) || !mid) {
                 g.remove();
                 return;
             }
             // align to the right of the line (perpendicular offset from the line direction)
             const angleRad = this.getLinkAngle(d) * Math.PI / 180;
-            const offset = 20; // px perpendicular shift to the right side (slightly more)
-            // right-hand normal of (cos, sin) is (sin, -cos)
+            // give a bit more spacing for if→python; input→python slightly closer than before
+            const offset = isIfToPython ? 28 : (isInputToPython ? 21 : 20);
             const nx = Math.sin(angleRad);
             const ny = -Math.cos(angleRad);
             const ox = nx * offset;
@@ -679,6 +718,43 @@ class LinkRenderer {
         });
         // clear alerts before recomputation
         this.linkAlerts.clear();
+        // also compute alerts for input→python links when any input is missing
+        const inputLinks = this.state.links.filter(l => {
+            const s = this.state.getNode(l.source);
+            const t = this.state.getNode(l.target);
+            return l.type === 'input_connection' && s && t && s.type === 'input_node' && t.type === 'python_file';
+        });
+        inputLinks.forEach(l => {
+            const inputNode = this.state.getNode(l.source);
+            if (!inputNode) return;
+            const params = Array.isArray(inputNode.parameters) ? inputNode.parameters : [];
+            const values = inputNode.inputValues || {};
+            const hasMissing = params.some(p => {
+                const val = (values[p] ?? '').toString();
+                return val.trim() === '';
+            });
+            if (hasMissing) {
+                const key = `${l.source}-${l.target}`;
+                this.linkAlerts.set(key, true);
+            }
+        });
+        // compute alerts for if→python links with no conditions set
+        const ifLinks = this.state.links.filter(l => {
+            const s = this.state.getNode(l.source);
+            const t = this.state.getNode(l.target);
+            return s && t && s.type === 'if_node' && t.type === 'python_file';
+        });
+        ifLinks.forEach(l => {
+            const linkObj = this.state.getLink(l.source, l.target);
+            const conditions = linkObj && Array.isArray(linkObj.conditions) ? linkObj.conditions : [];
+            const hasMissing = conditions.length === 0;
+            if (hasMissing) {
+                const key = `${l.source}-${l.target}`;
+                this.linkAlerts.set(key, true);
+            }
+        });
+        // update immediately for non-async checks (input and if links)
+        this.updateLinkCoverageAlerts();
         // fire off computations sequentially to avoid flooding; best-effort only
         const run = async () => {
             for (const link of pyPyLinks) {

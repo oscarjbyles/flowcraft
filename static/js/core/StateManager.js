@@ -30,6 +30,8 @@ class StateManager extends EventEmitter {
         
         // flow view state (toggle within build mode)
         this.isFlowView = false;
+        // error view state (toggle to show red error circles)
+        this.isErrorView = false;
         
         // counters
         this.nodeCounter = 0;
@@ -63,7 +65,9 @@ class StateManager extends EventEmitter {
             pythonFile: nodeData.pythonFile || '',
             description: nodeData.description || '',
             groupId: nodeData.groupId || null,
-            width: Geometry.getNodeWidth(nodeData.name || 'python node'),
+            width: (nodeData.type === 'data_save')
+                ? Geometry.getDataSaveNodeWidth(nodeData.name || 'data save')
+                : Geometry.getNodeWidth(nodeData.name || 'python node'),
             ...nodeData
         };
 
@@ -309,7 +313,7 @@ class StateManager extends EventEmitter {
             link.selectable = false;
         }
         
-        // validate link
+        // validate link (will also block data_save connections)
         const validation = Validation.validateLink(link, this.nodes);
         if (!validation.isValid) {
             throw new Error(`invalid link: ${validation.errors.join(', ')}`);
@@ -611,6 +615,11 @@ class StateManager extends EventEmitter {
     setFlowView(isFlowView) {
         this.isFlowView = isFlowView;
         this.emit('flowViewChanged', { isFlowView });
+    }
+
+    setErrorView(isErrorView) {
+        this.isErrorView = isErrorView;
+        this.emit('errorViewChanged', { isErrorView });
     }
 
     // convenience getters

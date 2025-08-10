@@ -30,7 +30,7 @@ class Validation {
             errors.push('description must be a string');
         }
 
-        if (node.type && !['python_file', 'module', 'function', 'class', 'input_node', 'if_node'].includes(node.type)) {
+        if (node.type && !['python_file', 'module', 'function', 'class', 'input_node', 'if_node', 'data_save'].includes(node.type)) {
             errors.push('invalid node type');
         }
 
@@ -59,8 +59,10 @@ class Validation {
         }
 
         // check if source and target nodes exist
-        const sourceExists = nodes.some(n => n.id === link.source);
-        const targetExists = nodes.some(n => n.id === link.target);
+        const sourceNode = nodes.find(n => n.id === link.source);
+        const targetNode = nodes.find(n => n.id === link.target);
+        const sourceExists = !!sourceNode;
+        const targetExists = !!targetNode;
 
         if (!sourceExists) {
             errors.push('source node does not exist');
@@ -68,6 +70,17 @@ class Validation {
 
         if (!targetExists) {
             errors.push('target node does not exist');
+        }
+
+        // disallow connections to/from data_save except python_file -> data_save
+        const isPythonToDataSave = sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'data_save';
+        if (!isPythonToDataSave) {
+            if (sourceNode && sourceNode.type === 'data_save') {
+                errors.push('connections from data_save nodes are not allowed');
+            }
+            if (targetNode && targetNode.type === 'data_save') {
+                errors.push('connections to data_save nodes are not allowed');
+            }
         }
 
         return {

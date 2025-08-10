@@ -412,6 +412,20 @@
             color: #ffffff;
         }
 
+/* run mode start/clear buttons – align with build toolbar buttons (keep colors) */
+.start_button_container .btn {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+.start_button_container .btn.btn_primary { border-color: var(--primary-color); }
+.start_button_container .btn.btn_secondary { border-color: var(--border-color); }
+.start_button_container .material-icons { font-size: 18px; }
+
         .canvas_container {
             flex: 1;
             position: relative;
@@ -844,6 +858,20 @@
             pointer-events: none;
         }
 
+        /* error circles (for error view) */
+        .error_circle {
+            fill: #f44336;
+            stroke: none;
+        }
+        .error_text {
+            fill: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+
         /* annotation styles */
         .annotation_text { user-select: none; cursor: move; }
         .annotation_box { fill: transparent; stroke: transparent; rx: 4px; ry: 4px; }
@@ -877,6 +905,11 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px; /* match primary toolbar radius */
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         /* default properties width positioning (when not in run mode, if visible) */
@@ -902,20 +935,51 @@
             animation: spin 1s linear infinite;
         }
 
-        /* floating toolbar */
-        .floating_toolbar {
+        /* floating toolbars on the left */
+        .left_toolbars {
             position: absolute;
             top: 14px;
-            left: 335px; /* positioned to the left of properties sidebar */
+            left: 335px; /* aligned with properties sidebar edge */
             z-index: 100;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 12px; /* space between the two toolbars */
+        }
+
+        /* primary floating toolbar */
+        .floating_toolbar {
+            /* positioned by parent container */
+            position: static;
+            display: flex;
+            flex-direction: row;
             gap: 8px;
             background-color: var(--background-color);
             border: 1px solid var(--border-color);
+            /* match annotation_toolbar radius */
             border-radius: 8px;
             padding: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* secondary floating toolbar to the right of the primary */
+        .floating_toolbar_secondary {
+            /* positioned by parent container */
+            position: static;
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            /* make the outer toolbar fully pill-shaped (infinite radius) */
+            border-radius: 9999px;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* make buttons inside the secondary toolbar circular */
+        .floating_toolbar_secondary .toolbar_btn {
+            border-radius: 50%;
         }
 
         .toolbar_btn {
@@ -1062,6 +1126,14 @@
         .properties_footer .btn {
             width: 100%;
         }
+        /* header section at top of properties sidebar */
+        .properties_header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px;
+            background: var(--surface-color);
+            display: none; /* hidden by default; shown for single node selection */
+        }
+        #properties_header_text { font-size: 1.3rem; font-weight: 600; letter-spacing: .5px; }
         
         /* default properties layout when no selection */
         #default_properties .sidebar_content {
@@ -1468,28 +1540,35 @@
         <div class="main_content">
             <!-- start button in top left -->
             <div class="start_button_container" id="start_button_container" style="display: none;">
+                <div class="loading_wheel" id="execution_loading_wheel" style="display: none;"></div>
                 <button class="btn btn_primary" id="execute_start_btn">
                     <span class="material-icons">play_arrow</span>
-                    START
+                    Start
                 </button>
-                <div class="loading_wheel" id="execution_loading_wheel" style="display: none;"></div>
                 <button class="btn btn_secondary" id="execute_clear_btn" title="clear">
                     <span class="material-icons">brush</span>
-                    CLEAR
+                    Clear
                 </button>
             </div>
             
-            <!-- floating toolbar -->
-            <div class="floating_toolbar" id="floating_toolbar">
-                <button class="toolbar_btn" id="flow_toggle_btn" title="Toggle Flow View">
-                    <span class="material-icons">device_hub</span>
-                </button>
-                <button class="toolbar_btn" id="group_select_btn" title="Group Select Tool">
-                    <span class="material-icons">select_all</span>
-                </button>
-                <button class="toolbar_btn" id="deselect_btn" title="Deselect All">
-                    <span class="material-icons">pan_tool</span>
-                </button>
+            <!-- floating toolbars -->
+            <div class="left_toolbars" id="left_toolbars">
+                <div class="floating_toolbar" id="floating_toolbar">
+                    <button class="toolbar_btn" id="group_select_btn" title="group select tool">
+                        <span class="material-icons">select_all</span>
+                    </button>
+                    <button class="toolbar_btn" id="deselect_btn" title="deselect all">
+                        <span class="material-icons">pan_tool</span>
+                    </button>
+                </div>
+                <div class="floating_toolbar_secondary" id="floating_toolbar_secondary">
+                    <button class="toolbar_btn" id="error_toggle_btn" title="show error circles">
+                        <span class="material-icons">priority_high</span>
+                    </button>
+                    <button class="toolbar_btn" id="flow_toggle_btn" title="show flow circles">
+                        <span class="material-icons">device_hub</span>
+                    </button>
+                </div>
             </div>
             
             <!-- top toolbars container (build mode only content) -->
@@ -1511,11 +1590,11 @@
                 <div class="build_toolbar" id="build_toolbar" style="display:none;">
                     <button class="btn btn_secondary" id="python_node_btn" title="add python node">
                         <span class="material-icons">code</span>
-                        python node
+                        Python Node
                     </button>
                     <button class="btn btn_secondary" id="if_condition_btn" title="add if condition">
                         <span class="material-icons">alt_route</span>
-                        if condition
+                        IF Condition
                     </button>
                 </div>
             </div>
@@ -1600,6 +1679,10 @@
 
         <!-- properties sidebar -->
         <div class="properties_sidebar" id="properties_sidebar">
+        <!-- pinned header for node type -->
+        <div class="properties_header" id="properties_header">
+            <div id="properties_header_text">NODE</div>
+        </div>
         
         <!-- default state -->
         <div class="properties_content active" id="default_properties">
@@ -2140,8 +2223,20 @@
     <script src="/static/js/rendering/GroupRenderer.js"></script>
     <script src="/static/js/rendering/AnnotationRenderer.js"></script>
 
-    <!-- component modules -->
-    <script src="/static/js/components/Sidebar.js"></script>
+    <!-- component modules: refactored sidebar (order matters) -->
+    <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.settings.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.selection.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.nodes.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.forms.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.files.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.links.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.analysis.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.iflogic.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.flowcharts.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.url.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.events.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.runview.js"></script>
 
     <!-- main application -->
     <script src="/static/js/core/FlowchartBuilder.js"></script>

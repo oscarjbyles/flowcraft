@@ -19,15 +19,15 @@
       "pythonFile": "nodes/example.py",
       "type": "python_file",
       "width": 190.73333740234375,
-      "x": 805.7249755859375,
-      "y": -311.9170837402344
+      "x": 819.2770385742188,
+      "y": -311.13140869140625
     },
     {
       "description": "input parameters",
       "groupId": null,
       "id": 1754557341635.2678,
       "inputValues": {
-        "variable2": "",
+        "variable2": "3",
         "variableA": "4"
       },
       "name": "Input Node",
@@ -118,8 +118,8 @@
       "targetNodeId": 1754646735053.426,
       "type": "input_node",
       "width": 300,
-      "x": 490.0111389160156,
-      "y": -120.34087371826172
+      "x": 486.8837585449219,
+      "y": -100.53401947021484
     },
     {
       "description": "",
@@ -135,96 +135,64 @@
     {
       "description": "",
       "groupId": null,
-      "id": 1754848459095.1128,
-      "magnet_partner_id": 1754848942231.6738,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 1168.8367919921875,
-      "y": -261.4288864135742
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1754848461479.0037,
-      "magnet_partner_id": 1754849040550.744,
-      "name": "if condition",
-      "pythonFile": "",
-      "type": "if_node",
-      "width": 120,
-      "x": 1384.594970703125,
-      "y": -186.30259704589844
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1754848942231.6738,
-      "magnet_partner_id": 1754848459095.1128,
-      "name": "if condition",
-      "pythonFile": "",
-      "type": "if_node",
-      "width": 120,
-      "x": 1168.8367919921875,
-      "y": -181.42888641357422
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1754849040550.744,
-      "magnet_partner_id": 1754848461479.0037,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 1384.594970703125,
-      "y": -266.30259704589844
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1754849272005.6926,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 1158.8818359375,
-      "y": -10.74213981628418
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1754849272748.0566,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 1378.7984619140625,
-      "y": -1.6920757293701172
-    },
-    {
-      "description": "",
-      "groupId": null,
       "id": 1754849299897.9001,
+      "magnet_partner_id": 1754850114255.0886,
       "name": "python node",
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1119.9952392578125,
-      "y": -582.3009643554688,
-      "magnet_partner_id": 1754850114255.0886
+      "x": 862.0789184570312,
+      "y": 383.677490234375
     },
     {
       "description": "",
       "groupId": null,
       "id": 1754850114255.0886,
+      "magnet_partner_id": 1754849299897.9001,
       "name": "if condition",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
-      "x": 1119.9952392578125,
-      "y": -502.30096435546875,
-      "magnet_partner_id": 1754849299897.9001
+      "x": 862.0789184570312,
+      "y": 463.677490234375
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 29,
+          "name": "result",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754853828832.737,
+      "name": "result",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 688.5722379005184,
+      "y": -232.65509209861293
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 14,
+          "name": "variableC",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754862315571.3855,
+      "name": "variableC",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 1052.6401158892168,
+      "y": -360.4450514586955
     }
   ],
   "links": [
@@ -279,26 +247,20 @@
     },
     {
       "selectable": false,
-      "source": 1754848459095.1128,
-      "target": 1754848942231.6738
-    },
-    {
-      "selectable": false,
-      "source": 1754849040550.744,
-      "target": 1754848461479.0037
-    },
-    {
-      "source": 1754848461479.0037,
-      "target": 1754849272005.6926
-    },
-    {
-      "source": 1754848461479.0037,
-      "target": 1754849272748.0566
-    },
-    {
-      "selectable": false,
       "source": 1754849299897.9001,
       "target": 1754850114255.0886
+    },
+    {
+      "selectable": false,
+      "source": 1754646735053.426,
+      "style": "dashed",
+      "target": 1754853828832.737
+    },
+    {
+      "selectable": false,
+      "source": 1754557300491.1255,
+      "style": "dashed",
+      "target": 1754862315571.3855
     }
   ],
   "groups": [

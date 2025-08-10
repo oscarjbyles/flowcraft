@@ -177,12 +177,35 @@ class FlowchartBuilder {
         this.state.on('flowViewChanged', (data) => {
             this.updateFlowViewUI(data.isFlowView);
         });
+        this.state.on('errorViewChanged', (data) => {
+            console.log('[error_view] event errorViewChanged', data);
+            this.updateErrorViewUI(data.isErrorView);
+        });
         
         // update order when state changes if in flow view
         this.state.on('stateChanged', () => {
             if (this.state.isFlowView) {
                 this.renderNodeOrder();
             }
+            if (this.state.isErrorView) {
+                console.log('[error_view] stateChanged -> renderErrorCircles');
+                this.renderErrorCircles();
+                if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
+                    this.nodeRenderer.updateCoverageAlerts();
+                }
+            }
+        });
+
+        // re-render alerts when links are added/updated/removed and error view is on
+        ['linkAdded','linkUpdated','linkRemoved'].forEach(evt => {
+            this.state.on(evt, () => {
+                if (this.state.isErrorView) {
+                    console.log('[error_view]', evt, '-> re-render link alerts');
+                    if (this.linkRenderer && this.linkRenderer.renderCoverageAlerts) {
+                        this.linkRenderer.renderCoverageAlerts();
+                    }
+                }
+            });
         });
         
         // update coordinates when selection changes
@@ -404,7 +427,7 @@ class FlowchartBuilder {
             })
             .call(this.dragHandler.createDragBehavior(this.zoomGroup.node()));
 
-        // setup connection dots
+        // setup connection dots (none exist for data_save nodes)
         nodeElement.selectAll('.connection_dot')
             .on('mousedown', (event, d) => {
                 event.stopPropagation();
@@ -481,6 +504,16 @@ class FlowchartBuilder {
         document.getElementById('flow_toggle_btn').addEventListener('click', () => {
             this.toggleFlowView();
         });
+        // error toggle button
+        const errorToggleBtn = document.getElementById('error_toggle_btn');
+        if (errorToggleBtn) {
+            errorToggleBtn.addEventListener('click', () => {
+                console.log('[error_view] toggle button clicked');
+                this.toggleErrorView();
+            });
+        } else {
+            console.warn('[error_view] error_toggle_btn not found in dom');
+        }
         
         document.getElementById('group_select_btn').addEventListener('click', () => {
             this.toggleGroupSelectMode();
@@ -1179,6 +1212,43 @@ class FlowchartBuilder {
         }
     }
 
+    toggleErrorView() {
+        // allow error view toggle in both build and run modes
+        const next = !this.state.isErrorView;
+        console.log('[error_view] toggling to', next);
+        this.state.setErrorView(next);
+        console.log('[error_view] state after set', this.state.isErrorView);
+        if (this.state.isErrorView) {
+            console.log('[error_view] rendering error circles');
+            this.renderErrorCircles();
+            // also show coverage alerts if any
+            if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
+                console.log('[error_view] updating coverage alerts (enable)');
+                this.nodeRenderer.updateCoverageAlerts();
+            } else {
+                console.warn('[error_view] nodeRenderer.updateCoverageAlerts unavailable');
+            }
+            // recompute link coverage now that error view is enabled
+            if (this.linkRenderer && this.linkRenderer.computeLinkCoverageFromAnalysis) {
+                console.log('[error_view] computing link coverage alerts');
+                this.linkRenderer.computeLinkCoverageFromAnalysis();
+                this.linkRenderer.updateLinkCoverageAlerts();
+            }
+            this.updateStatusBar('error view enabled - showing errors');
+        } else {
+            console.log('[error_view] hiding error circles');
+            this.hideErrorCircles();
+            // ensure legacy coverage alerts are removed while disabled
+            if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
+                console.log('[error_view] updating coverage alerts (disable)');
+                this.nodeRenderer.updateCoverageAlerts();
+            } else {
+                console.warn('[error_view] nodeRenderer.updateCoverageAlerts unavailable');
+            }
+            this.updateStatusBar('error view disabled');
+        }
+    }
+
     toggleGroupSelectMode() {
         // only allow in build mode
         if (!this.state.isBuildMode) {
@@ -1312,6 +1382,46 @@ class FlowchartBuilder {
 
     hideNodeOrder() {
         this.nodeRenderer.nodeGroup.selectAll('.node_order_circle, .node_order_text').remove();
+    }
+
+    renderErrorCircles() {
+        console.log('[error_view] renderErrorCircles start');
+        // remove previous error indicators
+        this.nodeRenderer.nodeGroup.selectAll('.error_circle, .error_text').remove();
+        // draw an error marker for nodes in error state
+        this.nodeRenderer.nodeGroup.selectAll('.node-group').each(function(d) {
+            const group = d3.select(this);
+            const rect = group.select('.node');
+            const isErr = rect.classed('error');
+            if (!isErr) return;
+            const width = d.width || 120;
+            const x = width / 2 + 18;
+            const y = -18;
+            group.append('circle')
+                .attr('class', 'error_circle')
+                .attr('cx', x)
+                .attr('cy', y)
+                .attr('r', 12);
+            group.append('text')
+                .attr('class', 'error_text')
+                .attr('x', x)
+                .attr('y', y)
+                .text('!');
+        });
+        console.log('[error_view] renderErrorCircles done');
+    }
+
+    hideErrorCircles() {
+        console.log('[error_view] hideErrorCircles');
+        try {
+            this.nodeRenderer.nodeGroup.selectAll('.error_circle, .error_text').remove();
+            // also remove link coverage alerts when hiding error view
+            if (this.linkRenderer && this.linkRenderer.linkGroup) {
+                this.linkRenderer.linkGroup.selectAll('.link-coverage-alert').remove();
+            }
+        } catch (e) {
+            console.warn('[error_view] hideErrorCircles error', e);
+        }
     }
 
     updateModeUI(mode, previousMode) {
@@ -1516,6 +1626,21 @@ class FlowchartBuilder {
             flowToggleBtn.innerHTML = '<span class="material-icons">device_hub</span>';
             flowToggleBtn.title = 'Toggle Flow View';
         }
+    }
+
+    updateErrorViewUI(isErrorView) {
+        const errorToggleBtn = document.getElementById('error_toggle_btn');
+        if (!errorToggleBtn) return;
+        if (isErrorView) {
+            errorToggleBtn.classList.add('active');
+            errorToggleBtn.innerHTML = '<span class="material-icons">stop</span>';
+            errorToggleBtn.title = 'stop error view';
+        } else {
+            errorToggleBtn.classList.remove('active');
+            errorToggleBtn.innerHTML = '<span class="material-icons">priority_high</span>';
+            errorToggleBtn.title = 'show error circles';
+        }
+        console.log('[error_view] updateErrorViewUI ->', isErrorView);
     }
 
     deselectAll() {

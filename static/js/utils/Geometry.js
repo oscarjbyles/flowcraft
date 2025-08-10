@@ -19,6 +19,14 @@ class Geometry {
     }
 
     /**
+     * calculate compact width for data_save nodes (smaller padding and min)
+     */
+    static getDataSaveNodeWidth(text, padding = 18, minWidth = 80) {
+        const textWidth = this.getTextWidth(text);
+        return Math.max(minWidth, textWidth + padding);
+    }
+
+    /**
      * calculate node height based on type and parameters
      */
     static getNodeHeight(node) {
@@ -34,6 +42,9 @@ class Geometry {
             const rowHeight = 40;
             const padding = 20;
             return Math.max(60, parameters.length * rowHeight + padding);
+        } else if (node.type === 'data_save') {
+            // more compact height for data_save nodes
+            return 44;
         } else {
             // regular nodes have fixed height
             return 60;
