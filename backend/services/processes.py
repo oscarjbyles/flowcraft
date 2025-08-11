@@ -12,6 +12,117 @@ import psutil
 # to preserve behavior, these will be injected from the caller.
 
 
+def create_temp_execution_script(file_path: str, function_args: Dict[str, Any], input_values: Dict[str, Any]) -> Dict[str, Any]:
+    """create a temp script that wraps the target file and function call, returning path and metadata"""
+    # all comments in lower case
+    with open(file_path, 'r', encoding='utf-8') as f:
+        original_content = f.read()
+
+    tree = ast.parse(original_content)
+    functions = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            functions.append({'name': node.name, 'args': [arg.arg for arg in node.args.args]})
+
+    if not functions:
+        return {
+            'error': 'no function found in python file'
+        }
+
+    function_name = functions[0]['name']
+    formal_function_args = functions[0]['args']
+
+    call_args: Dict[str, Any] = {}
+    missing_args = []
+    for arg_name in formal_function_args:
+        if arg_name in function_args:
+            call_args[arg_name] = function_args[arg_name]
+        else:
+            missing_args.append(arg_name)
+
+    if missing_args:
+        return {
+            'error': f"missing required function arguments: {', '.join(missing_args)}"
+        }
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as temp_script:
+        temp_script.write(f'''
+import json
+import sys
+import os
+sys.path.insert(0, os.path.dirname({repr(file_path)}))
+
+input_values_for_mock = {repr(input_values)}
+input_call_count = 0
+
+def mock_input(prompt=""):
+    global input_call_count, input_values_for_mock
+    input_call_count += 1
+    value_list = list(input_values_for_mock.values())
+    if input_call_count <= len(value_list):
+        _val = value_list[input_call_count - 1]
+        print(f"{{prompt}}{{_val}}")
+        return str(_val)
+    else:
+        print(f"{{prompt}}")
+        return ""
+
+import builtins
+builtins.input = mock_input
+
+{original_content}
+
+try:
+    if {len(formal_function_args) > 0}:
+        result = {function_name}(**{repr(call_args)})
+    else:
+        result = {function_name}()
+    output_data = {{
+        'success': True,
+        'return_value': result,
+        'function_name': '{function_name}',
+        'function_args': {repr(call_args)},
+        'input_values': {repr(input_values)}
+    }}
+    print("__RESULT_START__")
+    print(json.dumps(output_data, default=str))
+    print("__RESULT_END__")
+except Exception as e:
+    output_data = {{
+        'success': False,
+        'error': str(e),
+        'function_name': '{function_name}',
+        'function_args': {repr(call_args)},
+        'input_values': {repr(input_values)}
+    }}
+    print("__RESULT_START__")
+    print(json.dumps(output_data, default=str))
+    print("__RESULT_END__")
+''')
+        temp_script_path = temp_script.name
+
+    return {
+        'temp_script_path': temp_script_path,
+        'function_name': function_name,
+        'call_args': call_args,
+    }
+
+
+def start_unbuffered_process(temp_script_path: str):
+    """start the temp script with unbuffered stdio for live streaming"""
+    # all comments in lower case
+    env = os.environ.copy()
+    env['PYTHONUNBUFFERED'] = '1'
+    return subprocess.Popen(
+        [sys.executable, '-u', temp_script_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=os.getcwd(),
+        env=env,
+        bufsize=1
+    )
+
 def execute_python_function_with_tracking(
     file_path: str,
     function_args: Optional[Dict[str, Any]] = None,

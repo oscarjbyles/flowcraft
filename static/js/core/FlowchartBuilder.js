@@ -54,6 +54,8 @@ class FlowchartBuilder {
         this.nodeExecutionResults = new Map(); // nodeId -> execution result
         this.globalExecutionLog = ''; // overall execution log
         this.nodeVariables = new Map(); // nodeId -> returned variables from function
+        // live feed for persistence: array of { node_id, node_name, started_at, finished_at, success, lines: [{text, ts}] }
+        this.executionFeed = [];
         
         // setup core event listeners
         this.setupCoreEvents();
@@ -573,6 +575,76 @@ class FlowchartBuilder {
                 this.resetNodeStates();
                 this.clearOutput();
                 this.updateExecutionStatus('info', 'cleared');
+            });
+        }
+
+        // run feed up/down buttons
+        const runFeedUpBtn = document.getElementById('run_feed_up_btn');
+        const runFeedDownBtn = document.getElementById('run_feed_down_btn');
+        const runFeedBar = document.getElementById('run_feed_bar');
+
+        if (runFeedUpBtn && runFeedBar) {
+            runFeedUpBtn.addEventListener('click', () => {
+                // remove hidden state if present
+                runFeedBar.classList.remove('hidden');
+                // toggle full screen state
+                runFeedBar.classList.toggle('full_screen');
+                
+                // update button appearance
+                if (runFeedBar.classList.contains('full_screen')) {
+                    runFeedUpBtn.innerHTML = '<span class="material-icons">compress</span>up';
+                    runFeedUpBtn.title = 'restore normal size';
+                } else {
+                    runFeedUpBtn.innerHTML = '<span class="material-icons">expand_less</span>up';
+                    runFeedUpBtn.title = 'expand to full screen';
+                }
+            });
+        }
+
+        if (runFeedDownBtn && runFeedBar) {
+            runFeedDownBtn.addEventListener('click', () => {
+                // remove full screen state if present
+                runFeedBar.classList.remove('full_screen');
+                // toggle hidden state
+                runFeedBar.classList.toggle('hidden');
+                
+                // update button appearance
+                if (runFeedBar.classList.contains('hidden')) {
+                    runFeedDownBtn.innerHTML = '<span class="material-icons">expand_less</span>down';
+                    runFeedDownBtn.title = 'show feed';
+                } else {
+                    runFeedDownBtn.innerHTML = '<span class="material-icons">expand_more</span>down';
+                    runFeedDownBtn.title = 'hide feed';
+                }
+            });
+        }
+
+        // toggle right properties sidebar visibility in run mode via start/clear toolbar
+        const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
+        if (toggleSidebarBtn) {
+            toggleSidebarBtn.addEventListener('click', () => {
+                const propertiesSidebar = document.getElementById('properties_sidebar');
+                const mainContent = document.querySelector('.main_content');
+                const runFeedBar = document.getElementById('run_feed_bar');
+                const startButtonContainer = document.getElementById('start_button_container');
+
+                const isCollapsed = propertiesSidebar.classList.toggle('collapsed');
+                if (isCollapsed) {
+                    // expand canvas area
+                    mainContent.classList.add('sidebar_collapsed');
+                    if (runFeedBar) runFeedBar.classList.add('sidebar_collapsed');
+                    if (startButtonContainer) startButtonContainer.classList.add('sidebar_collapsed');
+                    // update button icon/title
+                    toggleSidebarBtn.title = 'show properties';
+                    toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
+                } else {
+                    // restore run-mode layout widths
+                    mainContent.classList.remove('sidebar_collapsed');
+                    if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
+                    if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
+                    toggleSidebarBtn.title = 'hide properties';
+                    toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
+                }
             });
         }
         
@@ -1529,6 +1601,8 @@ class FlowchartBuilder {
         const startButtonContainer = document.getElementById('start_button_container');
         const mainContent = document.querySelector('.main_content');
         const propertiesSidebar = document.querySelector('.properties_sidebar');
+        const runFeedBar = document.getElementById('run_feed_bar');
+        const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
         const addNodeSection = document.getElementById('add_node_section');
         const canvasContainer = document.querySelector('.canvas_container');
         const settingsPage = document.getElementById('settings_page');
@@ -1548,6 +1622,11 @@ class FlowchartBuilder {
         // reset width mode classes
         if (mainContent) mainContent.classList.remove('run_mode', 'history_mode');
         if (propertiesSidebar) propertiesSidebar.classList.remove('run_mode', 'history_mode');
+        // always clear sidebar collapsed classes when switching modes
+        if (propertiesSidebar) propertiesSidebar.classList.remove('collapsed');
+        if (mainContent) mainContent.classList.remove('sidebar_collapsed');
+        if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
+        if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
 
         if (mode === 'build') {
             // activate build mode
@@ -1565,6 +1644,11 @@ class FlowchartBuilder {
             
             // hide start button
             startButtonContainer.style.display = 'none';
+            // hide live feed bar
+            try {
+                const runFeedBar = document.getElementById('run_feed_bar');
+                if (runFeedBar) runFeedBar.style.display = 'none';
+            } catch (_) {}
             
             // restore normal properties sidebar width
             mainContent.classList.remove('run_mode');
@@ -1613,10 +1697,25 @@ class FlowchartBuilder {
             
             // show start button
             startButtonContainer.style.display = 'flex';
+            // ensure toggle button ui matches collapsed sidebar state on entry (default closed)
+            if (toggleSidebarBtn) {
+                toggleSidebarBtn.title = 'show properties';
+                toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
+            }
+            // show live feed bar
+            try {
+                const runFeedBar = document.getElementById('run_feed_bar');
+                if (runFeedBar) runFeedBar.style.display = 'flex';
+            } catch (_) {}
             
-            // expand properties sidebar to run view width
+            // expand properties sidebar to run view width (but start collapsed)
             mainContent.classList.add('run_mode');
             propertiesSidebar.classList.add('run_mode');
+            // start with sidebar collapsed in run mode
+            propertiesSidebar.classList.add('collapsed');
+            mainContent.classList.add('sidebar_collapsed');
+            if (runFeedBar) runFeedBar.classList.add('sidebar_collapsed');
+            if (startButtonContainer) startButtonContainer.classList.add('sidebar_collapsed');
             
             // switch to execution panel
             this.showExecutionPanel();
@@ -1824,6 +1923,8 @@ class FlowchartBuilder {
         this.nodeVariables.clear();
         this.globalExecutionLog = '';
         this.clearOutput();
+        // reset live feed for this run
+        this.executionFeed = [];
         
         // update execution status
         this.updateExecutionStatus('running', `executing ${executionOrder.length} nodes`);
@@ -2028,6 +2129,7 @@ class FlowchartBuilder {
                 execution_order: executionOrder.map(node => node.id),
                 results: results,
                 data_saves: dataSaves,
+                feed: this.executionFeed,
                 // exclude data_save nodes from counts by only considering the computed execution order
                 total_nodes: executionOrder.length,
                 successful_nodes: results.filter(r => r.success && executionOrder.some(node => node.id === r.node_id)).length,
@@ -2163,17 +2265,36 @@ class FlowchartBuilder {
     }
 
     displayHistoryExecutionResults(executionData) {
-        // populate the global execution log with historical data
-        this.globalExecutionLog = '';
-        
-        executionData.results.forEach(result => {
-            const statusText = result.success ? 'completed' : 'failed';
-            const output = result.success ? result.output : result.error;
-            this.globalExecutionLog += `[${result.node_name}] execution ${statusText} in ${result.runtime}ms\n${output}\n\n`;
-        });
-        
-        // update the output display
-        this.showGlobalExecutionLog();
+        // restore the bottom live feed from saved history when viewing
+        try {
+            const list = document.getElementById('run_feed_list');
+            if (list) {
+                list.innerHTML = '';
+                const feed = Array.isArray(executionData.feed) ? executionData.feed : [];
+                feed.forEach(entry => {
+                    const item = document.createElement('div');
+                    item.className = 'run_feed_item ' + (entry.success ? 'success' : (entry.success === false ? 'error' : ''));
+                    const title = document.createElement('div');
+                    title.className = 'run_feed_item_title';
+                    title.textContent = entry.node_name;
+                    const outCol = document.createElement('div');
+                    outCol.className = 'run_feed_output';
+                    (entry.lines || []).forEach(line => {
+                        const lineDiv = document.createElement('div');
+                        lineDiv.className = 'run_feed_line';
+                        lineDiv.textContent = line.text;
+                        outCol.appendChild(lineDiv);
+                    });
+                    const metaCol = document.createElement('div');
+                    metaCol.className = 'run_feed_meta';
+                    metaCol.textContent = (entry.finished_at || entry.started_at || '').replace('T', ' ').split('.')[0];
+                    item.appendChild(title);
+                    item.appendChild(outCol);
+                    item.appendChild(metaCol);
+                    list.appendChild(item);
+                });
+            }
+        } catch (_) {}
         
         // update execution status
         const statusText = executionData.status === 'success' ? 'completed' : 
@@ -2444,8 +2565,78 @@ class FlowchartBuilder {
             // debug: log input variables for troubleshooting
             console.log(`[${node.name}] Input variables:`, inputVariables);
             
+            // create a feed entry upfront so the title appears even if no output lines
+            try {
+                const existing = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
+                if (!existing) {
+                    this.executionFeed.push({
+                        node_id: node.id,
+                        node_name: node.name,
+                        started_at: new Date().toISOString(),
+                        finished_at: null,
+                        success: null,
+                        lines: []
+                    });
+                }
+            } catch (_) {}
+            
             // execute the node via API with input variables
             const result = await this.callNodeExecution(node, inputVariables);
+
+            // append a neat feed item for each node upon completion
+            try {
+                const list = document.getElementById('run_feed_list');
+                if (list) {
+                    const runningId = `run_feed_running_${node.id}`;
+                    // if a running item exists, finalize it; otherwise create a new completed item
+                    let item = document.getElementById(runningId);
+                    if (item) {
+                        item.classList.add(result.success ? 'success' : 'error');
+                        const metaCol = item.children[2];
+                        if (metaCol) metaCol.textContent = new Date().toLocaleTimeString();
+                        item.removeAttribute('id');
+                    } else {
+                        item = document.createElement('div');
+                        item.className = 'run_feed_item ' + (result.success ? 'success' : 'error');
+                        const title = document.createElement('div');
+                        title.className = 'run_feed_item_title';
+                        title.textContent = node.name;
+                        const outCol = document.createElement('div');
+                        outCol.className = 'run_feed_output';
+                        const lines = ((result.output || '') + (result.error ? `\n${result.error}` : '')).trim().split(/\r?\n/);
+                        lines.filter(Boolean).forEach(l => {
+                            const lineDiv = document.createElement('div');
+                            lineDiv.className = 'run_feed_line';
+                            lineDiv.textContent = l;
+                            outCol.appendChild(lineDiv);
+                        });
+                        const metaCol = document.createElement('div');
+                        metaCol.className = 'run_feed_meta';
+                        metaCol.textContent = new Date().toLocaleTimeString();
+                        item.appendChild(title);
+                        item.appendChild(outCol);
+                        item.appendChild(metaCol);
+                        list.appendChild(item);
+                    }
+                    const bar = document.getElementById('run_feed_bar');
+                    if (bar) bar.scrollTop = bar.scrollHeight;
+                }
+            } catch (_) {}
+
+            // finalize feed entry and ensure lines present (non-streaming fallback)
+            try {
+                const entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
+                if (entry) {
+                    entry.finished_at = new Date().toISOString();
+                    entry.success = !!result.success;
+                    const combined = ((result.output || '') + (result.error ? `\n${result.error}` : '')).trim();
+                    if (combined && entry.lines.length === 0) {
+                        combined.split(/\r?\n/).filter(Boolean).forEach(l => {
+                            entry.lines.push({ text: l, ts: new Date().toISOString() });
+                        });
+                    }
+                }
+            } catch (_) {}
             
             const endTime = Date.now();
             const runtime = endTime - startTime;
@@ -2525,9 +2716,10 @@ class FlowchartBuilder {
     }
 
     async callNodeExecution(node, inputVariables = {}) {
-        // call the individual node execution endpoint for real-time feedback
+        // call streaming endpoint to receive live stdout as events
         try {
-            const response = await fetch('/api/execute-node', {
+            const controller = this.currentExecutionController || new AbortController();
+            const response = await fetch('/api/execute-node-stream', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -2539,22 +2731,172 @@ class FlowchartBuilder {
                     function_args: inputVariables.functionArgs || {},
                     input_values: inputVariables.inputValues || {}
                 }),
-                signal: this.currentExecutionController ? this.currentExecutionController.signal : null
+                signal: controller.signal
             });
-            
-            const result = await response.json();
-            return result;
+
+            if (!response.ok || !response.body) {
+                // fallback to non-streaming if server doesn't support it
+                const fallback = await fetch('/api/execute-node', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        node_id: node.id,
+                        python_file: node.pythonFile,
+                        node_name: node.name,
+                        function_args: inputVariables.functionArgs || {},
+                        input_values: inputVariables.inputValues || {}
+                    })
+                });
+                return await fallback.json();
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let finalResult = null;
+
+            const appendConsole = (line) => {
+                // append live output to the sidebar console if this node is selected
+                const selected = Array.from(this.state.selectedNodes);
+                if (selected.length === 1 && selected[0] === node.id) {
+                    const consoleContent = document.getElementById('console_content');
+                    if (consoleContent) {
+                        const div = document.createElement('div');
+                        div.textContent = line;
+                        consoleContent.appendChild(div);
+                        const container = document.getElementById('console_output_log');
+                        if (container) container.scrollTop = container.scrollHeight;
+                    }
+                }
+                // also append a live line to the bottom feed for this node
+                try {
+                    // persist line into execution feed
+                    try {
+                        let entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
+                        if (!entry) {
+                            entry = {
+                                node_id: node.id,
+                                node_name: node.name,
+                                started_at: new Date().toISOString(),
+                                finished_at: null,
+                                success: null,
+                                lines: []
+                            };
+                            this.executionFeed.push(entry);
+                        }
+                        entry.lines.push({ text: line, ts: new Date().toISOString() });
+                    } catch (_) {}
+
+                    const list = document.getElementById('run_feed_list');
+                    if (list) {
+                        // reuse or create a current running item for this node
+                        const runningId = `run_feed_running_${node.id}`;
+                        let item = document.getElementById(runningId);
+                        if (!item) {
+                            item = document.createElement('div');
+                            item.id = runningId;
+                            item.className = 'run_feed_item';
+                            const title = document.createElement('div');
+                            title.className = 'run_feed_item_title';
+                            title.textContent = node.name;
+                            const outCol = document.createElement('div');
+                            outCol.className = 'run_feed_output';
+                            const metaCol = document.createElement('div');
+                            metaCol.className = 'run_feed_meta';
+                            metaCol.textContent = 'running...';
+                            item.appendChild(title);
+                            item.appendChild(outCol);
+                            item.appendChild(metaCol);
+                            list.appendChild(item);
+                        }
+                        const outCol = item.children[1];
+                        if (outCol) {
+                            const lineDiv = document.createElement('div');
+                            lineDiv.className = 'run_feed_line';
+                            lineDiv.textContent = line;
+                            outCol.appendChild(lineDiv);
+                            list.scrollTop = list.scrollHeight;
+                        }
+                    }
+                } catch (_) {}
+            };
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+
+                // process sse-like chunks
+                let idx;
+                while ((idx = buffer.indexOf('\n\n')) !== -1) {
+                    const chunk = buffer.slice(0, idx).trimEnd();
+                    buffer = buffer.slice(idx + 2);
+                    if (!chunk) continue;
+                    const lines = chunk.split('\n');
+                    let eventType = 'message';
+                    let dataLines = [];
+                    for (const l of lines) {
+                        if (l.startsWith('event:')) {
+                            eventType = l.slice(6).trim();
+                        } else if (l.startsWith('data:')) {
+                            dataLines.push(l.slice(5).trim());
+                        }
+                    }
+                    const data = dataLines.join('\n');
+                    if (eventType === 'stdout') {
+                        appendConsole(data);
+                    } else if (eventType === 'result') {
+                        try {
+                            finalResult = JSON.parse(data);
+                        } catch (_) {
+                            finalResult = { success: false, error: 'invalid result payload' };
+                        }
+                        // finalize the running feed item state
+                        try {
+                            const runningId = `run_feed_running_${node.id}`;
+                            const item = document.getElementById(runningId);
+                            if (item) {
+                                item.classList.add(finalResult.success ? 'success' : 'error');
+                                // keep id so we can reuse if the same node is run again in the same session; but we want to start a new group next time
+                                // we will remove id right before creating a new running item for this node next time
+                                const metaCol = item.children[2];
+                                if (metaCol) metaCol.textContent = new Date().toLocaleTimeString();
+                            }
+                            // finalize feed entry data
+                            try {
+                                const entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
+                                if (entry) {
+                                    entry.finished_at = new Date().toISOString();
+                                    entry.success = !!finalResult.success;
+                                    // if there was non-streamed output appended at the end by the wrapper, ensure it's included
+                                    const tail = (finalResult && finalResult.output) ? String(finalResult.output) : '';
+                                    if (tail) {
+                                        const tailLines = tail.split(/\r?\n/).filter(Boolean);
+                                        // avoid duplicating if same last line already exists
+                                        const lastText = entry.lines.length ? entry.lines[entry.lines.length - 1].text : null;
+                                        tailLines.forEach(tl => {
+                                            if (tl !== lastText) {
+                                                entry.lines.push({ text: tl, ts: new Date().toISOString() });
+                                            }
+                                        });
+                                    }
+                                }
+                            } catch (_) {}
+                        } catch (_) {}
+                    }
+                }
+            }
+
+            // ensure we have a result
+            if (!finalResult) {
+                finalResult = { success: false, error: 'no result received' };
+            }
+            return finalResult;
         } catch (error) {
             if (error.name === 'AbortError') {
-                return {
-                    success: false,
-                    error: 'execution was cancelled by user'
-                };
+                return { success: false, error: 'execution was cancelled by user' };
             }
-            return {
-                success: false,
-                error: `network error: ${error.message}`
-            };
+            return { success: false, error: `network error: ${error.message}` };
         }
     }
 

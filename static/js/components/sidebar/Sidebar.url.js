@@ -9,6 +9,7 @@
             if (flowchartExists) {
                 await this.state.save(true);
                 this.state.storage.setCurrentFlowchart(flowchartName);
+                this.urlManager.setLastAccessedFlowchart(flowchartName);
                 const result = await this.state.load();
                 if (result.success) {
                     this.setCurrentFlowchart(displayName || flowchartName.replace('.json',''));

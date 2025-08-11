@@ -32,6 +32,27 @@
         </div>
     </div>
 
+    <!-- create flowchart modal (data matrix page) -->
+    <div class="modal_overlay" id="create_flowchart_modal">
+        <div class="modal_content">
+            <div class="modal_header">
+                <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
+                <button class="modal_close" id="close_create_modal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="form_group">
+                <label class="form_label" for="new_flowchart_name">flowchart name</label>
+                <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
+                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">use letters, numbers, spaces, hyphens, and underscores only</div>
+            </div>
+            <div class="modal_actions">
+                <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
+                <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     (async function(){
         // small helpers (keep comments in lower case to match project convention)
@@ -104,8 +125,8 @@
         // wire sidebar navigation to preserve flowchart across pages
         function withFlowchart(href){
             const u = new URL(href, window.location.origin);
-            // builder pages use ?flowchart=display and ?mode=...
-            if (u.pathname === '/' || u.pathname === '/scripts') {
+            // builder pages + dashboard use ?flowchart=display and ?mode=...
+            if (u.pathname === '/' || u.pathname === '/scripts' || u.pathname === '/dashboard') {
                 if (flowDisplay && flowDisplay !== 'default') u.searchParams.set('flowchart', flowDisplay); else u.searchParams.delete('flowchart');
                 if (!u.searchParams.get('mode')) u.searchParams.set('mode', modeParam || 'build');
             }
@@ -148,6 +169,11 @@
         const selector = document.getElementById('flowchart_selector');
         const dropdown = document.getElementById('flowchart_dropdown');
         const createBtn = document.getElementById('create_flowchart_btn');
+        const createModal = document.getElementById('create_flowchart_modal');
+        const closeCreateModal = document.getElementById('close_create_modal');
+        const cancelCreate = document.getElementById('cancel_create_flowchart');
+        const confirmCreate = document.getElementById('confirm_create_flowchart');
+        const newFlowchartNameInput = document.getElementById('new_flowchart_name');
 
         async function fetchFlowcharts(){
             try {
@@ -188,6 +214,7 @@
                     url.searchParams.set('flowchart_name', item.dataset.filename);
                     // preserve mode for consistency in nav
                     url.searchParams.set('mode', modeParam || 'build');
+                    try { localStorage.setItem('last_accessed_flowchart', item.dataset.filename); } catch(_) {}
                     window.location.href = url.pathname + '?' + url.searchParams.toString();
                 });
             });
@@ -240,8 +267,40 @@
             fetchFlowcharts();
         }
 
-        // create flowchart from data matrix: redirect to builder and open modal
-        if (createBtn) createBtn.onclick = (e) => { e.preventDefault(); const u = new URL('/', window.location.origin); if (flowDisplay && flowDisplay !== 'default') u.searchParams.set('flowchart', flowDisplay); u.searchParams.set('mode','build'); u.searchParams.set('openCreateFlowchart','1'); window.location.href = u.pathname + '?' + u.searchParams.toString(); };
+        // create flowchart from data matrix: open local modal, do not navigate
+        if (createBtn) {
+            createBtn.onclick = (e) => {
+                e.preventDefault();
+                if (createModal) createModal.classList.add('show');
+                if (newFlowchartNameInput) { newFlowchartNameInput.value = ''; newFlowchartNameInput.focus(); }
+            };
+        }
+        if (closeCreateModal) closeCreateModal.onclick = () => { if (createModal) createModal.classList.remove('show'); };
+        if (cancelCreate) cancelCreate.onclick = () => { if (createModal) createModal.classList.remove('show'); };
+        if (createModal) createModal.addEventListener('click', (e) => { if (e.target === createModal) createModal.classList.remove('show'); });
+            if (confirmCreate) {
+            confirmCreate.onclick = async () => {
+                const rawName = (newFlowchartNameInput && newFlowchartNameInput.value ? newFlowchartNameInput.value : '').trim();
+                if (!rawName) { alert('flowchart name is required'); return; }
+                try {
+                    const resp = await fetch('/api/flowcharts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: rawName })});
+                    const data = await resp.json();
+                    if (data.status === 'success') {
+                        if (createModal) createModal.classList.remove('show');
+                        await fetchFlowcharts();
+                        if (selector) selector.value = data.flowchart.name;
+                        // update url to reflect new selection on data page
+                        const u = new URL(window.location.href);
+                        u.searchParams.set('flowchart_name', data.flowchart.filename);
+                            try { localStorage.setItem('last_accessed_flowchart', data.flowchart.filename); } catch(_) {}
+                        window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
+                    } else {
+                        alert(data.message || 'failed to create flowchart');
+                    }
+                } catch(_) { alert('error creating flowchart'); }
+            };
+            if (newFlowchartNameInput) newFlowchartNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmCreate.click(); });
+        }
 
         // fetch latest history for current flowchart
         try { console.log('[dm] fetching history for', flowFilename); } catch(_) {}

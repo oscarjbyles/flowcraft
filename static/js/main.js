@@ -98,11 +98,30 @@
         initializeApp();
     }
 
-    // handle page unload
-    window.addEventListener('beforeunload', () => {
-        if (window.flowchartApp) {
-            window.flowchartApp.destroy();
+    // handle page lifecycle to avoid losing recent edits on quick exit
+    function handleExit() {
+        try {
+            const app = window.flowchartApp;
+            if (app && app.state && typeof app.state.flushPendingSavesOnExit === 'function') {
+                app.state.flushPendingSavesOnExit();
+            }
+        } catch (_) {}
+        try {
+            if (window.flowchartApp) {
+                window.flowchartApp.destroy();
+            }
+        } catch (_) {}
+    }
+
+    // use pagehide (fires on bfcache and normal navigations)
+    window.addEventListener('pagehide', handleExit, { capture: true });
+    // fallback for some browsers
+    window.addEventListener('beforeunload', handleExit, { capture: true });
+    // ensure backgrounding also triggers a flush
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            handleExit();
         }
-    });
+    }, { capture: true });
 
 })();

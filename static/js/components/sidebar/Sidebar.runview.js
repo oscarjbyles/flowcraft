@@ -61,8 +61,6 @@
         if (selection.nodes.length === 1) {
             if (executionStatusGroup) executionStatusGroup.style.display = '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
-            if (nodeInputGroup) nodeInputGroup.style.display = '';
-            if (nodeOutputGroup) nodeOutputGroup.style.display = '';
             if (consoleGroup) consoleGroup.style.display = '';
             if (dataSaveGroup) dataSaveGroup.style.display = 'none';
             if (failureInfo) failureInfo.style.display = 'none';
@@ -75,6 +73,13 @@
                     } else {
                         progressGroup.style.display = '';
                     }
+                }
+                if (node.type === 'python_file') {
+                    if (nodeInputGroup) nodeInputGroup.style.display = 'none';
+                    if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
+                } else {
+                    if (nodeInputGroup) nodeInputGroup.style.display = '';
+                    if (nodeOutputGroup) nodeOutputGroup.style.display = '';
                 }
                 this.displayNodeFileInfo(node, nodeFileContent);
                 const executionResult = window.flowchartApp?.nodeExecutionResults?.get(nodeId);

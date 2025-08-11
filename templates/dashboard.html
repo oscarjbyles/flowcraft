@@ -14,9 +14,11 @@
     <style>
         /* dashboard layout */
         .dashboard_container { flex: 1; display:flex; flex-direction: column; padding: 16px; gap: 16px; }
-        .dash_row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .dash_card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
-        .dash_title { font-size: 1rem; font-weight: 600; opacity: 0.9; margin-bottom: 10px; }
+        .dash_row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+        .dash_columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+        .dash_col_left, .dash_col_right { display: flex; flex-direction: column; gap: 16px; }
+        .dash_card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; height: fit-content; min-height: 0; }
+        .dash_title { font-size: 1rem; font-weight: 600; opacity: 0.9; margin-bottom: 10px; text-transform: capitalize; }
         .dash_text { opacity: 0.85; }
         .kpi_grid { display:grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }
         .kpi_card { background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; display:flex; flex-direction:column; gap:8px; }
@@ -46,26 +48,19 @@
         .grow { flex:1; }
         .right { text-align:right; }
         @media (max-width: 1200px) { .kpi_grid { grid-template-columns: repeat(3, 1fr);} }
-        @media (max-width: 780px) { .dash_row { grid-template-columns: 1fr; } .kpi_grid{ grid-template-columns: repeat(2, 1fr);} }
+        @media (max-width: 780px) { .dash_columns { grid-template-columns: 1fr; } .kpi_grid{ grid-template-columns: repeat(2, 1fr);} }
     </style>
+    <script src="/static/js/utils/URLManager.js"></script>
     <script>
         // keep nav behavior consistent; preserve flowchart context when available
         document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
-            const mode_param = params.get('mode') || 'build';
-            const flow_name_param = params.get('flowchart');
+            const urlMgr = new URLManager();
+            const mode_param = urlMgr.getMode();
+            const flow_name_param = urlMgr.getFlowchartDisplayNamePreferred();
 
             function with_flowchart(href){
-                const u = new URL(href, window.location.origin);
-                if (u.pathname === '/' || u.pathname === '/scripts') {
-                    if (flow_name_param) u.searchParams.set('flowchart', flow_name_param);
-                    if (!u.searchParams.get('mode')) u.searchParams.set('mode', mode_param);
-                }
-                if (u.pathname === '/data') {
-                    const file_param = params.get('flowchart_name') || (flow_name_param ? `${flow_name_param}.json` : 'default.json');
-                    u.searchParams.set('flowchart_name', file_param);
-                }
-                return u.pathname + (u.search ? u.search : '');
+                return urlMgr.buildUrlPreserveContext(href);
             }
 
             const map = new Map([
@@ -86,8 +81,8 @@
 
             async function init_dashboard(){
                 // compute flow context compatible with other pages
-                const flow_display = flow_name_param || (params.get('flowchart_name') ? params.get('flowchart_name').replace(/\.json$/i, '') : 'default');
-                const flow_filename = (params.get('flowchart_name') || `${flow_display}.json`);
+                const flow_display = urlMgr.getFlowchartDisplayNamePreferred();
+                const flow_filename = urlMgr.getFlowchartFilenameFromURL();
 
                 // dom refs
                 const el_total_exec = document.getElementById('kpi_total_exec');
@@ -99,7 +94,6 @@
                 const el_dist = document.getElementById('distribution_bars');
                 const el_recent_body = document.getElementById('recent_tbody');
                 const el_failure_block = document.getElementById('failure_block');
-                const el_editors = document.getElementById('editors_list');
                 const el_links_build = document.getElementById('link_build');
                 const el_links_run = document.getElementById('link_run');
                 const el_links_scripts = document.getElementById('link_scripts');
@@ -112,27 +106,28 @@
                 if (el_links_scripts) el_links_scripts.onclick = () => window.location.href = with_flowchart('/scripts');
                 if (el_links_data) el_links_data.onclick = () => window.location.href = with_flowchart('/data');
 
-                // fetch in parallel
-                let flow_resp, files_resp, hist_resp, editors_resp;
+                // fetch in parallel (history api removed; we rely on embedded executions in flow json)
+                let flow_resp, files_resp, editors_resp;
                 try {
-                    [flow_resp, files_resp, hist_resp, editors_resp] = await Promise.all([
+                    [flow_resp, files_resp, editors_resp] = await Promise.all([
                         fetch(`/api/flowchart?name=${encodeURIComponent(flow_display)}`),
                         fetch('/api/python-files'),
-                        fetch(`/api/history?flowchart_name=${encodeURIComponent(flow_filename)}`),
                         fetch('/api/editors')
                     ]);
                 } catch (e) {
                     // basic network failure handling
                 }
 
-                let flow = { nodes: [], links: [] };
+                let flow = { nodes: [], links: [], executions: [] };
                 let py_files = [];
-                let history = [];
                 let editors = [];
                 try { flow = await flow_resp.json(); } catch(_) {}
                 try { const f = await files_resp.json(); if (f && f.status === 'success') py_files = f.files || []; } catch(_) {}
-                try { const h = await hist_resp.json(); if (h && h.status === 'success') history = h.history || []; } catch(_) {}
                 try { const ed = await editors_resp.json(); if (ed && ed.status === 'success') editors = ed.editors || []; } catch(_) {}
+
+                // always use compact execution summaries embedded in the flow json for dashboard kpis
+                let history = [];
+                try { history = Array.isArray(flow.executions) ? flow.executions : []; } catch(_) { history = []; }
 
                 // compute coverage + missing/orphan
                 const total_nodes = Array.isArray(flow.nodes) ? flow.nodes.length : 0;
@@ -145,8 +140,12 @@
                 };
                 const file_set = new Set((py_files || []).map(f => String(f.path).replace(/\\\\/g, '/')));
                 const missing_nodes = nodes_with_files.filter(n => !file_set.has(norm(n.pythonFile)));
-                const used_files = new Set(nodes_with_files.map(n => norm(n.pythonFile)));
-                const orphaned = (py_files || []).filter(f => !used_files.has(String(f.path).replace(/\\\\/g, '/')));
+                // orphaned nodes: nodes that have no incoming or outgoing links (excluding utility nodes)
+                const utility_types = new Set(['input_node', 'data_save']);
+                const candidate_nodes = (flow.nodes || []).filter(n => n && !utility_types.has(n.type));
+                const linked_node_ids = new Set();
+                (flow.links || []).forEach(l => { if (l && l.source != null) linked_node_ids.add(l.source); if (l && l.target != null) linked_node_ids.add(l.target); });
+                const orphaned_nodes = candidate_nodes.filter(n => !linked_node_ids.has(n.id));
 
                 // quick stats
                 const total_exec = history.length;
@@ -166,15 +165,72 @@
                 if (el_avg_time) el_avg_time.textContent = fmt_elapsed(avg_elapsed_ms);
                 if (el_nodes_cov) el_nodes_cov.textContent = `${nodes_with_files_count}/${total_nodes}`;
                 if (el_missing) el_missing.textContent = String(missing_nodes.length);
-                if (el_orphan) el_orphan.textContent = String(orphaned.length);
+                if (el_orphan) el_orphan.textContent = String(orphaned_nodes.length);
 
-                // editors list
-                if (el_editors) {
-                    if (!editors.length) {
-                        el_editors.innerHTML = '<div class="muted">no editors detected</div>';
-                    } else {
-                        el_editors.innerHTML = editors.slice(0,5).map(e => `<div class="muted">${e.name}</div>`).join('');
+                // default editor chooser (same behavior as settings page)
+                const el_def_input = document.getElementById('default_editor_input');
+                const el_def_dropdown = document.getElementById('default_editor_dropdown');
+                if (el_def_input && el_def_dropdown) {
+                    // load saved preference from localstorage
+                    try {
+                        const saved = localStorage.getItem('flowcraft_default_editor');
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            el_def_input.value = parsed.name || parsed.path || 'custom editor';
+                            el_def_input.dataset.path = parsed.path || '';
+                        }
+                    } catch(_) {}
+
+                    // render dropdown items
+                    function renderEditorsDropdown(editorsList){
+                        if (!Array.isArray(editorsList) || editorsList.length === 0) {
+                            el_def_dropdown.innerHTML = '<div class="dropdown_no_results">no editors found</div>';
+                            return;
+                        }
+                        el_def_dropdown.innerHTML = editorsList.map(ed => `
+                            <div class="dropdown_item" data-name="${ed.name}" data-path="${ed.path}">
+                                <div class="dropdown_item_content">
+                                    <div class="dropdown_item_name">${ed.name}</div>
+                                    <div class="dropdown_item_meta" style="opacity:.7; font-size:.75rem;">${ed.path}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                        el_def_dropdown.querySelectorAll('.dropdown_item').forEach(item => {
+                            item.addEventListener('click', () => {
+                                const editor = { name: item.dataset.name, path: item.dataset.path };
+                                el_def_input.value = editor.name;
+                                el_def_input.dataset.path = editor.path || '';
+                                localStorage.setItem('flowcraft_default_editor', JSON.stringify(editor));
+                                el_def_dropdown.classList.remove('show');
+                            });
+                        });
                     }
+
+                    if (Array.isArray(editors) && editors.length) {
+                        renderEditorsDropdown(editors);
+                    } else {
+                        // fallback fetch if initial editors load failed
+                        try {
+                            const resp = await fetch('/api/editors');
+                            const data = await resp.json();
+                            if (data && data.status === 'success') renderEditorsDropdown(data.editors);
+                            else el_def_dropdown.innerHTML = '<div class="dropdown_no_results">failed to detect editors</div>';
+                        } catch(_) {
+                            el_def_dropdown.innerHTML = '<div class="dropdown_no_results">error detecting editors</div>';
+                        }
+                    }
+
+                    // open/close behavior
+                    el_def_input.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        el_def_dropdown.classList.toggle('show');
+                    });
+                    document.addEventListener('click', (e) => {
+                        const container = el_def_input.closest('.dropdown_container');
+                        if (container && !container.contains(e.target)) {
+                            el_def_dropdown.classList.remove('show');
+                        }
+                    });
                 }
 
                 // execution distribution (last 10 success %)
@@ -314,61 +370,79 @@
                             <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">warning</span> nodes pointing to missing paths</div>
                         </div>
                         <div class="kpi_card">
-                            <div class="kpi_title">orphaned scripts</div>
+                            <div class="kpi_title">orphaned nodes</div>
                             <div class="kpi_value" id="kpi_orphan">0</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">description</span> not used by any node</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">device_hub</span> nodes with no links</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- distribution + actions row -->
-                <div class="dash_row">
-                    <div class="dash_card">
-                        <div class="dash_title">execution distribution</div>
-                        <div id="distribution_bars" class="chart_bar_row"></div>
-                        <div class="muted" style="margin-top:8px;">last runs (older on left)</div>
-                    </div>
-                    <div class="dash_card">
-                        <div class="dash_title">quick actions</div>
-                        <div class="btn_row">
-                            <button id="link_build" class="mini_btn"><span class="material-icons" style="font-size:16px;">build</span> build</button>
-                            <button id="link_run" class="mini_btn"><span class="material-icons" style="font-size:16px;">play_arrow</span> run</button>
-                            <button id="link_scripts" class="mini_btn"><span class="material-icons" style="font-size:16px;">code</span> scripts</button>
-                            <button id="link_data" class="mini_btn"><span class="material-icons" style="font-size:16px;">table_chart</span> data matrix</button>
-                            <div class="grow"></div>
-                            <button id="btn_clear_history" class="mini_btn" style="background: rgba(244, 67, 54, 0.12); color:#f44336; border:none;"><span class="material-icons" style="font-size:16px;">delete</span> clear history</button>
+                <div class="dash_columns">
+                    <div class="dash_col_left">
+                        <!-- recent executions -->
+                        <div class="dash_card">
+                            <div class="dash_title">recent executions</div>
+                            <div class="table_wrap">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>status</th>
+                                            <th>nodes</th>
+                                            <th>success %</th>
+                                            <th>elapsed</th>
+                                            <th class="right">actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent_tbody">
+                                        <tr><td colspan="5" class="muted" style="text-align:center; padding:14px;">loading...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div style="margin-top:14px;">
-                            <div class="dash_title" style="margin-bottom:6px;">editors</div>
-                            <div id="editors_list" class="flex_col gap8"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- recent executions + failures -->
-                <div class="dash_row">
-                    <div class="dash_card">
-                        <div class="dash_title">recent executions</div>
-                        <div class="table_wrap">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>status</th>
-                                        <th>nodes</th>
-                                        <th>success %</th>
-                                        <th>elapsed</th>
-                                        <th class="right">actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent_tbody">
-                                    <tr><td colspan="5" class="muted" style="text-align:center; padding:14px;">loading...</td></tr>
-                                </tbody>
-                            </table>
+                        <!-- execution distribution -->
+                        <div class="dash_card">
+                            <div class="dash_title">execution distribution</div>
+                            <div id="distribution_bars" class="chart_bar_row"></div>
+                            <div class="muted" style="margin-top:8px;">last runs (older on left)</div>
                         </div>
                     </div>
-                    <div class="dash_card">
-                        <div class="dash_title">failure spotlight</div>
-                        <div id="failure_block"></div>
+
+                    <div class="dash_col_right">
+                        <!-- quick actions -->
+                        <div class="dash_card">
+                            <div class="dash_title">quick actions</div>
+                            <div class="btn_row">
+                                <button id="link_build" class="mini_btn"><span class="material-icons" style="font-size:16px;">build</span> Build</button>
+                                <button id="link_run" class="mini_btn"><span class="material-icons" style="font-size:16px;">play_arrow</span> Run</button>
+                                <button id="link_scripts" class="mini_btn"><span class="material-icons" style="font-size:16px;">code</span> Scripts</button>
+                                <button id="link_data" class="mini_btn"><span class="material-icons" style="font-size:16px;">table_chart</span> Data Matrix</button>
+                                <div class="grow"></div>
+                                <button id="btn_clear_history" class="mini_btn" style="background: rgba(244, 67, 54, 0.12); color:#f44336; border:none;"><span class="material-icons" style="font-size:16px;">delete</span> Clear History</button>
+                            </div>
+                        </div>
+
+                        <!-- choose default editor -->
+                        <div class="dash_card">
+                            <div class="dash_title">choose default editor</div>
+                            <div class="form_group">
+                                <label class="form_label">default editor</label>
+                                <div class="dropdown_container">
+                                    <input type="text" id="default_editor_input" class="form_input dropdown_input" placeholder="detecting installed editors..." readonly>
+                                    <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                                    <div class="dropdown_menu" id="default_editor_dropdown">
+                                        <div class="dropdown_loading">scanning editors...</div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">used when opening files from the app</div>
+                            </div>
+                        </div>
+
+                        <!-- failure spotlight -->
+                        <div class="dash_card">
+                            <div class="dash_title">failure spotlight</div>
+                            <div id="failure_block"></div>
+                        </div>
                     </div>
                 </div>
 

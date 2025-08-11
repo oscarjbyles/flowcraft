@@ -1,0 +1,115 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754947169232.756,
+      "name": "node 1",
+      "pythonFile": "nodes/dash_test/node1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 53.42086410522461,
+      "y": -913.5538940429688
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754947169509.6736,
+      "name": "node2",
+      "pythonFile": "nodes/dash_test/node2.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 53.42086410522461,
+      "y": -715.8539428710938
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 15,
+          "name": "argument1",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754947537905.6792,
+      "name": "argument1",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 85.69999694824219,
+      "x": 326.7510131722368,
+      "y": -703.912438576212
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 15,
+          "name": "random_strings",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754947539125.4895,
+      "name": "random_strings",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 115.0999984741211,
+      "x": 240.50607903342126,
+      "y": -587.1500662036618
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754947542965.7744,
+      "name": "hello",
+      "pythonFile": "nodes/dash_test/error_creator.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -88.5515604019165,
+      "y": -547.3447265625
+    }
+  ],
+  "links": [
+    {
+      "source": 1754947169232.756,
+      "target": 1754947169509.6736
+    },
+    {
+      "selectable": false,
+      "source": 1754947169509.6736,
+      "style": "dashed",
+      "target": 1754947537905.6792
+    },
+    {
+      "selectable": false,
+      "source": 1754947169509.6736,
+      "style": "dashed",
+      "target": 1754947539125.4895
+    },
+    {
+      "source": 1754947169509.6736,
+      "target": 1754947542965.7744
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "executions": [
+    {
+      "execution_id": "b766df72-92db-42e0-80e2-63a703000864",
+      "timestamp": "2025-08-11T23:17:33.754537",
+      "flowchart_name": "dash_test",
+      "status": "success",
+      "total_nodes": 3,
+      "successful_nodes": 3,
+      "completed_nodes": 3,
+      "success_percentage": 100.0,
+      "completed_percentage": 100.0,
+      "failed_node": null,
+      "elapsed_ms": 9405,
+      "execution_time": "9.40s"
+    }
+  ]
+}

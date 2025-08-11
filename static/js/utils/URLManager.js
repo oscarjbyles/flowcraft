@@ -9,6 +9,18 @@ class URLManager {
             const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
             window.history.replaceState(null, '', newURL);
         }
+
+        // if a flowchart reference exists in one form, normalize localstorage for consistency
+        try {
+            const flowParam = this.params.get('flowchart');
+            const flowFileParam = this.params.get('flowchart_name');
+            if (flowFileParam) {
+                // prefer filename as-is
+                localStorage.setItem('last_accessed_flowchart', flowFileParam);
+            } else if (flowParam) {
+                localStorage.setItem('last_accessed_flowchart', `${flowParam}.json`);
+            }
+        } catch (_) {}
     }
 
     /**
@@ -50,6 +62,72 @@ class URLManager {
         window.history.pushState({ flowchart: displayName }, '', newURL);
         
         console.log(`[URLManager] Updated URL to flowchart: ${displayName}`);
+    }
+
+    /**
+     * get current mode (always defined)
+     */
+    getMode() {
+        return this.params.get('mode') || 'build';
+    }
+
+    /**
+     * get flowchart filename from url using either 'flowchart_name' (filename) or 'flowchart' (display)
+     * falls back to localstorage and finally to 'default.json'
+     */
+    getFlowchartFilenameFromURL() {
+        const fromFile = this.params.get('flowchart_name');
+        if (fromFile) return fromFile;
+        const fromDisplay = this.params.get('flowchart');
+        if (fromDisplay) return `${fromDisplay}.json`;
+        try {
+            const last = localStorage.getItem('last_accessed_flowchart');
+            if (last) return last;
+        } catch (_) {}
+        return 'default.json';
+    }
+
+    /**
+     * get flowchart display name (without .json). derives from url or localstorage
+     */
+    getFlowchartDisplayNamePreferred() {
+        const fromDisplay = this.params.get('flowchart');
+        if (fromDisplay) return fromDisplay;
+        const fromFile = this.params.get('flowchart_name');
+        if (fromFile) return fromFile.replace(/\.json$/i, '');
+        try {
+            const last = localStorage.getItem('last_accessed_flowchart');
+            if (last) return last.replace(/\.json$/i, '');
+        } catch (_) {}
+        return 'default';
+    }
+
+    /**
+     * persist last accessed filename to localstorage
+     */
+    setLastAccessedFlowchart(filename) {
+        try { localStorage.setItem('last_accessed_flowchart', filename); } catch (_) {}
+    }
+
+    /**
+     * build a url for the given path, preserving flowchart context and mode consistently across pages.
+     * - dashboard, index and scripts use ?flowchart=display
+     * - data matrix uses ?flowchart_name=filename
+     */
+    buildUrlPreserveContext(path, overrides = {}) {
+        const url = new URL(path, window.location.origin);
+        const mode = overrides.mode || this.getMode();
+        const display = overrides.display || this.getFlowchartDisplayNamePreferred();
+        const filename = overrides.filename || this.getFlowchartFilenameFromURL();
+
+        if (url.pathname === '/data') {
+            url.searchParams.set('flowchart_name', filename);
+        } else if (url.pathname === '/' || url.pathname === '/scripts' || url.pathname === '/dashboard') {
+            if (display && display !== 'default') url.searchParams.set('flowchart', display);
+        }
+        // always include mode for consistency
+        if (!url.searchParams.get('mode')) url.searchParams.set('mode', mode);
+        return url.pathname + (url.search ? url.search : '');
     }
 
     /**

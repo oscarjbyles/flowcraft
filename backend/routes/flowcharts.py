@@ -22,8 +22,15 @@ def get_flowchart():
 def save_flowchart_data():
     data = request.json
     flowchart_name = request.json.get('flowchart_name', DEFAULT_FLOWCHART)
-    flowchart_data = {k: v for k, v in data.items() if k != 'flowchart_name'}
-    save_flowchart(flowchart_data, flowchart_name)
+    incoming = {k: v for k, v in data.items() if k != 'flowchart_name'}
+    # preserve executions array if client doesn't send it, to avoid wiping dashboard summaries
+    try:
+        existing = load_flowchart(flowchart_name)
+    except Exception:
+        existing = {}
+    if 'executions' not in incoming and isinstance(existing, dict) and isinstance(existing.get('executions'), list):
+        incoming['executions'] = existing.get('executions')
+    save_flowchart(incoming, flowchart_name)
     return jsonify({"status": "success"})
 
 
@@ -64,7 +71,7 @@ def create_flowchart():
     if os.path.exists(flowchart_path):
         return jsonify({"status": "error", "message": "flowchart already exists"}), 409
     try:
-        empty_flowchart = {"nodes": [], "links": [], "groups": []}
+        empty_flowchart = {"nodes": [], "links": [], "groups": [], "executions": []}
         save_flowchart(empty_flowchart, flowchart_name + '.json')
         return jsonify({"status": "success", "message": f"created flowchart: {flowchart_name}", "flowchart": {"name": flowchart_name, "filename": flowchart_name + '.json'}})
     except Exception as e:

@@ -54,6 +54,33 @@ class StateManager extends EventEmitter {
         this.magnetPairs = new Map(); // key: nodeId -> partnerId
     }
 
+    /**
+     * return a plain object representing current flowchart state for persistence
+     */
+    getSerializableData() {
+        return {
+            nodes: this.nodes,
+            links: this.links,
+            groups: this.groups,
+            annotations: this.annotations
+        };
+    }
+
+    /**
+     * flush any pending autosave immediately and try to persist using exit-safe transport
+     */
+    flushPendingSavesOnExit() {
+        try {
+            if (this.autosaveTimer) {
+                clearTimeout(this.autosaveTimer);
+                this.autosaveTimer = null;
+            }
+            const data = this.getSerializableData();
+            // best-effort; do not await
+            this.storage.saveOnExit(data);
+        } catch (_) {}
+    }
+
     // node management
     addNode(nodeData) {
         const node = {

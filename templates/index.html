@@ -35,6 +35,9 @@
                     <span class="material-icons">brush</span>
                     Clear
                 </button>
+                <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties">
+                    <span class="material-icons">chevron_right</span>
+                </button>
             </div>
             
             <!-- floating toolbars -->
@@ -130,6 +133,24 @@
             </div>
 
             {% include 'partials/status_bar.html' %}
+
+            <!-- run mode live feed bar -->
+            <div class="run_feed_bar" id="run_feed_bar" style="display: none;">
+                <div class="run_feed_header">
+                    <span class="material-icons">dynamic_feed</span>
+                    <span class="run_feed_title">live execution feed</span>
+                    <div style="flex:1"></div>
+                    <button class="btn btn_secondary" id="run_feed_up_btn" title="expand to full screen" style="text-transform: lowercase; margin-right: 4px;">
+                        <span class="material-icons">expand_less</span>
+                        up
+                    </button>
+                    <button class="btn btn_secondary" id="run_feed_down_btn" title="hide feed" style="text-transform: lowercase;">
+                        <span class="material-icons">expand_more</span>
+                        down
+                    </button>
+                </div>
+                <div class="run_feed_list" id="run_feed_list"></div>
+            </div>
         </div>
     </div>
 

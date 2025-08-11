@@ -1,0 +1,232 @@
+{
+  "execution_id": "e4790381-b7b9-4704-8d55-6cd00ca2fb91",
+  "timestamp": "2025-08-11T23:06:48.604699",
+  "flowchart_name": "dash_test",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1754947169232.756,
+      1754947169509.6736,
+      1754947542965.7744
+    ],
+    "results": [
+      {
+        "node_id": 1754947169232.756,
+        "node_name": "node 1",
+        "python_file": "nodes/dash_test/node1.py",
+        "success": true,
+        "output": "generated random number: 2.4030510707110735",
+        "error": null,
+        "runtime": 2561,
+        "timestamp": "23:06:42",
+        "return_value": 2.4030510707110735,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947169509.6736,
+        "node_name": "node2",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "bF3v322oaJ\nvD1xDbbe1n\nL4MOCXO4Tc\n9BWMucPa1m\nZPg4HkhBNC\nBhfQ1Dq7ju",
+        "error": null,
+        "runtime": 6147,
+        "timestamp": "23:06:48",
+        "return_value": [
+          1,
+          [
+            "bF3v322oaJ",
+            "vD1xDbbe1n",
+            "L4MOCXO4Tc",
+            "9BWMucPa1m",
+            "ZPg4HkhBNC",
+            "BhfQ1Dq7ju"
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947542965.7744,
+        "node_name": "hello",
+        "python_file": "nodes/dash_test/error_creator.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 126,
+        "timestamp": "23:06:48",
+        "return_value": [
+          1,
+          [
+            "bF3v322oaJ",
+            "vD1xDbbe1n",
+            "L4MOCXO4Tc",
+            "9BWMucPa1m",
+            "ZPg4HkhBNC",
+            "BhfQ1Dq7ju"
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947537905.6792,
+        "node_name": "argument1",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "23:06:48",
+        "return_value": {
+          "argument1": 1
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "argument1",
+          "variable_name": "argument1"
+        }
+      },
+      {
+        "node_id": 1754947539125.4895,
+        "node_name": "random_strings",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "23:06:48",
+        "return_value": {
+          "random_strings": [
+            "bF3v322oaJ",
+            "vD1xDbbe1n",
+            "L4MOCXO4Tc",
+            "9BWMucPa1m",
+            "ZPg4HkhBNC",
+            "BhfQ1Dq7ju"
+          ]
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "random_strings",
+          "variable_name": "random_strings"
+        }
+      }
+    ],
+    "data_saves": [
+      {
+        "node_name": "argument1",
+        "variable_name": "argument1",
+        "variable_content": [
+          "integer",
+          1
+        ]
+      },
+      {
+        "node_name": "random_strings",
+        "variable_name": "random_strings",
+        "variable_content": [
+          "array",
+          [
+            "bF3v322oaJ",
+            "vD1xDbbe1n",
+            "L4MOCXO4Tc",
+            "9BWMucPa1m",
+            "ZPg4HkhBNC",
+            "BhfQ1Dq7ju"
+          ]
+        ]
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 3,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754947169232.756,
+          "name": "node 1",
+          "x": 53.42086410522461,
+          "y": -913.5538940429688,
+          "pythonFile": "nodes/dash_test/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754947169509.6736,
+          "name": "node2",
+          "x": 53.42086410522461,
+          "y": -715.8539428710938,
+          "pythonFile": "nodes/dash_test/node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754947537905.6792,
+          "name": "argument1",
+          "x": 326.7510131722368,
+          "y": -703.912438576212,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 15,
+              "name": "argument1",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754947539125.4895,
+          "name": "random_strings",
+          "x": 240.50607903342126,
+          "y": -587.1500662036618,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 15,
+              "name": "random_strings",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754947542965.7744,
+          "name": "hello",
+          "x": -88.5515604019165,
+          "y": -547.3447265625,
+          "pythonFile": "nodes/dash_test/error_creator.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754947169232.756,
+          "target": 1754947169509.6736
+        },
+        {
+          "selectable": false,
+          "source": 1754947169509.6736,
+          "style": "dashed",
+          "target": 1754947537905.6792
+        },
+        {
+          "selectable": false,
+          "source": 1754947169509.6736,
+          "style": "dashed",
+          "target": 1754947539125.4895
+        },
+        {
+          "source": 1754947169509.6736,
+          "target": 1754947542965.7744
+        }
+      ],
+      "groups": []
+    }
+  }
+}

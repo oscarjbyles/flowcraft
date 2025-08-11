@@ -3,7 +3,9 @@
     if (!window.Sidebar) return;
 
     Sidebar.prototype.setupFlowchartManagement = function() {
-        document.getElementById('create_flowchart_btn').addEventListener('click', () => {
+        document.getElementById('create_flowchart_btn').addEventListener('click', (e) => {
+            // prevent default anchor navigation so it never changes page
+            e.preventDefault();
             this.showCreateFlowchartModal();
         });
 
@@ -15,13 +17,8 @@
         const dmBtn = document.getElementById('data_matrix_btn');
         if (dmBtn) {
             dmBtn.addEventListener('click', () => {
-                try {
-                    const fc = this.state.storage.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
-                    const url = `/data?flowchart_name=${encodeURIComponent(fc || 'default.json')}`;
-                    window.location.href = url;
-                } catch (_) {
-                    window.location.href = '/data';
-                }
+                const url = this.urlManager.buildUrlPreserveContext('/data');
+                window.location.href = url;
             });
         }
 
@@ -100,6 +97,7 @@
         if (initialFilename) {
             this.state.storage.setCurrentFlowchart(initialFilename);
             this.setCurrentFlowchart(initialDisplay);
+            this.urlManager.setLastAccessedFlowchart(initialFilename);
             this.urlManager.updateFlowchartInURL(initialFilename);
         } else {
             // no flowcharts exist yet

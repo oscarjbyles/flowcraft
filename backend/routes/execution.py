@@ -6,7 +6,12 @@ from datetime import datetime
 
 from ..services.storage import DEFAULT_FLOWCHART, load_flowchart, save_execution_history, get_execution_history, delete_execution_history
 from ..services.analysis import PythonVariableAnalyzer, extract_returns_from_statement
-from ..services.processes import execute_python_function_with_tracking, stop_all_processes
+from ..services.processes import (
+    execute_python_function_with_tracking,
+    stop_all_processes,
+    create_temp_execution_script,
+    start_unbuffered_process,
+)
 
 
 execution_bp = Blueprint('execution', __name__, url_prefix='/api')
@@ -84,6 +89,110 @@ def execute_node():
         return result
     except Exception as e:
         return jsonify({'success': False, 'error': f'failed to execute node: {str(e)}'}), 500
+
+
+@execution_bp.route('/execute-node-stream', methods=['POST'])
+def execute_node_stream():
+    # live stream stdout as server-sent events while also returning a final result event
+    data = request.json
+    node_id = data.get('node_id')
+    python_file = data.get('python_file')
+    function_args = data.get('function_args', {})
+    input_values = data.get('input_values', {})
+    if not node_id or not python_file:
+        return jsonify({'success': False, 'error': 'node_id and python_file are required'}), 400
+    normalized_python_file = python_file.replace('\\', '/')
+    if normalized_python_file.startswith('nodes/'):
+        file_path = os.path.normpath(python_file)
+    else:
+        file_path = os.path.join('nodes', python_file)
+    if not os.path.exists(file_path):
+        return jsonify({'success': False, 'error': f'python file not found: {python_file}'}), 404
+
+    meta = create_temp_execution_script(file_path, function_args, input_values)
+    if 'error' in meta:
+        return jsonify({'success': False, 'error': meta['error']}), 400
+
+    temp_script_path = meta['temp_script_path']
+    proc = start_unbuffered_process(temp_script_path)
+
+    # register running process for stop support
+    with process_lock:
+        running_processes[node_id] = {
+            'process': proc,
+            'start_time': datetime.now(),
+            'file_path': file_path,
+            'temp_script_path': temp_script_path
+        }
+
+    def event_stream():
+        try:
+            all_stdout_parts = []
+            # stream stdout lines
+            if proc.stdout is not None:
+                for line in proc.stdout:
+                    if not line:
+                        break
+                    all_stdout_parts.append(line)
+                    yield f"event: stdout\ndata: {line.rstrip()}\n\n"
+            # wait for process completion to collect remaining output/error and final result
+            proc.wait()
+            stdout = ''.join(all_stdout_parts)
+            stderr = ''
+            try:
+                if proc.stdout:
+                    try:
+                        remaining = proc.stdout.read()
+                        if remaining:
+                            stdout += remaining
+                    except Exception:
+                        pass
+                if proc.stderr:
+                    stderr = proc.stderr.read() or ''
+            except Exception:
+                pass
+
+            # parse embedded result if present
+            result_data = None
+            if "__RESULT_START__" in stdout and "__RESULT_END__" in stdout:
+                result_start = stdout.find("__RESULT_START__") + len("__RESULT_START__")
+                result_end = stdout.find("__RESULT_END__")
+                result_json = stdout[result_start:result_end].strip()
+                try:
+                    import json as _json
+                    result_data = _json.loads(result_json)
+                    console_output = stdout[:stdout.find("__RESULT_START__")].strip()
+                    if stdout[result_end + len("__RESULT_END__"):].strip():
+                        console_output += stdout[result_end + len("__RESULT_END__"):].strip()
+                    result_data['output'] = console_output
+                    result_data['error'] = stderr if stderr else result_data.get('error')
+                except Exception:
+                    pass
+            if result_data is None:
+                result_data = {
+                    'success': proc.returncode == 0,
+                    'output': stdout,
+                    'error': stderr if stderr else None,
+                    'return_value': None,
+                }
+
+            # clean up from running processes
+            with process_lock:
+                running_processes.pop(node_id, None)
+
+            import json as _json
+            yield f"event: result\ndata: {_json.dumps(result_data)}\n\n"
+        finally:
+            # ensure temp file is removed
+            try:
+                if temp_script_path and os.path.exists(temp_script_path):
+                    os.unlink(temp_script_path)
+            except Exception:
+                pass
+
+    from flask import Response
+    headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    return Response(event_stream(), mimetype='text/event-stream', headers=headers)
 
 
 @execution_bp.route('/stop-execution', methods=['POST'])
@@ -201,6 +310,15 @@ def delete_history_entry(execution_id):
     try:
         success = delete_execution_history(flowchart_name, execution_id)
         if success:
+            # also remove the summary from the flowchart json's executions array
+            try:
+                from ..services.storage import load_flowchart, save_flowchart
+                flow = load_flowchart(flowchart_name)
+                if isinstance(flow, dict) and isinstance(flow.get('executions'), list):
+                    flow['executions'] = [e for e in flow['executions'] if e.get('execution_id') != execution_id]
+                    save_flowchart(flow, flowchart_name)
+            except Exception:
+                pass
             return jsonify({'status': 'success', 'message': 'execution history deleted'})
         else:
             return jsonify({'status': 'error', 'message': 'execution not found'}), 404
@@ -233,7 +351,9 @@ def clear_history_for_flowchart():
                     shutil.rmtree(full_path)
                     removed += 1
             except Exception as e:
+                # comments: keep going even if a file fails to delete
                 print(f"warning: failed to remove {full_path}: {e}")
+        # do not modify the embedded `executions` array in the flowchart json here; executions are permanent
         return jsonify({'status': 'success', 'message': f'cleared {removed} items from history for {flowchart_folder}'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'failed to clear history: {str(e)}'}), 500

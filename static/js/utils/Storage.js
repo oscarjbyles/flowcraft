@@ -70,6 +70,42 @@ class Storage {
     }
 
     /**
+     * best-effort save used during page exit/navigation
+     * tries sendbeacon first, falls back to fetch with keepalive
+     */
+    saveOnExit(data) {
+        try {
+            const saveData = {
+                ...data,
+                flowchart_name: this.currentFlowchart
+            };
+
+            const payload = JSON.stringify(saveData);
+
+            // prefer sendbeacon for reliability on tab close/navigation
+            if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+                const blob = new Blob([payload], { type: 'application/json' });
+                return navigator.sendBeacon(this.apiEndpoint, blob);
+            }
+
+            // fallback: use fetch with keepalive
+            if (typeof fetch === 'function') {
+                fetch(this.apiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                    keepalive: true
+                }).catch(() => {});
+                return true;
+            }
+
+            return false;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    /**
      * load flowchart data from server
      */
     async load(flowchartName = null) {

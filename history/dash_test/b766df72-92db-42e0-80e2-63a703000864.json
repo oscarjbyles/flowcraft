@@ -1,0 +1,353 @@
+{
+  "execution_id": "b766df72-92db-42e0-80e2-63a703000864",
+  "timestamp": "2025-08-11T23:17:33.754537",
+  "flowchart_name": "dash_test",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1754947169232.756,
+      1754947169509.6736,
+      1754947542965.7744
+    ],
+    "results": [
+      {
+        "node_id": 1754947169232.756,
+        "node_name": "node 1",
+        "python_file": "nodes/dash_test/node1.py",
+        "success": true,
+        "output": "generated random number: 2.9929768875393057",
+        "error": null,
+        "runtime": 3136,
+        "timestamp": "23:17:27",
+        "return_value": 2.9929768875393057,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947169509.6736,
+        "node_name": "node2",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "x5yvipEqCx\nYc6gRRMupT\nA056NIvgPY\nP1kZINKDjb\n7xZm4hxXtV\nUwEbaEBGC8",
+        "error": null,
+        "runtime": 6137,
+        "timestamp": "23:17:33",
+        "return_value": [
+          1,
+          [
+            "x5yvipEqCx",
+            "Yc6gRRMupT",
+            "A056NIvgPY",
+            "P1kZINKDjb",
+            "7xZm4hxXtV",
+            "UwEbaEBGC8"
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947542965.7744,
+        "node_name": "hello",
+        "python_file": "nodes/dash_test/error_creator.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 132,
+        "timestamp": "23:17:33",
+        "return_value": [
+          1,
+          [
+            "x5yvipEqCx",
+            "Yc6gRRMupT",
+            "A056NIvgPY",
+            "P1kZINKDjb",
+            "7xZm4hxXtV",
+            "UwEbaEBGC8"
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947537905.6792,
+        "node_name": "argument1",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "23:17:33",
+        "return_value": {
+          "argument1": 1
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "argument1",
+          "variable_name": "argument1"
+        }
+      },
+      {
+        "node_id": 1754947539125.4895,
+        "node_name": "random_strings",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "23:17:33",
+        "return_value": {
+          "random_strings": [
+            "x5yvipEqCx",
+            "Yc6gRRMupT",
+            "A056NIvgPY",
+            "P1kZINKDjb",
+            "7xZm4hxXtV",
+            "UwEbaEBGC8"
+          ]
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "random_strings",
+          "variable_name": "random_strings"
+        }
+      }
+    ],
+    "data_saves": [
+      {
+        "node_name": "argument1",
+        "variable_name": "argument1",
+        "variable_content": [
+          "integer",
+          1
+        ]
+      },
+      {
+        "node_name": "random_strings",
+        "variable_name": "random_strings",
+        "variable_content": [
+          "array",
+          [
+            "x5yvipEqCx",
+            "Yc6gRRMupT",
+            "A056NIvgPY",
+            "P1kZINKDjb",
+            "7xZm4hxXtV",
+            "UwEbaEBGC8"
+          ]
+        ]
+      }
+    ],
+    "feed": [
+      {
+        "node_id": 1754947169232.756,
+        "node_name": "node 1",
+        "started_at": "2025-08-11T22:17:24.357Z",
+        "finished_at": "2025-08-11T22:17:27.466Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "generated random number: 2.9929768875393057",
+            "ts": "2025-08-11T22:17:24.468Z"
+          },
+          {
+            "text": "__RESULT_START__",
+            "ts": "2025-08-11T22:17:27.460Z"
+          },
+          {
+            "text": "{\"success\": true, \"return_value\": 2.9929768875393057, \"function_name\": \"my_function\", \"function_args\": {}, \"input_values\": {}}",
+            "ts": "2025-08-11T22:17:27.461Z"
+          },
+          {
+            "text": "__RESULT_END__",
+            "ts": "2025-08-11T22:17:27.461Z"
+          },
+          {
+            "text": "generated random number: 2.9929768875393057",
+            "ts": "2025-08-11T22:17:27.466Z"
+          }
+        ]
+      },
+      {
+        "node_id": 1754947169509.6736,
+        "node_name": "node2",
+        "started_at": "2025-08-11T22:17:27.480Z",
+        "finished_at": "2025-08-11T22:17:33.605Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "x5yvipEqCx",
+            "ts": "2025-08-11T22:17:28.593Z"
+          },
+          {
+            "text": "Yc6gRRMupT",
+            "ts": "2025-08-11T22:17:29.593Z"
+          },
+          {
+            "text": "A056NIvgPY",
+            "ts": "2025-08-11T22:17:30.593Z"
+          },
+          {
+            "text": "P1kZINKDjb",
+            "ts": "2025-08-11T22:17:31.593Z"
+          },
+          {
+            "text": "7xZm4hxXtV",
+            "ts": "2025-08-11T22:17:32.594Z"
+          },
+          {
+            "text": "UwEbaEBGC8",
+            "ts": "2025-08-11T22:17:33.595Z"
+          },
+          {
+            "text": "__RESULT_START__",
+            "ts": "2025-08-11T22:17:33.595Z"
+          },
+          {
+            "text": "{\"success\": true, \"return_value\": [1, [\"x5yvipEqCx\", \"Yc6gRRMupT\", \"A056NIvgPY\", \"P1kZINKDjb\", \"7xZm4hxXtV\", \"UwEbaEBGC8\"]], \"function_name\": \"my_function\", \"function_args\": {\"random_number\": 2.9929768875393057}, \"input_values\": {}}",
+            "ts": "2025-08-11T22:17:33.595Z"
+          },
+          {
+            "text": "__RESULT_END__",
+            "ts": "2025-08-11T22:17:33.595Z"
+          },
+          {
+            "text": "x5yvipEqCx",
+            "ts": "2025-08-11T22:17:33.605Z"
+          },
+          {
+            "text": "Yc6gRRMupT",
+            "ts": "2025-08-11T22:17:33.605Z"
+          },
+          {
+            "text": "A056NIvgPY",
+            "ts": "2025-08-11T22:17:33.605Z"
+          },
+          {
+            "text": "P1kZINKDjb",
+            "ts": "2025-08-11T22:17:33.605Z"
+          },
+          {
+            "text": "7xZm4hxXtV",
+            "ts": "2025-08-11T22:17:33.605Z"
+          },
+          {
+            "text": "UwEbaEBGC8",
+            "ts": "2025-08-11T22:17:33.605Z"
+          }
+        ]
+      },
+      {
+        "node_id": 1754947542965.7744,
+        "node_name": "hello",
+        "started_at": "2025-08-11T22:17:33.629Z",
+        "finished_at": "2025-08-11T22:17:33.748Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "__RESULT_START__",
+            "ts": "2025-08-11T22:17:33.740Z"
+          },
+          {
+            "text": "{\"success\": true, \"return_value\": [1, [\"x5yvipEqCx\", \"Yc6gRRMupT\", \"A056NIvgPY\", \"P1kZINKDjb\", \"7xZm4hxXtV\", \"UwEbaEBGC8\"]], \"function_name\": \"my_function\", \"function_args\": {\"argument1\": [1, [\"x5yvipEqCx\", \"Yc6gRRMupT\", \"A056NIvgPY\", \"P1kZINKDjb\", \"7xZm4hxXtV\", \"UwEbaEBGC8\"]]}, \"input_values\": {}}",
+            "ts": "2025-08-11T22:17:33.740Z"
+          },
+          {
+            "text": "__RESULT_END__",
+            "ts": "2025-08-11T22:17:33.740Z"
+          }
+        ]
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 3,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754947169232.756,
+          "name": "node 1",
+          "x": 53.42086410522461,
+          "y": -913.5538940429688,
+          "pythonFile": "nodes/dash_test/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754947169509.6736,
+          "name": "node2",
+          "x": 53.42086410522461,
+          "y": -715.8539428710938,
+          "pythonFile": "nodes/dash_test/node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754947537905.6792,
+          "name": "argument1",
+          "x": 326.7510131722368,
+          "y": -703.912438576212,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 15,
+              "name": "argument1",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754947539125.4895,
+          "name": "random_strings",
+          "x": 240.50607903342126,
+          "y": -587.1500662036618,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 15,
+              "name": "random_strings",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754947542965.7744,
+          "name": "hello",
+          "x": -88.5515604019165,
+          "y": -547.3447265625,
+          "pythonFile": "nodes/dash_test/error_creator.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754947169232.756,
+          "target": 1754947169509.6736
+        },
+        {
+          "selectable": false,
+          "source": 1754947169509.6736,
+          "style": "dashed",
+          "target": 1754947537905.6792
+        },
+        {
+          "selectable": false,
+          "source": 1754947169509.6736,
+          "style": "dashed",
+          "target": 1754947539125.4895
+        },
+        {
+          "source": 1754947169509.6736,
+          "target": 1754947542965.7744
+        }
+      ],
+      "groups": []
+    }
+  }
+}
