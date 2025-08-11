@@ -142,8 +142,11 @@ def get_execution_history(flowchart_name):
             except Exception as e:
                 print(f"error reading history file {filename}: {e}")
     
-    # sort by timestamp (newest first)
-    history_entries.sort(key=lambda x: x['timestamp'], reverse=True)
+    # sort by timestamp (newest first); tolerate missing/invalid timestamps
+    try:
+        history_entries.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+    except Exception:
+        pass
     return history_entries
 
 def delete_execution_history(flowchart_name, execution_id):
@@ -1655,37 +1658,75 @@ def get_history():
     
     try:
         history_entries = get_execution_history(flowchart_name)
-        
-        # process entries to add summary information
+
+        # process entries to add summary information; skip malformed entries instead of failing all
         processed_entries = []
         for entry in history_entries:
-            execution_data = entry['execution_data']
-            
-            # calculate summary stats
-            total_nodes = len(execution_data.get('execution_order', []))
-            successful_nodes = len([r for r in execution_data.get('results', []) if r.get('success', False)])
-            success_percentage = (successful_nodes / total_nodes * 100) if total_nodes > 0 else 0
-            
-            # find failed node
-            failed_node = None
-            for result in execution_data.get('results', []):
-                if not result.get('success', False):
-                    failed_node = result.get('node_name', 'unknown')
-                    break
-            
-            processed_entry = {
-                'execution_id': entry['execution_id'],
-                'timestamp': entry['timestamp'],
-                'flowchart_name': entry['flowchart_name'],
-                'total_nodes': total_nodes,
-                'successful_nodes': successful_nodes,
-                'success_percentage': round(success_percentage, 1),
-                'failed_node': failed_node,
-                'status': execution_data.get('status', 'unknown'),
-                'execution_time': datetime.fromisoformat(entry['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
-            }
-            processed_entries.append(processed_entry)
-        
+            try:
+                execution_data = entry.get('execution_data', {})
+
+                # calculate summary stats
+                total_nodes = len(execution_data.get('execution_order', []))
+                results = execution_data.get('results', []) or []
+                successful_nodes = len([r for r in results if r.get('success', False)])
+                success_percentage = (successful_nodes / total_nodes * 100) if total_nodes > 0 else 0
+
+                # find failed node
+                failed_node = None
+                for result in results:
+                    if not result.get('success', False):
+                        failed_node = result.get('node_name', 'unknown')
+                        break
+
+                # compute elapsed time (prefer summed runtimes)
+                elapsed_ms = 0
+                for r in results:
+                    try:
+                        elapsed_ms += int(r.get('runtime', 0) or 0)
+                    except Exception:
+                        # ignore invalid runtime values
+                        pass
+
+                def _format_elapsed(ms: int) -> str:
+                    try:
+                        ms = int(ms)
+                    except Exception:
+                        return '0ms'
+                    if ms < 1000:
+                        return f"{ms}ms"
+                    seconds = ms / 1000.0
+                    if seconds < 60:
+                        return f"{seconds:.2f}s"
+                    minutes = int(seconds // 60)
+                    rem = seconds - minutes * 60
+                    return f"{minutes}m {rem:.1f}s"
+
+                # human timestamp for when the execution was saved
+                try:
+                    saved_at_human = datetime.fromisoformat(entry.get('timestamp', '')).strftime('%Y-%m-%d %H:%M:%S')
+                except Exception:
+                    saved_at_human = entry.get('timestamp', '')
+
+                processed_entry = {
+                    'execution_id': entry.get('execution_id'),
+                    'timestamp': entry.get('timestamp'),
+                    'flowchart_name': entry.get('flowchart_name'),
+                    'total_nodes': total_nodes,
+                    'successful_nodes': successful_nodes,
+                    'success_percentage': round(success_percentage, 1),
+                    'failed_node': failed_node,
+                    'status': execution_data.get('status', 'unknown'),
+                    # maintain existing key used by ui; repurpose to represent elapsed time for clarity
+                    'execution_time': _format_elapsed(elapsed_ms),
+                    # extras for potential future use
+                    'elapsed_ms': elapsed_ms,
+                    'saved_at': saved_at_human
+                }
+                processed_entries.append(processed_entry)
+            except Exception as entry_error:
+                # skip bad entry; continue with others
+                print(f"warning: failed to process history entry {entry.get('execution_id', 'unknown')}: {entry_error}")
+
         return jsonify({
             'status': 'success',
             'history': processed_entries,
@@ -1866,13 +1907,30 @@ def analyze_python_function():
         top_level_input_vars = []
         top_level_input_calls = []
         
+        # helper to detect input() anywhere inside an expression tree
+        def _find_input_call_and_prompt(expr):
+            try:
+                for n in ast.walk(expr):
+                    if isinstance(n, ast.Call):
+                        # direct input() call
+                        if isinstance(n.func, ast.Name) and n.func.id == 'input':
+                            prompt_val = None
+                            if len(n.args) > 0 and isinstance(n.args[0], ast.Constant):
+                                prompt_val = n.args[0].value
+                            return True, prompt_val
+                        # method chains like input(...).strip() present as Attribute in func with Call(value)
+                        if isinstance(n.func, ast.Attribute):
+                            # continue walking; ast.walk will cover n.func.value and args
+                            pass
+                return False, None
+            except Exception:
+                return False, None
+        
         for node in ast.walk(tree):
             if isinstance(node, ast.Assign):
-                # check if the assignment value is an input() call
-                if (isinstance(node.value, ast.Call) and 
-                    isinstance(node.value.func, ast.Name) and 
-                    node.value.func.id == 'input'):
-                    
+                # detect input() anywhere within the assigned expression (supports wrappers like int(input(...)))
+                has_input, prompt = _find_input_call_and_prompt(node.value)
+                if has_input:
                     # get the variable name(s) being assigned to
                     for target in node.targets:
                         if isinstance(target, ast.Name):
@@ -1880,11 +1938,8 @@ def analyze_python_function():
                             top_level_input_vars.append(variable_name)
                             
                             # also extract prompt for backward compatibility
-                            if (len(node.value.args) > 0 and 
-                                isinstance(node.value.args[0], ast.Constant)):
-                                prompt = node.value.args[0].value
-                                # create a parameter name from the prompt for fallback
-                                base_param_name = prompt.replace("Enter ", "").replace(":", "").replace(" ", "_").lower()
+                            if prompt is not None:
+                                base_param_name = str(prompt).replace("Enter ", "").replace(":", "").replace(" ", "_").lower()
                                 if not base_param_name:
                                     base_param_name = "input"
                                 top_level_input_calls.append(base_param_name)
@@ -1902,14 +1957,12 @@ def analyze_python_function():
                 input_variable_names = []
                 input_variable_details = []
                 
-                # look for assignment statements where input() is assigned to a variable
+                # look for assignment statements where input() is assigned to a variable (including wrapped input)
                 for child in ast.walk(node):
                     if isinstance(child, ast.Assign):
-                        # check if the assignment value is an input() call
-                        if (isinstance(child.value, ast.Call) and 
-                            isinstance(child.value.func, ast.Name) and 
-                            child.value.func.id == 'input'):
-                            
+                        # detect input() anywhere within the assigned expression (supports wrappers like int(input(...)))
+                        has_input, prompt = _find_input_call_and_prompt(child.value)
+                        if has_input:
                             # get the variable name(s) being assigned to
                             for target in child.targets:
                                 if isinstance(target, ast.Name):
@@ -1919,11 +1972,8 @@ def analyze_python_function():
                                     input_variable_details.append({'name': variable_name, 'line': child.lineno})
                                     
                                     # also extract prompt for backward compatibility
-                                    if (len(child.value.args) > 0 and 
-                                        isinstance(child.value.args[0], ast.Constant)):
-                                        prompt = child.value.args[0].value
-                                        # create a parameter name from the prompt for fallback
-                                        base_param_name = prompt.replace("Enter ", "").replace(":", "").replace(" ", "_").lower()
+                                    if prompt is not None:
+                                        base_param_name = str(prompt).replace("Enter ", "").replace(":", "").replace(" ", "_").lower()
                                         if not base_param_name:
                                             base_param_name = "input"
                                         input_calls.append(base_param_name)
@@ -1955,9 +2005,8 @@ def analyze_python_function():
             top_level_input_details = []
             for node in ast.walk(tree):
                 if isinstance(node, ast.Assign):
-                    if (isinstance(node.value, ast.Call) and 
-                        isinstance(node.value.func, ast.Name) and 
-                        node.value.func.id == 'input'):
+                    has_input, _prompt = _find_input_call_and_prompt(node.value)
+                    if has_input:
                         for target in node.targets:
                             if isinstance(target, ast.Name):
                                 top_level_input_details.append({'name': target.id, 'line': node.lineno})
@@ -2099,6 +2148,43 @@ def stop_execution():
         'status': 'success',
         'message': f'terminated {terminated_count} running processes, cleaned up {cleaned_files} temporary files'
     })
+
+@app.route('/api/history/clear', methods=['POST'])
+def clear_history_for_flowchart():
+    """clear execution history for a specific flowchart by emptying its history folder"""
+    try:
+        data = request.json or {}
+        flowchart_name = data.get('flowchart_name') or DEFAULT_FLOWCHART
+        # normalize folder name (strip .json)
+        if flowchart_name.endswith('.json'):
+            flowchart_folder = flowchart_name[:-5]
+        else:
+            flowchart_folder = flowchart_name
+
+        history_path = os.path.join(HISTORY_DIR, flowchart_folder)
+
+        if not os.path.exists(history_path):
+            # nothing to clear
+            return jsonify({'status': 'success', 'message': 'no history found to clear'})
+
+        # delete all files in the directory but keep the directory itself
+        removed = 0
+        for entry in os.listdir(history_path):
+            full_path = os.path.join(history_path, entry)
+            try:
+                if os.path.isfile(full_path):
+                    os.remove(full_path)
+                    removed += 1
+                elif os.path.isdir(full_path):
+                    shutil.rmtree(full_path)
+                    removed += 1
+            except Exception as e:
+                # continue removing other entries
+                print(f"warning: failed to remove {full_path}: {e}")
+
+        return jsonify({'status': 'success', 'message': f'cleared {removed} items from history for {flowchart_folder}'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'failed to clear history: {str(e)}'}), 500
 
 def _is_port_open(port):
     """check if a port is open (a process is already listening)."""

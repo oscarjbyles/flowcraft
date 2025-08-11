@@ -112,48 +112,24 @@
                     </div>
 
                     <div class="form_group">
-                        <label class="form_label">appearance</label>
-                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px;">
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">palette</span>
-                                <span style="font-size: 0.9rem;">theme</span>
-                                <span style="font-size: 0.75rem; opacity: 0.7; margin-left: auto;">coming soon</span>
-                            </div>
+                        <label class="form_label">history</label>
+                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; align-items:center; gap:12px;">
+                            <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">delete_sweep</span>
+                            <span style="font-size: 0.9rem;">clear execution history for current flowchart</span>
+                            <div style="flex:1;"></div>
+                            <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn" style="text-transform: lowercase;">
+                                <span class="material-icons">delete</span>
+                                clear history
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="form_group">
-                        <label class="form_label">behavior</label>
-                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px;">
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">save</span>
-                                <span style="font-size: 0.9rem;">autosave</span>
-                                <span style="font-size: 0.75rem; opacity: 0.7; margin-left: auto;">coming soon</span>
-                            </div>
+                        <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
+                            this removes all files under <code>history/&lt;flowchart&gt;</code>.
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="status_bar">
-                <span id="node_count">nodes: 0</span>
-                <span id="status_text" style="margin-left: 16px;">ready - click to add nodes, drag to connect</span>
-                <div style="flex: 1;"></div>
-                <div id="status_progress" style="display:none; width: 160px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-right: 16px;">
-                    <div id="status_progress_bar" style="width: 0%; height: 100%; background: #7e57c2; transition: width 120ms ease;"></div>
-                </div>
-                <div id="node_coordinates" style="margin-right: 16px; opacity: 0.7; display: flex; align-items: center; gap: 8px;">
-                    <span>x:</span>
-                    <input type="number" id="node_x" class="coordinate_input" style="width: 50px; display: none;" title="x coordinate">
-                    <span>y:</span>
-                    <input type="number" id="node_y" class="coordinate_input" style="width: 50px; display: none;" title="y coordinate">
-                    <div style="width: 16px;"></div>
-                    <span>w:</span>
-                    <input type="number" id="node_width" class="coordinate_input" style="width: 50px; display: none;" title="width">
-                    <span>h:</span>
-                    <input type="number" id="node_height" class="coordinate_input" style="width: 50px; display: none;" title="height">
-                </div>
-            </div>
+            {% include 'partials/status_bar.html' %}
         </div>
     </div>
 
@@ -236,7 +212,7 @@
                 <div class="form_group" id="data_save_variable_section" style="display: none;">
                     <label class="form_label" for="data_save_variable_dropdown">variable</label>
                     <select id="data_save_variable_dropdown" class="form_input">
-                        <option value="">select a variable</option>
+                        <option value="" style="font-style: italic;">select a variable</option>
                     </select>
                     <div id="data_save_variable_help" style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
                         choose from the python node's returns (data out)
@@ -244,14 +220,7 @@
                     <div id="data_save_variable_error" style="display:none; color:#f44336; font-size: .8rem; margin-top: 6px;">failed to load variables</div>
                 </div>
 
-                <!-- data save node: data name for data matrix -->
-                <div class="form_group" id="data_save_name_section" style="display: none;">
-                    <label class="form_label" for="data_save_name_input">name data</label>
-                    <input type="text" id="data_save_name_input" class="form_input" placeholder="enter data name">
-                    <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
-                        lowercase letters, numbers and underscores only (no spaces)
-                    </div>
-                </div>
+                <!-- data save node: name data removed -->
 
                 <div class="form_group" id="arguments_section" style="display: none; flex: 1;">
                     <label class="form_label">arguments (data in)</label>

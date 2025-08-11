@@ -11,19 +11,23 @@
             this._defaultStatusTextCaptured = true;
         }
         statusElement.textContent = message;
-        const isWarning = /warning:/i.test(message) || /no python file assigned/i.test(message);
-        if (isWarning) {
-            const originalBg = statusBar.style.backgroundColor;
-            statusBar.style.backgroundColor = '#2A0E0E';
-            if (this._statusResetTimeout) {
-                clearTimeout(this._statusResetTimeout);
-            }
-            this._statusResetTimeout = setTimeout(() => {
-                statusBar.style.backgroundColor = originalBg || 'var(--surface-color)';
-                statusElement.textContent = this._defaultStatusText || 'ready';
-                this._statusResetTimeout = null;
-            }, 3000);
+        const lower = String(message || '').toLowerCase();
+        let bg = null;
+        if (/warning:/.test(lower) || /no python file assigned/.test(lower)) {
+            bg = '#2A0E0E';
+        } else if (/error/.test(lower) || /failed/.test(lower)) {
+            bg = '#2A0E0E';
+        } else if (/success/.test(lower)) {
+            bg = '#0e2a16';
         }
+        const originalBg = statusBar.style.backgroundColor;
+        statusBar.style.backgroundColor = bg;
+        if (this._statusResetTimeout) clearTimeout(this._statusResetTimeout);
+        this._statusResetTimeout = setTimeout(() => {
+            statusBar.style.backgroundColor = originalBg || 'var(--surface-color)';
+            statusElement.textContent = '';
+            this._statusResetTimeout = null;
+        }, 3000);
     };
 
     Sidebar.prototype.updateRunModeNodeDetails = function(selection) {

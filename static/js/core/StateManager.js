@@ -114,7 +114,7 @@ class StateManager extends EventEmitter {
         }
 
         // when a python node's python file changes, ensure only one fresh input node exists
-        if (typeof updates.pythonFile !== 'undefined' && node.type === 'python_file') {
+        if (node.type === 'python_file' && typeof updates.pythonFile !== 'undefined' && updates.pythonFile !== previousPythonFile) {
             // remove existing associated input nodes
             const existingInputs = this.nodes.filter(n => n.type === 'input_node' && n.targetNodeId === node.id);
             existingInputs.forEach(inputNode => this.removeNode(inputNode.id, true));

@@ -1,6 +1,6 @@
 {
-  "execution_id": "521f8cc8-8df1-4baa-b432-a8ca8fee6532",
-  "timestamp": "2025-08-10T17:50:41.697405",
+  "execution_id": "3ed0d575-3162-4148-abc0-0a1763f31632",
+  "timestamp": "2025-08-11T13:41:29.937340",
   "flowchart_name": "simple2",
   "execution_data": {
     "status": "failed",
@@ -12,24 +12,67 @@
       1754593440510.8223,
       1754843101576.906,
       1754593440044.931,
-      1754485128247.5793
+      1754485128247.5793,
+      1754849299897.9001,
+      1754850114255.0886
     ],
     "results": [
       {
         "node_id": 1754557300491.1255,
         "node_name": "assign variable + sqaure",
         "python_file": "nodes/example.py",
+        "success": true,
+        "output": "Enter a number: 4\n16.0",
+        "error": null,
+        "runtime": 2091,
+        "timestamp": "13:41:29",
+        "return_value": 16,
+        "function_name": "get_user_input"
+      },
+      {
+        "node_id": 1754646735053.426,
+        "node_name": "python node",
+        "python_file": "nodes/node1.py",
         "success": false,
         "output": "",
-        "error": "execution was cancelled by user",
-        "runtime": 2386,
-        "timestamp": "17:50:41",
+        "error": "missing required function arguments: num45",
+        "runtime": 13,
+        "timestamp": "13:41:29",
         "return_value": null
+      },
+      {
+        "node_id": 1754866553260.119,
+        "node_name": "variableC",
+        "python_file": "nodes/example.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "13:41:29",
+        "return_value": {
+          "variableC": 16
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "variableC",
+          "variable_name": "variableC"
+        }
       }
     ],
-    "total_nodes": 8,
-    "successful_nodes": 0,
-    "error_message": "execution stopped at node: assign variable + sqaure",
+    "data_saves": [
+      {
+        "node_name": "variableC",
+        "variable_name": "variableC",
+        "variable_content": [
+          "integer",
+          16
+        ]
+      }
+    ],
+    "total_nodes": 10,
+    "successful_nodes": 2,
+    "error_message": "execution stopped at node: python node",
     "flowchart_state": {
       "nodes": [
         {
@@ -44,8 +87,8 @@
         {
           "id": 1754557300491.1255,
           "name": "assign variable + sqaure",
-          "x": 827.4667358398438,
-          "y": -289.60028076171875,
+          "x": 819.2770385742188,
+          "y": -315.281005859375,
           "pythonFile": "nodes/example.py",
           "description": "",
           "type": "python_file"
@@ -53,26 +96,17 @@
         {
           "id": 1754557341635.2678,
           "name": "Input Node",
-          "x": 484.8334655761719,
-          "y": -288.69109058380127,
+          "x": 453.612548828125,
+          "y": -311.5063371658325,
           "pythonFile": "nodes/example.py",
           "description": "input parameters",
           "type": "input_node"
         },
         {
-          "id": 1754559850176.4702,
-          "name": "another number",
-          "x": 1208.3743896484375,
-          "y": -233.0128936767578,
-          "pythonFile": "nodes/TEST1.py",
-          "description": "",
-          "type": "python_file"
-        },
-        {
           "id": 1754592052289.3586,
           "name": "girl boy?",
-          "x": 818.4725952148438,
-          "y": 39.33476257324219,
+          "x": 809.9208984375,
+          "y": -76.14509582519531,
           "pythonFile": "",
           "description": "",
           "type": "if_node"
@@ -107,8 +141,8 @@
         {
           "id": 1754646735053.426,
           "name": "python node",
-          "x": 821.5030517578125,
-          "y": -122.1737060546875,
+          "x": 809.9208984375,
+          "y": -156.1450958251953,
           "pythonFile": "nodes/node1.py",
           "description": "",
           "type": "python_file"
@@ -116,8 +150,8 @@
         {
           "id": 1754646773379.522,
           "name": "Input Node",
-          "x": 490.0111389160156,
-          "y": -120.34087371826172,
+          "x": 486.8837585449219,
+          "y": -100.53401947021484,
           "pythonFile": "nodes/node1.py",
           "description": "input parameters",
           "type": "input_node"
@@ -130,6 +164,58 @@
           "pythonFile": "",
           "description": "",
           "type": "python_file"
+        },
+        {
+          "id": 1754849299897.9001,
+          "name": "python node",
+          "x": 862.0789184570312,
+          "y": 383.677490234375,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754850114255.0886,
+          "name": "if condition",
+          "x": 862.0789184570312,
+          "y": 463.677490234375,
+          "pythonFile": "",
+          "description": "",
+          "type": "if_node"
+        },
+        {
+          "id": 1754866553260.119,
+          "name": "variableC",
+          "x": 1052.1761987028513,
+          "y": -349.7808715314756,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 14,
+              "name": "variableC",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754866900741.5713,
+          "name": "result",
+          "x": 1011.3488821683536,
+          "y": -163.65634027126686,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 29,
+              "name": "result",
+              "type": "variable"
+            }
+          }
         }
       ],
       "links": [
@@ -181,6 +267,23 @@
         {
           "source": 1754646735053.426,
           "target": 1754592052289.3586
+        },
+        {
+          "selectable": false,
+          "source": 1754849299897.9001,
+          "target": 1754850114255.0886
+        },
+        {
+          "selectable": false,
+          "source": 1754557300491.1255,
+          "style": "dashed",
+          "target": 1754866553260.119
+        },
+        {
+          "selectable": false,
+          "source": 1754646735053.426,
+          "style": "dashed",
+          "target": 1754866900741.5713
         }
       ],
       "groups": [

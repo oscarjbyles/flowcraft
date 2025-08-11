@@ -206,48 +206,51 @@
 
     Sidebar.prototype.showSuccess = function(message) {
         this.state.emit('statusUpdate', message);
-        this.showToast(message, 'success');
+        this.flashStatusBar(message, 'success');
     };
 
     Sidebar.prototype.showError = function(message) {
         this.state.emit('statusUpdate', `error: ${message}`);
-        this.showToast(message, 'error');
+        this.flashStatusBar(message, 'error');
     };
 
     Sidebar.prototype.showWarning = function(message) {
         this.state.emit('statusUpdate', `warning: ${message}`);
-        this.showToast(message, 'info');
+        this.flashStatusBar(message, 'info');
     };
 
-    Sidebar.prototype.showToast = function(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 6px;
-            color: white;
-            font-size: 0.875rem;
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        `;
+    Sidebar.prototype.flashStatusBar = function(message, type = 'info') {
+        const statusElement = document.getElementById('status_text');
+        const statusBar = document.querySelector('.status_bar');
+        if (!statusElement || !statusBar) return;
 
-        if (type === 'success') {
-            toast.style.backgroundColor = '#4caf50';
-        } else if (type === 'error') {
-            toast.style.backgroundColor = '#f44336';
-        } else {
-            toast.style.backgroundColor = '#2196f3';
+        // capture default text once
+        if (!this._defaultStatusTextCaptured) {
+            this._defaultStatusText = statusElement.textContent || 'ready';
+            this._defaultStatusTextCaptured = true;
         }
 
-        document.body.appendChild(toast);
+        // set message
+        statusElement.textContent = message;
 
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => document.body.removeChild(toast), 300);
+        // choose subtle background based on type
+        const originalBg = statusBar.style.backgroundColor;
+        let bgColor = 'var(--surface-color)';
+        if (type === 'success') {
+            bgColor = '#0e2a16';
+        } else if (type === 'error') {
+            bgColor = '#2A0E0E';
+        }
+        statusBar.style.backgroundColor = bgColor;
+
+        // reset after a short delay
+        if (this._statusResetTimeout) {
+            clearTimeout(this._statusResetTimeout);
+        }
+        this._statusResetTimeout = setTimeout(() => {
+            statusBar.style.backgroundColor = originalBg || 'var(--surface-color)';
+            statusElement.textContent = '';
+            this._statusResetTimeout = null;
         }, 3000);
     };
 })();

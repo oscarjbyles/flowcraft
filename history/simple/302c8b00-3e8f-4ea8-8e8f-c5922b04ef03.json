@@ -1,11 +1,13 @@
 {
-  "execution_id": "61f7647d-135b-4d19-b057-161bdd321ca0",
-  "timestamp": "2025-08-10T01:41:20.571977",
+  "execution_id": "302c8b00-3e8f-4ea8-8e8f-c5922b04ef03",
+  "timestamp": "2025-08-11T11:27:50.467735",
   "flowchart_name": "simple",
   "execution_data": {
     "status": "failed",
     "execution_order": [
       1754654709071.8608,
+      1754867312491.0635,
+      1754904147880.503,
       1754653519066.0964,
       1754693832673.4893,
       1754732651225.0054
@@ -13,71 +15,50 @@
     "results": [
       {
         "node_id": 1754654709071.8608,
-        "node_name": "node4",
+        "node_name": "input + sleep",
         "python_file": "nodes/test2/node4.py",
         "success": true,
-        "output": "Enter value A: 2",
+        "output": "Enter value A: 10",
         "error": null,
-        "runtime": 1086,
-        "timestamp": "01:41:20",
-        "return_value": 2,
+        "runtime": 1102,
+        "timestamp": "11:27:50",
+        "return_value": 10,
         "function_name": "my_function"
       },
       {
-        "node_id": 1754653519066.0964,
-        "node_name": "node1",
-        "python_file": "nodes/test2/node1.py",
-        "success": true,
-        "output": "value before: 2\nvalue after: 4",
-        "error": null,
-        "runtime": 57,
-        "timestamp": "01:41:20",
-        "return_value": 4,
-        "function_name": "my_function"
-      },
-      {
-        "node_id": 1754693832673.4893,
-        "node_name": "nothing1",
-        "python_file": "nodes/test2/nothing1.py",
+        "node_id": 1754867312491.0635,
+        "node_name": "valueA",
+        "python_file": "",
         "success": false,
         "output": "",
-        "error": "missing required function arguments: valueA",
+        "error": "node_id and python_file are required",
         "runtime": 11,
-        "timestamp": "01:41:20",
+        "timestamp": "11:27:50",
         "return_value": null
       }
     ],
-    "total_nodes": 4,
-    "successful_nodes": 2,
-    "error_message": "execution stopped at node: nothing1",
+    "total_nodes": 6,
+    "successful_nodes": 1,
+    "error_message": "execution stopped at node: valueA",
     "flowchart_state": {
       "nodes": [
         {
           "id": 1754653519066.0964,
-          "name": "node1",
-          "x": 169.04180908203125,
-          "y": -690.1625175476074,
+          "name": "square input",
+          "x": 347.2919006347656,
+          "y": -741.5102958679199,
           "pythonFile": "nodes/test2/node1.py",
           "description": "",
           "type": "python_file"
         },
         {
           "id": 1754654709071.8608,
-          "name": "node4",
+          "name": "input + sleep",
           "x": 172.51415252685547,
           "y": -847.2426147460938,
           "pythonFile": "nodes/test2/node4.py",
           "description": "",
           "type": "python_file"
-        },
-        {
-          "id": 1754658964199.9182,
-          "name": "Input Node",
-          "x": -142.8184051513672,
-          "y": -845.885009765625,
-          "pythonFile": "nodes/test2/node4.py",
-          "description": "input parameters",
-          "type": "input_node"
         },
         {
           "id": 1754693832673.4893,
@@ -96,6 +77,33 @@
           "pythonFile": "",
           "description": "",
           "type": "python_file"
+        },
+        {
+          "id": 1754867312491.0635,
+          "name": "valueA",
+          "x": 364.41533549901936,
+          "y": -843.4198437359335,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save"
+        },
+        {
+          "id": 1754903834540.247,
+          "name": "Input Node",
+          "x": -94.47918701171875,
+          "y": -847.2426147460938,
+          "pythonFile": "nodes/test2/node4.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754904147880.503,
+          "name": "if condition",
+          "x": 172.51415252685547,
+          "y": -767.2426147460938,
+          "pythonFile": "",
+          "description": "",
+          "type": "if_node"
         }
       ],
       "links": [
@@ -104,19 +112,30 @@
           "target": 1754653519066.0964
         },
         {
-          "selectable": false,
-          "source": 1754658964199.9182,
-          "style": "dashed",
-          "target": 1754654709071.8608,
-          "type": "input_connection"
-        },
-        {
           "source": 1754653519066.0964,
           "target": 1754693832673.4893
         },
         {
           "source": 1754693832673.4893,
           "target": 1754732651225.0054
+        },
+        {
+          "selectable": false,
+          "source": 1754654709071.8608,
+          "style": "dashed",
+          "target": 1754867312491.0635
+        },
+        {
+          "selectable": false,
+          "source": 1754903834540.247,
+          "style": "dashed",
+          "target": 1754654709071.8608,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754654709071.8608,
+          "target": 1754904147880.503
         }
       ],
       "groups": [

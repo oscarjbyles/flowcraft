@@ -61,11 +61,9 @@
             returnsSection.style.display = 'none';
             const dsSection = document.getElementById('data_save_variable_section');
             if (dsSection) dsSection.style.display = 'block';
-            const dsNameSection = document.getElementById('data_save_name_section');
-            if (dsNameSection) dsNameSection.style.display = 'block';
+            // name data removed from ui
             if (quickActionsGroup) quickActionsGroup.style.display = 'none';
             this.populateDataSaveVariables(node);
-            this.initializeDataSaveName(node);
         } else {
             // python node and others
             pythonFileSection.style.display = 'block';
@@ -549,45 +547,7 @@
         }
     };
 
-    // data save: initialize and validate "name data" input (lowercase, numbers, underscores)
-    Sidebar.prototype.initializeDataSaveName = function(node) {
-        const input = document.getElementById('data_save_name_input');
-        if (!input) return;
-        // prefill: from node.name normalized to snake_case (no spaces/capitals)
-        const normalize = (val) => {
-            return (val || '')
-                .toString()
-                .trim()
-                .toLowerCase()
-                .replace(/\s+/g, '_')
-                .replace(/[^a-z0-9_]/g, '_')
-                .replace(/_+/g, '_')
-                .replace(/^_+|_+$/g, '');
-        };
-        if (!input.dataset._initialized) {
-            input.addEventListener('input', () => {
-                const caret = input.selectionStart;
-                const val = input.value;
-                const normalized = normalize(val);
-                if (val !== normalized) {
-                    input.value = normalized;
-                    try { input.setSelectionRange(caret, caret); } catch (_) {}
-                }
-                // store on node for persistence when saved
-                node.dataName = input.value;
-                // optionally emit state change if needed
-                this.state.emit('stateChanged');
-            });
-            input.dataset._initialized = '1';
-        }
-        // only set prefill if empty or differs from normalized node name
-        const normalizedNodeName = normalize(node.name || '');
-        if (!input.value) {
-            input.value = normalizedNodeName;
-            node.dataName = input.value;
-            this.state.emit('stateChanged');
-        }
-    };
+    // data save: name data removed from ui; no initialization needed
 
     Sidebar.prototype.showArgumentsError = function(message) {
         document.getElementById('arguments_loading').style.display = 'none';

@@ -1,0 +1,26 @@
+<div class="status_bar">
+    <span id="node_count">nodes: 0</span>
+    <span id="file_count" style="display: none;">files: 0  ·  folders: 0</span>
+    <span id="status_text"></span>
+    <button id="clear_history_status_btn" class="btn btn_secondary btn_danger_subtle" title="clear execution history" style="display: none;">
+        <span class="material-icons">delete_sweep</span>
+        <span class="btn_label">clear history</span>
+    </button>
+    <div style="flex: 1;"></div>
+    <div id="status_progress" style="display:none; width: 160px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-right: 16px;">
+        <div id="status_progress_bar" style="width: 0%; height: 100%; background: #7e57c2; transition: width 120ms ease;"></div>
+    </div>
+    <div id="node_coordinates" style="margin-right: 16px; opacity: 0.7; display: flex; align-items: center; gap: 8px;">
+        <span>x:</span>
+        <input type="number" id="node_x" class="coordinate_input" style="width: 50px; display: none;" title="x coordinate">
+        <span>y:</span>
+        <input type="number" id="node_y" class="coordinate_input" style="width: 50px; display: none;" title="y coordinate">
+        <div style="width: 16px;"></div>
+        <span>w:</span>
+        <input type="number" id="node_width" class="coordinate_input" style="width: 50px; display: none;" title="width">
+        <span>h:</span>
+        <input type="number" id="node_height" class="coordinate_input" style="width: 50px; display: none;" title="height">
+    </div>
+</div>
+
+

@@ -763,6 +763,38 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     color: var(--on-surface);
 }
 
+/* compact status text and actions */
+.status_bar #status_text { margin-right: 8px; }
+
+/* compact, unobtrusive button styling for status bar */
+#clear_history_status_btn {
+    /* reduce overall footprint to fit 32px bar */
+    font-size: 0.70rem;
+    padding: 2px 8px;
+    height: 22px;
+    line-height: 1;
+
+    /* neutral surface style to blend with bar */
+    background-color: var(--surface-variant) !important;
+    color: var(--on-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+#clear_history_status_btn:hover {
+    background-color: var(--hover-color) !important;
+}
+
+#clear_history_status_btn .material-icons {
+    font-size: 14px;
+}
+
+#clear_history_status_btn .btn_label {
+    font-size: 0.70rem;
+    text-transform: lowercase;
+}
+
 .coordinate_input {
     background: transparent;
     border: 1px solid var(--border-color);

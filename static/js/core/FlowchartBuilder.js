@@ -144,7 +144,6 @@ class FlowchartBuilder {
         });
         
         this.state.on('dataLoaded', (data) => {
-            this.updateStatusBar(data.message);
             this.updateStats();
             // try to restore viewport after data loads (handles initial load and flowchart switches)
             this.restoreViewportFromStorage();
@@ -172,6 +171,8 @@ class FlowchartBuilder {
         // mode change events
         this.state.on('modeChanged', (data) => {
             this.updateModeUI(data.mode, data.previousMode);
+            // update coordinates visibility based on mode
+            this.updateNodeCoordinates();
         });
         
         this.state.on('flowViewChanged', (data) => {
@@ -214,6 +215,13 @@ class FlowchartBuilder {
             // re-render annotations to apply selected class
             if (this.annotationRenderer && this.annotationRenderer.render) {
                 this.annotationRenderer.render();
+            }
+        });
+
+        // when a node is removed in build mode, clear all selections to reset ui state
+        this.state.on('nodeRemoved', () => {
+            if (this.state.isBuildMode) {
+                this.deselectAll();
             }
         });
         
@@ -563,6 +571,20 @@ class FlowchartBuilder {
         this.nodeCoordinates = document.getElementById('node_coordinates');
         this.statusProgress = document.getElementById('status_progress');
         this.statusProgressBar = document.getElementById('status_progress_bar');
+        this.statusBar = document.querySelector('.status_bar');
+
+        // capture default status text once
+        if (this.statusText && !this._defaultStatusText) {
+            this._defaultStatusText = this.statusText.textContent || 'ready';
+        }
+
+        // hide node count when viewing a past execution (history view in run mode via executionId)
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('executionId') && this.nodeCount) {
+                this.nodeCount.style.display = 'none';
+            }
+        } catch (_) {}
         
         // get coordinate input elements
         this.nodeXInput = document.getElementById('node_x');
@@ -573,8 +595,8 @@ class FlowchartBuilder {
         // setup coordinate input event listeners
         this.setupCoordinateInputs();
         
-        // initial status
-        this.updateStatusBar('ready - click to add nodes, drag dots to connect');
+        // initial status (suppress verbose hint)
+        this.updateStatusBar('');
         this.updateStats();
         this.updateNodeCoordinates();
     }
@@ -820,9 +842,63 @@ class FlowchartBuilder {
 
     // ui updates
     updateStatusBar(message) {
-        if (this.statusText) {
-            this.statusText.textContent = message;
+        // suppress mode/view toggle notifications in status bar
+        try {
+        const lower = String(message || '').toLowerCase();
+        const suppressPhrases = [
+                'build mode',
+                'run view enabled',
+                'run view disabled',
+                'flow view enabled',
+                'flow view disabled',
+                'error view enabled',
+                'error view disabled',
+                'group select mode enabled',
+            'group select mode disabled',
+            'ready - click to add nodes, drag to connect',
+            'run mode - interface locked for execution',
+            's: 1 run mode - interface locked for execution'
+            ];
+            if (suppressPhrases.some(p => lower.includes(p))) {
+                return;
+            }
+        } catch (_) {}
+
+        if (!this.statusText || !this.statusBar) {
+            if (this.statusText) this.statusText.textContent = message;
+            return;
         }
+
+        // set message
+        this.statusText.textContent = message;
+
+        // choose subtle background based on message content
+        const originalBg = this._statusOriginalBg || this.statusBar.style.backgroundColor;
+        this._statusOriginalBg = originalBg;
+        const lower = String(message || '').toLowerCase();
+        let bgColor = 'var(--surface-color)';
+        if (!message || lower.trim() === '') {
+            // no message: keep neutral background
+            bgColor = 'var(--surface-color)';
+        } else if (lower.startsWith('error') || lower.includes('failed')) {
+            bgColor = '#2A0E0E';
+        } else if (lower.startsWith('warning') || lower.includes('cannot')) {
+            bgColor = '#2a1f0e';
+        } else if (lower.includes('success')) {
+            bgColor = '#0e2a16';
+        }
+        this.statusBar.style.backgroundColor = bgColor;
+
+        // reset after a short delay
+        if (this._statusResetTimeout) {
+            clearTimeout(this._statusResetTimeout);
+        }
+        this._statusResetTimeout = setTimeout(() => {
+            this.statusBar.style.backgroundColor = this._statusOriginalBg || 'var(--surface-color)';
+            // clear message instead of restoring verbose default
+            this.statusText.textContent = '';
+            this._statusResetTimeout = null;
+        }, 3000);
     }
 
     // temporary progress utils for status bar
@@ -854,6 +930,15 @@ class FlowchartBuilder {
 
     updateNodeCoordinates() {
         if (!this.nodeCoordinates) return;
+        
+        // hide coordinates if not in build mode
+        if (!this.state.isBuildMode) {
+            this.nodeCoordinates.style.display = 'none';
+            return;
+        }
+        
+        // show coordinates in build mode
+        this.nodeCoordinates.style.display = 'flex';
         
         const selectedNodes = Array.from(this.state.selectedNodes);
         
@@ -1009,6 +1094,9 @@ class FlowchartBuilder {
             } else {
                 this.updateModeUI('build', null);
             }
+            
+            // ensure coordinates are properly hidden/shown based on initial mode
+            this.updateNodeCoordinates();
         } catch (error) {
             console.error('failed to initialize app:', error);
             this.updateStatusBar('failed to initialize application');
@@ -1071,14 +1159,16 @@ class FlowchartBuilder {
         const links = this.state.links;
         
         // step 1: identify connected nodes only (nodes that are part of execution flow)
-        // first filter out input nodes and their connections
-        const nonInputNodes = nodes.filter(node => node.type !== 'input_node');
+        // first filter out input nodes and data_save nodes and their connections
+        const nonInputNodes = nodes.filter(node => node.type !== 'input_node' && node.type !== 'data_save');
         const nonInputLinks = links.filter(link => {
             const sourceNode = nodes.find(n => n.id === link.source);
             const targetNode = nodes.find(n => n.id === link.target);
-            // exclude links that involve input nodes or input connections
+            // exclude links that involve input nodes or data_save nodes or input connections
             return sourceNode?.type !== 'input_node' && 
                    targetNode?.type !== 'input_node' &&
+                   sourceNode?.type !== 'data_save' &&
+                   targetNode?.type !== 'data_save' &&
                    link.type !== 'input_connection';
         });
         
@@ -1418,6 +1508,7 @@ class FlowchartBuilder {
         // history button removed
         const settingsBtn = document.getElementById('settings_btn');
         const floatingToolbar = document.getElementById('floating_toolbar');
+        const floatingToolbarSecondary = document.getElementById('floating_toolbar_secondary');
         const buildToolbar = document.getElementById('build_toolbar');
         const annotationToolbar = document.getElementById('annotation_toolbar');
         const topToolbars = document.getElementById('top_toolbars');
@@ -1448,6 +1539,7 @@ class FlowchartBuilder {
             // activate build mode
             buildBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // show floating toolbar
+            if (floatingToolbarSecondary) floatingToolbarSecondary.style.display = 'flex'; // show secondary toolbar
             if (topToolbars) topToolbars.style.display = 'flex';
             if (buildToolbar) buildToolbar.style.display = 'flex'; // show build toolbar
             if (annotationToolbar) annotationToolbar.style.display = 'flex'; // show annotation toolbar
@@ -1474,7 +1566,7 @@ class FlowchartBuilder {
                 this.nodeRenderer.hideAllPlayButtons();
             }
             
-            this.updateStatusBar('build mode - create and edit your flowchart');
+            // suppressed: build mode notification
             
         } else if (mode === 'run') {
             // hide multiselect button in run mode
@@ -1485,6 +1577,7 @@ class FlowchartBuilder {
             // activate run mode
             runBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'flex'; // keep floating toolbar visible in run mode
+            if (floatingToolbarSecondary) floatingToolbarSecondary.style.display = 'flex'; // keep secondary toolbar visible in run mode
             if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in run
             if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in run
@@ -1517,12 +1610,28 @@ class FlowchartBuilder {
             // update play button visibility for current selection
             this.nodeRenderer.updatePlayButtonVisibility();
             
-            this.updateStatusBar('run mode - interface locked for execution');
+            // suppressed: run mode interface locked message
+
+            // check if a specific executionId is requested (from data matrix view button)
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const execId = params.get('executionId');
+                if (execId) {
+                    // clear the param from url to avoid repeated loads on refresh
+                    params.delete('executionId');
+                    const newSearch = params.toString();
+                    const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
+                    window.history.replaceState(null, '', newURL);
+                    // load and display this execution
+                    this.viewExecutionHistory(execId);
+                }
+            } catch (_) {}
             
         } else if (mode === 'settings') {
             // activate settings mode as full page view
             if (settingsBtn) settingsBtn.classList.add('run_mode_active');
             floatingToolbar.style.display = 'none';
+            if (floatingToolbarSecondary) floatingToolbarSecondary.style.display = 'none'; // hide secondary toolbar in settings mode
             if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in settings
             if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in settings
@@ -1717,6 +1826,10 @@ class FlowchartBuilder {
                 
             const node = executionOrder[i];
                 const success = await this.executeNodeLive(node, i + 1, executionOrder.length);
+                // after a successful python node, persist any connected data_save values
+                if (success && node.type === 'python_file') {
+                    try { await this.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
+                }
                 // update sidebar progress each step
                 this.updateExecutionStatus('running', `executing ${i + 1} of ${executionOrder.length}`);
                 
@@ -1840,11 +1953,67 @@ class FlowchartBuilder {
                     });
                 }
             }
+
+            // also include synthesized results for data_save nodes (not part of executionOrder)
+            try {
+                const dataSaveNodes = this.state.nodes.filter(n => n.type === 'data_save');
+                for (const ds of dataSaveNodes) {
+                    const dsResult = this.nodeExecutionResults.get(ds.id);
+                    if (!dsResult) continue;
+                    results.push({
+                        node_id: ds.id,
+                        node_name: ds.name,
+                        python_file: dsResult.python_file || '',
+                        success: dsResult.success,
+                        output: dsResult.output,
+                        error: dsResult.error,
+                        runtime: dsResult.runtime,
+                        timestamp: dsResult.timestamp,
+                        return_value: dsResult.return_value,
+                        function_name: dsResult.function_name || 'data_save',
+                        input_args: dsResult.input_args,
+                        // carry metadata to help ui show the python variable name
+                        data_save: dsResult.data_save || {
+                            data_name: (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || (ds && ds.name) || 'data',
+                            variable_name: (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null
+                        }
+                    });
+                }
+            } catch (_) {}
+
+            // build a normalized data_saves array for easy consumption in the data matrix
+            const dataSaves = [];
+            try {
+                const dataSaveNodes = this.state.nodes.filter(n => n.type === 'data_save');
+                for (const ds of dataSaveNodes) {
+                    const dsResult = this.nodeExecutionResults.get(ds.id);
+                    if (!dsResult || !dsResult.return_value || typeof dsResult.return_value !== 'object') continue;
+                    const keys = Object.keys(dsResult.return_value);
+                    if (keys.length === 0) continue;
+                    const varName = (dsResult.data_save && dsResult.data_save.variable_name) || keys[0];
+                    const value = dsResult.return_value[varName] ?? dsResult.return_value[keys[0]];
+                    const typeOf = (val) => {
+                        if (val === null) return 'null';
+                        if (Array.isArray(val)) return 'array';
+                        if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'float';
+                        if (typeof val === 'object') return 'object';
+                        if (typeof val === 'string') return 'string';
+                        if (typeof val === 'boolean') return 'boolean';
+                        return typeof val;
+                    };
+                    dataSaves.push({
+                        node_name: ds.name || 'data save',
+                        variable_name: varName || keys[0],
+                        variable_content: [ typeOf(value), value ]
+                    });
+                }
+            } catch (_) {}
             
             const executionData = {
                 status: status,
                 execution_order: executionOrder.map(node => node.id),
                 results: results,
+                data_saves: dataSaves,
                 total_nodes: executionOrder.length,
                 successful_nodes: results.filter(r => r.success).length,
                 error_message: errorMessage,
@@ -1856,7 +2025,9 @@ class FlowchartBuilder {
                         y: node.y,
                         pythonFile: node.pythonFile,
                         description: node.description,
-                        type: node.type
+                        type: node.type,
+                        // include data_save specific fields to support data matrix table
+                        dataSource: node.dataSource
                     })),
                     links: this.state.links,
                     groups: this.state.groups
@@ -2103,6 +2274,9 @@ class FlowchartBuilder {
                     const result = this.nodeExecutionResults.get(node.id);
                     if (result && result.return_value && typeof result.return_value === 'object') {
                         Object.assign(currentVariables, result.return_value);
+                    }
+                    if (node.type === 'python_file') {
+                        try { await this.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
                     }
                 } else {
                     // if node failed, stop execution immediately
@@ -2444,6 +2618,73 @@ class FlowchartBuilder {
         console.log(`[${targetNode.name}] Final function args (from previous nodes):`, functionArgs);
         console.log(`[${targetNode.name}] Final input values (for input() calls):`, inputValues);
         return { functionArgs, inputValues };
+    }
+
+    // persist data from connected data_save nodes when a python node completes successfully
+    async persistDataSaveForNode(pythonNode) {
+        try {
+            // find all data_save nodes connected to this python node (either direction)
+            const connectedDataSaves = [];
+            for (const link of this.state.links) {
+                if (link.source === pythonNode.id) {
+                    const t = this.state.getNode(link.target);
+                    if (t && t.type === 'data_save') connectedDataSaves.push(t);
+                } else if (link.target === pythonNode.id) {
+                    const s = this.state.getNode(link.source);
+                    if (s && s.type === 'data_save') connectedDataSaves.push(s);
+                }
+            }
+            if (connectedDataSaves.length === 0) return;
+
+            // get latest execution result for this python node
+            const result = this.nodeExecutionResults.get(pythonNode.id);
+            const returnsVal = result ? result.return_value : undefined;
+
+            connectedDataSaves.forEach(ds => {
+                // variable to save chosen in sidebar
+                const varName = (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null;
+                const dataKey = varName || (ds && ds.name) || 'data';
+                if (typeof varName !== 'string' || !result) return;
+                let value;
+                const rv = returnsVal;
+                if (rv && typeof rv === 'object') {
+                    if (Object.prototype.hasOwnProperty.call(rv, varName)) {
+                        value = rv[varName];
+                    } else {
+                        const keys = Object.keys(rv);
+                        if (keys.length === 1) {
+                            value = rv[keys[0]];
+                        }
+                    }
+                } else if (typeof rv !== 'undefined') {
+                    value = rv; // treat primitive return as the selected variable's value
+                }
+                if (typeof value === 'undefined') return;
+                try {
+                    // store a synthetic result entry so it shows up in history and data matrix
+                    const synthetic = {
+                        node_id: ds.id,
+                        node_name: ds.name || 'data save',
+                        python_file: pythonNode.pythonFile,
+                        success: true,
+                        output: '',
+                        error: null,
+                        runtime: 0,
+                        timestamp: new Date().toLocaleTimeString(),
+                        return_value: { [dataKey]: value },
+                        function_name: 'data_save',
+                        input_args: {},
+                        data_save: { data_name: dataKey, variable_name: varName }
+                    };
+                    // push into current map so saveExecutionHistory includes it
+                    this.nodeExecutionResults.set(ds.id, synthetic);
+                } catch (e) {
+                    console.warn('failed to synthesize data_save result', e);
+                }
+            });
+        } catch (e) {
+            console.warn('persistDataSaveForNode error', e);
+        }
     }
 
     async updateConnectedInputNodes(sourceNodeId, returnValue) {

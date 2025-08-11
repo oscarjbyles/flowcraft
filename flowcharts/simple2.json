@@ -27,13 +27,11 @@
       "groupId": null,
       "id": 1754557341635.2678,
       "inputValues": {
-        "variable3": "",
         "variableA": "4"
       },
       "name": "Input Node",
       "parameters": [
-        "variableA",
-        "variable3"
+        "variableA"
       ],
       "pythonFile": "nodes/example.py",
       "skipInputCheck": true,

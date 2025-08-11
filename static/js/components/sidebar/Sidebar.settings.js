@@ -7,6 +7,29 @@
         this.defaultEditorInput = document.getElementById('default_editor_input');
         this.defaultEditorDropdown = document.getElementById('default_editor_dropdown');
 
+        // wire clear history button
+        const clearBtn = document.getElementById('clear_history_btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async () => {
+                try {
+                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
+                    const resp = await fetch('/api/history/clear', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ flowchart_name: current })
+                    });
+                    const data = await resp.json();
+                    if (data.status === 'success') {
+                        this.showSuccess(data.message || 'history cleared');
+                    } else {
+                        this.showError(data.message || 'failed to clear history');
+                    }
+                } catch (err) {
+                    this.showError('error clearing history');
+                }
+            });
+        }
+
         if (!this.defaultEditorInput || !this.defaultEditorDropdown) return;
 
         // load saved preference from localstorage

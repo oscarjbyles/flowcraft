@@ -52,6 +52,14 @@
         .sidebar_item .material-icons { margin-right:12px; font-size:20px; width:26px; }
         .sidebar_footer { margin-top:auto; padding-top:8px; border-top:1px solid var(--border-color); }
         .main_content { flex:1; display:flex; flex-direction:column; background-color: var(--background-color); }
+        .status_bar { height: 32px; background-color: var(--surface-color); border-top: 1px solid var(--border-color); display:flex; align-items:center; padding: 0 16px; font-size: 0.75rem; color: var(--on-surface); }
+        /* hide node count in scripts page */
+        #node_count { display: none; }
+        /* show file count in scripts page */
+        #file_count { display: inline !important; }
+        /* hide coordinates in scripts page */
+        #node_coordinates { display: none !important; }
+        .coordinate_input { background: transparent; border: 1px solid var(--border-color); border-radius: 2px; color: var(--on-surface); font-size: 0.75rem; padding: 2px 4px; text-align: center; outline: none; }
         @media (max-width:768px){ .sidebar{ width:240px; } }
         /* explorer layout */
         .scripts_container { flex:1; display:flex; flex-direction:column; padding:16px; gap:12px; }
@@ -152,7 +160,7 @@
 
         <!-- main content for scripts interface -->
         <div class="main_content">
-            <div class="scripts_container">
+            <div class="scripts_container" style="flex:1;">
                 <div class="explorer_toolbar">
                     <button id="btn_new_file" class="explorer_btn"><span class="material-icons">note_add</span> Create File</button>
                     <button id="btn_new_folder" class="explorer_btn"><span class="material-icons">create_new_folder</span> Create Folder</button>
@@ -186,6 +194,7 @@
                     </table>
                 </div>
             </div>
+            {% include 'partials/status_bar.html' %}
         </div>
     </div>
 
@@ -414,7 +423,20 @@
             }
 
             function renderEntries(entries){
+                // update file and folder count in status bar
+                const fileCountEl = document.getElementById('file_count');
+                if (fileCountEl) {
+                    const fileCount = entries.filter(e => !e.is_dir).length;
+                    const folderCount = entries.filter(e => e.is_dir).length;
+                    fileCountEl.textContent = `files: ${fileCount}  ·  folders: ${folderCount}`;
+                }
+                
                 if (!entries.length){
+                    // update file count for empty directory
+                    const fileCountEl = document.getElementById('file_count');
+                    if (fileCountEl) {
+                        fileCountEl.textContent = 'files: 0  ·  folders: 0';
+                    }
                     tbody.innerHTML = `<tr><td class=\"explorer_td\" colspan=\"5\"><div class=\"empty_state\">empty folder</div></td></tr>`;
                     return;
                 }
@@ -493,6 +515,11 @@
             }
 
             function renderError(msg){
+                // reset file count on error
+                const fileCountEl = document.getElementById('file_count');
+                if (fileCountEl) {
+                    fileCountEl.textContent = 'files: 0  ·  folders: 0';
+                }
                 tbody.innerHTML = `<tr><td class=\"explorer_td\" colspan=\"5\"><div class=\"empty_state\">${msg}</div></td></tr>`;
             }
 

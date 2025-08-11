@@ -4,18 +4,19 @@
       "description": "",
       "groupId": 1754694400800.869,
       "id": 1754653519066.0964,
-      "name": "node1",
+      "name": "square input",
       "pythonFile": "nodes/test2/node1.py",
       "type": "python_file",
       "width": 120,
-      "x": 169.04180908203125,
-      "y": -691.2653007507324
+      "x": 347.2919006347656,
+      "y": -741.5102958679199
     },
     {
       "description": "",
       "groupId": 1754694400800.869,
       "id": 1754654709071.8608,
-      "name": "node4",
+      "magnet_partner_id": 1754904147880.503,
+      "name": "input + sleep",
       "pythonFile": "nodes/test2/node4.py",
       "type": "python_file",
       "width": 120,
@@ -61,8 +62,50 @@
       "pythonFile": "",
       "type": "data_save",
       "width": 80,
-      "x": 425.4271305429647,
-      "y": -860.1681957867147
+      "x": 364.41533549901936,
+      "y": -843.4198437359335
+    },
+    {
+      "description": "input parameters",
+      "groupId": 1754694400800.869,
+      "id": 1754903834540.247,
+      "inputValues": {
+        "valueA": "10"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "valueA"
+      ],
+      "pythonFile": "nodes/test2/node4.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1754654709071.8608,
+      "type": "input_node",
+      "width": 300,
+      "x": -94.47918701171875,
+      "y": -847.2426147460938
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754904147880.503,
+      "magnet_partner_id": 1754654709071.8608,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 172.51415252685547,
+      "y": -767.2426147460938
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754908819721.7458,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": -120.53990173339844,
+      "y": -584.7970581054688
     }
   ],
   "links": [
@@ -83,6 +126,22 @@
       "source": 1754654709071.8608,
       "style": "dashed",
       "target": 1754867312491.0635
+    },
+    {
+      "selectable": false,
+      "source": 1754903834540.247,
+      "style": "dashed",
+      "target": 1754654709071.8608,
+      "type": "input_connection"
+    },
+    {
+      "selectable": false,
+      "source": 1754654709071.8608,
+      "target": 1754904147880.503
+    },
+    {
+      "source": 1754904147880.503,
+      "target": 1754908819721.7458
     }
   ],
   "groups": [
