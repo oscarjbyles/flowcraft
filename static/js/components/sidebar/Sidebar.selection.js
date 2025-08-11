@@ -37,14 +37,15 @@
         this.updateFooterDelete(selection);
         this.updateFooterVisibility(selection);
 
-        const quickBtn = document.getElementById('add_if_condition_btn');
-        if (quickBtn) {
+        const quickGroup = document.getElementById('python_quick_actions');
+        if (quickGroup) {
             const one = selection.nodes.length === 1 ? this.state.getNode(selection.nodes[0]) : null;
             let hasIf = false;
             if (one && one.type === 'python_file') {
                 hasIf = !!this.state.getAssociatedIfForPython(one.id);
             }
-            quickBtn.style.display = (one && one.type === 'python_file' && !this.state.isRunMode && !hasIf) ? 'flex' : 'none';
+            // show/hide the entire quick action form_group instead of the inner button
+            quickGroup.style.display = (one && one.type === 'python_file' && !this.state.isRunMode && !hasIf) ? '' : 'none';
         }
     };
 
@@ -187,6 +188,14 @@
         if (this.state.isRunMode && numNodes > 0) {
             this.footerDeleteBtn.style.display = 'none';
             return;
+        }
+        // hide delete for single input_node to avoid confusing ux
+        if (numNodes === 1) {
+            const n = this.state.getNode(selection.nodes[0]);
+            if (n && n.type === 'input_node') {
+                this.footerDeleteBtn.style.display = 'none';
+                return;
+            }
         }
         if (selection.link) {
             this.footerDeleteBtn.style.display = 'block';

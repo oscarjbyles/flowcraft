@@ -177,6 +177,11 @@ def scripts_page():
     """scripts page (separate interface with identical sidebar)"""
     return render_template('scripts.html')
 
+@app.route('/data')
+def data_matrix_page():
+    """data matrix page - displays executions and saved data."""
+    return render_template('data_matrix.html')
+
 @app.route('/api/open-file', methods=['POST'])
 def open_file_in_editor():
     """open a python file in a real editor.
@@ -1895,6 +1900,7 @@ def analyze_python_function():
                 # find input() calls within assignment statements to get variable names
                 input_calls = []
                 input_variable_names = []
+                input_variable_details = []
                 
                 # look for assignment statements where input() is assigned to a variable
                 for child in ast.walk(node):
@@ -1909,6 +1915,8 @@ def analyze_python_function():
                                 if isinstance(target, ast.Name):
                                     variable_name = target.id
                                     input_variable_names.append(variable_name)
+                                    # record the exact line number of this input assignment
+                                    input_variable_details.append({'name': variable_name, 'line': child.lineno})
                                     
                                     # also extract prompt for backward compatibility
                                     if (len(child.value.args) > 0 and 
@@ -1936,12 +1944,23 @@ def analyze_python_function():
                     'formal_parameters': formal_params,
                     'input_calls': input_calls,
                     'input_variable_names': input_variable_names,
+                    'input_variable_details': input_variable_details,
                     'returns': returns,
                     'line': node.lineno
                 })
         
         # if no functions found but there are top-level input assignments, create a virtual function
         if not functions and top_level_input_vars:
+            # gather line numbers for top-level input assignments
+            top_level_input_details = []
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    if (isinstance(node.value, ast.Call) and 
+                        isinstance(node.value.func, ast.Name) and 
+                        node.value.func.id == 'input'):
+                        for target in node.targets:
+                            if isinstance(target, ast.Name):
+                                top_level_input_details.append({'name': target.id, 'line': node.lineno})
             all_parameters = top_level_input_vars if top_level_input_vars else top_level_input_calls
             functions.append({
                 'name': 'main',  # virtual function name for top-level code
@@ -1949,6 +1968,7 @@ def analyze_python_function():
                 'formal_parameters': [],
                 'input_calls': top_level_input_calls,
                 'input_variable_names': top_level_input_vars,
+                'input_variable_details': top_level_input_details,
                 'line': 1
             })
         
@@ -1969,6 +1989,7 @@ def analyze_python_function():
             'formal_parameters': target_function.get('formal_parameters', []),  # for variable passing
             'input_calls': target_function.get('input_calls', []),
             'input_variable_names': target_function.get('input_variable_names', []),
+            'input_variable_details': target_function.get('input_variable_details', []),
             'returns': target_function.get('returns', []),  # add return information
             'line': target_function['line']
         })

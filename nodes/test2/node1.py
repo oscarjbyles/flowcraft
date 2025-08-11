@@ -7,3 +7,4 @@ def my_function(valueA):
     print('value after: ' + str(valueB))
 
     return valueB
+    return valueA

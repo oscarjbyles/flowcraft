@@ -1238,6 +1238,16 @@ class NodeRenderer {
             const result = await response.json();
             
             if (result.success && result.parameters) {
+                // if there are no parameters, delete the associated input node
+                // note: deletion uses force=true because input nodes are protected by default
+                if (Array.isArray(result.parameters) && result.parameters.length === 0) {
+                    try {
+                        this.state.removeNode(node.id, true);
+                    } catch (e) {
+                        console.error('error deleting input node after empty analysis:', e);
+                    }
+                    return;
+                }
                 // update the node with new parameters
                 const updatedInputValues = {};
                 

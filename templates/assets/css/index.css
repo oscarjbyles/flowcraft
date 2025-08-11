@@ -393,6 +393,9 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     color: #ffffff;
 }
 
+/* fix left padding/offset on ungroup icon inside the button */
+#group_properties #ungroup_nodes { display: flex; align-items: center; justify-content: center; }
+
 /* run mode start/clear buttons – align with build toolbar buttons (keep colors) */
 .start_button_container .btn {
     height: 40px;
@@ -1066,10 +1069,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     width: 450px;
 }
 
-/* history view width */
-.main_content.history_mode {
-    margin-right: 430px;
-}
+/* history view removed */
 
 .properties_sidebar.history_mode {
     width: 430px;

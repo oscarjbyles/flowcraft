@@ -482,12 +482,7 @@ class FlowchartBuilder {
             window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
         });
         
-        document.getElementById('history_btn').addEventListener('click', () => {
-            this.switchToHistoryMode();
-            const u = new URL(window.location.href);
-            u.searchParams.set('mode', 'history');
-            window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
-        });
+        // history removed
 
         // settings button
         const settingsBtn = document.getElementById('settings_btn');
@@ -559,10 +554,7 @@ class FlowchartBuilder {
             });
         }
         
-        // refresh history button
-        document.getElementById('refresh_history_btn').addEventListener('click', () => {
-            this.loadExecutionHistory();
-        });
+        // history removed
     }
 
     setupStatusBar() {
@@ -1007,13 +999,11 @@ class FlowchartBuilder {
             // now load the initial data with correct flowchart
             await this.loadInitialData();
             
-            // set initial mode from url if provided (e.g., ?mode=run or ?mode=history)
+            // set initial mode from url if provided (e.g., ?mode=run)
             const params = new URLSearchParams(window.location.search);
             const mode = params.get('mode');
             if (mode === 'run') {
                 this.switchToRunMode();
-            } else if (mode === 'history') {
-                this.switchToHistoryMode();
             } else if (mode === 'settings') {
                 this.switchToSettingsMode();
             } else {
@@ -1191,10 +1181,7 @@ class FlowchartBuilder {
         this.state.setMode('run');
     }
 
-    switchToHistoryMode() {
-        this.state.setMode('history');
-        this.loadExecutionHistory();
-    }
+            // history mode removed
 
     switchToSettingsMode() {
         this.state.setMode('settings');
@@ -1428,7 +1415,7 @@ class FlowchartBuilder {
         const buildBtn = document.getElementById('build_btn');
         const scriptsBtn = document.getElementById('scripts_btn');
         const runBtn = document.getElementById('run_btn');
-        const historyBtn = document.getElementById('history_btn');
+        // history button removed
         const settingsBtn = document.getElementById('settings_btn');
         const floatingToolbar = document.getElementById('floating_toolbar');
         const buildToolbar = document.getElementById('build_toolbar');
@@ -1445,7 +1432,7 @@ class FlowchartBuilder {
         buildBtn.classList.remove('run_mode_active');
         if (scriptsBtn) scriptsBtn.classList.remove('run_mode_active');
         runBtn.classList.remove('run_mode_active');
-        historyBtn.classList.remove('run_mode_active');
+        // no history button to reset
         if (settingsBtn) settingsBtn.classList.remove('run_mode_active');
         
         // ensure settings page is hidden unless in settings mode
@@ -1479,7 +1466,6 @@ class FlowchartBuilder {
             
             // switch back to default panel
             this.hideExecutionPanel();
-            this.hideHistoryPanel();
             
             // reset node colors when leaving run mode
             if (previousMode === 'run' || previousMode === 'history') {
@@ -1527,56 +1513,12 @@ class FlowchartBuilder {
             
             // switch to execution panel
             this.showExecutionPanel();
-            this.hideHistoryPanel();
             
             // update play button visibility for current selection
             this.nodeRenderer.updatePlayButtonVisibility();
             
             this.updateStatusBar('run mode - interface locked for execution');
             
-        } else if (mode === 'history') {
-            // hide multiselect button in history mode
-            const groupSelectBtn = document.getElementById('group_select_btn');
-            if (groupSelectBtn) {
-                groupSelectBtn.style.display = 'none';
-            }
-            // activate history mode
-            historyBtn.classList.add('run_mode_active');
-            // keep floating toolbar visible in history mode
-            floatingToolbar.style.display = 'flex';
-            
-            // disable add node section in history mode
-            if (addNodeSection) {
-                addNodeSection.classList.add('disabled');
-            }
-            
-            // disable group select mode in history mode
-            if (this.isGroupSelectMode) {
-                this.isGroupSelectMode = false;
-                const groupSelectBtn = document.getElementById('group_select_btn');
-                groupSelectBtn.classList.remove('active');
-                const canvas = document.getElementById('flowchart_canvas');
-                canvas.style.cursor = '';
-                this.hideSelectionRect();
-            }
-            
-            // hide start button
-            startButtonContainer.style.display = 'none';
-            
-            // set history-specific width
-            mainContent.classList.add('history_mode');
-            propertiesSidebar.classList.add('history_mode');
-            if (topToolbars) topToolbars.style.display = 'none';
-            if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in history
-            if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in history
-            
-            // switch to history panel
-            this.hideExecutionPanel();
-            this.showHistoryPanel();
-            // always (re)load history when entering history mode
-            this.loadExecutionHistory();
-            
-            this.updateStatusBar('history mode - view past executions');
         } else if (mode === 'settings') {
             // activate settings mode as full page view
             if (settingsBtn) settingsBtn.classList.add('run_mode_active');
@@ -1598,7 +1540,6 @@ class FlowchartBuilder {
             if (mainContent) mainContent.classList.add('full_width');
 
             // hide other special panels
-            this.hideHistoryPanel();
             this.hideExecutionPanel();
 
             // show full page settings
@@ -1718,18 +1659,7 @@ class FlowchartBuilder {
         }
     }
 
-    showHistoryPanel() {
-        // only show history panel in history mode
-        if (this.state.isHistoryMode) {
-            // hide all other panels
-            document.querySelectorAll('.properties_content').forEach(panel => {
-                panel.classList.remove('active');
-            });
-            
-            // show history panel
-            document.getElementById('execution_history_properties').classList.add('active');
-        }
-    }
+    // history panel removed
 
     showSettingsPage() {
         const settingsPage = document.getElementById('settings_page');
@@ -1741,19 +1671,7 @@ class FlowchartBuilder {
         if (settingsPage) settingsPage.style.display = 'none';
     }
 
-    hideHistoryPanel() {
-        // hide history panel
-        const historyPanel = document.getElementById('execution_history_properties');
-        if (historyPanel) {
-            historyPanel.classList.remove('active');
-        }
-        
-        // let sidebar handle showing the appropriate panel
-        if (this.state.isBuildMode) {
-            // trigger sidebar update to show correct panel for current selection
-            this.state.emit('updateSidebar');
-        }
-    }
+    // history panel removed
 
     async startExecution() {
         // clear all selections when starting execution (same as deselect button)
@@ -1968,85 +1886,7 @@ class FlowchartBuilder {
             console.error('error saving execution history:', error);
         }
     }
-
-    async loadExecutionHistory() {
-        try {
-            const historyLoading = document.getElementById('history_loading');
-            const historyContent = document.getElementById('history_content');
-            const historyEmpty = document.getElementById('history_empty');
-            const historyError = document.getElementById('history_error');
-            
-            // show loading state
-            historyLoading.style.display = 'block';
-            historyContent.style.display = 'none';
-            historyEmpty.style.display = 'none';
-            historyError.style.display = 'none';
-            
-            const response = await fetch(`/api/history?flowchart_name=${encodeURIComponent(this.getCurrentFlowchartName())}`);
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                if (result.history.length === 0) {
-                    // no history entries
-                    historyLoading.style.display = 'none';
-                    historyEmpty.style.display = 'block';
-                } else {
-                    // populate history entries
-                    this.renderHistoryEntries(result.history);
-                    historyLoading.style.display = 'none';
-                    historyContent.style.display = 'block';
-                }
-            } else {
-                // error loading history
-                historyLoading.style.display = 'none';
-                historyError.style.display = 'block';
-                document.getElementById('history_error_message').textContent = result.message || 'failed to load execution history';
-            }
-            
-        } catch (error) {
-            console.error('error loading execution history:', error);
-            
-            // show error state
-            document.getElementById('history_loading').style.display = 'none';
-            document.getElementById('history_error').style.display = 'block';
-            document.getElementById('history_error_message').textContent = 'network error loading history';
-        }
-    }
-
-    renderHistoryEntries(historyEntries) {
-        const historyContent = document.getElementById('history_content');
-        historyContent.innerHTML = '';
-        
-        historyEntries.forEach(entry => {
-            const entryDiv = document.createElement('div');
-            entryDiv.className = `history_entry ${entry.status}`;
-            
-            const failedNodeText = entry.failed_node ? `<div>Failed at: ${entry.failed_node}</div>` : '';
-            
-            entryDiv.innerHTML = `
-                <div class="history_entry_header">
-                    <div class="history_entry_time">${entry.execution_time}</div>
-                    <div class="history_entry_status ${entry.status}">${entry.status}</div>
-                </div>
-                <div class="history_entry_stats">
-                    <div>${entry.successful_nodes}/${entry.total_nodes} nodes (${entry.success_percentage}%)</div>
-                    ${failedNodeText}
-                </div>
-                <div class="history_entry_actions">
-                    <button class="history_entry_btn view" onclick="window.flowchartApp.viewExecutionHistory('${entry.execution_id}')">
-                        <span class="material-icons" style="font-size: 14px;">visibility</span>
-                        view
-                    </button>
-                    <button class="history_entry_btn delete" onclick="window.flowchartApp.deleteExecutionHistory('${entry.execution_id}')">
-                        <span class="material-icons" style="font-size: 14px;">delete</span>
-                        delete
-                    </button>
-                </div>
-            `;
-            
-            historyContent.appendChild(entryDiv);
-        });
-    }
+    // history removed
 
     async viewExecutionHistory(executionId) {
         try {
@@ -2088,8 +1928,7 @@ class FlowchartBuilder {
             const result = await response.json();
             
             if (result.status === 'success') {
-                // reload history list
-                this.loadExecutionHistory();
+                // no-op: history panel removed; data matrix will reflect deletion on refresh
             } else {
                 alert('failed to delete execution: ' + result.message);
             }

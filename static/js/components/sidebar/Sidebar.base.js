@@ -22,7 +22,7 @@ class Sidebar {
             link: document.getElementById('link_properties'),
             annotation: document.getElementById('annotation_properties'),
             execution: document.getElementById('run_execution_properties'),
-            history: document.getElementById('execution_history_properties')
+            history: null
         };
 
         // pinned footer container and delete button

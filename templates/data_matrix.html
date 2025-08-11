@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowCraft • Data Matrix</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/assets/css/index.css">
+    <link rel="stylesheet" href="/assets/css/data_matrix.css">
+</head>
+<body>
+    {% include 'partials/sidebar.html' %}
+    <div class="data_matrix_container" style="margin-left:320px;">
+        <header class="dm_header">
+            <h1>data matrix</h1>
+            <div class="dm_actions">
+                <a href="/" class="dm_link"><span class="material-icons">arrow_back</span> back to builder</a>
+            </div>
+        </header>
+
+        <div id="dm_content" class="dm_content">
+            <!-- one block per execution -->
+        </div>
+    </div>
+
+    <script>
+    (async function(){
+        // small helpers (keep comments in lower case to match project convention)
+        const $ = (sel) => document.querySelector(sel);
+        const container = document.getElementById('dm_content');
+        function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html!==undefined) e.innerHTML = html; return e; }
+
+        // unify flowchart context from url
+        const params = new URLSearchParams(window.location.search);
+        const modeParam = params.get('mode') || 'build';
+        const flowNameParam = params.get('flowchart'); // display form (no .json)
+        const flowFileParam = params.get('flowchart_name'); // filename form (with .json)
+        const flowDisplay = (flowNameParam || (flowFileParam ? flowFileParam.replace(/\.json$/i, '') : 'default'));
+        const flowFilename = (flowFileParam || `${flowDisplay}.json`);
+
+        // wire sidebar navigation to preserve flowchart across pages
+        function withFlowchart(href){
+            const u = new URL(href, window.location.origin);
+            // builder pages use ?flowchart=display and ?mode=...
+            if (u.pathname === '/' || u.pathname === '/scripts') {
+                if (flowDisplay && flowDisplay !== 'default') u.searchParams.set('flowchart', flowDisplay); else u.searchParams.delete('flowchart');
+                if (!u.searchParams.get('mode')) u.searchParams.set('mode', modeParam || 'build');
+            }
+            // data matrix uses ?flowchart_name=filename
+            if (u.pathname === '/data') {
+                u.searchParams.set('flowchart_name', flowFilename || 'default.json');
+            }
+            return u.pathname + (u.search ? u.search : '');
+        }
+
+        const navMap = new Map([
+            ['build_btn','/'],
+            ['scripts_btn','/scripts'],
+            ['run_btn','/?mode=run'],
+            ['export_btn','/'],
+            ['settings_btn','/?mode=settings'],
+            ['data_matrix_btn','/data']
+        ]);
+        navMap.forEach((href, id) => { const el = document.getElementById(id); if (el) el.onclick = () => window.location.href = withFlowchart(href); });
+
+        // highlight data matrix as active; clear others
+        (['build_btn','scripts_btn','run_btn','settings_btn','export_btn','data_matrix_btn']).forEach(id => {
+            const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.classList.remove('run_mode_active'); }
+        });
+        const dmBtn = document.getElementById('data_matrix_btn'); if (dmBtn) dmBtn.classList.add('active');
+
+        // back link should preserve flowchart context to builder
+        const backLink = document.querySelector('.dm_actions .dm_link');
+        if (backLink) backLink.setAttribute('href', withFlowchart('/'));
+
+        // flowchart dropdown: fetch and populate, keep selection reflecting current flow
+        const selector = document.getElementById('flowchart_selector');
+        const dropdown = document.getElementById('flowchart_dropdown');
+        const createBtn = document.getElementById('create_flowchart_btn');
+
+        async function fetchFlowcharts(){
+            try {
+                const resp = await fetch('/api/flowcharts');
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    renderDropdown(data.flowcharts || []);
+                    if (selector) selector.value = flowDisplay || 'default';
+                } else {
+                    dropdown.innerHTML = '<div class="dropdown_no_results">failed to load flowcharts</div>';
+                }
+            } catch (_) {
+                dropdown.innerHTML = '<div class="dropdown_no_results">error loading flowcharts</div>';
+            }
+        }
+
+        function renderDropdown(items){
+            if (!items.length) { dropdown.innerHTML = '<div class="dropdown_no_results">no flowcharts found</div>'; return; }
+            dropdown.innerHTML = items.map(f => `
+                <div class="dropdown_item" data-filename="${f.filename}" data-name="${f.name}">
+                    <div class="dropdown_item_content">
+                        <div class="dropdown_item_name">${f.name}</div>
+                    </div>
+                </div>
+            `).join('');
+            dropdown.querySelectorAll('.dropdown_item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (selector) selector.value = item.dataset.name;
+                    toggleDropdown(false);
+                    // stay on data matrix; update flowchart_name
+                    const url = new URL('/data', window.location.origin);
+                    url.searchParams.set('flowchart_name', item.dataset.filename);
+                    // preserve mode for consistency in nav
+                    url.searchParams.set('mode', modeParam || 'build');
+                    window.location.href = url.pathname + '?' + url.searchParams.toString();
+                });
+            });
+        }
+
+        function toggleDropdown(force){ const show = typeof force === 'boolean' ? force : !dropdown.classList.contains('show'); dropdown.classList.toggle('show', show); }
+        if (selector) {
+            selector.addEventListener('click', (e) => { e.stopPropagation(); toggleDropdown(); });
+            document.addEventListener('click', (e) => { const container = selector.closest('.dropdown_container'); if (container && !container.contains(e.target)) dropdown.classList.remove('show'); });
+            fetchFlowcharts();
+        }
+
+        // create flowchart from data matrix: redirect to builder and open modal
+        if (createBtn) createBtn.onclick = (e) => { e.preventDefault(); const u = new URL('/', window.location.origin); if (flowDisplay && flowDisplay !== 'default') u.searchParams.set('flowchart', flowDisplay); u.searchParams.set('mode','build'); u.searchParams.set('openCreateFlowchart','1'); window.location.href = u.pathname + '?' + u.searchParams.toString(); };
+
+        // fetch latest history for current flowchart
+        const res = await fetch(`/api/history?flowchart_name=${encodeURIComponent(flowFilename)}`);
+        const data = await res.json();
+        if (!data || data.status !== 'success') {
+            container.appendChild(el('div','dm_error','failed to load history'));
+            return;
+        }
+
+        const executions = data.history || [];
+        if (executions.length === 0) {
+            container.appendChild(el('div','dm_empty','no executions yet'));
+            return;
+        }
+
+        // helper to fetch full execution details for richer data
+        async function fetchDetails(executionId){
+            try {
+                const resp = await fetch(`/api/history/${executionId}?flowchart_name=${encodeURIComponent(flowFilename)}`);
+                const json = await resp.json();
+                if (json && json.status === 'success') return json.execution;
+            } catch (_) {}
+            return null;
+        }
+
+        // render one row block per execution and enrich with detailed data
+        const detailPromises = executions.map(exec => fetchDetails(exec.execution_id));
+        const details = await Promise.all(detailPromises);
+        executions.forEach((exec, idx) => {
+            const row = el('div','dm_row');
+
+            // left: high-level execution info
+            const left = el('div','dm_left');
+            const statusBadge = exec.status === 'success' ? 'success' : (exec.status === 'failed' ? 'failed' : 'info');
+            left.appendChild(el('div',`dm_status dm_status_${statusBadge}`, exec.status || 'unknown'));
+            left.appendChild(el('div','dm_meta','nodes: ' + (exec.successful_nodes || 0) + ' / ' + (exec.total_nodes || 0)));
+            left.appendChild(el('div','dm_meta','elapsed: ' + (exec.execution_time || exec.timestamp)));
+            left.appendChild(el('div','dm_meta','run at: ' + exec.timestamp));
+
+            // right: summarize returned data from python nodes (serves as integrated history)
+            const right = el('div','dm_right');
+            right.appendChild(el('div','dm_right_title','data'));
+            const content = el('div','dm_data_content');
+            const detail = details[idx];
+            // build a compact summary; if execution data exists, list node outputs
+            if (detail && detail.execution_data && Array.isArray(detail.execution_data.results)) {
+                const results = detail.execution_data.results;
+                if (results.length === 0) {
+                    content.appendChild(el('div','dm_data_placeholder','no node outputs'));
+                } else {
+                    // show up to 5 entries for brevity
+                    const maxItems = 5;
+                    results.slice(0, maxItems).forEach(res => {
+                        const name = res.node_name || 'node';
+                        let valueSummary = '';
+                        const rv = res.return_value;
+                        if (rv === null || typeof rv === 'undefined') {
+                            valueSummary = 'no return';
+                        } else if (typeof rv === 'object') {
+                            try {
+                                const keys = Object.keys(rv);
+                                valueSummary = keys.length ? `keys: ${keys.slice(0,5).join(', ')}${keys.length>5?'…':''}` : 'object';
+                            } catch(_) { valueSummary = 'object'; }
+                        } else if (typeof rv === 'string') {
+                            valueSummary = rv.length > 40 ? rv.slice(0,37) + '…' : rv;
+                        } else {
+                            valueSummary = String(rv);
+                        }
+                        const item = el('div','dm_data_item');
+                        item.textContent = `${name}: ${valueSummary}`;
+                        content.appendChild(item);
+                    });
+                    if (results.length > maxItems) {
+                        content.appendChild(el('div','dm_data_more', `+ ${results.length - maxItems} more`));
+                    }
+                }
+            } else {
+                content.appendChild(el('div','dm_data_placeholder','no data'));
+            }
+            right.appendChild(content);
+
+            row.appendChild(left);
+            row.appendChild(right);
+            container.appendChild(row);
+        });
+    })();
+    </script>
+</body>
+</html>
+

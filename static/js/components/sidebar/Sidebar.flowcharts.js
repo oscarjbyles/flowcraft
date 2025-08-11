@@ -11,6 +11,20 @@
             this.exportCurrentFlowchart();
         });
 
+        // open data matrix page for current flowchart
+        const dmBtn = document.getElementById('data_matrix_btn');
+        if (dmBtn) {
+            dmBtn.addEventListener('click', () => {
+                try {
+                    const fc = this.state.storage.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
+                    const url = `/data?flowchart_name=${encodeURIComponent(fc || 'default.json')}`;
+                    window.location.href = url;
+                } catch (_) {
+                    window.location.href = '/data';
+                }
+            });
+        }
+
         document.getElementById('close_create_modal').addEventListener('click', () => {
             this.hideCreateFlowchartModal();
         });

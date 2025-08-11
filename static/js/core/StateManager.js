@@ -26,7 +26,7 @@ class StateManager extends EventEmitter {
         this.suppressNextCanvasClick = false;
         
         // application modes
-        this.currentMode = 'build'; // 'build' or 'run'
+        this.currentMode = 'build'; // 'build' or 'run' or 'settings'
         
         // flow view state (toggle within build mode)
         this.isFlowView = false;
@@ -631,9 +631,7 @@ class StateManager extends EventEmitter {
         return this.currentMode === 'build';
     }
 
-    get isHistoryMode() {
-        return this.currentMode === 'history';
-    }
+    // history mode removed
 
     get isSettingsMode() {
         return this.currentMode === 'settings';

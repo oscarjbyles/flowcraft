@@ -239,9 +239,9 @@
             const navMap = new Map([
                 ['build_btn','/'],
                 ['run_btn','/?mode=run'],
-                ['history_btn','/?mode=history'],
                 ['export_btn','/'],
-                ['settings_btn','/?mode=settings']
+                ['settings_btn','/?mode=settings'],
+                ['data_matrix_btn','/data']
             ]);
             navMap.forEach((href, id) => {
                 const el = document.getElementById(id);
@@ -250,7 +250,7 @@
 
             // ensure the scripts item is visibly active on the scripts page
             // (clear any previous state from other buttons first)
-            const sidebar_btn_ids = ['build_btn','scripts_btn','run_btn','history_btn','settings_btn','export_btn'];
+            const sidebar_btn_ids = ['build_btn','scripts_btn','run_btn','settings_btn','export_btn'];
             sidebar_btn_ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {

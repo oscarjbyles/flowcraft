@@ -186,6 +186,26 @@
         <!-- single node properties -->
         <div class="properties_content" id="single_node_properties">
             <div class="sidebar_content">
+                <!-- input node: inputs section only -->
+                <div class="form_group" id="input_node_inputs_section" style="display: none; flex: 1;">
+                    <label class="form_label">inputs</label>
+                    <div id="input_node_inputs_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                        <div id="input_node_inputs_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
+                            <p style="font-size: 0.8em;">analyzing inputs...</p>
+                        </div>
+                        <div id="input_node_inputs_content" style="display: none; flex: 1;"></div>
+                        <div id="input_node_inputs_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
+                            <p style="font-size: 0.8em;">no inputs found</p>
+                        </div>
+                        <div id="input_node_inputs_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
+                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>
+                            <p id="input_node_inputs_error_message" style="font-size: 0.8em;">failed to analyze inputs</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form_group">
                     <label class="form_label" for="node_name">node name</label>
                     <input type="text" id="node_name" class="form_input" placeholder="enter node name">
@@ -206,10 +226,31 @@
 
                 <!-- quick action to add an if node magnetised to this python node -->
                 <div class="form_group" id="python_quick_actions">
-                    <button class="btn btn_primary" id="add_if_condition_btn" style="width: 100%; display: none;">
+                    <button class="btn btn_primary" id="add_if_condition_btn" style="width: 100%;">
                         <span class="material-icons">alt_route</span>
                         <span class="btn_label">+ if condition</span>
                     </button>
+                </div>
+
+                <!-- data save node: variable selection (dropdown of python node returns) -->
+                <div class="form_group" id="data_save_variable_section" style="display: none;">
+                    <label class="form_label" for="data_save_variable_dropdown">variable</label>
+                    <select id="data_save_variable_dropdown" class="form_input">
+                        <option value="">select a variable</option>
+                    </select>
+                    <div id="data_save_variable_help" style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
+                        choose from the python node's returns (data out)
+                    </div>
+                    <div id="data_save_variable_error" style="display:none; color:#f44336; font-size: .8rem; margin-top: 6px;">failed to load variables</div>
+                </div>
+
+                <!-- data save node: data name for data matrix -->
+                <div class="form_group" id="data_save_name_section" style="display: none;">
+                    <label class="form_label" for="data_save_name_input">name data</label>
+                    <input type="text" id="data_save_name_input" class="form_input" placeholder="enter data name">
+                    <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
+                        lowercase letters, numbers and underscores only (no spaces)
+                    </div>
                 </div>
 
                 <div class="form_group" id="arguments_section" style="display: none; flex: 1;">
@@ -445,19 +486,15 @@
                     <input type="text" id="group_name" class="form_input" placeholder="enter group name">
                 </div>
                 <div class="form_group">
-                    <label class="form_label" for="group_description">description</label>
-                    <textarea id="group_description" class="form_textarea" placeholder="describe this group"></textarea>
-                </div>
-                <div class="form_group">
                     <label class="form_label">group members</label>
                     <div id="group_members_list" style="max-height: 200px; overflow-y: auto; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
                         <!-- group members will be listed here -->
                     </div>
                 </div>
                 <div class="form_group">
-                    <button class="btn btn_secondary" id="ungroup_nodes" style="width: 100%; margin-bottom: 8px;">
-                        <span class="material-icons">ungroup</span>
-                        ungroup
+                    <button class="btn btn_secondary btn_danger_subtle" id="ungroup_nodes" style="width: 100%; margin-bottom: 8px;">
+                        <span class="material-icons delete_button_icon_1">ungroup</span>
+                        <span class="delete_button_text_inner">ungroup</span>
                     </button>
                     <button class="btn btn_secondary btn_danger_subtle" id="delete_group" style="width: 100%;">
                         <span class="material-icons">delete</span>
@@ -560,39 +597,7 @@
             </div>
         </div>
 
-        <!-- execution history panel -->
-        <div class="properties_content" id="execution_history_properties">
-            <div class="sidebar_content">
-                <div class="form_group">
-                    <label class="form_label">execution history</label>
-                    <div id="history_list" style="max-height: 500px; overflow-y: auto;">
-                        <div id="history_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">hourglass_empty</span>
-                            <p>loading execution history...</p>
-                        </div>
-                        <div id="history_content" style="display: none;">
-                            <!-- history entries will be populated here -->
-                        </div>
-                        <div id="history_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">history</span>
-                            <p>no execution history found</p>
-                            <p style="font-size: 0.8em; margin-top: 8px;">run the flowchart to create history entries</p>
-                        </div>
-                        <div id="history_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">error</span>
-                            <p id="history_error_message">failed to load execution history</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form_group">
-                    <button class="btn btn_secondary" id="refresh_history_btn" style="width: 100%;">
-                        <span class="material-icons">refresh</span>
-                        refresh history
-                    </button>
-                </div>
-            </div>
-        </div>
+        
         <!-- pinned footer actions -->
         <div class="properties_footer">
             <button class="btn btn_secondary btn_danger_subtle" id="sidebar_delete_btn" style="display: none; text-transform: capitalize;">

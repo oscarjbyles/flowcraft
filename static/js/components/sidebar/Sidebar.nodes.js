@@ -4,34 +4,79 @@
 
     Sidebar.prototype.populateNodeForm = function(node) {
         document.getElementById('node_name').value = node.name || '';
+
         const pythonFileInput = document.getElementById('python_file');
         const pythonFile = node.pythonFile || '';
         const displayPath = pythonFile.startsWith('nodes/') ? pythonFile.substring(6) : pythonFile;
-        pythonFileInput.value = displayPath;
-        pythonFileInput.dataset.fullPath = pythonFile;
         const pythonFileSection = pythonFileInput.closest('.form_group');
-        if (node.type === 'if_node') {
-            pythonFileSection.style.display = 'none';
-        } else {
-            pythonFileSection.style.display = 'block';
-        }
+
+        // common sections
         const argumentsSection = document.getElementById('arguments_section');
         const returnsSection = document.getElementById('returns_section');
         const ifVariablesSection = document.getElementById('if_node_variables_section');
-        if (node.pythonFile && node.type !== 'if_node') {
-            argumentsSection.style.display = 'block';
-            returnsSection.style.display = 'block';
-            ifVariablesSection.style.display = 'none';
-            this.analyzeNodeFunction(node);
-        } else if (node.type === 'if_node') {
-            argumentsSection.style.display = 'none';
-            returnsSection.style.display = 'none';
-            ifVariablesSection.style.display = 'block';
+        const inputNodeInputsSection = document.getElementById('input_node_inputs_section');
+        const dataSaveVariableSection = document.getElementById('data_save_variable_section');
+        const dataSaveNameSection = document.getElementById('data_save_name_section');
+
+        // default hide
+        argumentsSection.style.display = 'none';
+        returnsSection.style.display = 'none';
+        ifVariablesSection.style.display = 'none';
+        inputNodeInputsSection.style.display = 'none';
+        if (dataSaveVariableSection) dataSaveVariableSection.style.display = 'none';
+        if (dataSaveNameSection) dataSaveNameSection.style.display = 'none';
+
+        // common form groups to toggle visibility
+        const nodeNameGroup = document.getElementById('node_name')?.closest('.form_group');
+        const quickActionsGroup = document.getElementById('python_quick_actions');
+        const sidebarDeleteGroup = document.getElementById('delete_node_from_sidebar')?.closest('.form_group');
+
+        // reset groups to visible by default
+        if (nodeNameGroup) nodeNameGroup.style.display = '';
+        if (quickActionsGroup) quickActionsGroup.style.display = '';
+        if (sidebarDeleteGroup) sidebarDeleteGroup.style.display = '';
+
+        // python file field population
+        pythonFileInput.value = displayPath;
+        pythonFileInput.dataset.fullPath = pythonFile;
+
+        // visibility per type
+        if (node.type === 'if_node') {
+            pythonFileSection.style.display = 'none';
             this.analyzeIfNodeVariables(node);
-        } else {
+            ifVariablesSection.style.display = 'block';
+        } else if (node.type === 'input_node') {
+            // for input nodes: show only inputs list; hide python file picker
+            pythonFileSection.style.display = 'none';
+            if (nodeNameGroup) nodeNameGroup.style.display = 'none';
+            if (quickActionsGroup) quickActionsGroup.style.display = 'none';
+            if (sidebarDeleteGroup) sidebarDeleteGroup.style.display = 'none';
+            inputNodeInputsSection.style.display = 'block';
+            this.populateInputNodeInputs(node);
+        } else if (node.type === 'data_save') {
+            // for data save: hide python picker; show variable selection based on associated python node returns
+            pythonFileSection.style.display = 'none';
+            ifVariablesSection.style.display = 'none';
             argumentsSection.style.display = 'none';
             returnsSection.style.display = 'none';
-            ifVariablesSection.style.display = 'none';
+            const dsSection = document.getElementById('data_save_variable_section');
+            if (dsSection) dsSection.style.display = 'block';
+            const dsNameSection = document.getElementById('data_save_name_section');
+            if (dsNameSection) dsNameSection.style.display = 'block';
+            if (quickActionsGroup) quickActionsGroup.style.display = 'none';
+            this.populateDataSaveVariables(node);
+            this.initializeDataSaveName(node);
+        } else {
+            // python node and others
+            pythonFileSection.style.display = 'block';
+            if (nodeNameGroup) nodeNameGroup.style.display = '';
+            if (quickActionsGroup) quickActionsGroup.style.display = '';
+            if (sidebarDeleteGroup) sidebarDeleteGroup.style.display = '';
+            if (node.pythonFile) {
+                argumentsSection.style.display = 'block';
+                returnsSection.style.display = 'block';
+                this.analyzeNodeFunction(node);
+            }
         }
     };
 
@@ -176,7 +221,6 @@
 
     Sidebar.prototype.populateGroupForm = function(group) {
         document.getElementById('group_name').value = group.name || '';
-        document.getElementById('group_description').value = group.description || '';
         this.updateGroupMembersList(group);
     };
 
@@ -184,7 +228,7 @@
         if (!this.state.selectedGroup) return;
         const updates = {
             name: document.getElementById('group_name').value.trim(),
-            description: document.getElementById('group_description').value.trim()
+            // description removed from ui
         };
         if (!updates.name) { this.showError('group name is required'); return; }
         try {
@@ -351,6 +395,198 @@
         });
         document.getElementById('returns_loading').style.display = 'none';
         document.getElementById('returns_content').style.display = 'block';
+    };
+
+    // input node: populate inputs list with variable names and their line numbers from associated python script
+    Sidebar.prototype.populateInputNodeInputs = async function(node) {
+        if (!this._inputNodeInputsReqId) this._inputNodeInputsReqId = 0;
+        const reqId = ++this._inputNodeInputsReqId;
+        const loading = document.getElementById('input_node_inputs_loading');
+        const content = document.getElementById('input_node_inputs_content');
+        const empty = document.getElementById('input_node_inputs_empty');
+        const errorDiv = document.getElementById('input_node_inputs_error');
+        const errorMsg = document.getElementById('input_node_inputs_error_message');
+
+        // reset visibility
+        if (loading) loading.style.display = 'block';
+        if (content) { content.style.display = 'none'; content.innerHTML = ''; }
+        if (empty) empty.style.display = 'none';
+        if (errorDiv) errorDiv.style.display = 'none';
+
+        if (!node || !node.pythonFile) {
+            if (loading) loading.style.display = 'none';
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/analyze-python-function', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ python_file: node.pythonFile })
+            });
+            const result = await response.json();
+            if (reqId !== this._inputNodeInputsReqId) return;
+            const details = result && (result.input_variable_details || []);
+
+            if (!result || result.success === false) {
+                if (loading) loading.style.display = 'none';
+                if (errorDiv) errorDiv.style.display = 'block';
+                if (errorMsg) errorMsg.textContent = (result && (result.error || 'failed to analyze inputs')) || 'failed to analyze inputs';
+                return;
+            }
+
+            const unique = [];
+            const seen = new Set();
+            (Array.isArray(details) ? details : []).forEach((d) => {
+                const key = `${d.name}::${d.line}`;
+                if (!seen.has(key)) { seen.add(key); unique.push(d); }
+            });
+            if (unique.length === 0) {
+                if (loading) loading.style.display = 'none';
+                if (empty) empty.style.display = 'block';
+                return;
+            }
+
+            // render items
+            unique.forEach((item) => {
+                const row = document.createElement('div');
+                row.style.cssText = `
+                    background: var(--surface-color);
+                    border: 1px solid var(--border-color);
+                    border-radius: 4px;
+                    padding: 8px 10px;
+                    margin-bottom: 4px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+                row.innerHTML = `
+                    <span class="material-icons" style="font-size: 16px; color: #2196f3;">keyboard</span>
+                    <span style="font-family: monospace; font-weight: 500;">${item.name}</span>
+                    <span style="font-size: 0.75rem; opacity: 0.7; margin-left: auto;">line ${item.line}</span>
+                `;
+                content.appendChild(row);
+            });
+
+            if (loading) loading.style.display = 'none';
+            if (content) content.style.display = 'block';
+        } catch (err) {
+            if (reqId !== this._inputNodeInputsReqId) return;
+            if (loading) loading.style.display = 'none';
+            if (errorDiv) errorDiv.style.display = 'block';
+            if (errorMsg) errorMsg.textContent = 'network error';
+        }
+    };
+
+    // data save: populate dropdown with variables from associated python node's returns
+    Sidebar.prototype.populateDataSaveVariables = async function(node) {
+        if (!this._dataSaveVarReqId) this._dataSaveVarReqId = 0;
+        const reqId = ++this._dataSaveVarReqId;
+        const dropdown = document.getElementById('data_save_variable_dropdown');
+        const errorDiv = document.getElementById('data_save_variable_error');
+        if (!dropdown) return;
+        // clear
+        dropdown.innerHTML = '<option value="">select a variable</option>';
+        if (errorDiv) errorDiv.style.display = 'none';
+        // compute preferred name from node.dataSource (drag payload)
+        const preferredName = (() => {
+            try {
+                const v = node && node.dataSource && node.dataSource.variable;
+                if (!v) return '';
+                return v.name || (v.type === 'constant' ? String(v.value) : v.type || 'value');
+            } catch (_) { return ''; }
+        })();
+
+        try {
+            // find associated python node via incoming/outgoing links
+            let pythonNode = null;
+            const partner = this.state.getDependencies ? null : null; // placeholder safeguard
+            // search links to find a python_file connected to this data_save node
+            for (const link of this.state.links) {
+                if (link.source === node.id) {
+                    const n = this.state.getNode(link.target);
+                    if (n && n.type === 'python_file') { pythonNode = n; break; }
+                } else if (link.target === node.id) {
+                    const n = this.state.getNode(link.source);
+                    if (n && n.type === 'python_file') { pythonNode = n; break; }
+                }
+            }
+            if (!pythonNode || !pythonNode.pythonFile) {
+                if (errorDiv) { errorDiv.textContent = 'no associated python node found'; errorDiv.style.display = 'block'; }
+                return;
+            }
+            const resp = await fetch('/api/analyze-python-function', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ python_file: pythonNode.pythonFile })
+            });
+            const data = await resp.json();
+            if (reqId !== this._dataSaveVarReqId) return;
+            if (!data || data.success === false) {
+                if (errorDiv) { errorDiv.textContent = (data && data.error) || 'failed to analyze python function'; errorDiv.style.display = 'block'; }
+                return;
+            }
+            const returns = Array.isArray(data.returns) ? data.returns : [];
+            if (returns.length === 0) {
+                if (errorDiv) { errorDiv.textContent = 'python node has no return variables'; errorDiv.style.display = 'block'; }
+                return;
+            }
+            const seen = new Set();
+            returns.forEach((ret) => {
+                const name = ret.name || (ret.type === 'constant' ? String(ret.value) : ret.type || 'value');
+                if (seen.has(name)) return; seen.add(name);
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                dropdown.appendChild(opt);
+            });
+            // apply prefill from drag-and-drop source
+            if (preferredName && seen.has(preferredName)) {
+                dropdown.value = preferredName;
+            }
+        } catch (e) {
+            if (reqId !== this._dataSaveVarReqId) return;
+            if (errorDiv) { errorDiv.textContent = 'network error'; errorDiv.style.display = 'block'; }
+        }
+    };
+
+    // data save: initialize and validate "name data" input (lowercase, numbers, underscores)
+    Sidebar.prototype.initializeDataSaveName = function(node) {
+        const input = document.getElementById('data_save_name_input');
+        if (!input) return;
+        // prefill: from node.name normalized to snake_case (no spaces/capitals)
+        const normalize = (val) => {
+            return (val || '')
+                .toString()
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, '_')
+                .replace(/[^a-z0-9_]/g, '_')
+                .replace(/_+/g, '_')
+                .replace(/^_+|_+$/g, '');
+        };
+        if (!input.dataset._initialized) {
+            input.addEventListener('input', () => {
+                const caret = input.selectionStart;
+                const val = input.value;
+                const normalized = normalize(val);
+                if (val !== normalized) {
+                    input.value = normalized;
+                    try { input.setSelectionRange(caret, caret); } catch (_) {}
+                }
+                // store on node for persistence when saved
+                node.dataName = input.value;
+                // optionally emit state change if needed
+                this.state.emit('stateChanged');
+            });
+            input.dataset._initialized = '1';
+        }
+        // only set prefill if empty or differs from normalized node name
+        const normalizedNodeName = normalize(node.name || '');
+        if (!input.value) {
+            input.value = normalizedNodeName;
+            node.dataName = input.value;
+            this.state.emit('stateChanged');
+        }
     };
 
     Sidebar.prototype.showArgumentsError = function(message) {

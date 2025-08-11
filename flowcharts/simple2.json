@@ -27,13 +27,13 @@
       "groupId": null,
       "id": 1754557341635.2678,
       "inputValues": {
-        "variable2": "3",
+        "variable3": "",
         "variableA": "4"
       },
       "name": "Input Node",
       "parameters": [
         "variableA",
-        "variable2"
+        "variable3"
       ],
       "pythonFile": "nodes/example.py",
       "skipInputCheck": true,
@@ -52,8 +52,8 @@
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
-      "x": 811.1217041015625,
-      "y": -74.94430541992188
+      "x": 809.9208984375,
+      "y": -76.14509582519531
     },
     {
       "description": "",
@@ -97,8 +97,8 @@
       "pythonFile": "nodes/node1.py",
       "type": "python_file",
       "width": 120,
-      "x": 811.1217041015625,
-      "y": -154.94430541992188
+      "x": 809.9208984375,
+      "y": -156.1450958251953
     },
     {
       "description": "input parameters",
@@ -157,25 +157,7 @@
       "y": 463.677490234375
     },
     {
-      "dataSource": {
-        "origin": "returns",
-        "variable": {
-          "line": 29,
-          "name": "result",
-          "type": "variable"
-        }
-      },
-      "description": "",
-      "groupId": null,
-      "id": 1754853828832.737,
-      "name": "result",
-      "pythonFile": "",
-      "type": "data_save",
-      "width": 80,
-      "x": 688.5722379005184,
-      "y": -232.65509209861293
-    },
-    {
+      "dataName": "hello",
       "dataSource": {
         "origin": "returns",
         "variable": {
@@ -186,13 +168,32 @@
       },
       "description": "",
       "groupId": null,
-      "id": 1754862315571.3855,
+      "id": 1754866553260.119,
       "name": "variableC",
       "pythonFile": "",
       "type": "data_save",
       "width": 80,
-      "x": 1052.6401158892168,
-      "y": -360.4450514586955
+      "x": 1052.1761987028513,
+      "y": -349.7808715314756
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 29,
+          "name": "result",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754866900741.5713,
+      "name": "result",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 1011.3488821683536,
+      "y": -163.65634027126686
     }
   ],
   "links": [
@@ -252,15 +253,15 @@
     },
     {
       "selectable": false,
-      "source": 1754646735053.426,
+      "source": 1754557300491.1255,
       "style": "dashed",
-      "target": 1754853828832.737
+      "target": 1754866553260.119
     },
     {
       "selectable": false,
-      "source": 1754557300491.1255,
+      "source": 1754646735053.426,
       "style": "dashed",
-      "target": 1754862315571.3855
+      "target": 1754866900741.5713
     }
   ],
   "groups": [

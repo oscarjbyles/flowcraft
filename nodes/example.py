@@ -3,7 +3,7 @@ import time
 def get_user_input():
 
     variableA = input("Enter a number: ")
-    variable2 = input("Enter a number: ")
+    variable3 = input("Enter a number: ")
     variableB = float(variableA)
     variableC = variableB * variableB
 
