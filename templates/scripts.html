@@ -10,57 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/assets/css/index.css">
     <style>
-        /* minimal reuse: import key layout rules from index via duplication to keep identical sidebar behavior */
-        :root {
-            --primary-color: #1976d2;
-            --primary-dark: #0d47a1;
-            --secondary-color: #424242;
-            --background-color: #121212;
-            --surface-color: #1e1e1e;
-            --surface-variant: #2d2d2d;
-            --on-background: #ffffff;
-            --on-surface: #ffffff;
-            --on-primary: #ffffff;
-            --border-color: #3d3d3d;
-            --hover-color: #333333;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Roboto', sans-serif; background-color: var(--background-color); color: var(--on-background); height:100vh; overflow:hidden; }
-        /* ensure most ui text uses roboto identically to the main app to keep font weights consistent */
-        html, body, .app_container, .sidebar, .sidebar_content, .main_content,
-        .sidebar_item, .sidebar_section_title, .sidebar_title, .status_bar,
-        button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .dropdown_no_results,
-        .modal_title, .btn { font-family: 'Roboto', sans-serif; }
-        .app_container { display:flex; height:100vh; }
-        .sidebar { width:320px; height:100vh; background: linear-gradient(180deg, var(--surface-color) 0%, var(--surface-variant) 100%); border-right:1px solid var(--border-color); display:flex; flex-direction:column; transition: width .3s ease; box-shadow:2px 0 8px rgba(0,0,0,0.15); }
-        .sidebar_header { padding:24px 20px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:16px; }
-        .sidebar_title { font-size:1.3rem; font-weight:600; color:white; letter-spacing:.5px; }
-        .app_logo { width:28px; height:28px; flex-shrink:0; }
-        .app_logo .logo_node { fill: var(--surface-variant); stroke: var(--primary-color); stroke-width:2px; }
-        .app_logo .logo_center { fill: var(--primary-color); stroke: var(--on-primary); stroke-width:1.5px; }
-        .app_logo .logo_connector { fill:none; stroke: var(--primary-color); stroke-width:2px; stroke-linecap:round; }
-        .sidebar_content { flex:1; padding:16px; display:flex; flex-direction:column; }
-        .sidebar_section { margin-bottom:24px; }
-        .sidebar_section.disabled { opacity: 0.4; pointer-events: none; }
-        .sidebar_section.disabled .sidebar_item { cursor: not-allowed; }
-        .sidebar_section_title { font-size:.875rem; font-weight:500; color: var(--on-surface); margin-bottom:12px; text-transform:uppercase; letter-spacing:.5px; opacity:.8; }
-        /* match index.html sidebar_item sizing and typography exactly */
-        .sidebar_item { display:flex; align-items:center; justify-content:flex-start; text-align:left; padding-left:14px; padding-right:18px; padding-bottom:12px; padding-top:12px; margin-bottom:10px; background:transparent; border-radius:8px; cursor:pointer; transition: all .3s ease; border:none; width:100%; color: var(--on-surface); font-size:.875rem; font-weight:500; text-transform:capitalize; letter-spacing:.5px; opacity:.95; }
-        .sidebar_item:hover { background: linear-gradient(135deg, var(--hover-color) 0%, rgba(51,51,51,.9) 100%); }
-        .sidebar_item.active, .sidebar_item.run_mode_active { background:#484848; color: var(--on-primary); }
-        .sidebar_item .material-icons { margin-right:12px; font-size:20px; width:26px; }
-        .sidebar_footer { margin-top:auto; padding-top:8px; border-top:1px solid var(--border-color); }
-        .main_content { flex:1; display:flex; flex-direction:column; background-color: var(--background-color); }
-        .status_bar { height: 32px; background-color: var(--surface-color); border-top: 1px solid var(--border-color); display:flex; align-items:center; padding: 0 16px; font-size: 0.75rem; color: var(--on-surface); }
-        /* hide node count in scripts page */
-        #node_count { display: none; }
-        /* show file count in scripts page */
-        #file_count { display: inline !important; }
-        /* hide coordinates in scripts page */
-        #node_coordinates { display: none !important; }
-        .coordinate_input { background: transparent; border: 1px solid var(--border-color); border-radius: 2px; color: var(--on-surface); font-size: 0.75rem; padding: 2px 4px; text-align: center; outline: none; }
-        @media (max-width:768px){ .sidebar{ width:240px; } }
+        /* page-specific scripts styles only; shared layout/variables/sidebar come from linked css files */
         /* explorer layout */
         .scripts_container { flex:1; display:flex; flex-direction:column; padding:16px; gap:12px; }
         .explorer_toolbar { display:flex; gap:8px; align-items:center; }
@@ -164,7 +116,7 @@
         {% include 'partials/sidebar.html' %}
 
         <!-- main content for scripts interface -->
-        <div class="main_content">
+        <div class="main_content full_width">
             <div class="scripts_container" style="flex:1;">
                 <div class="explorer_toolbar">
                     <button id="btn_new_file" class="explorer_btn"><span class="material-icons">note_add</span> Create File</button>
@@ -251,6 +203,7 @@
 
             // wire nav buttons to keep flowchart and mode
             const navMap = new Map([
+                ['dashboard_btn','/dashboard'],
                 ['build_btn','/'],
                 ['run_btn','/?mode=run'],
                 ['export_btn','/'],

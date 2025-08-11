@@ -7,4 +7,6 @@ def my_function():
 
     print(input_value)
 
-    return input_value
+    value2 = 'hello'
+
+    return input_value, value2

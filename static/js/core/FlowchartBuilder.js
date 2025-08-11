@@ -460,6 +460,20 @@ class FlowchartBuilder {
 
     setupSidebarButtons() {
         // main sidebar buttons
+        // dashboard navigates to overview page; preserve flowchart selection
+        const dashboardBtn = document.getElementById('dashboard_btn');
+        if (dashboardBtn) {
+            dashboardBtn.addEventListener('click', () => {
+                const currentFlow = this.state?.storage?.getCurrentFlowchart?.();
+                let url = '/dashboard';
+                if (currentFlow) {
+                    const display = String(currentFlow).replace(/\.json$/i, '');
+                    url = `/dashboard?flowchart=${encodeURIComponent(display)}&mode=build`;
+                }
+                window.location.href = url;
+            });
+        }
+
         document.getElementById('build_btn').addEventListener('click', () => {
             this.switchToBuildMode();
             // persist mode in url
@@ -2014,8 +2028,9 @@ class FlowchartBuilder {
                 execution_order: executionOrder.map(node => node.id),
                 results: results,
                 data_saves: dataSaves,
+                // exclude data_save nodes from counts by only considering the computed execution order
                 total_nodes: executionOrder.length,
-                successful_nodes: results.filter(r => r.success).length,
+                successful_nodes: results.filter(r => r.success && executionOrder.some(node => node.id === r.node_id)).length,
                 error_message: errorMessage,
                 flowchart_state: {
                     nodes: this.state.nodes.map(node => ({
@@ -2623,6 +2638,7 @@ class FlowchartBuilder {
     // persist data from connected data_save nodes when a python node completes successfully
     async persistDataSaveForNode(pythonNode) {
         try {
+            console.log(`[data_save] scanning connections for python node: ${pythonNode.name} (${pythonNode.id})`);
             // find all data_save nodes connected to this python node (either direction)
             const connectedDataSaves = [];
             for (const link of this.state.links) {
@@ -2634,32 +2650,117 @@ class FlowchartBuilder {
                     if (s && s.type === 'data_save') connectedDataSaves.push(s);
                 }
             }
+            console.log(`[data_save] found ${connectedDataSaves.length} connected data_save node(s) for ${pythonNode.name}`);
             if (connectedDataSaves.length === 0) return;
 
             // get latest execution result for this python node
             const result = this.nodeExecutionResults.get(pythonNode.id);
             const returnsVal = result ? result.return_value : undefined;
+            console.log(`[data_save] latest return for ${pythonNode.name}:`, returnsVal);
 
-            connectedDataSaves.forEach(ds => {
-                // variable to save chosen in sidebar
-                const varName = (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null;
-                const dataKey = varName || (ds && ds.name) || 'data';
-                if (typeof varName !== 'string' || !result) return;
+            const analyzeReturnsForNode = async () => {
+                try {
+                    const resp = await fetch('/api/analyze-python-function', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ python_file: pythonNode.pythonFile })
+                    });
+                    const data = await resp.json();
+                    if (!data || data.success === false) return null;
+                    return Array.isArray(data.returns) ? data.returns : [];
+                } catch (e) {
+                    console.warn('[data_save] analyze-python-function failed:', e);
+                    return null;
+                }
+            };
+
+            const returnsAnalysis = Array.isArray(returnsVal) ? await analyzeReturnsForNode() : null;
+
+            const getIndexForVariable = (varName, varLine, rvArray, analysis) => {
+                if (!Array.isArray(rvArray) || !analysis) return -1;
+                // group analysis returns by line to identify tuple elements from the same return statement
+                const grouped = new Map();
+                analysis.forEach(item => {
+                    const ln = item && typeof item.line === 'number' ? item.line : null;
+                    if (ln === null) return;
+                    if (!grouped.has(ln)) grouped.set(ln, []);
+                    grouped.get(ln).push(item);
+                });
+                const tryFindInGroup = (items) => {
+                    // prefer variables; keep order
+                    const names = items.filter(it => it && it.type === 'variable').map(it => it.name);
+                    const idx = names.indexOf(varName);
+                    return idx >= 0 ? idx : -1;
+                };
+                // 1) if we know the line, use that group directly
+                if (typeof varLine === 'number' && grouped.has(varLine)) {
+                    const idx = tryFindInGroup(grouped.get(varLine));
+                    if (idx >= 0 && idx < rvArray.length) return idx;
+                }
+                // 2) otherwise, search for a group whose size matches rv length
+                for (const [, items] of grouped.entries()) {
+                    const onlyVars = items.filter(it => it && it.type === 'variable');
+                    if (onlyVars.length === rvArray.length) {
+                        const idx = tryFindInGroup(onlyVars);
+                        if (idx >= 0) return idx;
+                    }
+                }
+                // 3) fallback: search any group in order
+                for (const [, items] of grouped.entries()) {
+                    const idx = tryFindInGroup(items);
+                    if (idx >= 0) return idx;
+                }
+                return -1;
+            };
+
+            connectedDataSaves.forEach(async ds => {
+                // try to use the selected variable name; if none, infer from return value
+                let varName = (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null;
+                const varLine = (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.line) || null;
+                if (!result) { console.log('[data_save] no execution result present; skipping'); return; }
                 let value;
                 const rv = returnsVal;
                 if (rv && typeof rv === 'object') {
-                    if (Object.prototype.hasOwnProperty.call(rv, varName)) {
-                        value = rv[varName];
-                    } else {
-                        const keys = Object.keys(rv);
-                        if (keys.length === 1) {
-                            value = rv[keys[0]];
+                    const keys = Object.keys(rv);
+                    // if no explicit variable chosen, default to first key when available
+                    if (typeof varName !== 'string' || varName.length === 0) {
+                        if (keys.length > 0) {
+                            varName = keys[0];
                         }
                     }
+                    if (Array.isArray(rv)) {
+                        // map variable name to index using analysis grouping by return line
+                        let idx = -1;
+                        if (typeof varName === 'string' && varName.length > 0) {
+                            idx = getIndexForVariable(varName, typeof varLine === 'number' ? varLine : null, rv, returnsAnalysis);
+                        }
+                        if (idx >= 0 && idx < rv.length) {
+                            value = rv[idx];
+                        } else if (typeof varName === 'string' && Object.prototype.hasOwnProperty.call(rv, varName)) {
+                            // as a last resort, allow numeric-string index
+                            value = rv[varName];
+                        } else {
+                            // no reliable mapping: keep whole array
+                            value = rv;
+                        }
+                    } else if (typeof varName === 'string' && Object.prototype.hasOwnProperty.call(rv, varName)) {
+                        value = rv[varName];
+                    } else if (keys.length === 1) {
+                        value = rv[keys[0]];
+                        if (typeof varName !== 'string' || varName.length === 0) {
+                            varName = keys[0];
+                        }
+                    } else {
+                        // as a fallback for objects with multiple keys and no match, persist the whole object
+                        value = rv;
+                    }
                 } else if (typeof rv !== 'undefined') {
-                    value = rv; // treat primitive return as the selected variable's value
+                    // primitive return: save it directly
+                    value = rv;
                 }
-                if (typeof value === 'undefined') return;
+                // choose a data key for storage
+                const dataKey = (typeof varName === 'string' && varName.length > 0) ? varName : ((ds && ds.name) || 'data');
+                if (typeof value === 'undefined') { console.log(`[data_save] unable to resolve value for ${ds.name}; skipping`); return; }
                 try {
                     // store a synthetic result entry so it shows up in history and data matrix
                     const synthetic = {
@@ -2674,10 +2775,11 @@ class FlowchartBuilder {
                         return_value: { [dataKey]: value },
                         function_name: 'data_save',
                         input_args: {},
-                        data_save: { data_name: dataKey, variable_name: varName }
+                        data_save: { data_name: dataKey, variable_name: (typeof varName === 'string' && varName.length > 0) ? varName : null }
                     };
                     // push into current map so saveExecutionHistory includes it
                     this.nodeExecutionResults.set(ds.id, synthetic);
+                    console.log(`[data_save] persisted for node '${ds.name}' with key '${dataKey}'`);
                 } catch (e) {
                     console.warn('failed to synthesize data_save result', e);
                 }
@@ -2899,7 +3001,6 @@ class FlowchartBuilder {
         const statusElement = document.getElementById('execution_status_text');
         const iconElement = document.querySelector('#execution_status .material-icons');
         const timeRow = document.getElementById('execution_time_row');
-        const timeGroup = document.getElementById('execution_time_group');
         const timeText = document.getElementById('execution_time_text');
         const timestampEl = document.getElementById('execution_timestamp');
         const progressText = document.getElementById('execution_progress_text');
@@ -2920,7 +3021,6 @@ class FlowchartBuilder {
                 this.lastExecutionElapsedMs = null;
                 this.lastExecutionTimestampString = '';
                 if (timeRow) timeRow.style.display = 'flex';
-                if (timeGroup) timeGroup.style.display = '';
                 if (failureInfo) failureInfo.style.display = 'none';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 this._elapsedTimer = setInterval(() => {
@@ -2954,7 +3054,6 @@ class FlowchartBuilder {
                     }
                 }
                 if (timeRow) timeRow.style.display = 'flex';
-                if (timeGroup) timeGroup.style.display = '';
                 if (failureInfo) failureInfo.style.display = 'none';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'completed';
@@ -2981,7 +3080,6 @@ class FlowchartBuilder {
                     }
                 }
                 if (timeRow) timeRow.style.display = 'flex';
-                if (timeGroup) timeGroup.style.display = '';
                 if (failureInfo) failureInfo.style.display = 'none';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'error';
@@ -3008,7 +3106,6 @@ class FlowchartBuilder {
                     }
                 }
                 if (timeRow) timeRow.style.display = 'flex';
-                if (timeGroup) timeGroup.style.display = '';
                 if (failureInfo) failureInfo.style.display = 'none';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'stopped';
@@ -3035,7 +3132,6 @@ class FlowchartBuilder {
                     }
                 }
                 if (timeRow) timeRow.style.display = 'flex';
-                if (timeGroup) timeGroup.style.display = '';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'failed';
                 break;
@@ -3053,7 +3149,10 @@ class FlowchartBuilder {
         if (progressText) {
             const order = this.calculateNodeOrder ? this.calculateNodeOrder() : [];
             const total = order.length;
-            const executed = this.nodeExecutionResults ? this.nodeExecutionResults.size : 0;
+            // only count executed nodes that are part of the execution order (exclude data_save etc.)
+            const executed = this.nodeExecutionResults
+                ? Array.from(this.nodeExecutionResults.keys()).filter(id => order.some(n => n.id === id)).length
+                : 0;
             progressText.textContent = `${executed} of ${total}`;
         }
     }

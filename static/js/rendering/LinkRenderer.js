@@ -244,13 +244,20 @@ class LinkRenderer {
                 if (d.type === 'input_connection') {
                     classes += ' input_connection';
                 }
+                // add class for python to data save connections to prevent hover effects
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                if (src && tgt && src.type === 'python_file' && tgt.type === 'data_save') {
+                    classes += ' python_to_data_save';
+                }
                 return classes;
             })
             .style('cursor', d => {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                return (d.selectable === false || isPyToIf) ? 'default' : 'pointer';
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                return (d.selectable === false || isPyToIf || isPyToDataSave) ? 'default' : 'pointer';
             })
             .style('stroke-dasharray', d => d.style === 'dashed' ? '5,5' : null)
             .style('marker-end', d => d.type === 'input_connection' ? 'none' : null)
@@ -271,7 +278,8 @@ class LinkRenderer {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                if (d.selectable !== false && !isPyToIf) {
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                if (d.selectable !== false && !isPyToIf && !isPyToDataSave) {
                     this.state.emit('linkClicked', { event, link: d });
                 }
             })
@@ -280,7 +288,8 @@ class LinkRenderer {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
                     this.updateArrowColor(d, true);
                 }
             })
@@ -289,7 +298,8 @@ class LinkRenderer {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
                     this.updateArrowColor(d, false);
                 }
             });
@@ -376,11 +386,13 @@ class LinkRenderer {
     }
 
     renderSingleLink(link) {
-        // determine if this link is from a python node to an if node
+        // determine if this link is from a python node to an if node or data save node
         const sourceNodeForSelect = this.state.getNode(link.source);
         const targetNodeForSelect = this.state.getNode(link.target);
         const isPythonToIf = !!(sourceNodeForSelect && targetNodeForSelect &&
             sourceNodeForSelect.type === 'python_file' && targetNodeForSelect.type === 'if_node');
+        const isPythonToDataSave = !!(sourceNodeForSelect && targetNodeForSelect &&
+            sourceNodeForSelect.type === 'python_file' && targetNodeForSelect.type === 'data_save');
 
         const linkElement = this.linkGroup
             .append('path')
@@ -390,10 +402,16 @@ class LinkRenderer {
                 if (d.type === 'input_connection') {
                     classes += ' input_connection';
                 }
+                // add class for python to data save connections to prevent hover effects
+                const src = this.state.getNode(d.source);
+                const tgt = this.state.getNode(d.target);
+                if (src && tgt && src.type === 'python_file' && tgt.type === 'data_save') {
+                    classes += ' python_to_data_save';
+                }
                 return classes;
             })
             .attr('d', this.calculateLinkPath(link))
-            .style('cursor', (link.selectable === false || isPythonToIf) ? 'default' : 'pointer')
+            .style('cursor', (link.selectable === false || isPythonToIf || isPythonToDataSave) ? 'default' : 'pointer')
             .style('stroke-dasharray', link.style === 'dashed' ? '5,5' : null)
             .style('marker-end', link.type === 'input_connection' ? 'none' : null)
             .style('stroke', () => {
@@ -413,7 +431,8 @@ class LinkRenderer {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                if (d.selectable !== false && !isPyToIf) {
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                if (d.selectable !== false && !isPyToIf && !isPyToDataSave) {
                     this.state.emit('linkClicked', { event, link: d });
                 }
             })
@@ -422,7 +441,8 @@ class LinkRenderer {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
                     this.updateArrowColor(d, true);
                 }
             })
@@ -431,7 +451,8 @@ class LinkRenderer {
                 const src = this.state.getNode(d.source);
                 const tgt = this.state.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
-                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf) {
+                const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
+                if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
                     this.updateArrowColor(d, false);
                 }
             });

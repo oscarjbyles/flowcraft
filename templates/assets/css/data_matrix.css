@@ -1,26 +1,6 @@
-:root {
-  --primary-color: #1976d2;
-  --primary-dark: #0d47a1;
-  --secondary-color: #424242;
-  --background-color: #121212;
-  --surface-color: #1e1e1e;
-  --surface-variant: #2d2d2d;
-  --on-background: #ffffff;
-  --on-surface: #ffffff;
-  --border-color: #3d3d3d;
-  --hover-color: #333333;
-}
+/* variables are defined globally in /assets/css/index.css */
 
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  font-family: 'Roboto', sans-serif;
-  margin: 0;
-  background: var(--background-color);
-  color: var(--on-background);
-  height: 100vh;
-  overflow: hidden;
-}
+/* global resets are defined in /assets/css/index.css to avoid conflicts */
 
 .app_container { display: flex; height: 100vh; }
 .data_matrix_container { flex: 1; max-width: unset; padding: 24px; margin-left: 0; overflow-y: auto; }
@@ -56,7 +36,7 @@ body {
 .dm_stat_text { display:flex; flex-direction: column; }
 .dm_stat_label { font-size: .75rem; opacity: .7; text-transform: lowercase; }
 .dm_stat_value { font-size: .95rem; }
-.dm_right { background: transparent; border: none; border-radius: 0; padding: 0px 0px 0px 4px; min-height: 80px; }
+.dm_right { background: transparent; border: none; border-radius: 0; padding: 0px 0px 0px 4px; min-height: 80px; min-width: 0; }
 .dm_data_bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
 .dm_search_container { flex: 1; max-width: 400px; display: flex; align-items: center; gap: 12px; position: relative; }
 .dm_search_input { flex: 0 0 230px; width: 230px; min-width: 230px; max-width: 230px; padding: 8px 12px 8px 22px; background: transparent; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0; color: var(--on-surface); font-size: 0.9rem; }
@@ -72,12 +52,39 @@ body {
 .dm_table thead th.dm_col_type { text-align: center; }
 .dm_table tbody td { padding: 8px 6px; vertical-align: middle; border-bottom: 1px solid var(--border-color); }
 .dm_table tbody td.dm_col_type { padding-left: 0; padding-right: 0; }
-.dm_col_var_name { width: 20%; }
-.dm_col_py_name { width: 25%; }
-.dm_col_value { width: 35%; }
-.dm_col_type { width: 10%; text-align: center; }
-.dm_col_open { width: 10%; text-align: right; padding: 4px 6px; }
+
+/* truncate long values in value column */
+.dm_table tbody td.dm_col_value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* allow the column to take remaining space and ellipsize within it */
+  width: auto;
+  min-width: 0;
+}
+/* keep header cell consistent */
+.dm_table thead th.dm_col_value { min-width: 0; }
+
+/* column sizing: ensure total does not exceed 100% */
+.dm_col_var_name { width: 22%; }
+.dm_col_py_name { width: 24%; }
+/* let value column flex into remaining space (no explicit % width) */
+.dm_col_value { }
+/* use a fixed width for actions so it doesn't steal too much space */
+.dm_col_actions { width: 160px; text-align: right; padding: 4px 6px; }
 .dm_open_btn { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:.85rem; }
+
+/* actions column styling - type tag and open button together */
+.dm_col_actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dm_col_actions .dm_type_tag {
+  margin: 0; /* remove auto margins since we're using flexbox */
+}
 
 /* type tag styling with fully rounded ends */
 .dm_type_tag {

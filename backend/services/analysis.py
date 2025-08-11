@@ -55,18 +55,55 @@ class PythonVariableAnalyzer:
 
     def _extract_returns_from_statement(self, stmt: ast.AST, returns_list: List[Dict[str, Any]]) -> None:
         if isinstance(stmt, ast.Return) and stmt.value:
-            if isinstance(stmt.value, ast.Name):
-                returns_list.append({'type': 'variable', 'name': stmt.value.id, 'line': stmt.lineno})
-            elif isinstance(stmt.value, ast.Constant):
-                returns_list.append({'type': 'constant', 'value': str(stmt.value.value), 'data_type': type(stmt.value.value).__name__, 'line': stmt.lineno})
-            elif isinstance(stmt.value, ast.List):
+            value = stmt.value
+
+            # helper to add a variable item
+            def add_variable(name: str):
+                returns_list.append({'type': 'variable', 'name': name, 'line': stmt.lineno})
+
+            # helper to walk an arbitrary expression and extract variable names
+            def extract_names_from_expression(expr: ast.AST):
+                seen = set()
+                for n in ast.walk(expr):
+                    if isinstance(n, ast.Name):
+                        if n.id not in seen:
+                            seen.add(n.id)
+                            add_variable(n.id)
+
+            # tuple returns: treat each element as its own return item
+            if isinstance(value, ast.Tuple):
+                for elt in value.elts:
+                    if isinstance(elt, ast.Name):
+                        add_variable(elt.id)
+                    elif isinstance(elt, ast.Constant):
+                        returns_list.append({
+                            'type': 'constant',
+                            'value': str(elt.value),
+                            'data_type': type(elt.value).__name__,
+                            'line': stmt.lineno
+                        })
+                    elif isinstance(elt, ast.List):
+                        returns_list.append({'type': 'list', 'name': 'list', 'line': stmt.lineno})
+                    elif isinstance(elt, ast.Dict):
+                        returns_list.append({'type': 'dict', 'name': 'dict', 'line': stmt.lineno})
+                    elif isinstance(elt, ast.Call) and isinstance(elt.func, ast.Name):
+                        returns_list.append({'type': 'function_call', 'name': elt.func.id + '()', 'line': stmt.lineno})
+                    else:
+                        # generic expression inside tuple: extract variable names
+                        extract_names_from_expression(elt)
+            elif isinstance(value, ast.Name):
+                add_variable(value.id)
+            elif isinstance(value, ast.Constant):
+                returns_list.append({'type': 'constant', 'value': str(value.value), 'data_type': type(value.value).__name__, 'line': stmt.lineno})
+            elif isinstance(value, ast.List):
                 returns_list.append({'type': 'list', 'name': 'list', 'line': stmt.lineno})
-            elif isinstance(stmt.value, ast.Dict):
+            elif isinstance(value, ast.Dict):
                 returns_list.append({'type': 'dict', 'name': 'dict', 'line': stmt.lineno})
-            elif isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Name):
-                returns_list.append({'type': 'function_call', 'name': stmt.value.func.id + '()', 'line': stmt.lineno})
+            elif isinstance(value, ast.Call) and isinstance(value.func, ast.Name):
+                returns_list.append({'type': 'function_call', 'name': value.func.id + '()', 'line': stmt.lineno})
             else:
-                returns_list.append({'type': 'expression', 'name': 'expression', 'line': stmt.lineno})
+                # generic expression: extract all variable names so they appear separately
+                extract_names_from_expression(value)
         elif isinstance(stmt, ast.If):
             for child in stmt.body:
                 self._extract_returns_from_statement(child, returns_list)

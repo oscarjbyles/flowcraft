@@ -1,0 +1,697 @@
+{
+  "execution_id": "dcd53f90-14ec-4ae1-90c4-aaa6133b055c",
+  "timestamp": "2025-08-11T19:53:25.407447",
+  "flowchart_name": "linear",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754924938625.3826,
+      1754924939141.8098,
+      1754938399534.4658,
+      1754924939591.0085
+    ],
+    "results": [
+      {
+        "node_id": 1754924938625.3826,
+        "node_name": "node 1",
+        "python_file": "nodes/linear_test/node1.py",
+        "success": true,
+        "output": "Enter a value: 12\n12",
+        "error": null,
+        "runtime": 95,
+        "timestamp": "19:53:25",
+        "return_value": [
+          12,
+          "hello"
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754924939141.8098,
+        "node_name": "python node",
+        "python_file": "nodes/linear_test/node2.py",
+        "success": true,
+        "output": "Variable from previous script: [12, 'hello']\n[[['PEc', 'tGIuJGOn'], ['oui', 'Nts', '0Xf', 'I7pcO', 'rhkJCek20']], [['BD8vlMW'], ['zYVdq']], [['e2PWdF', '0hBa6Q8cX', 'FYftStS', 'B'], ['yFm'], ['TqhxPfe', 'WPj8kEcJ', 'WlRkJ', '6rSLe59dd']], [['z4v', 'KjZoXLB4BO', 'A3On93p8', 'XRg4kGEa', 'bz'], ['06FHc', '9PEy'], ['LSs5rzMea', 'AEWw', 'hYJX', 'qgu7Fxp', '4y6mXJmXgC'], ['bK1', 'UuGbJ']], [['dQ'], ['7hxROHv', '1Ip'], ['dMowu', 'vPTk8', 'S9RVk']], [['YYXR', 'vK26K', 'VKlhlY'], ['b', '3TSAy9'], ['v', '43R0eEU', 'vKmaX8hCHP', 'R1552iZ', 'NdTlF0Jx']], [['KjuGnyr', 'j6snNO', 'Yoyuyn6oL', 'T', 'UxmWGhD']], [['V849IQC'], ['rUSBtbvd', 'ptO1h', 'pb2OH8mrel', 'RPO9'], ['9WTEpBpOjP']], [['uWS1Su8lVP', 'UaDLY']], [['yK', 'bqNzroLh', 'w7uttbmw', 'XDx0T'], ['0mnlSD', '1R', 'VX']], [['VFooO9g3TS', 'BpC8S54v', '6Djyje2bQl', '9O'], ['BByDtsO5B', 'SnO4Iq9vo6', 'Wud2Qi', 'T']], [['WkcFR', 'SWBirNP', 'BTNS7yQHtf', '4YCVcE'], ['ZtBHFIG5j'], ['AxZyy']], [['P1fM8BWNdd', 'WUiBpEG', 'rFNB', 'HbKzzOYc9']], [['d', 'nisCDG', 'x', 'Gs8tAI'], ['r5kBVD', 'R', 'ZSMmutyuBq', 'xGf9I', 'B'], ['6dKlaXgEuD', 'G', 'gJFz', 'FY02ECoYSE']], [['xR2', 'anSaTp5bfr'], ['Z', '1G3Nds0q38']]]",
+        "error": null,
+        "runtime": 65,
+        "timestamp": "19:53:25",
+        "return_value": [
+          [
+            [
+              "PEc",
+              "tGIuJGOn"
+            ],
+            [
+              "oui",
+              "Nts",
+              "0Xf",
+              "I7pcO",
+              "rhkJCek20"
+            ]
+          ],
+          [
+            [
+              "BD8vlMW"
+            ],
+            [
+              "zYVdq"
+            ]
+          ],
+          [
+            [
+              "e2PWdF",
+              "0hBa6Q8cX",
+              "FYftStS",
+              "B"
+            ],
+            [
+              "yFm"
+            ],
+            [
+              "TqhxPfe",
+              "WPj8kEcJ",
+              "WlRkJ",
+              "6rSLe59dd"
+            ]
+          ],
+          [
+            [
+              "z4v",
+              "KjZoXLB4BO",
+              "A3On93p8",
+              "XRg4kGEa",
+              "bz"
+            ],
+            [
+              "06FHc",
+              "9PEy"
+            ],
+            [
+              "LSs5rzMea",
+              "AEWw",
+              "hYJX",
+              "qgu7Fxp",
+              "4y6mXJmXgC"
+            ],
+            [
+              "bK1",
+              "UuGbJ"
+            ]
+          ],
+          [
+            [
+              "dQ"
+            ],
+            [
+              "7hxROHv",
+              "1Ip"
+            ],
+            [
+              "dMowu",
+              "vPTk8",
+              "S9RVk"
+            ]
+          ],
+          [
+            [
+              "YYXR",
+              "vK26K",
+              "VKlhlY"
+            ],
+            [
+              "b",
+              "3TSAy9"
+            ],
+            [
+              "v",
+              "43R0eEU",
+              "vKmaX8hCHP",
+              "R1552iZ",
+              "NdTlF0Jx"
+            ]
+          ],
+          [
+            [
+              "KjuGnyr",
+              "j6snNO",
+              "Yoyuyn6oL",
+              "T",
+              "UxmWGhD"
+            ]
+          ],
+          [
+            [
+              "V849IQC"
+            ],
+            [
+              "rUSBtbvd",
+              "ptO1h",
+              "pb2OH8mrel",
+              "RPO9"
+            ],
+            [
+              "9WTEpBpOjP"
+            ]
+          ],
+          [
+            [
+              "uWS1Su8lVP",
+              "UaDLY"
+            ]
+          ],
+          [
+            [
+              "yK",
+              "bqNzroLh",
+              "w7uttbmw",
+              "XDx0T"
+            ],
+            [
+              "0mnlSD",
+              "1R",
+              "VX"
+            ]
+          ],
+          [
+            [
+              "VFooO9g3TS",
+              "BpC8S54v",
+              "6Djyje2bQl",
+              "9O"
+            ],
+            [
+              "BByDtsO5B",
+              "SnO4Iq9vo6",
+              "Wud2Qi",
+              "T"
+            ]
+          ],
+          [
+            [
+              "WkcFR",
+              "SWBirNP",
+              "BTNS7yQHtf",
+              "4YCVcE"
+            ],
+            [
+              "ZtBHFIG5j"
+            ],
+            [
+              "AxZyy"
+            ]
+          ],
+          [
+            [
+              "P1fM8BWNdd",
+              "WUiBpEG",
+              "rFNB",
+              "HbKzzOYc9"
+            ]
+          ],
+          [
+            [
+              "d",
+              "nisCDG",
+              "x",
+              "Gs8tAI"
+            ],
+            [
+              "r5kBVD",
+              "R",
+              "ZSMmutyuBq",
+              "xGf9I",
+              "B"
+            ],
+            [
+              "6dKlaXgEuD",
+              "G",
+              "gJFz",
+              "FY02ECoYSE"
+            ]
+          ],
+          [
+            [
+              "xR2",
+              "anSaTp5bfr"
+            ],
+            [
+              "Z",
+              "1G3Nds0q38"
+            ]
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754938399534.4658,
+        "node_name": "python node",
+        "python_file": "",
+        "success": false,
+        "output": "",
+        "error": "node_id and python_file are required",
+        "runtime": 7,
+        "timestamp": "19:53:25",
+        "return_value": null
+      },
+      {
+        "node_id": 1754928697641.7373,
+        "node_name": "big_array",
+        "python_file": "nodes/linear_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "19:53:25",
+        "return_value": {
+          "argument1": [
+            [
+              "PEc",
+              "tGIuJGOn"
+            ],
+            [
+              "oui",
+              "Nts",
+              "0Xf",
+              "I7pcO",
+              "rhkJCek20"
+            ]
+          ]
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "argument1",
+          "variable_name": "argument1"
+        }
+      },
+      {
+        "node_id": 1754928835424.4587,
+        "node_name": "input value",
+        "python_file": "nodes/linear_test/node1.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "19:53:25",
+        "return_value": {
+          "input_value": 12
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "input_value",
+          "variable_name": "input_value"
+        }
+      },
+      {
+        "node_id": 1754928916757.5627,
+        "node_name": "aSTING",
+        "python_file": "nodes/linear_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "19:53:25",
+        "return_value": {
+          "aSTING": [
+            [
+              "PEc",
+              "tGIuJGOn"
+            ],
+            [
+              "oui",
+              "Nts",
+              "0Xf",
+              "I7pcO",
+              "rhkJCek20"
+            ]
+          ]
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "aSTING",
+          "variable_name": "aSTING"
+        }
+      },
+      {
+        "node_id": 1754930440224.9797,
+        "node_name": "value2",
+        "python_file": "nodes/linear_test/node1.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "19:53:25",
+        "return_value": {
+          "value2": "hello"
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "value2",
+          "variable_name": "value2"
+        }
+      }
+    ],
+    "data_saves": [
+      {
+        "node_name": "big_array",
+        "variable_name": "argument1",
+        "variable_content": [
+          "array",
+          [
+            [
+              "PEc",
+              "tGIuJGOn"
+            ],
+            [
+              "oui",
+              "Nts",
+              "0Xf",
+              "I7pcO",
+              "rhkJCek20"
+            ]
+          ]
+        ]
+      },
+      {
+        "node_name": "input value",
+        "variable_name": "input_value",
+        "variable_content": [
+          "integer",
+          12
+        ]
+      },
+      {
+        "node_name": "aSTING",
+        "variable_name": "aSTING",
+        "variable_content": [
+          "array",
+          [
+            [
+              "PEc",
+              "tGIuJGOn"
+            ],
+            [
+              "oui",
+              "Nts",
+              "0Xf",
+              "I7pcO",
+              "rhkJCek20"
+            ]
+          ]
+        ]
+      },
+      {
+        "node_name": "value2",
+        "variable_name": "value2",
+        "variable_content": [
+          "string",
+          "hello"
+        ]
+      }
+    ],
+    "total_nodes": 4,
+    "successful_nodes": 2,
+    "error_message": "execution stopped at node: python node",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754924938625.3826,
+          "name": "node 1",
+          "x": -137.19602966308594,
+          "y": -818.501708984375,
+          "pythonFile": "nodes/linear_test/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754924939141.8098,
+          "name": "python node",
+          "x": -146.77146911621094,
+          "y": -613.5399169921875,
+          "pythonFile": "nodes/linear_test/node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754924939591.0085,
+          "name": "python node",
+          "x": -155.64644622802734,
+          "y": -422.5850524902344,
+          "pythonFile": "nodes/linear_test/node3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754925101933.1995,
+          "name": "Input Node",
+          "x": -460.2354278564453,
+          "y": -825.454345703125,
+          "pythonFile": "nodes/linear_test/node1.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754928697641.7373,
+          "name": "big_array",
+          "x": 78.34003962044513,
+          "y": -649.1178086173426,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 25,
+              "name": "argument1",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754928835424.4587,
+          "name": "input value",
+          "x": 80.36413794573635,
+          "y": -819.1422168902419,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 10,
+              "name": "input_value",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754928916757.5627,
+          "name": "aSTING",
+          "x": 112.74974292252182,
+          "y": -566.1296483148723,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 28,
+              "name": "aSTING",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754929012115.194,
+          "name": "argument1",
+          "x": 50.00262463201066,
+          "y": -456.8282068448941,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 5,
+              "name": "argument1",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754930304311.069,
+          "name": "var1",
+          "x": 5.472414637541194,
+          "y": -361.69547795030553,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 12,
+              "name": "var1",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754930305709.6292,
+          "name": "var2",
+          "x": -56.26265411320244,
+          "y": -304.00861042911885,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 12,
+              "name": "var2",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754930307192.5747,
+          "name": "var3",
+          "x": -185.80509345902513,
+          "y": -231.1409882970936,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 12,
+              "name": "var3",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754930309267.0178,
+          "name": "var4",
+          "x": -340.64879048957886,
+          "y": -248.34584352271068,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 12,
+              "name": "var4",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754930440224.9797,
+          "name": "value2",
+          "x": 82.38823799912342,
+          "y": -736.1540916843243,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 12,
+              "name": "value2",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754938399534.4658,
+          "name": "python node",
+          "x": -326.4024963378906,
+          "y": -524.2473754882812,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754924938625.3826,
+          "target": 1754924939141.8098
+        },
+        {
+          "selectable": false,
+          "source": 1754925101933.1995,
+          "style": "dashed",
+          "target": 1754924938625.3826,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754924939141.8098,
+          "style": "dashed",
+          "target": 1754928697641.7373
+        },
+        {
+          "selectable": false,
+          "source": 1754924938625.3826,
+          "style": "dashed",
+          "target": 1754928835424.4587
+        },
+        {
+          "selectable": false,
+          "source": 1754924939141.8098,
+          "style": "dashed",
+          "target": 1754928916757.5627
+        },
+        {
+          "selectable": false,
+          "source": 1754924939591.0085,
+          "style": "dashed",
+          "target": 1754929012115.194
+        },
+        {
+          "selectable": false,
+          "source": 1754924939591.0085,
+          "style": "dashed",
+          "target": 1754930304311.069
+        },
+        {
+          "selectable": false,
+          "source": 1754924939591.0085,
+          "style": "dashed",
+          "target": 1754930305709.6292
+        },
+        {
+          "selectable": false,
+          "source": 1754924939591.0085,
+          "style": "dashed",
+          "target": 1754930307192.5747
+        },
+        {
+          "selectable": false,
+          "source": 1754924939591.0085,
+          "style": "dashed",
+          "target": 1754930309267.0178
+        },
+        {
+          "selectable": false,
+          "source": 1754924938625.3826,
+          "style": "dashed",
+          "target": 1754930440224.9797
+        },
+        {
+          "source": 1754924939141.8098,
+          "target": 1754938399534.4658
+        },
+        {
+          "source": 1754938399534.4658,
+          "target": 1754924939591.0085
+        }
+      ],
+      "groups": []
+    }
+  }
+}

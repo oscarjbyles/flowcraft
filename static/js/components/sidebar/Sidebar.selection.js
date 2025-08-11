@@ -3,50 +3,53 @@
     if (!window.Sidebar) return;
 
     Sidebar.prototype.updateContent = function(selection) {
-        if (this.state.isRunMode && this.contentPanels.execution.classList.contains('active')) {
-            this.updateRunModeNodeDetails(selection);
-            this.updateFooterDelete(selection);
-            this.updateFooterVisibility(selection);
-            return;
-        }
-        
-        this.hideAllPanels();
-
-        if (selection.annotation) {
-            this.showAnnotationPanel(selection.annotation);
-        } else if (selection.nodes.length === 1) {
-            this.showSingleNodePanel(selection.nodes[0]);
-        } else if (selection.nodes.length > 1) {
-            this.showMultiSelectPanel(selection.nodes);
-        } else if (selection.link) {
-            this.showLinkPanel(selection.link);
-        } else if (selection.group) {
-            this.showGroupPanel(selection.group);
-        } else {
-            this.showDefaultPanel();
-        }
-
-        // show/hide properties header based on selection
-        try {
-            const header = document.getElementById('properties_header');
-            if (header) {
-                const show = selection.nodes && selection.nodes.length === 1;
-                header.style.display = show ? 'block' : 'none';
+        // centralized content engine decides which panel/sections to show
+        if (this.contentEngine) {
+            this.contentEngine.apply(selection);
+            // in run mode, also populate dynamic run view details
+            if (this.state.isRunMode) {
+                this.updateRunModeNodeDetails(selection);
+            } else {
+                const ctx = (selection.nodes && selection.nodes.length === 1)
+                    ? 'single' : (selection.nodes && selection.nodes.length > 1 ? 'multi' : (selection.link ? 'link' : (selection.group ? 'group' : (selection.annotation ? 'annotation' : 'default'))));
+                // call existing population helpers for non-single contexts to keep behavior
+                if (ctx === 'multi') this.updateSelectedNodesList(selection.nodes);
+                if (ctx === 'link') {
+                    const sourceNode = selection.link && this.state.getNode(selection.link.source);
+                    const targetNode = selection.link && this.state.getNode(selection.link.target);
+                    const isIfToPython = sourceNode && targetNode && sourceNode.type === 'if_node' && targetNode.type === 'python_file';
+                    if (isIfToPython) this.showConnectionNodePanel(selection.link); else this.populateLinkForm(selection.link);
+                }
+                if (ctx === 'group' && selection.group) this.populateGroupForm(selection.group);
+                if (ctx === 'annotation' && selection.annotation) this.showAnnotationPanel(selection.annotation);
             }
-        } catch (_) {}
+        } else {
+            // fallback to legacy behavior if engine not available
+            if (this.state.isRunMode && this.contentPanels.execution.classList.contains('active')) {
+                this.updateRunModeNodeDetails(selection);
+                this.updateFooterDelete(selection);
+                this.updateFooterVisibility(selection);
+                return;
+            }
+            this.hideAllPanels();
+            if (selection.annotation) {
+                this.showAnnotationPanel(selection.annotation);
+            } else if (selection.nodes.length === 1) {
+                this.showSingleNodePanel(selection.nodes[0]);
+            } else if (selection.nodes.length > 1) {
+                this.showMultiSelectPanel(selection.nodes);
+            } else if (selection.link) {
+                this.showLinkPanel(selection.link);
+            } else if (selection.group) {
+                this.showGroupPanel(selection.group);
+            } else {
+                this.showDefaultPanel();
+            }
+        }
         this.updateFooterDelete(selection);
         this.updateFooterVisibility(selection);
 
-        const quickGroup = document.getElementById('python_quick_actions');
-        if (quickGroup) {
-            const one = selection.nodes.length === 1 ? this.state.getNode(selection.nodes[0]) : null;
-            let hasIf = false;
-            if (one && one.type === 'python_file') {
-                hasIf = !!this.state.getAssociatedIfForPython(one.id);
-            }
-            // show/hide the entire quick action form_group instead of the inner button
-            quickGroup.style.display = (one && one.type === 'python_file' && !this.state.isRunMode && !hasIf) ? '' : 'none';
-        }
+        // quick actions visibility handled by content engine; no-op here
     };
 
     Sidebar.prototype.handleAddIfCondition = function() {

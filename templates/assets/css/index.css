@@ -39,16 +39,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     height: 100vh;
 }
 
-.sidebar {
-    width: 320px;
-    height: 100vh;
-    background: linear-gradient(180deg, var(--surface-color) 0%, var(--surface-variant) 100%);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    transition: width 0.3s ease;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-}
+/* sidebar styles are defined in /static/css/sidebar.css to avoid duplication */
 
 .properties_sidebar {
     width: 320px;
@@ -73,114 +64,23 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     overflow-y: auto;
 }
 
-.sidebar_header {
-    padding: 24px 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: transparent;
-}
+/* sidebar header styles are defined in /static/css/sidebar.css */
 
-.sidebar_title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: white;
-    letter-spacing: 0.5px;
-}
+/* sidebar title styles are defined in /static/css/sidebar.css */
 
-/* simple geometric logo for flowcraft */
-.app_logo {
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-}
-.app_logo .logo_node {
-    fill: var(--surface-variant);
-    stroke: var(--primary-color);
-    stroke-width: 2px;
-}
-.app_logo .logo_center {
-    fill: var(--primary-color);
-    stroke: var(--on-primary);
-    stroke-width: 1.5px;
-}
-.app_logo .logo_connector {
-    fill: none;
-    stroke: var(--primary-color);
-    stroke-width: 2px;
-    stroke-linecap: round;
-}
+/* app logo styles are defined in /static/css/sidebar.css */
 
-.sidebar_content {
-    flex: 1;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-}
+/* sidebar content styles are defined in /static/css/sidebar.css */
 
-/* keep the settings button pinned to the bottom */
-.sidebar_footer {
-    margin-top: auto;
-    padding-top: 8px;
-    border-top: 1px solid var(--border-color);
-}
+/* sidebar footer styles are defined in /static/css/sidebar.css */
 
-.sidebar_section {
-    margin-bottom: 24px;
-}
+/* sidebar section styles are defined in /static/css/sidebar.css */
 
-.sidebar_section_title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--on-surface);
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    opacity: 0.8;
-}
+/* sidebar section title styles are defined in /static/css/sidebar.css */
 
-.sidebar_item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: left;
-    padding-left: 14px;
-    padding-right: 18px;
-    padding-bottom: 12px;
-    padding-top: 12px;
-    margin-bottom: 10px;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: none;
-    width: 100%;
-    color: var(--on-surface);
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-transform: capitalize;
-    letter-spacing: 0.5px;
-    opacity: 0.95;
-}
+/* sidebar item styles are defined in /static/css/sidebar.css */
 
-.sidebar_item:hover {
-    background: linear-gradient(135deg, var(--hover-color) 0%, rgba(51, 51, 51, 0.9) 100%);
-}
-
-.sidebar_item.active {
-    background: #484848;
-    color: var(--on-primary);
-}
-
-.sidebar_section.disabled {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-.sidebar_section.disabled .sidebar_item {
-    cursor: not-allowed;
-}
+/* sidebar disabled state styles are defined in /static/css/sidebar.css */
 
 .btn_create {
     background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%) !important;
@@ -193,51 +93,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     margin-top: 0px;
 }
 
-.create_flowchart_link_container {
-    margin-top: -10px;
-    text-align: right;
-}
-
-.create_flowchart_link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #4caf50;
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 500;
-    padding: 6px 12px;
-    padding-left: 0px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    text-transform: lowercase;
-}
-
-.create_flowchart_link .span {
-    margin-top: 1px;
-}
-
-.create_flowchart_link:hover {
-    background: transparent;
-    color: #4caf50;
-    text-decoration: none; /* prevent icon underline; underline text via child span */
-}
-
-/* underline only the text part on hover */
-.create_flowchart_link:hover .create_link_text {
-    text-decoration: underline;
-}
-
-.create_flowchart_link .material-icons {
-    font-size: 16px;
-    text-decoration: none;
-}
-
-/* ensure plus icons are never underlined on hover */
-.create_flowchart_link .material-icons,
-.create_flowchart_link:hover .material-icons {
-    text-decoration: none;
-}
+/* create flowchart link styles are defined in /static/css/sidebar.css */
 
 .dropdown_delete_btn {
     background: none;
@@ -313,11 +169,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     margin-top: 4px;
 }
 
-.sidebar_item .material-icons {
-    margin-right: 12px;
-    font-size: 20px;
-    width: 26px;
-}
+/* sidebar icon spacing is defined in /static/css/sidebar.css */
 
 .main_content {
     flex: 1;
@@ -530,6 +382,11 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .link.input_connection:hover {
     stroke: var(--border-color);
     opacity: 0.8;
+}
+
+/* prevent hover effects for python to data save connections */
+.link.python_to_data_save:hover {
+    stroke: var(--border-color);
 }
 
 .connection_dot {
@@ -850,12 +707,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     background-color: var(--hover-color);
 }
 
-/* responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 240px;
-    }
-}
+/* responsive sidebar sizing is defined in /static/css/sidebar.css */
 
 .node_order_circle {
     fill: var(--primary-color);
@@ -891,25 +743,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .annotation_box { fill: transparent; stroke: transparent; rx: 4px; ry: 4px; }
 .annotation_item.selected .annotation_box { stroke: var(--primary-color); stroke-width: 2px; }
 
-/* run view styles */
-.sidebar_item.flow_view_active {
-    background-color: #484848;
-    color: var(--on-primary);
-}
-
-.sidebar_item.flow_view_active:hover {
-    background-color: #555555;
-}
-
-/* mode styles */
-.sidebar_item.run_mode_active {
-    background-color: #484848;
-    color: var(--on-primary);
-}
-
-.sidebar_item.run_mode_active:hover {
-    background-color: #555555;
-}
+/* run/mode active styles are defined in /static/css/sidebar.css */
 
 .start_button_container {
     position: absolute;
@@ -1404,6 +1238,105 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 /* mini folder explorer styles */
 .mini_explorer { border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-variant); padding: 10px; }
+
+/* data save details panel - improved readability */
+.data_save_details_card {
+  background: var(--surface-variant);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.data_save_details_grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.data_save_field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.data_save_label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--on-surface);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data_save_value {
+  font-size: 0.95rem;
+  color: var(--on-surface);
+  font-weight: 500;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  min-height: 20px;
+}
+
+.data_save_value_monospace {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  background: rgba(25, 118, 210, 0.1);
+  border-color: rgba(25, 118, 210, 0.3);
+  color: #90caf9;
+}
+
+.data_save_value_pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #1a1a1a;
+  color: #ffa726;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  border: 1px solid #333;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.data_save_history {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 6px;
+  color: #4caf50;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.data_save_history_icon {
+  font-size: 16px;
+}
+
+.data_save_history_waiting {
+  background: rgba(255, 152, 0, 0.1);
+  border-color: rgba(255, 152, 0, 0.3);
+  color: #ff9800;
+}
+
+.data_save_history_success {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+}
+
+.data_save_history_error {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+  color: #f44336;
+}
 .mini_explorer_toolbar { 
     display: flex; gap: 8px; 
     align-items: center; 

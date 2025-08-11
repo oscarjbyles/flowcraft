@@ -120,17 +120,21 @@ def get_history():
         for entry in history_entries:
             try:
                 execution_data = entry.get('execution_data', {})
-                total_nodes = len(execution_data.get('execution_order', []))
+                execution_order = execution_data.get('execution_order', []) or []
+                total_nodes = len(execution_order)
                 results = execution_data.get('results', []) or []
-                successful_nodes = len([r for r in results if r.get('success', False)])
+                # exclude data_save nodes: only consider nodes that are part of the execution order
+                order_id_set = set(execution_order)
+                results_in_order = [r for r in results if r.get('node_id') in order_id_set]
+                successful_nodes = len([r for r in results_in_order if r.get('success', False)])
                 success_percentage = (successful_nodes / total_nodes * 100) if total_nodes > 0 else 0
                 failed_node = None
-                for result in results:
+                for result in results_in_order:
                     if not result.get('success', False):
                         failed_node = result.get('node_name', 'unknown')
                         break
                 elapsed_ms = 0
-                for r in results:
+                for r in results_in_order:
                     try:
                         elapsed_ms += int(r.get('runtime', 0) or 0)
                     except Exception:

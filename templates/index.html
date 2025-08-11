@@ -484,6 +484,15 @@
                             <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">info</span>
                             <span id="execution_status_text">ready to start execution</span>
                         </div>
+                        <!-- execution time (integrated into status block) -->
+                        <div id="execution_time_row" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <div style="display:flex; align-items: center; gap: 8px;">
+                                <span class="material-icons" style="color: #4caf50; font-size: 18px;">schedule</span>
+                                <span id="execution_time_text">0ms</span>
+                                <div style="flex: 1;"></div>
+                                <span id="execution_timestamp" style="font-size: 0.8em; opacity: 0.7;">--:--:--</span>
+                            </div>
+                        </div>
                         <!-- failure info (shown only when run has failed and no node is selected) -->
                         <div id="execution_failure_info" style="display:none; margin-top:12px; background: #2a1a1a; border: 1px solid rgba(244,67,54,0.35); border-radius: 8px; padding: 12px;">
                             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
@@ -499,19 +508,6 @@
                                     go to node
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- execution time (global) -->
-                <div class="form_group" id="execution_time_group" style="display:none;">
-                    <label class="form_label">execution time</label>
-                    <div id="execution_time_block" style="background: var(--surface-variant); border-radius: 4px; padding: 12px;">
-                        <div id="execution_time_row" style="display:flex; align-items: center; gap: 8px;">
-                            <span class="material-icons" style="color: #4caf50; font-size: 18px;">schedule</span>
-                            <span id="execution_time_text">0ms</span>
-                            <div style="flex: 1;"></div>
-                            <span id="execution_timestamp" style="font-size: 0.8em; opacity: 0.7;">--:--:--</span>
                         </div>
                     </div>
                 </div>
@@ -559,6 +555,38 @@
                     <div id="console_output_log" style="max-height: 600px; overflow-y: auto; background: #1a1a1a; color: #00ff00; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
                         <div id="console_content">
                             <!-- console output will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- data save run-mode details (shown only when selecting a data_save node in run mode) -->
+                <div class="form_group" id="data_save_details_group" style="display: none;">
+                    <label class="form_label">data save</label>
+                    <div id="data_save_details_card" class="data_save_details_card">
+                        <div class="data_save_details_grid">
+                            <div class="data_save_field">
+                                <div class="data_save_label">node name</div>
+                                <div id="ds_node_name" class="data_save_value"></div>
+                            </div>
+                            <div class="data_save_field">
+                                <div class="data_save_label">python variable</div>
+                                <div id="ds_variable_name" class="data_save_value data_save_value_monospace"></div>
+                            </div>
+                            <div class="data_save_field">
+                                <div class="data_save_label">type</div>
+                                <div id="ds_variable_type" class="data_save_value data_save_value_monospace"></div>
+                            </div>
+                            <div class="data_save_field">
+                                <div class="data_save_label">value</div>
+                                <pre id="ds_variable_value" class="data_save_value_pre"></pre>
+                            </div>
+                            <div class="data_save_field">
+                                <div class="data_save_label">history</div>
+                                <div id="ds_history_confirmation" class="data_save_history data_save_history_waiting">
+                                    <span class="material-icons data_save_history_icon" id="ds_history_icon">hourglass_empty</span>
+                                    <span id="ds_history_text">waiting to save...</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -685,6 +713,7 @@
 
     <!-- component modules: refactored sidebar (order matters) -->
     <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.content.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.settings.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.selection.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.nodes.js"></script>

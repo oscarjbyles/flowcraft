@@ -232,8 +232,10 @@ class NodeRenderer {
             this.addConnectionDots(nodeEnter);
         }
 
-        // add play button for run mode (initially hidden)
-        this.addPlayButton(nodeEnter);
+        // add play button for run mode (initially hidden) - skip for data_save nodes
+        if (d.type !== 'data_save') {
+            this.addPlayButton(nodeEnter);
+        }
         
         // add refresh button for input nodes (initially hidden)
         this.addRefreshButton(nodeEnter);
@@ -581,8 +583,10 @@ class NodeRenderer {
             });
         }
 
-        // add play button for run mode (initially hidden)
-        this.addPlayButtonToNode(nodeGroup, node);
+        // add play button for run mode (initially hidden) - skip for data_save nodes
+        if (node.type !== 'data_save') {
+            this.addPlayButtonToNode(nodeGroup, node);
+        }
         
         // add refresh button for input nodes (initially hidden)
         this.addRefreshButtonToNode(nodeGroup, node);

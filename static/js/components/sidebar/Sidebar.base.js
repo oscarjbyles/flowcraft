@@ -46,6 +46,13 @@ class Sidebar {
         this.initializePythonFileDropdown();
         this.initializeSettings();
         // note: initializeFlowchartDropdown is called from FlowchartBuilder.initializeApp()
+
+        // centralized content engine
+        try {
+            this.contentEngine = new SidebarContentEngine(this);
+        } catch (_) {
+            this.contentEngine = null;
+        }
     }
 
 }

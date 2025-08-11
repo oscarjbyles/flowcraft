@@ -4,7 +4,7 @@
 .sidebar { width: 320px; height: 100vh; background: linear-gradient(180deg, var(--surface-color) 0%, var(--surface-variant) 100%); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: width 0.3s ease; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15); }
 
 /* header */
-.sidebar_header { padding: 24px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 16px; background: transparent; }
+.sidebar_header { padding: 24px 20px 10px 20px; display: flex; align-items: center; gap: 16px; background: transparent; }
 .sidebar_title { font-size: 1.3rem; font-weight: 600; color: white; letter-spacing: 0.5px; }
 
 /* logo */
@@ -21,17 +21,18 @@
 .sidebar_section { margin-bottom: 24px; }
 .sidebar_section.disabled { opacity: 0.4; pointer-events: none; }
 .sidebar_section.disabled .sidebar_item { cursor: not-allowed; }
-.sidebar_section_title { font-size: 0.875rem; font-weight: 500; color: var(--on-surface); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
+.sidebar_section_title { font-size: 0.75rem; font-weight: 500; color: var(--on-surface); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.65; }
 
 /* items */
 .sidebar_item { display: flex; align-items: center; justify-content: flex-start; text-align: left; padding-left: 14px; padding-right: 18px; padding-bottom: 12px; padding-top: 12px; margin-bottom: 10px; background: transparent; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: none; width: 100%; color: var(--on-surface); font-size: 0.875rem; font-weight: 500; text-transform: capitalize; letter-spacing: 0.5px; opacity: 0.95; }
+#dashboard_btn { margin-bottom: 26px; }
 .sidebar_item:hover { background: linear-gradient(135deg, var(--hover-color) 0%, rgba(51, 51, 51, 0.9) 100%); }
 .sidebar_item.active { background: #484848; color: var(--on-primary); }
 .sidebar_item.flow_view_active { background-color: #484848; color: var(--on-primary); }
 .sidebar_item.flow_view_active:hover { background-color: #555555; }
 .sidebar_item.run_mode_active { background-color: #484848; color: var(--on-primary); }
 .sidebar_item.run_mode_active:hover { background-color: #555555; }
-.sidebar_item .material-icons { margin-right: 12px; font-size: 20px; width: 26px; }
+.sidebar_item .material-icons { margin-right: 10px; font-size: 20px; width: 26px; }
 
 /* flowchart link */
 .create_flowchart_link_container { margin-top: -10px; text-align: right; }

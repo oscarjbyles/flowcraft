@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowCraft • Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/assets/css/index.css">
+    <style>
+        /* dashboard layout */
+        .dashboard_container { flex: 1; display:flex; flex-direction: column; padding: 16px; gap: 16px; }
+        .dash_row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .dash_card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
+        .dash_title { font-size: 1rem; font-weight: 600; opacity: 0.9; margin-bottom: 10px; }
+        .dash_text { opacity: 0.85; }
+        .kpi_grid { display:grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }
+        .kpi_card { background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; display:flex; flex-direction:column; gap:8px; }
+        .kpi_title { font-size: .85rem; opacity: .8; }
+        .kpi_value { font-size: 1.6rem; font-weight:700; letter-spacing:.3px; }
+        .kpi_sub { font-size:.8rem; opacity:.7; display:flex; align-items:center; gap:6px; }
+        .chart_bar_row { display:flex; gap:8px; align-items:flex-end; height: 120px; background: var(--surface-variant); border:1px solid var(--border-color); border-radius: 10px; padding: 12px; }
+        .bar { width: 16px; background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%); border-radius:6px 6px 0 0; display:flex; align-items:flex-end; justify-content:center; position:relative; }
+        .bar_label { position:absolute; bottom:-18px; font-size:.7rem; opacity:.7; }
+        .bar_value { position:absolute; top:-18px; font-size:.7rem; opacity:.8; }
+        .table_wrap { background: var(--surface-variant); border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
+        .table { width:100%; border-collapse: collapse; }
+        .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border-color); text-align:left; font-size:.9rem; }
+        .table th { background:#242424; }
+        .status_badge { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:.8rem; }
+        .status_success { background: rgba(76,175,80,.15); color:#66bb6a; }
+        .status_failed { background: rgba(244,67,54,.15); color:#f28b82; }
+        .status_info { background: rgba(158,158,158,.15); color:#bdbdbd; }
+        .btn_row { display:flex; gap:8px; }
+        .mini_btn { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--border-color); background: var(--surface-variant); color: var(--on-surface); border-radius:8px; cursor:pointer; font-size:.85rem; }
+        .mini_btn:hover { background: var(--hover-color); }
+        .muted { opacity:.7; font-size:.85rem; }
+        .flex { display:flex; }
+        .flex_col { display:flex; flex-direction:column; }
+        .gap8 { gap:8px; }
+        .gap12 { gap:12px; }
+        .grow { flex:1; }
+        .right { text-align:right; }
+        @media (max-width: 1200px) { .kpi_grid { grid-template-columns: repeat(3, 1fr);} }
+        @media (max-width: 780px) { .dash_row { grid-template-columns: 1fr; } .kpi_grid{ grid-template-columns: repeat(2, 1fr);} }
+    </style>
+    <script>
+        // keep nav behavior consistent; preserve flowchart context when available
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const mode_param = params.get('mode') || 'build';
+            const flow_name_param = params.get('flowchart');
+
+            function with_flowchart(href){
+                const u = new URL(href, window.location.origin);
+                if (u.pathname === '/' || u.pathname === '/scripts') {
+                    if (flow_name_param) u.searchParams.set('flowchart', flow_name_param);
+                    if (!u.searchParams.get('mode')) u.searchParams.set('mode', mode_param);
+                }
+                if (u.pathname === '/data') {
+                    const file_param = params.get('flowchart_name') || (flow_name_param ? `${flow_name_param}.json` : 'default.json');
+                    u.searchParams.set('flowchart_name', file_param);
+                }
+                return u.pathname + (u.search ? u.search : '');
+            }
+
+            const map = new Map([
+                ['dashboard_btn','/dashboard'],
+                ['build_btn','/'],
+                ['scripts_btn','/scripts'],
+                ['run_btn','/?mode=run'],
+                ['export_btn','/'],
+                ['settings_btn','/?mode=settings'],
+                ['data_matrix_btn','/data']
+            ]);
+            map.forEach((href, id) => { const el = document.getElementById(id); if (el) el.onclick = () => window.location.href = with_flowchart(href); });
+            ['dashboard_btn','build_btn','scripts_btn','run_btn','settings_btn','export_btn','data_matrix_btn'].forEach(id => { const el = document.getElementById(id); if (el){ el.classList.remove('active'); el.classList.remove('run_mode_active'); }});
+            const db = document.getElementById('dashboard_btn'); if (db) db.classList.add('active');
+
+            // dashboard data wiring
+            init_dashboard();
+
+            async function init_dashboard(){
+                // compute flow context compatible with other pages
+                const flow_display = flow_name_param || (params.get('flowchart_name') ? params.get('flowchart_name').replace(/\.json$/i, '') : 'default');
+                const flow_filename = (params.get('flowchart_name') || `${flow_display}.json`);
+
+                // dom refs
+                const el_total_exec = document.getElementById('kpi_total_exec');
+                const el_success_rate = document.getElementById('kpi_success_rate');
+                const el_avg_time = document.getElementById('kpi_avg_time');
+                const el_nodes_cov = document.getElementById('kpi_nodes_cov');
+                const el_missing = document.getElementById('kpi_missing');
+                const el_orphan = document.getElementById('kpi_orphan');
+                const el_dist = document.getElementById('distribution_bars');
+                const el_recent_body = document.getElementById('recent_tbody');
+                const el_failure_block = document.getElementById('failure_block');
+                const el_editors = document.getElementById('editors_list');
+                const el_links_build = document.getElementById('link_build');
+                const el_links_run = document.getElementById('link_run');
+                const el_links_scripts = document.getElementById('link_scripts');
+                const el_links_data = document.getElementById('link_data');
+                const el_clear_history = document.getElementById('btn_clear_history');
+
+                // wire quick links with preserved context
+                if (el_links_build) el_links_build.onclick = () => window.location.href = with_flowchart('/');
+                if (el_links_run) el_links_run.onclick = () => window.location.href = with_flowchart('/?mode=run');
+                if (el_links_scripts) el_links_scripts.onclick = () => window.location.href = with_flowchart('/scripts');
+                if (el_links_data) el_links_data.onclick = () => window.location.href = with_flowchart('/data');
+
+                // fetch in parallel
+                let flow_resp, files_resp, hist_resp, editors_resp;
+                try {
+                    [flow_resp, files_resp, hist_resp, editors_resp] = await Promise.all([
+                        fetch(`/api/flowchart?name=${encodeURIComponent(flow_display)}`),
+                        fetch('/api/python-files'),
+                        fetch(`/api/history?flowchart_name=${encodeURIComponent(flow_filename)}`),
+                        fetch('/api/editors')
+                    ]);
+                } catch (e) {
+                    // basic network failure handling
+                }
+
+                let flow = { nodes: [], links: [] };
+                let py_files = [];
+                let history = [];
+                let editors = [];
+                try { flow = await flow_resp.json(); } catch(_) {}
+                try { const f = await files_resp.json(); if (f && f.status === 'success') py_files = f.files || []; } catch(_) {}
+                try { const h = await hist_resp.json(); if (h && h.status === 'success') history = h.history || []; } catch(_) {}
+                try { const ed = await editors_resp.json(); if (ed && ed.status === 'success') editors = ed.editors || []; } catch(_) {}
+
+                // compute coverage + missing/orphan
+                const total_nodes = Array.isArray(flow.nodes) ? flow.nodes.length : 0;
+                const nodes_with_files = (flow.nodes || []).filter(n => (n && typeof n.pythonFile === 'string' && n.pythonFile.trim() !== ''));
+                const nodes_with_files_count = nodes_with_files.length;
+                const norm = (p) => {
+                    if (!p) return '';
+                    const s = String(p).replace(/\\\\/g, '/');
+                    return s.startsWith('nodes/') ? s : `nodes/${s}`;
+                };
+                const file_set = new Set((py_files || []).map(f => String(f.path).replace(/\\\\/g, '/')));
+                const missing_nodes = nodes_with_files.filter(n => !file_set.has(norm(n.pythonFile)));
+                const used_files = new Set(nodes_with_files.map(n => norm(n.pythonFile)));
+                const orphaned = (py_files || []).filter(f => !used_files.has(String(f.path).replace(/\\\\/g, '/')));
+
+                // quick stats
+                const total_exec = history.length;
+                const avg_success = total_exec > 0 ? (history.reduce((a, b) => a + (b.success_percentage || 0), 0) / total_exec) : 0;
+                const avg_elapsed_ms = total_exec > 0 ? Math.round(history.reduce((a, b) => a + (b.elapsed_ms || 0), 0) / total_exec) : 0;
+                const fmt_elapsed = (ms) => {
+                    try { ms = parseInt(ms); } catch(_) { return '0ms'; }
+                    if (ms < 1000) return `${ms}ms`;
+                    const s = ms / 1000.0;
+                    if (s < 60) return `${s.toFixed(2)}s`;
+                    const m = Math.floor(s / 60);
+                    const r = s - m*60;
+                    return `${m}m ${r.toFixed(1)}s`;
+                };
+                if (el_total_exec) el_total_exec.textContent = String(total_exec);
+                if (el_success_rate) el_success_rate.textContent = `${avg_success.toFixed(1)}%`;
+                if (el_avg_time) el_avg_time.textContent = fmt_elapsed(avg_elapsed_ms);
+                if (el_nodes_cov) el_nodes_cov.textContent = `${nodes_with_files_count}/${total_nodes}`;
+                if (el_missing) el_missing.textContent = String(missing_nodes.length);
+                if (el_orphan) el_orphan.textContent = String(orphaned.length);
+
+                // editors list
+                if (el_editors) {
+                    if (!editors.length) {
+                        el_editors.innerHTML = '<div class="muted">no editors detected</div>';
+                    } else {
+                        el_editors.innerHTML = editors.slice(0,5).map(e => `<div class="muted">${e.name}</div>`).join('');
+                    }
+                }
+
+                // execution distribution (last 10 success %)
+                if (el_dist) {
+                    const recent = history.slice(0, 10).reverse();
+                    if (!recent.length) {
+                        el_dist.innerHTML = '<div class="muted" style="padding:8px;">no executions yet</div>';
+                    } else {
+                        el_dist.innerHTML = '';
+                        recent.forEach((h, idx) => {
+                            const pct = Math.max(0, Math.min(100, Number(h.success_percentage || 0)));
+                            const bar = document.createElement('div');
+                            bar.className = 'bar';
+                            bar.style.height = `${10 + Math.round(pct)}%`;
+                            const v = document.createElement('div'); v.className = 'bar_value'; v.textContent = `${pct}%`;
+                            const l = document.createElement('div'); l.className = 'bar_label'; l.textContent = String(recent.length - idx);
+                            bar.appendChild(v); bar.appendChild(l);
+                            el_dist.appendChild(bar);
+                        });
+                    }
+                }
+
+                // recent executions table
+                if (el_recent_body) {
+                    if (!history.length) {
+                        el_recent_body.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center; padding:14px;">no executions yet</td></tr>';
+                    } else {
+                        const rows = history.slice(0, 6).map(item => {
+                            const cls = item.status === 'success' ? 'status_success' : (item.status === 'failed' ? 'status_failed' : 'status_info');
+                            const badge = `<span class="status_badge ${cls}"><span class="material-icons" style="font-size:16px;">${item.status==='success'?'check_circle':(item.status==='failed'?'error':'info')}</span>${item.status || 'unknown'}</span>`;
+                            const nodes = `${item.successful_nodes || 0} / ${item.total_nodes || 0}`;
+                            const elapsed = item.execution_time || '-';
+                            const when = item.timestamp || '-';
+                            const viewBtn = `<button class="mini_btn" data-id="${item.execution_id}"><span class="material-icons" style="font-size:16px;">visibility</span> view</button>`;
+                            return `<tr>
+                                <td>${badge}</td>
+                                <td>${nodes}</td>
+                                <td>${String(item.success_percentage ?? 0)}%</td>
+                                <td>${elapsed}</td>
+                                <td class="right">${viewBtn}</td>
+                            </tr>`;
+                        }).join('');
+                        el_recent_body.innerHTML = rows;
+                        el_recent_body.querySelectorAll('button[data-id]').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                const id = btn.getAttribute('data-id');
+                                const u = new URL('/', window.location.origin);
+                                if (flow_display && flow_display !== 'default') u.searchParams.set('flowchart', flow_display);
+                                u.searchParams.set('mode', 'run');
+                                u.searchParams.set('executionId', id);
+                                window.location.href = u.pathname + '?' + u.searchParams.toString();
+                            });
+                        });
+                    }
+                }
+
+                // failure spotlight
+                if (el_failure_block) {
+                    const failed = history.find(h => (h.status || '').toLowerCase() === 'failed');
+                    if (!failed) {
+                        el_failure_block.innerHTML = '<div class="muted">no failures in recent executions</div>';
+                    } else {
+                        const name = failed.failed_node || 'unknown';
+                        el_failure_block.innerHTML = `
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                <span class="material-icons" style="color:#f44336;">error</span>
+                                <strong style="color:#f44336; text-transform: lowercase;">execution failed</strong>
+                            </div>
+                            <div class="muted">failed node: <span style="font-family:monospace;">${name}</span></div>
+                            <div class="btn_row" style="margin-top:10px;">
+                                <button class="mini_btn" id="btn_view_failed"><span class="material-icons" style="font-size:16px;">visibility</span> view run</button>
+                            </div>
+                        `;
+                        const v = document.getElementById('btn_view_failed');
+                        if (v) v.onclick = () => {
+                            const u = new URL('/', window.location.origin);
+                            if (flow_display && flow_display !== 'default') u.searchParams.set('flowchart', flow_display);
+                            u.searchParams.set('mode', 'run');
+                            u.searchParams.set('executionId', failed.execution_id);
+                            window.location.href = u.pathname + '?' + u.searchParams.toString();
+                        };
+                    }
+                }
+
+                // clear history action
+                if (el_clear_history) {
+                    el_clear_history.onclick = async () => {
+                        if (!confirm('clear all executions for this flowchart?')) return;
+                        try {
+                            const resp = await fetch('/api/history/clear', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ flowchart_name: flow_filename })
+                            });
+                            const j = await resp.json();
+                            if (j && j.status === 'success') window.location.reload(); else alert(j.message || 'failed to clear history');
+                        } catch(_){ alert('error clearing history'); }
+                    };
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="app_container">
+        {% include 'partials/sidebar.html' %}
+        <div class="main_content full_width">
+            <div class="dashboard_container">
+
+                <!-- quick stats grid -->
+                <div class="dash_card">
+                    <div class="dash_title">quick stats</div>
+                    <div class="kpi_grid">
+                        <div class="kpi_card">
+                            <div class="kpi_title">executions</div>
+                            <div class="kpi_value" id="kpi_total_exec">0</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">history</span> total runs</div>
+                        </div>
+                        <div class="kpi_card">
+                            <div class="kpi_title">success rate</div>
+                            <div class="kpi_value" id="kpi_success_rate">0%</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">check_circle</span> average</div>
+                        </div>
+                        <div class="kpi_card">
+                            <div class="kpi_title">average run time</div>
+                            <div class="kpi_value" id="kpi_avg_time">0ms</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">schedule</span> per execution</div>
+                        </div>
+                        <div class="kpi_card">
+                            <div class="kpi_title">node coverage</div>
+                            <div class="kpi_value" id="kpi_nodes_cov">0/0</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">device_hub</span> nodes with files</div>
+                        </div>
+                        <div class="kpi_card">
+                            <div class="kpi_title">missing files</div>
+                            <div class="kpi_value" id="kpi_missing">0</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">warning</span> nodes pointing to missing paths</div>
+                        </div>
+                        <div class="kpi_card">
+                            <div class="kpi_title">orphaned scripts</div>
+                            <div class="kpi_value" id="kpi_orphan">0</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">description</span> not used by any node</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- distribution + actions row -->
+                <div class="dash_row">
+                    <div class="dash_card">
+                        <div class="dash_title">execution distribution</div>
+                        <div id="distribution_bars" class="chart_bar_row"></div>
+                        <div class="muted" style="margin-top:8px;">last runs (older on left)</div>
+                    </div>
+                    <div class="dash_card">
+                        <div class="dash_title">quick actions</div>
+                        <div class="btn_row">
+                            <button id="link_build" class="mini_btn"><span class="material-icons" style="font-size:16px;">build</span> build</button>
+                            <button id="link_run" class="mini_btn"><span class="material-icons" style="font-size:16px;">play_arrow</span> run</button>
+                            <button id="link_scripts" class="mini_btn"><span class="material-icons" style="font-size:16px;">code</span> scripts</button>
+                            <button id="link_data" class="mini_btn"><span class="material-icons" style="font-size:16px;">table_chart</span> data matrix</button>
+                            <div class="grow"></div>
+                            <button id="btn_clear_history" class="mini_btn" style="background: rgba(244, 67, 54, 0.12); color:#f44336; border:none;"><span class="material-icons" style="font-size:16px;">delete</span> clear history</button>
+                        </div>
+                        <div style="margin-top:14px;">
+                            <div class="dash_title" style="margin-bottom:6px;">editors</div>
+                            <div id="editors_list" class="flex_col gap8"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- recent executions + failures -->
+                <div class="dash_row">
+                    <div class="dash_card">
+                        <div class="dash_title">recent executions</div>
+                        <div class="table_wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>status</th>
+                                        <th>nodes</th>
+                                        <th>success %</th>
+                                        <th>elapsed</th>
+                                        <th class="right">actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent_tbody">
+                                    <tr><td colspan="5" class="muted" style="text-align:center; padding:14px;">loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="dash_card">
+                        <div class="dash_title">failure spotlight</div>
+                        <div id="failure_block"></div>
+                    </div>
+                </div>
+
+            </div>
+            {% include 'partials/status_bar.html' %}
+        </div>
+    </div>
+</body>
+</html>
+
+

@@ -117,6 +117,7 @@
         }
 
         const navMap = new Map([
+            ['dashboard_btn','/dashboard'],
             ['build_btn','/'],
             ['scripts_btn','/scripts'],
             ['run_btn','/?mode=run'],
@@ -391,13 +392,21 @@
             
             const content = el('div','dm_data_content');
             const table = el('table','dm_table');
+            // enforce column sizing so value column expands to fill remaining width
+            const colgroup = document.createElement('colgroup');
+            const col1 = document.createElement('col'); col1.style.width = '22%';
+            const col2 = document.createElement('col'); col2.style.width = '24%';
+            // remaining width after first two percentage columns and fixed actions column
+            const col3 = document.createElement('col'); col3.style.width = 'calc(100% - 46% - 160px)';
+            const col4 = document.createElement('col'); col4.style.width = '160px';
+            colgroup.appendChild(col1); colgroup.appendChild(col2); colgroup.appendChild(col3); colgroup.appendChild(col4);
+            table.appendChild(colgroup);
             const thead = el('thead');
             thead.innerHTML = `<tr>
                 <th class="dm_col_var_name">data name</th>
                 <th class="dm_col_py_name">python variable</th>
                 <th class="dm_col_value">value</th>
-                <th class="dm_col_type">type</th>
-                <th class="dm_col_open"></th>
+                <th class="dm_col_actions">actions</th>
             </tr>`;
             table.appendChild(thead);
             const tbody = el('tbody');
@@ -440,10 +449,9 @@
                         const td1 = document.createElement('td'); td1.className='dm_col_var_name'; td1.textContent = r.node_name || '-';
                         const td2 = document.createElement('td'); td2.className='dm_col_py_name'; td2.textContent = r.variable_name || '-';
                         const td3 = document.createElement('td'); td3.className='dm_col_value'; td3.textContent = Array.isArray(r.variable_content) ? String(r.variable_content[1]) : '';
-                        const tdType = document.createElement('td'); tdType.className='dm_col_type';
+                        const td4 = document.createElement('td'); td4.className='dm_col_actions';
                         const typeText = Array.isArray(r.variable_content) ? String(r.variable_content[0] || '-') : '-';
-                        tdType.appendChild(typeTag(typeText));
-                        const td4 = document.createElement('td'); td4.className='dm_col_open';
+                        td4.appendChild(typeTag(typeText));
                         const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons">open_in_new</span>');
                         // open detail view for this variable
                         openBtn.addEventListener('click', () => {
@@ -455,7 +463,7 @@
                             });
                         });
                         td4.appendChild(openBtn);
-                        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(tdType); tr.appendChild(td4);
+                        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
                         tbody.appendChild(tr);
                     });
                 } else if (Array.isArray(detail.execution_data.results)) {
@@ -463,7 +471,7 @@
                     // fallback: infer from synthesized results
                     const dsRows = results.filter(r => r.function_name === 'data_save' || (r.node_name && r.python_file && r.return_value && typeof r.return_value === 'object' && Object.keys(r.return_value).length === 1 && detail.execution_data.flowchart_state && detail.execution_data.flowchart_state.nodes && detail.execution_data.flowchart_state.nodes.find(n=>n.id===r.node_id && n.type==='data_save')));
                     if (dsRows.length === 0) {
-                        tbody.appendChild(el('tr','', '<td colspan="5" style="opacity:.7">no saved data</td>'));
+                        tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7; text-align: center;">no saved data</td>'));
                     } else {
                         dsRows.forEach(r => {
                             const keys = (r.return_value && typeof r.return_value === 'object') ? Object.keys(r.return_value) : [];
@@ -474,10 +482,9 @@
                             const td1 = document.createElement('td'); td1.className='dm_col_var_name'; td1.textContent = dataName || '-';
                             const td2 = document.createElement('td'); td2.className='dm_col_py_name'; td2.textContent = pyVar || '-';
                             const td3 = document.createElement('td'); td3.className='dm_col_value'; td3.textContent = (value === null || typeof value === 'undefined') ? 'null' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
-                            const tdType = document.createElement('td'); tdType.className='dm_col_type';
+                            const td4 = document.createElement('td'); td4.className='dm_col_actions';
                             const typeText = inferType(value);
-                            tdType.appendChild(typeTag(typeText));
-                            const td4 = document.createElement('td'); td4.className='dm_col_open';
+                            td4.appendChild(typeTag(typeText));
                             const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons">open_in_new</span>');
                             openBtn.addEventListener('click', () => {
                                 openVariableDetail({
@@ -488,16 +495,16 @@
                                 });
                             });
                             td4.appendChild(openBtn);
-                            tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(tdType); tr.appendChild(td4);
+                            tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
                             tbody.appendChild(tr);
                         });
                     }
                 } else {
-                    tbody.appendChild(el('tr','', '<td colspan="5" style="opacity:.7">no saved data</td>'));
+                    tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7">no saved data</td>'));
                 }
-            } else {
-                tbody.appendChild(el('tr','', '<td colspan="5" style="opacity:.7">no data</td>'));
-            }
+                            } else {
+                    tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7; text-align: center;">no data</td>'));
+                }
             table.appendChild(tbody);
             content.appendChild(table);
             right.appendChild(content);

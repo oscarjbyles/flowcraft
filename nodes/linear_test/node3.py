@@ -1,5 +1,12 @@
 def my_function(argument1):
 
-    # put your script here 
+    import random
 
-    return argument1
+    # create 5 random variables
+    var1 = random.random()
+    var2 = random.random()
+    var3 = random.random()
+    var4 = random.random()
+    var5 = random.random()
+
+    return var1, var2, var3, var4, var5

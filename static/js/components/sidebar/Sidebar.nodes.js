@@ -3,79 +3,12 @@
     if (!window.Sidebar) return;
 
     Sidebar.prototype.populateNodeForm = function(node) {
-        document.getElementById('node_name').value = node.name || '';
-
-        const pythonFileInput = document.getElementById('python_file');
-        const pythonFile = node.pythonFile || '';
-        const displayPath = pythonFile.startsWith('nodes/') ? pythonFile.substring(6) : pythonFile;
-        const pythonFileSection = pythonFileInput.closest('.form_group');
-
-        // common sections
-        const argumentsSection = document.getElementById('arguments_section');
-        const returnsSection = document.getElementById('returns_section');
-        const ifVariablesSection = document.getElementById('if_node_variables_section');
-        const inputNodeInputsSection = document.getElementById('input_node_inputs_section');
-        const dataSaveVariableSection = document.getElementById('data_save_variable_section');
-        const dataSaveNameSection = document.getElementById('data_save_name_section');
-
-        // default hide
-        argumentsSection.style.display = 'none';
-        returnsSection.style.display = 'none';
-        ifVariablesSection.style.display = 'none';
-        inputNodeInputsSection.style.display = 'none';
-        if (dataSaveVariableSection) dataSaveVariableSection.style.display = 'none';
-        if (dataSaveNameSection) dataSaveNameSection.style.display = 'none';
-
-        // common form groups to toggle visibility
-        const nodeNameGroup = document.getElementById('node_name')?.closest('.form_group');
-        const quickActionsGroup = document.getElementById('python_quick_actions');
-        const sidebarDeleteGroup = document.getElementById('delete_node_from_sidebar')?.closest('.form_group');
-
-        // reset groups to visible by default
-        if (nodeNameGroup) nodeNameGroup.style.display = '';
-        if (quickActionsGroup) quickActionsGroup.style.display = '';
-        if (sidebarDeleteGroup) sidebarDeleteGroup.style.display = '';
-
-        // python file field population
-        pythonFileInput.value = displayPath;
-        pythonFileInput.dataset.fullPath = pythonFile;
-
-        // visibility per type
-        if (node.type === 'if_node') {
-            pythonFileSection.style.display = 'none';
-            this.analyzeIfNodeVariables(node);
-            ifVariablesSection.style.display = 'block';
-        } else if (node.type === 'input_node') {
-            // for input nodes: show only inputs list; hide python file picker
-            pythonFileSection.style.display = 'none';
-            if (nodeNameGroup) nodeNameGroup.style.display = 'none';
-            if (quickActionsGroup) quickActionsGroup.style.display = 'none';
-            if (sidebarDeleteGroup) sidebarDeleteGroup.style.display = 'none';
-            inputNodeInputsSection.style.display = 'block';
-            this.populateInputNodeInputs(node);
-        } else if (node.type === 'data_save') {
-            // for data save: hide python picker; show variable selection based on associated python node returns
-            pythonFileSection.style.display = 'none';
-            ifVariablesSection.style.display = 'none';
-            argumentsSection.style.display = 'none';
-            returnsSection.style.display = 'none';
-            const dsSection = document.getElementById('data_save_variable_section');
-            if (dsSection) dsSection.style.display = 'block';
-            // name data removed from ui
-            if (quickActionsGroup) quickActionsGroup.style.display = 'none';
-            this.populateDataSaveVariables(node);
-        } else {
-            // python node and others
-            pythonFileSection.style.display = 'block';
-            if (nodeNameGroup) nodeNameGroup.style.display = '';
-            if (quickActionsGroup) quickActionsGroup.style.display = '';
-            if (sidebarDeleteGroup) sidebarDeleteGroup.style.display = '';
-            if (node.pythonFile) {
-                argumentsSection.style.display = 'block';
-                returnsSection.style.display = 'block';
-                this.analyzeNodeFunction(node);
-            }
+        // defer visibility decisions to the centralized content engine
+        if (this.contentEngine) {
+            this.contentEngine.apply({ nodes: [node.id], link: null, group: null, annotation: null });
+            return;
         }
+        // legacy fallback will not be used in normal flow
     };
 
     Sidebar.prototype.updateSelectedNodesList = function(nodeIds) {
@@ -541,6 +474,19 @@
             if (preferredName && seen.has(preferredName)) {
                 dropdown.value = preferredName;
             }
+
+            // persist selection to the data_save node so downstream logic saves the correct single variable
+            dropdown.onchange = () => {
+                const selectedName = dropdown.value || '';
+                try {
+                    const current = this.state.getNode(node.id);
+                    const origin = (current && current.dataSource && current.dataSource.origin) || 'returns';
+                    const newDataSource = { origin, variable: selectedName ? { name: selectedName } : null };
+                    this.state.updateNode(node.id, { dataSource: newDataSource });
+                } catch (e) {
+                    console.warn('failed to update data_save selection:', e);
+                }
+            };
         } catch (e) {
             if (reqId !== this._dataSaveVarReqId) return;
             if (errorDiv) { errorDiv.textContent = 'network error'; errorDiv.style.display = 'block'; }

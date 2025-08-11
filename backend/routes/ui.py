@@ -16,6 +16,12 @@ def scripts_page():
     return render_template('scripts.html')
 
 
+@ui_bp.route('/dashboard')
+def dashboard_page():
+    """dashboard page (overview landing)"""
+    return render_template('dashboard.html')
+
+
 @ui_bp.route('/data')
 def data_matrix_page():
     """data matrix page - displays executions and saved data."""

@@ -33,7 +33,6 @@
     Sidebar.prototype.updateRunModeNodeDetails = function(selection) {
         const nodeFileContent = document.getElementById('node_file_content');
         const executionTimeRow = document.getElementById('execution_time_row');
-        const executionTimeGroup = document.getElementById('execution_time_group');
         const executionTimeText = document.getElementById('execution_time_text');
         const executionTimestamp = document.getElementById('execution_timestamp');
         const nodeInputContent = document.getElementById('node_input_content');
@@ -51,14 +50,21 @@
         const failedPath = document.getElementById('failed_node_path');
         const failedError = document.getElementById('failed_node_error');
         const gotoBtn = document.getElementById('go_to_failed_node_btn');
+        const dataSaveGroup = document.getElementById('data_save_details_group');
+        const dsNodeName = document.getElementById('ds_node_name');
+        const dsVariableName = document.getElementById('ds_variable_name');
+        const dsVariableType = document.getElementById('ds_variable_type');
+        const dsVariableValue = document.getElementById('ds_variable_value');
+        const dsHistoryIcon = document.getElementById('ds_history_icon');
+        const dsHistoryText = document.getElementById('ds_history_text');
         
         if (selection.nodes.length === 1) {
             if (executionStatusGroup) executionStatusGroup.style.display = '';
-            if (executionTimeGroup) executionTimeGroup.style.display = '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
             if (nodeInputGroup) nodeInputGroup.style.display = '';
             if (nodeOutputGroup) nodeOutputGroup.style.display = '';
             if (consoleGroup) consoleGroup.style.display = '';
+            if (dataSaveGroup) dataSaveGroup.style.display = 'none';
             if (failureInfo) failureInfo.style.display = 'none';
             const nodeId = selection.nodes[0];
             const node = this.state.getNode(nodeId);
@@ -72,6 +78,67 @@
                 }
                 this.displayNodeFileInfo(node, nodeFileContent);
                 const executionResult = window.flowchartApp?.nodeExecutionResults?.get(nodeId);
+                // if this is a data_save node, only show the data save block
+                if (node.type === 'data_save') {
+                    // hide python-specific groups
+                    if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
+                    if (nodeInputGroup) nodeInputGroup.style.display = 'none';
+                    if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
+                    if (consoleGroup) consoleGroup.style.display = 'none';
+                    // hide data save group until we have an execution result (i.e., only show while/after running)
+                    if (!executionResult) {
+                        if (dataSaveGroup) dataSaveGroup.style.display = 'none';
+                        return; // nothing to render for data_save before running
+                    }
+                    if (dataSaveGroup) dataSaveGroup.style.display = '';
+                    // populate fields
+                    if (dsNodeName) dsNodeName.textContent = node.name || 'data save';
+                    // derive variable name and value from execution result
+                    let varName = null;
+                    let value = null;
+                    if (executionResult && executionResult.return_value && typeof executionResult.return_value === 'object') {
+                        const keys = Object.keys(executionResult.return_value);
+                        if (keys.length > 0) {
+                            varName = keys[0];
+                            value = executionResult.return_value[varName];
+                        }
+                    }
+                    if (!varName && executionResult && executionResult.data_save && executionResult.data_save.variable_name) {
+                        varName = executionResult.data_save.variable_name;
+                        if (executionResult.return_value && typeof executionResult.return_value === 'object' && varName in executionResult.return_value) {
+                            value = executionResult.return_value[varName];
+                        }
+                    }
+                    if (dsVariableName) dsVariableName.textContent = varName || '-';
+                    const typeOf = (val) => {
+                        if (val === null) return 'null';
+                        if (Array.isArray(val)) return 'array';
+                        if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'float';
+                        if (typeof val === 'object') return 'object';
+                        if (typeof val === 'string') return 'string';
+                        if (typeof val === 'boolean') return 'boolean';
+                        return typeof val;
+                    };
+                    if (dsVariableType) dsVariableType.textContent = typeOf(value);
+                    if (dsVariableValue) dsVariableValue.textContent = (value !== undefined) ? JSON.stringify(value, null, 2) : 'no value';
+                    // confirmation: saved in history if the execution record exists
+                    const saved = !!executionResult; // presence indicates it was synthesized and included in history
+                    const historyConfirmation = document.getElementById('ds_history_confirmation');
+                    if (saved) {
+                        if (dsHistoryIcon) dsHistoryIcon.textContent = 'check_circle';
+                        if (dsHistoryText) dsHistoryText.textContent = 'saved to history';
+                        if (historyConfirmation) {
+                            historyConfirmation.className = 'data_save_history data_save_history_success';
+                        }
+                    } else {
+                        if (dsHistoryIcon) dsHistoryIcon.textContent = 'hourglass_empty';
+                        if (dsHistoryText) dsHistoryText.textContent = 'waiting to save...';
+                        if (historyConfirmation) {
+                            historyConfirmation.className = 'data_save_history data_save_history_waiting';
+                        }
+                    }
+                    return; // stop further python-node UI rendering
+                }
                 if (executionResult) {
                     if (executionTimeRow) executionTimeRow.style.display = 'flex';
                     const _rt = executionResult.runtime || 0;
@@ -147,6 +214,7 @@
             if (nodeInputGroup) nodeInputGroup.style.display = 'none';
             if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
             if (consoleGroup) consoleGroup.style.display = 'none';
+            if (dataSaveGroup) dataSaveGroup.style.display = 'none';
             if (failureInfo) failureInfo.style.display = 'none';
             nodeFileContent.innerHTML = `
                 <div style="margin-bottom: 8px;">
@@ -162,12 +230,12 @@
             consoleContent.textContent = 'select a single node to view console output';
         } else {
             if (executionStatusGroup) executionStatusGroup.style.display = '';
-            if (executionTimeGroup) executionTimeGroup.style.display = '';
             if (progressGroup) progressGroup.style.display = '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
             if (nodeInputGroup) nodeInputGroup.style.display = 'none';
             if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
             if (consoleGroup) consoleGroup.style.display = 'none';
+            if (dataSaveGroup) dataSaveGroup.style.display = 'none';
             const app = window.flowchartApp;
             const isRunning = !!(app && app._elapsedTimer);
             const hasLast = !!(app && (app.lastExecutionElapsedMs || app.lastExecutionElapsedMs === 0));
@@ -175,7 +243,10 @@
             if (progressText && window.flowchartApp) {
                 const order = window.flowchartApp.calculateNodeOrder ? window.flowchartApp.calculateNodeOrder() : [];
                 const total = order.length;
-                const executed = window.flowchartApp.nodeExecutionResults ? window.flowchartApp.nodeExecutionResults.size : 0;
+                // only count executed nodes that are part of the execution order (exclude data_save etc.)
+                const executed = window.flowchartApp.nodeExecutionResults
+                    ? Array.from(window.flowchartApp.nodeExecutionResults.keys()).filter(id => order.some(n => n.id === id)).length
+                    : 0;
                 progressText.textContent = `${executed} of ${total}`;
             }
             if (failureInfo && window.flowchartApp && window.flowchartApp.lastExecutionStatus === 'failed' && window.flowchartApp.lastFailedNode) {
