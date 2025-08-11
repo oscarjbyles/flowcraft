@@ -1,0 +1,75 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754924938625.3826,
+      "name": "python node",
+      "pythonFile": "nodes/linear_test/node1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -138.2080841064453,
+      "y": -818.501708984375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754924939141.8098,
+      "name": "python node",
+      "pythonFile": "nodes/linear_test/node2.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -104.26536560058594,
+      "y": -613.5399169921875
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754924939591.0085,
+      "name": "python node",
+      "pythonFile": "nodes/linear_test/node3.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -121.23672485351562,
+      "y": -403.3561096191406
+    },
+    {
+      "id": 1754925101933.1995,
+      "x": -470.3559112548828,
+      "y": -815.3338623046875,
+      "name": "Input Node",
+      "type": "input_node",
+      "pythonFile": "nodes/linear_test/node1.py",
+      "description": "input parameters",
+      "groupId": null,
+      "width": 300,
+      "parameters": [
+        "input_value"
+      ],
+      "targetNodeId": 1754924938625.3826,
+      "inputValues": {
+        "input_value": ""
+      },
+      "skipInputCheck": true
+    }
+  ],
+  "links": [
+    {
+      "source": 1754924938625.3826,
+      "target": 1754924939141.8098
+    },
+    {
+      "source": 1754924939141.8098,
+      "target": 1754924939591.0085
+    },
+    {
+      "source": 1754925101933.1995,
+      "target": 1754924938625.3826,
+      "type": "input_connection",
+      "selectable": false,
+      "style": "dashed"
+    }
+  ],
+  "groups": [],
+  "annotations": []
+}

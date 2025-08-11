@@ -172,10 +172,14 @@
                     <div class="dropdown_item_content">
                         <div class="dropdown_item_name">${f.name}</div>
                     </div>
+                    <button class="dropdown_delete_btn" data-filename="${f.filename}" data-name="${f.name}" title="delete flowchart">
+                        <span class="material-icons">delete</span>
+                    </button>
                 </div>
             `).join('');
             dropdown.querySelectorAll('.dropdown_item').forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (ev) => {
+                    if (ev && ev.target && ev.target.closest && ev.target.closest('.dropdown_delete_btn')) return;
                     if (selector) selector.value = item.dataset.name;
                     toggleDropdown(false);
                     // stay on data matrix; update flowchart_name
@@ -184,6 +188,46 @@
                     // preserve mode for consistency in nav
                     url.searchParams.set('mode', modeParam || 'build');
                     window.location.href = url.pathname + '?' + url.searchParams.toString();
+                });
+            });
+
+            dropdown.querySelectorAll('.dropdown_delete_btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const filename = btn.dataset.filename;
+                    const name = btn.dataset.name;
+                    if (!confirm(`are you sure you want to delete the flowchart "${name}"? this action cannot be undone.`)) return;
+                    try {
+                        const resp = await fetch(`/api/flowcharts/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+                        const json = await resp.json();
+                        if (!resp.ok) { alert(json.message || 'error deleting flowchart'); return; }
+                        // refresh list
+                        const listResp = await fetch('/api/flowcharts');
+                        const listJson = await listResp.json();
+                        const flows = (listJson && Array.isArray(listJson.flowcharts)) ? listJson.flowcharts : [];
+                        renderDropdown(flows);
+                        // if current selection was deleted, pick newest and reload page with its flowchart_name
+                        if (filename === flowFilename) {
+                            if (flows.length > 0) {
+                                const fallback = flows[0];
+                                if (selector) selector.value = fallback.name;
+                                const url = new URL('/data', window.location.origin);
+                                url.searchParams.set('flowchart_name', fallback.filename);
+                                url.searchParams.set('mode', modeParam || 'build');
+                                try { localStorage.setItem('last_accessed_flowchart', fallback.filename); } catch(_) {}
+                                window.location.href = url.pathname + '?' + url.searchParams.toString();
+                            } else {
+                                // nothing left: clear selection and reload
+                                const url = new URL('/data', window.location.origin);
+                                url.searchParams.delete('flowchart_name');
+                                url.searchParams.set('mode', modeParam || 'build');
+                                try { localStorage.removeItem('last_accessed_flowchart'); } catch(_) {}
+                                window.location.href = url.pathname + (url.search ? url.search : '');
+                            }
+                        }
+                    } catch(_) {
+                        alert('error deleting flowchart');
+                    }
                 });
             });
         }

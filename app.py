@@ -342,7 +342,7 @@ def open_file_in_editor():
 @app.route('/api/flowchart', methods=['GET'])
 def get_flowchart():
     """get current flowchart data"""
-    flowchart_name = request.args.get('name', DEFAULT_FLOWCHART)
+    flowchart_name = request.args.get('name') or DEFAULT_FLOWCHART
     return jsonify(load_flowchart(flowchart_name))
 
 @app.route('/api/flowchart', methods=['POST'])
@@ -451,12 +451,7 @@ def delete_flowchart(flowchart_name):
                 "message": "flowchart not found"
             }), 404
         
-        # prevent deletion of default flowchart
-        if flowchart_name == 'default.json':
-            return jsonify({
-                "status": "error",
-                "message": "cannot delete default flowchart"
-            }), 400
+        # allow deletion of any flowchart, including default.json
         
         # delete the flowchart file
         os.remove(flowchart_path)

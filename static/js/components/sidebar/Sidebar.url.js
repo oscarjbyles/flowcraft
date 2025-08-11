@@ -11,13 +11,22 @@
                 this.state.storage.setCurrentFlowchart(flowchartName);
                 const result = await this.state.load();
                 if (result.success) {
-                    this.setCurrentFlowchart(displayName);
+                    this.setCurrentFlowchart(displayName || flowchartName.replace('.json',''));
                     this.showSuccess(`switched to flowchart: ${displayName}`);
                 }
             } else {
-                this.state.storage.setCurrentFlowchart('default.json');
-                this.setCurrentFlowchart('default');
-                this.urlManager.updateFlowchartInURL('default.json');
+                // if url points to a missing flowchart, switch to newest or last accessed
+                try {
+                    const last = localStorage.getItem('last_accessed_flowchart');
+                    if (last && this.flowcharts.some(f => f.filename === last)) {
+                        await this.selectFlowchart(last, last.replace('.json',''));
+                        return;
+                    }
+                } catch (_) {}
+                if (this.flowcharts.length > 0) {
+                    const newest = this.flowcharts[0];
+                    await this.selectFlowchart(newest.filename, newest.name);
+                }
             }
         });
     };

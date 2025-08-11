@@ -1,14 +1,14 @@
 {
-  "execution_id": "302c8b00-3e8f-4ea8-8e8f-c5922b04ef03",
-  "timestamp": "2025-08-11T11:27:50.467735",
+  "execution_id": "d1e9cf58-1444-42a4-ac8b-153892683f61",
+  "timestamp": "2025-08-11T16:06:56.126208",
   "flowchart_name": "simple",
   "execution_data": {
     "status": "failed",
     "execution_order": [
       1754654709071.8608,
-      1754867312491.0635,
       1754904147880.503,
       1754653519066.0964,
+      1754908819721.7458,
       1754693832673.4893,
       1754732651225.0054
     ],
@@ -20,26 +20,55 @@
         "success": true,
         "output": "Enter value A: 10",
         "error": null,
-        "runtime": 1102,
-        "timestamp": "11:27:50",
+        "runtime": 1066,
+        "timestamp": "16:06:56",
         "return_value": 10,
         "function_name": "my_function"
       },
       {
-        "node_id": 1754867312491.0635,
-        "node_name": "valueA",
+        "node_id": 1754904147880.503,
+        "node_name": "if condition",
         "python_file": "",
         "success": false,
         "output": "",
         "error": "node_id and python_file are required",
-        "runtime": 11,
-        "timestamp": "11:27:50",
+        "runtime": 10,
+        "timestamp": "16:06:56",
         "return_value": null
+      },
+      {
+        "node_id": 1754867312491.0635,
+        "node_name": "valueA",
+        "python_file": "nodes/test2/node4.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "16:06:56",
+        "return_value": {
+          "valueA": 10
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "valueA",
+          "variable_name": "valueA"
+        }
+      }
+    ],
+    "data_saves": [
+      {
+        "node_name": "valueA",
+        "variable_name": "valueA",
+        "variable_content": [
+          "integer",
+          10
+        ]
       }
     ],
     "total_nodes": 6,
-    "successful_nodes": 1,
-    "error_message": "execution stopped at node: valueA",
+    "successful_nodes": 2,
+    "error_message": "execution stopped at node: if condition",
     "flowchart_state": {
       "nodes": [
         {
@@ -85,7 +114,15 @@
           "y": -843.4198437359335,
           "pythonFile": "",
           "description": "",
-          "type": "data_save"
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 9,
+              "name": "valueA",
+              "type": "variable"
+            }
+          }
         },
         {
           "id": 1754903834540.247,
@@ -104,6 +141,15 @@
           "pythonFile": "",
           "description": "",
           "type": "if_node"
+        },
+        {
+          "id": 1754908819721.7458,
+          "name": "python node",
+          "x": -120.53990173339844,
+          "y": -584.7970581054688,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
         }
       ],
       "links": [
@@ -136,6 +182,10 @@
           "selectable": false,
           "source": 1754654709071.8608,
           "target": 1754904147880.503
+        },
+        {
+          "source": 1754904147880.503,
+          "target": 1754908819721.7458
         }
       ],
       "groups": [

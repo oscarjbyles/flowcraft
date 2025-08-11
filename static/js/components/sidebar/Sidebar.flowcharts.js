@@ -65,17 +65,45 @@
         await this.loadFlowcharts();
         this.setupFlowchartDropdownEvents();
         const flowchartFromURL = this.urlManager.getFlowchartFromURL();
-        const displayName = this.urlManager.getFlowchartDisplayName();
-        console.log(`[Sidebar] Initializing with flowchart from URL: ${flowchartFromURL} (${displayName})`);
-        const flowchartExists = this.flowcharts.some(f => f.filename === flowchartFromURL);
-        if (flowchartExists) {
-            this.state.storage.setCurrentFlowchart(flowchartFromURL);
-            this.setCurrentFlowchart(displayName);
+        const displayNameFromURL = this.urlManager.getFlowchartDisplayName();
+        let initialFilename = null;
+        let initialDisplay = null;
+
+        if (flowchartFromURL) {
+            // url-param driven selection
+            const exists = this.flowcharts.some(f => f.filename === flowchartFromURL);
+            if (exists) {
+                initialFilename = flowchartFromURL;
+                initialDisplay = displayNameFromURL || (flowchartFromURL.replace('.json',''));
+            }
+        }
+
+        if (!initialFilename) {
+            // fall back to last accessed from local storage
+            try {
+                const last = localStorage.getItem('last_accessed_flowchart');
+                if (last && this.flowcharts.some(f => f.filename === last)) {
+                    initialFilename = last;
+                    initialDisplay = last.replace('.json','');
+                }
+            } catch (_) {}
+        }
+
+        if (!initialFilename) {
+            // final fallback: newest modified from backend list
+            if (this.flowcharts.length > 0) {
+                initialFilename = this.flowcharts[0].filename;
+                initialDisplay = this.flowcharts[0].name;
+            }
+        }
+
+        if (initialFilename) {
+            this.state.storage.setCurrentFlowchart(initialFilename);
+            this.setCurrentFlowchart(initialDisplay);
+            this.urlManager.updateFlowchartInURL(initialFilename);
         } else {
-            console.warn(`[Sidebar] Flowchart ${flowchartFromURL} not found, falling back to default`);
-            this.state.storage.setCurrentFlowchart('default.json');
-            this.setCurrentFlowchart('default');
-            this.urlManager.updateFlowchartInURL('default.json');
+            // no flowcharts exist yet
+            console.warn('[Sidebar] no flowcharts available');
         }
     };
 
@@ -223,11 +251,20 @@
             if (result.success) {
                 await this.loadFlowcharts();
                 if (this.state.storage.getCurrentFlowchart() === filename) {
-                    this.state.storage.setCurrentFlowchart('default.json');
-                    const loadResult = await this.state.load();
-                    if (loadResult.success) {
-                        this.setCurrentFlowchart('default');
-                        this.urlManager.updateFlowchartInURL('default.json');
+                    // if we deleted the current one, switch to newest available or clear
+                    if (this.flowcharts.length > 0) {
+                        const newest = this.flowcharts[0];
+                        await this.selectFlowchart(newest.filename, newest.name);
+                    } else {
+                        this.state.storage.setCurrentFlowchart(null);
+                        this.setCurrentFlowchart('');
+                        // clear flowchart param
+                        try {
+                            const params = new URLSearchParams(window.location.search);
+                            params.delete('flowchart');
+                            const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+                            window.history.replaceState(null, '', newUrl);
+                        } catch (_) {}
                     }
                 }
                 this.showSuccess(result.message);

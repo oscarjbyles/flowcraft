@@ -2,7 +2,8 @@
 class Storage {
     constructor(apiEndpoint = '/api/flowchart') {
         this.apiEndpoint = apiEndpoint;
-        this.currentFlowchart = 'default.json';
+        // initial value will be determined by url or last accessed
+        this.currentFlowchart = null;
     }
 
     /**
@@ -10,13 +11,24 @@ class Storage {
      */
     setCurrentFlowchart(flowchartName) {
         this.currentFlowchart = flowchartName;
+        try {
+            localStorage.setItem('last_accessed_flowchart', flowchartName);
+        } catch (_) {}
     }
 
     /**
      * get current flowchart name
      */
     getCurrentFlowchart() {
-        return this.currentFlowchart;
+        if (this.currentFlowchart) return this.currentFlowchart;
+        try {
+            const last = localStorage.getItem('last_accessed_flowchart');
+            if (last) {
+                this.currentFlowchart = last;
+                return last;
+            }
+        } catch (_) {}
+        return null;
     }
 
     /**

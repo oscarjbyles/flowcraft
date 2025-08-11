@@ -16,14 +16,14 @@ class URLManager {
      */
     getFlowchartFromURL() {
         const flowchart = this.params.get('flowchart');
-        return flowchart ? `${flowchart}.json` : 'default.json';
+        return flowchart ? `${flowchart}.json` : null;
     }
 
     /**
      * get flowchart display name from url parameter
      */
     getFlowchartDisplayName() {
-        return this.params.get('flowchart') || 'default';
+        return this.params.get('flowchart') || null;
     }
 
     /**
@@ -38,12 +38,8 @@ class URLManager {
         // preserve existing mode; default to build if missing
         const currentMode = newParams.get('mode') || 'build';
         
-        if (displayName === 'default') {
-            // remove parameter for default flowchart to keep url clean
-            newParams.delete('flowchart');
-        } else {
-            newParams.set('flowchart', displayName);
-        }
+        // always set the flowchart param based on current selection
+        newParams.set('flowchart', displayName);
 
         // build new url
         newParams.set('mode', currentMode);
