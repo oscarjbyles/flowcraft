@@ -265,22 +265,210 @@
                                 pythonReturnsContent.innerHTML = '';
                                 const ret = executionResult.return_value;
 
-                                // helper: create a single return row with name then value
+                                // helper: create a single return row with name, value, and actions on the right (type tag + open icon)
                                 const makeRow = (labelText, value) => {
+                                    // outer container for a variable row (with border)
                                     const row = document.createElement('div');
                                     row.style.display = 'flex';
-                                    row.style.gap = '8px';
-                                    row.style.alignItems = 'baseline';
+                                    row.style.flexDirection = 'column';
+                                    row.style.gap = '6px';
+                                    row.style.padding = '8px 10px';
+                                    row.style.borderRadius = '6px';
+                                    row.style.border = '1px solid var(--border-color)';
+                                    row.style.background = 'var(--surface-color)';
+                                    row.style.marginBottom = '8px';
+
+                                    // header (name on left, actions on right)
+                                    const header = document.createElement('div');
+                                    header.style.display = 'flex';
+                                    header.style.alignItems = 'center';
+                                    header.style.gap = '8px';
+
                                     const nameEl = document.createElement('span');
                                     nameEl.style.color = '#c8e6c9';
                                     nameEl.style.minWidth = '120px';
                                     nameEl.style.fontWeight = '600';
                                     nameEl.textContent = String(labelText);
-                                    const valueEl = document.createElement('span');
-                                    try { valueEl.textContent = typeof value === 'string' ? value : JSON.stringify(value); }
+
+                                    const headerSpacer = document.createElement('div');
+                                    headerSpacer.style.flex = '1 1 auto';
+
+                                    const actions = document.createElement('div');
+                                    actions.style.display = 'flex';
+                                    actions.style.alignItems = 'center';
+                                    actions.style.gap = '8px';
+
+                                    // helper to infer simple type name
+                                    const typeOfValue = (val) => {
+                                        if (val === null) return 'null';
+                                        if (typeof val === 'undefined') return 'undefined';
+                                        if (Array.isArray(val)) return 'array';
+                                        if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'float';
+                                        if (typeof val === 'string') return 'string';
+                                        if (typeof val === 'boolean') return 'boolean';
+                                        if (val && typeof val === 'object') return 'object';
+                                        return typeof val;
+                                    };
+
+                                    // type tag
+                                    const typeText = typeOfValue(value);
+                                    const typeTag = document.createElement('span');
+                                    typeTag.className = 'dm_type_tag';
+                                    // minimal inline styling so it works without data_matrix css
+                                    typeTag.style.padding = '2px 6px';
+                                    typeTag.style.borderRadius = '12px';
+                                    typeTag.style.fontSize = '0.75rem';
+                                    typeTag.style.textTransform = 'lowercase';
+                                    typeTag.style.background = 'rgba(255,255,255,0.08)';
+                                    typeTag.style.border = '1px solid rgba(255,255,255,0.12)';
+                                    typeTag.style.color = 'var(--on-surface)';
+                                    typeTag.textContent = typeText;
+
+                                    // open icon button
+                                    const openBtn = document.createElement('button');
+                                    openBtn.title = 'open value in full screen';
+                                    openBtn.style.display = 'inline-flex';
+                                    openBtn.style.alignItems = 'center';
+                                    openBtn.style.justifyContent = 'center';
+                                    openBtn.style.padding = '2px 4px';
+                                    openBtn.style.borderRadius = '4px';
+                                    openBtn.style.border = '1px solid var(--border-color)';
+                                    openBtn.style.background = 'var(--surface-color)';
+                                    openBtn.style.cursor = 'pointer';
+                                    openBtn.style.color = '#fff';
+                                    const icon = document.createElement('span');
+                                    icon.className = 'material-icons';
+                                    icon.textContent = 'open_in_new';
+                                    icon.style.fontSize = '14px';
+                                    icon.style.color = '#fff';
+                                    openBtn.appendChild(icon);
+
+                                    // hover effect for button color
+                                    openBtn.addEventListener('mouseenter', () => {
+                                        openBtn.style.background = 'rgba(255,255,255,0.12)';
+                                        openBtn.style.borderColor = 'rgba(255,255,255,0.18)';
+                                    });
+                                    openBtn.addEventListener('mouseleave', () => {
+                                        openBtn.style.background = 'var(--surface-color)';
+                                        openBtn.style.borderColor = 'var(--border-color)';
+                                    });
+
+                                    // open a full screen variable viewer similar to data matrix
+                                    openBtn.addEventListener('click', () => {
+                                        // build overlay
+                                        let overlay = document.getElementById('variable_detail_overlay');
+                                        if (!overlay) {
+                                            overlay = document.createElement('div');
+                                            overlay.id = 'variable_detail_overlay';
+                                            overlay.style.position = 'fixed';
+                                            overlay.style.inset = '0';
+                                            overlay.style.zIndex = '10000';
+                                            overlay.style.background = 'var(--background-color, #111)';
+                                            overlay.style.color = 'var(--on-surface, #fff)';
+                                            overlay.style.display = 'flex';
+                                            overlay.style.flexDirection = 'column';
+                                            overlay.style.padding = '16px';
+                                            document.body.appendChild(overlay);
+                                        }
+                                        overlay.innerHTML = '';
+
+                                        // header/meta block
+                                        const top = document.createElement('div');
+                                        top.style.display = 'flex';
+                                        top.style.alignItems = 'flex-start';
+                                        top.style.justifyContent = 'space-between';
+                                        top.style.gap = '12px';
+                                        top.style.marginBottom = '12px';
+
+                                        const meta = document.createElement('div');
+                                        meta.style.display = 'grid';
+                                        meta.style.gridTemplateColumns = '160px 1fr';
+                                        meta.style.rowGap = '6px';
+                                        meta.style.columnGap = '10px';
+
+                                        const addMeta = (label, valueNode) => {
+                                            const l = document.createElement('div');
+                                            l.textContent = label;
+                                            l.style.opacity = '0.8';
+                                            const v = document.createElement('div');
+                                            v.appendChild(valueNode);
+                                            meta.appendChild(l);
+                                            meta.appendChild(v);
+                                        };
+
+                                        const nodeName = (node && node.name) ? node.name : 'python node';
+                                        addMeta('data name', document.createTextNode(nodeName));
+                                        addMeta('python variable', document.createTextNode(String(labelText)));
+                                        const typeWrap = document.createElement('div');
+                                        const typeTag2 = typeTag.cloneNode(true);
+                                        typeWrap.appendChild(typeTag2);
+                                        addMeta('type', typeWrap);
+
+                                        const closeBtn = document.createElement('button');
+                                        closeBtn.className = 'btn btn_secondary';
+                                        closeBtn.style.display = 'inline-flex';
+                                        closeBtn.style.alignItems = 'center';
+                                        closeBtn.style.gap = '6px';
+                                        closeBtn.style.padding = '6px 10px';
+                                        closeBtn.style.border = '1px solid var(--border-color)';
+                                        closeBtn.style.background = 'var(--surface-color)';
+                                        const closeIcon = document.createElement('span');
+                                        closeIcon.className = 'material-icons';
+                                        closeIcon.textContent = 'close';
+                                        const closeLabel = document.createElement('span');
+                                        closeLabel.textContent = 'close';
+                                        closeBtn.appendChild(closeIcon);
+                                        closeBtn.appendChild(closeLabel);
+                                        closeBtn.addEventListener('click', () => {
+                                            if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                                        });
+
+                                        top.appendChild(meta);
+                                        top.appendChild(closeBtn);
+
+                                        // content block
+                                        const bottom = document.createElement('div');
+                                        bottom.style.flex = '1 1 auto';
+                                        bottom.style.background = '#1a1a1a';
+                                        bottom.style.border = '1px solid rgba(255,255,255,0.08)';
+                                        bottom.style.borderRadius = '8px';
+                                        bottom.style.padding = '12px';
+                                        bottom.style.overflow = 'auto';
+                                        const pre = document.createElement('pre');
+                                        pre.style.whiteSpace = 'pre-wrap';
+                                        pre.style.wordBreak = 'break-word';
+                                        try { pre.textContent = typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value); }
+                                        catch(_) { pre.textContent = String(value); }
+                                        bottom.appendChild(pre);
+
+                                        overlay.appendChild(top);
+                                        overlay.appendChild(bottom);
+                                    });
+
+                                    actions.appendChild(typeTag);
+                                    actions.appendChild(openBtn);
+
+                                    header.appendChild(nameEl);
+                                    header.appendChild(headerSpacer);
+                                    header.appendChild(actions);
+
+                                    // value row (clamped to 3 lines with ellipsis)
+                                    const valueEl = document.createElement('div');
+                                    valueEl.style.fontFamily = 'monospace';
+                                    valueEl.style.fontSize = '0.85rem';
+                                    valueEl.style.color = '#ffa726';
+                                    valueEl.style.display = '-webkit-box';
+                                    valueEl.style.webkitBoxOrient = 'vertical';
+                                    valueEl.style.webkitLineClamp = '3';
+                                    valueEl.style.overflow = 'hidden';
+                                    valueEl.style.whiteSpace = 'pre-wrap';
+                                    valueEl.style.wordBreak = 'break-word';
+                                    try { valueEl.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); }
                                     catch(_) { valueEl.textContent = String(value); }
-                                    row.appendChild(nameEl);
+
+                                    row.appendChild(header);
                                     row.appendChild(valueEl);
+
                                     pythonReturnsContent.appendChild(row);
                                     return { row, nameEl, valueEl };
                                 };

@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/sidebar.css">
-    <link rel="stylesheet" href="/assets/css/index.css">
+    <link rel="stylesheet" href="/static/css/index.css">
     
     <!-- d3.js for flowchart -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -26,18 +26,22 @@
         <div class="main_content">
             <!-- start button in top left -->
             <div class="start_button_container" id="start_button_container" style="display: none;">
-                <div class="loading_wheel" id="execution_loading_wheel" style="display: none;"></div>
-                <button class="btn btn_primary" id="execute_start_btn">
-                    <span class="material-icons">play_arrow</span>
-                    Start
-                </button>
-                <button class="btn btn_secondary" id="execute_clear_btn" title="clear">
-                    <span class="material-icons">brush</span>
-                    Clear
-                </button>
-                <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties">
-                    <span class="material-icons">chevron_right</span>
-                </button>
+                <div class="run_controls_group">
+                    <div class="loading_wheel" id="execution_loading_wheel" style="display: none;"></div>
+                    <button class="btn btn_primary" id="execute_start_btn">
+                        <span class="material-icons">play_arrow</span>
+                        Start
+                    </button>
+                    <button class="btn btn_secondary" id="execute_clear_btn" title="clear">
+                        <span class="material-icons">brush</span>
+                        Clear
+                    </button>
+                </div>
+                <div class="sidebar_toggle_group">
+                    <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties">
+                        <span class="material-icons">chevron_right</span>
+                    </button>
+                </div>
             </div>
             
             <!-- floating toolbars -->

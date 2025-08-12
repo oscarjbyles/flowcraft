@@ -28,12 +28,6 @@ def data_matrix_page():
     return render_template('data_matrix.html')
 
 
-@ui_bp.route('/assets/css/<path:filename>')
-def assets_css(filename: str):
-    """serve css files from templates/assets/css.
-    this preserves the existing externalized styling without changing functionality.
-    """
-    base_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', 'assets', 'css')
-    return send_from_directory(base_dir, filename)
+# legacy css route removed; all styles now served from /static/css
 
 

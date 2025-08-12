@@ -1,6 +1,6 @@
-/* variables are defined globally in /assets/css/index.css */
+/* variables are defined globally in /static/css/index.css */
 
-/* global resets are defined in /assets/css/index.css to avoid conflicts */
+/* global resets are defined in /static/css/index.css to avoid conflicts */
 
 .app_container { display: flex; height: 100vh; }
 .data_matrix_container { flex: 1; max-width: unset; padding: 24px; margin-left: 0; overflow-y: auto; }

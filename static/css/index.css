@@ -902,7 +902,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     right: 470px; /* positioned to the left of the properties sidebar in run mode (450px + 20px gap) */
     z-index: 100;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 12px;
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
@@ -913,6 +913,21 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 /* compact toggle button icon state */
 #toggle_sidebar_btn .material-icons { font-size: 18px; }
+
+/* split start/clear from sidebar toggle into distinct groups */
+.run_controls_group {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar_toggle_group {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
 
 /* collapsed sidebar: hide panel, expand canvas and move start toolbar left */
 .properties_sidebar.collapsed { display: none !important; }
