@@ -59,183 +59,13 @@
         @media (max-width: 780px) { .dash_columns { grid-template-columns: 1fr; } .kpi_grid{ grid-template-columns: repeat(2, 1fr);} }
     </style>
     <script src="/static/js/utils/URLManager.js"></script>
+    <!-- left navigation (centralized) -->
+    <script src="/static/js/components/navigation/Navigation.base.js"></script>
+    <script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
     <script>
-        // keep nav behavior consistent; preserve flowchart context when available
+        // initialize nav and dashboard
         document.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const urlMgr = new URLManager();
-            const mode_param = urlMgr.getMode();
-            const flow_name_param = urlMgr.getFlowchartDisplayNamePreferred();
-
-            function with_flowchart(href){
-                return urlMgr.buildUrlPreserveContext(href);
-            }
-
-            const map = new Map([
-                ['dashboard_btn','/dashboard'],
-                ['build_btn','/'],
-                ['scripts_btn','/scripts'],
-                ['run_btn','/?mode=run'],
-                ['export_btn','/'],
-                ['settings_btn','/?mode=settings'],
-                ['data_matrix_btn','/data']
-            ]);
-            map.forEach((href, id) => { const el = document.getElementById(id); if (el) el.onclick = () => window.location.href = with_flowchart(href); });
-            ['dashboard_btn','build_btn','scripts_btn','run_btn','settings_btn','export_btn','data_matrix_btn'].forEach(id => { const el = document.getElementById(id); if (el){ el.classList.remove('active'); el.classList.remove('run_mode_active'); }});
-            const db = document.getElementById('dashboard_btn'); if (db) db.classList.add('active');
-
-            // lightweight flowchart dropdown + create wiring for dashboard page (no full app loaded)
-            setup_flowchart_ui();
-
-            // dashboard data wiring
-            init_dashboard();
-
-            // minimal sidebar flowchart interactions for dashboard
-            function setup_flowchart_ui(){
-                // dom refs
-                const selector = document.getElementById('flowchart_selector');
-                const dropdown = document.getElementById('flowchart_dropdown');
-                const create_btn = document.getElementById('create_flowchart_btn');
-
-                // set initial selector value from url/localstorage
-                try {
-                    const current_display = urlMgr.getFlowchartDisplayNamePreferred();
-                    if (selector) selector.value = current_display || '';
-                } catch (_) {}
-
-                // create button: open local modal on dashboard
-                const create_modal = document.getElementById('create_flowchart_modal');
-                const name_input = document.getElementById('new_flowchart_name');
-                const close_btn = document.getElementById('close_create_modal');
-                const cancel_btn = document.getElementById('cancel_create_flowchart');
-                const confirm_btn = document.getElementById('confirm_create_flowchart');
-
-                function openCreateModal(){
-                    if (!create_modal) return;
-                    create_modal.classList.add('show');
-                    if (name_input){ name_input.value = ''; name_input.focus(); }
-                }
-                function closeCreateModal(){
-                    if (!create_modal) return;
-                    create_modal.classList.remove('show');
-                }
-                async function confirmCreate(){
-                    if (!name_input) return;
-                    const raw = name_input.value.trim();
-                    if (!raw){ alert('flowchart name is required'); return; }
-                    try {
-                        confirm_btn && (confirm_btn.disabled = true);
-                        const resp = await fetch('/api/flowcharts', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: raw })
-                        });
-                        const data = await resp.json();
-                        if (resp.ok && data && data.status === 'success' && data.flowchart){
-                            const filename = data.flowchart.filename;
-                            const display = data.flowchart.name;
-                            try { urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
-                            // update dashboard url and reload to load new context
-                            const target = urlMgr.buildUrlPreserveContext('/dashboard', { display });
-                            window.location.href = target;
-                        } else {
-                            alert((data && data.message) || 'failed to create flowchart');
-                        }
-                    } catch(_) {
-                        alert('error creating flowchart');
-                    } finally {
-                        confirm_btn && (confirm_btn.disabled = false);
-                    }
-                }
-
-                if (create_btn){ create_btn.addEventListener('click', (e) => { e.preventDefault(); openCreateModal(); }); }
-                if (close_btn){ close_btn.addEventListener('click', closeCreateModal); }
-                if (cancel_btn){ cancel_btn.addEventListener('click', closeCreateModal); }
-                if (confirm_btn){ confirm_btn.addEventListener('click', confirmCreate); }
-                if (name_input){ 
-                    name_input.addEventListener('keydown', (e) => { 
-                        if (e.key === 'Enter') confirmCreate(); 
-                    });
-                    // prevent spaces from being entered
-                    name_input.addEventListener('keypress', (e) => {
-                        if (e.key === ' ') {
-                            e.preventDefault();
-                        }
-                    });
-                    // also prevent paste of content with spaces
-                    name_input.addEventListener('paste', (e) => {
-                        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                        if (pastedText.includes(' ')) {
-                            e.preventDefault();
-                        }
-                    });
-                }
-
-                if (!selector || !dropdown) return;
-
-                // open/close behavior
-                const container = selector.closest('.dropdown_container');
-                selector.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle('show');
-                });
-                document.addEventListener('click', (e) => {
-                    if (container && !container.contains(e.target)) dropdown.classList.remove('show');
-                });
-
-                // fetch and render flowcharts
-                fetch('/api/flowcharts')
-                    .then(r => r.json())
-                    .then(data => {
-                        const list = (data && data.flowcharts) ? data.flowcharts : [];
-                        if (!Array.isArray(list) || list.length === 0){
-                            dropdown.innerHTML = '<div class="dropdown_no_results">no flowcharts found</div>';
-                            return;
-                        }
-                        dropdown.innerHTML = list.map(f => `
-                            <div class="dropdown_item" data-name="${f.name}" data-filename="${f.filename}">
-                                <div class="dropdown_item_content">
-                                    <div class="dropdown_item_name">${f.name}</div>
-                                </div>
-                                <button class="dropdown_delete_btn" data-filename="${f.filename}" data-name="${f.name}" title="delete flowchart">
-                                    <span class="material-icons">delete</span>
-                                </button>
-                            </div>
-                        `).join('');
-
-                        // selection
-                        dropdown.querySelectorAll('.dropdown_item').forEach(item => {
-                            item.addEventListener('click', (e) => {
-                                if (e.target.closest('.dropdown_delete_btn')) return;
-                                const filename = item.getAttribute('data-filename');
-                                const display = item.getAttribute('data-name');
-                                try { urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
-                                selector.value = display;
-                                dropdown.classList.remove('show');
-                                // update url to keep user on dashboard with selected flowchart
-                                const newParams = new URLSearchParams(window.location.search);
-                                newParams.set('flowchart', display);
-                                if (!newParams.get('mode')) newParams.set('mode', urlMgr.getMode());
-                                const newUrl = window.location.pathname + '?' + newParams.toString();
-                                window.location.href = newUrl;
-                            });
-                        });
-
-                        // delete handling (dashboard keeps it simple: redirect to builder for delete)
-                        dropdown.querySelectorAll('.dropdown_delete_btn').forEach(btn => {
-                            btn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                // redirect to builder; deletion ui is richer there
-                                const target = urlMgr.buildUrlPreserveContext('/');
-                                window.location.href = target;
-                            });
-                        });
-                    })
-                    .catch(() => {
-                        dropdown.innerHTML = '<div class="dropdown_no_results">error loading flowcharts</div>';
-                    });
-            }
-
+            try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
             async function init_dashboard(){
                 // compute flow context compatible with other pages
                 const flow_display = urlMgr.getFlowchartDisplayNamePreferred();
@@ -508,6 +338,7 @@
                     };
                 }
             }
+            init_dashboard();
         });
     </script>
 </head>

@@ -486,72 +486,9 @@ class FlowchartBuilder {
     }
 
     setupSidebarButtons() {
-        // main sidebar buttons
-        // dashboard navigates to overview page; preserve flowchart selection
-        const dashboardBtn = document.getElementById('dashboard_btn');
-        if (dashboardBtn) {
-            dashboardBtn.addEventListener('click', () => {
-                // if leaving run mode, perform full clear same as clear button
-                try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } else { this.clearAllNodeColorState(); } } catch (_) {}
-                const currentFlow = this.state?.storage?.getCurrentFlowchart?.();
-                let url = '/dashboard';
-                if (currentFlow) {
-                    const display = String(currentFlow).replace(/\.json$/i, '');
-                    url = `/dashboard?flowchart=${encodeURIComponent(display)}&mode=build`;
-                }
-                window.location.href = url;
-            });
-        }
+        // delegate to centralized navigation module for left sidebar
+        try { if (window.Navigation && typeof window.Navigation.setupNavButtons === 'function') window.Navigation.setupNavButtons(this); } catch(_) {}
 
-        document.getElementById('build_btn').addEventListener('click', () => {
-            // if leaving run mode, perform full clear same as clear button
-            try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } } catch (_) {}
-            this.switchToBuildMode();
-            // persist mode in url
-            const u = new URL(window.location.href);
-            u.searchParams.set('mode', 'build');
-            window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
-        });
-        
-        // navigate to scripts interface
-        const scriptsBtn = document.getElementById('scripts_btn');
-        if (scriptsBtn) {
-            scriptsBtn.addEventListener('click', () => {
-                // if leaving run mode, perform full clear same as clear button
-                try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } else { this.clearAllNodeColorState(); } } catch (_) {}
-                // preserve current flowchart in url when navigating
-                const currentFlow = this.state?.storage?.getCurrentFlowchart?.();
-                let url = '/scripts';
-                if (currentFlow) {
-                    const display = String(currentFlow).replace(/\.json$/i, '');
-                    url = `/scripts?flowchart=${encodeURIComponent(display)}&mode=build`;
-                }
-                window.location.href = url;
-            });
-        }
-
-        document.getElementById('run_btn').addEventListener('click', () => {
-            this.switchToRunMode();
-            const u = new URL(window.location.href);
-            u.searchParams.set('mode', 'run');
-            window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
-        });
-        
-        // history removed
-
-        // settings button
-        const settingsBtn = document.getElementById('settings_btn');
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => {
-                // if leaving run mode, perform full clear same as clear button
-                try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } else if (this.state && this.state.isRunMode) { this.clearAllNodeColorState(); } } catch (_) {}
-                this.switchToSettingsMode();
-                const u = new URL(window.location.href);
-                u.searchParams.set('mode', 'settings');
-                window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
-            });
-        }
-        
         // floating toolbar buttons
         document.getElementById('flow_toggle_btn').addEventListener('click', () => {
             this.toggleFlowView();

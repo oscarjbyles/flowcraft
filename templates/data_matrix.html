@@ -53,8 +53,13 @@
         </div>
     </div>
 
+    <script src="/static/js/utils/URLManager.js"></script>
+    <!-- left navigation (centralized) -->
+    <script src="/static/js/components/navigation/Navigation.base.js"></script>
+    <script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
     <script>
     (async function(){
+        try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
         // small helpers (keep comments in lower case to match project convention)
         const $ = (sel) => document.querySelector(sel);
         const container = document.getElementById('dm_content');
@@ -137,30 +142,7 @@
             return u.pathname + (u.search ? u.search : '');
         }
 
-        const navMap = new Map([
-            ['dashboard_btn','/dashboard'],
-            ['build_btn','/?mode=build'],
-            ['scripts_btn','/scripts'],
-            ['run_btn','/?mode=run'],
-            ['export_btn','/'],
-            ['settings_btn','/?mode=settings'],
-            ['data_matrix_btn','/data']
-        ]);
-        navMap.forEach((href, id) => {
-            const elx = document.getElementById(id);
-            if (elx) {
-                elx.onclick = () => {
-                    try { console.log('[dm] nav click', id, href); } catch(_) {}
-                    window.location.href = withFlowchart(href);
-                };
-            }
-        });
-
-        // highlight data matrix as active; clear others
-        (['build_btn','scripts_btn','run_btn','settings_btn','export_btn','data_matrix_btn']).forEach(id => {
-            const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.classList.remove('run_mode_active'); }
-        });
-        const dmBtn = document.getElementById('data_matrix_btn'); if (dmBtn) dmBtn.classList.add('active');
+        // centralized nav handles highlighting
 
         // back link should preserve flowchart context to builder
         // no back link on data matrix
@@ -175,147 +157,9 @@
         const confirmCreate = document.getElementById('confirm_create_flowchart');
         const newFlowchartNameInput = document.getElementById('new_flowchart_name');
 
-        async function fetchFlowcharts(){
-            try {
-                const resp = await fetch('/api/flowcharts');
-                const data = await resp.json();
-                try { console.log('[dm] /api/flowcharts resp', { ok: resp.ok, status: resp.status, count: (data.flowcharts||[]).length, data }); } catch(_) {}
-                if (data.status === 'success') {
-                    renderDropdown(data.flowcharts || []);
-                    if (selector) selector.value = flowDisplay || 'default';
-                } else {
-                    dropdown.innerHTML = '<div class="dropdown_no_results">failed to load flowcharts</div>';
-                }
-            } catch (_) {
-                try { console.error('[dm] /api/flowcharts error', _); } catch(e) {}
-                dropdown.innerHTML = '<div class="dropdown_no_results">error loading flowcharts</div>';
-            }
-        }
+        // dropdown wiring is handled in centralized navigation module
 
-        function renderDropdown(items){
-            if (!items.length) { dropdown.innerHTML = '<div class="dropdown_no_results">no flowcharts found</div>'; return; }
-            dropdown.innerHTML = items.map(f => `
-                <div class="dropdown_item" data-filename="${f.filename}" data-name="${f.name}">
-                    <div class="dropdown_item_content">
-                        <div class="dropdown_item_name">${f.name}</div>
-                    </div>
-                    <button class="dropdown_delete_btn" data-filename="${f.filename}" data-name="${f.name}" title="delete flowchart">
-                        <span class="material-icons">delete</span>
-                    </button>
-                </div>
-            `).join('');
-            dropdown.querySelectorAll('.dropdown_item').forEach(item => {
-                item.addEventListener('click', (ev) => {
-                    if (ev && ev.target && ev.target.closest && ev.target.closest('.dropdown_delete_btn')) return;
-                    if (selector) selector.value = item.dataset.name;
-                    toggleDropdown(false);
-                    // stay on data matrix; update flowchart_name
-                    const url = new URL('/data', window.location.origin);
-                    url.searchParams.set('flowchart_name', item.dataset.filename);
-                    // preserve mode for consistency in nav
-                    url.searchParams.set('mode', modeParam || 'build');
-                    try { localStorage.setItem('last_accessed_flowchart', item.dataset.filename); } catch(_) {}
-                    window.location.href = url.pathname + '?' + url.searchParams.toString();
-                });
-            });
-
-            dropdown.querySelectorAll('.dropdown_delete_btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const filename = btn.dataset.filename;
-                    const name = btn.dataset.name;
-                    if (!confirm(`are you sure you want to delete the flowchart "${name}"? this action cannot be undone.`)) return;
-                    try {
-                        const resp = await fetch(`/api/flowcharts/${encodeURIComponent(filename)}`, { method: 'DELETE' });
-                        const json = await resp.json();
-                        if (!resp.ok) { alert(json.message || 'error deleting flowchart'); return; }
-                        // refresh list
-                        const listResp = await fetch('/api/flowcharts');
-                        const listJson = await listResp.json();
-                        const flows = (listJson && Array.isArray(listJson.flowcharts)) ? listJson.flowcharts : [];
-                        renderDropdown(flows);
-                        // if current selection was deleted, pick newest and reload page with its flowchart_name
-                        if (filename === flowFilename) {
-                            if (flows.length > 0) {
-                                const fallback = flows[0];
-                                if (selector) selector.value = fallback.name;
-                                const url = new URL('/data', window.location.origin);
-                                url.searchParams.set('flowchart_name', fallback.filename);
-                                url.searchParams.set('mode', modeParam || 'build');
-                                try { localStorage.setItem('last_accessed_flowchart', fallback.filename); } catch(_) {}
-                                window.location.href = url.pathname + '?' + url.searchParams.toString();
-                            } else {
-                                // nothing left: clear selection and reload
-                                const url = new URL('/data', window.location.origin);
-                                url.searchParams.delete('flowchart_name');
-                                url.searchParams.set('mode', modeParam || 'build');
-                                try { localStorage.removeItem('last_accessed_flowchart'); } catch(_) {}
-                                window.location.href = url.pathname + (url.search ? url.search : '');
-                            }
-                        }
-                    } catch(_) {
-                        alert('error deleting flowchart');
-                    }
-                });
-            });
-        }
-
-        function toggleDropdown(force){ const show = typeof force === 'boolean' ? force : !dropdown.classList.contains('show'); dropdown.classList.toggle('show', show); }
-        if (selector) {
-            selector.addEventListener('click', (e) => { e.stopPropagation(); toggleDropdown(); });
-            document.addEventListener('click', (e) => { const container = selector.closest('.dropdown_container'); if (container && !container.contains(e.target)) dropdown.classList.remove('show'); });
-            fetchFlowcharts();
-        }
-
-        // create flowchart from data matrix: open local modal, do not navigate
-        if (createBtn) {
-            createBtn.onclick = (e) => {
-                e.preventDefault();
-                if (createModal) createModal.classList.add('show');
-                if (newFlowchartNameInput) { newFlowchartNameInput.value = ''; newFlowchartNameInput.focus(); }
-            };
-        }
-        if (closeCreateModal) closeCreateModal.onclick = () => { if (createModal) createModal.classList.remove('show'); };
-        if (cancelCreate) cancelCreate.onclick = () => { if (createModal) createModal.classList.remove('show'); };
-        if (createModal) createModal.addEventListener('click', (e) => { if (e.target === createModal) createModal.classList.remove('show'); });
-            if (confirmCreate) {
-            confirmCreate.onclick = async () => {
-                const rawName = (newFlowchartNameInput && newFlowchartNameInput.value ? newFlowchartNameInput.value : '').trim();
-                if (!rawName) { alert('flowchart name is required'); return; }
-                try {
-                    const resp = await fetch('/api/flowcharts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: rawName })});
-                    const data = await resp.json();
-                    if (data.status === 'success') {
-                        if (createModal) createModal.classList.remove('show');
-                        await fetchFlowcharts();
-                        if (selector) selector.value = data.flowchart.name;
-                        // update url to reflect new selection on data page
-                        const u = new URL(window.location.href);
-                        u.searchParams.set('flowchart_name', data.flowchart.filename);
-                            try { localStorage.setItem('last_accessed_flowchart', data.flowchart.filename); } catch(_) {}
-                        window.history.replaceState(null, '', u.pathname + '?' + u.searchParams.toString());
-                    } else {
-                        alert(data.message || 'failed to create flowchart');
-                    }
-                } catch(_) { alert('error creating flowchart'); }
-            };
-            if (newFlowchartNameInput) { 
-                newFlowchartNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmCreate.click(); });
-                // prevent spaces from being entered
-                newFlowchartNameInput.addEventListener('keypress', (e) => {
-                    if (e.key === ' ') {
-                        e.preventDefault();
-                    }
-                });
-                // also prevent paste of content with spaces
-                newFlowchartNameInput.addEventListener('paste', (e) => {
-                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                    if (pastedText.includes(' ')) {
-                        e.preventDefault();
-                    }
-                });
-            }
-        }
+        // create flowchart modal is wired by centralized navigation module
 
         // fetch latest history for current flowchart
         try { console.log('[dm] fetching history for', flowFilename); } catch(_) {}
