@@ -37,11 +37,13 @@
                         Clear
                     </button>
                 </div>
-                <div class="sidebar_toggle_group">
-                    <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties">
-                        <span class="material-icons">chevron_right</span>
-                    </button>
-                </div>
+            </div>
+
+            <!-- separate right sidebar toggle bar -->
+            <div class="sidebar_toggle_container" id="sidebar_toggle_container" style="display: none;">
+                <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties">
+                    <span class="material-icons">chevron_right</span>
+                </button>
             </div>
             
             <!-- floating toolbars -->
@@ -607,7 +609,7 @@
                 <!-- 4.5 returns (data out) - detailed variables list for python nodes after execution -->
                 <div class="form_group" id="python_returns_group" style="display: none;">
                     <label class="form_label">returns (data out)</label>
-                    <div id="python_returns_content" style="background: var(--surface-variant); border-radius: 4px; padding: 12px;"></div>
+                    <div id="python_returns_content" style="background: transparent; border-radius: 4px; padding: 0;"></div>
                 </div>
 
                 <!-- 5. console output -->

@@ -899,10 +899,10 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .start_button_container {
     position: absolute;
     top: 14px;
-    right: 470px; /* positioned to the left of the properties sidebar in run mode (450px + 20px gap) */
+    right: 520px; /* leave room for separate toggle bar to the right */
     z-index: 100;
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: 12px;
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
@@ -914,11 +914,14 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* compact toggle button icon state */
 #toggle_sidebar_btn .material-icons { font-size: 18px; }
 
-/* separate right sidebar toggle bar (to the right of start/clear toolbar) */
+/* split start/clear from sidebar toggle into distinct groups */
+.run_controls_group { display: inline-flex; align-items: center; gap: 12px; }
+
+/* separate right sidebar toggle bar */
 .sidebar_toggle_container {
     position: absolute;
     top: 14px;
-    right: 420px; /* place just to the right of start toolbar (start at 470px) */
+    right: 470px; /* aligned just left of properties sidebar in run mode (450px + 20px gap) */
     z-index: 1103; /* ensure above most ui, including right sidebar */
     display: flex;
     align-items: center;
@@ -929,26 +932,14 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* split start/clear from sidebar toggle into distinct groups */
-.run_controls_group {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.sidebar_toggle_group {
-    display: inline-flex;
-    align-items: center;
-    margin-left: 8px;
-    padding-left: 8px;
-    border-left: 1px solid var(--border-color);
-}
+/* when the right sidebar is collapsed, both bars hug the right edge */
+.start_button_container.sidebar_collapsed { right: 80px !important; }
+.sidebar_toggle_container.sidebar_collapsed { right: 20px !important; }
 
 /* collapsed sidebar: hide panel, expand canvas and move start toolbar left */
 .properties_sidebar.collapsed { display: none !important; }
 .main_content.sidebar_collapsed { margin-right: 0 !important; }
 .start_button_container.sidebar_collapsed { right: 80px !important; }
-.sidebar_toggle_container.sidebar_collapsed { right: 20px !important; }
 .run_feed_bar.sidebar_collapsed { margin-right: 0 !important; }
 
 /* default properties width positioning (when not in run mode, if visible) */

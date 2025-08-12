@@ -207,3 +207,13 @@
   padding: 10px;
 }
 
+/* remove horizontal borders in actions column cells for a cleaner edge */
+.dm_table tbody td.dm_col_actions {
+  border-top: none;
+  border-bottom: none;
+}
+/* also remove the header-bottom border for the actions column to match */
+.dm_table thead th.dm_col_actions {
+  border-bottom: none;
+}
+

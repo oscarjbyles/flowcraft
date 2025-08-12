@@ -1,5 +1,17 @@
 {
-  "nodes": [],
+  "nodes": [
+    {
+      "id": 1755032695079.6995,
+      "x": -501.743896484375,
+      "y": -1948.221923828125,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
   "links": [],
   "groups": [],
   "annotations": [],

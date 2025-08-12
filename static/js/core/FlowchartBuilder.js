@@ -769,12 +769,14 @@ class FlowchartBuilder {
 
         // toggle right properties sidebar visibility in run mode via start/clear toolbar
         const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
+        const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
         if (toggleSidebarBtn) {
             toggleSidebarBtn.addEventListener('click', () => {
                 const propertiesSidebar = document.getElementById('properties_sidebar');
                 const mainContent = document.querySelector('.main_content');
                 const runFeedBar = document.getElementById('run_feed_bar');
                 const startButtonContainer = document.getElementById('start_button_container');
+                const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
 
                 const isCollapsed = propertiesSidebar.classList.toggle('collapsed');
                 if (isCollapsed) {
@@ -782,6 +784,7 @@ class FlowchartBuilder {
                     mainContent.classList.add('sidebar_collapsed');
                     if (runFeedBar) runFeedBar.classList.add('sidebar_collapsed');
                     if (startButtonContainer) startButtonContainer.classList.add('sidebar_collapsed');
+                    if (sidebarToggleContainer) sidebarToggleContainer.classList.add('sidebar_collapsed');
                     // update button icon/title
                     toggleSidebarBtn.title = 'show properties';
                     toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
@@ -790,6 +793,7 @@ class FlowchartBuilder {
                     mainContent.classList.remove('sidebar_collapsed');
                     if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
                     if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
+                    if (sidebarToggleContainer) sidebarToggleContainer.classList.remove('sidebar_collapsed');
                     toggleSidebarBtn.title = 'hide properties';
                     toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
                 }
@@ -1761,6 +1765,7 @@ class FlowchartBuilder {
         const annotationToolbar = document.getElementById('annotation_toolbar');
         const topToolbars = document.getElementById('top_toolbars');
         const startButtonContainer = document.getElementById('start_button_container');
+        const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
         const mainContent = document.querySelector('.main_content');
         const propertiesSidebar = document.querySelector('.properties_sidebar');
         const runFeedBar = document.getElementById('run_feed_bar');
@@ -1790,6 +1795,7 @@ class FlowchartBuilder {
         if (mainContent) mainContent.classList.remove('sidebar_collapsed');
         if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
         if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
+        if (sidebarToggleContainer) sidebarToggleContainer.classList.remove('sidebar_collapsed');
 
         if (mode === 'build') {
             // activate build mode
@@ -1807,8 +1813,9 @@ class FlowchartBuilder {
                 addNodeSection.classList.remove('disabled');
             }
             
-            // hide start button
+            // hide start button and toggle bar
             startButtonContainer.style.display = 'none';
+            if (sidebarToggleContainer) sidebarToggleContainer.style.display = 'none';
             // hide live feed bar
             try {
                 const runFeedBar = document.getElementById('run_feed_bar');
@@ -1865,8 +1872,9 @@ class FlowchartBuilder {
                 this.hideSelectionRect();
             }
             
-            // show start button
+            // show start button and toggle bar
             startButtonContainer.style.display = 'flex';
+            if (sidebarToggleContainer) sidebarToggleContainer.style.display = 'flex';
             // ensure toggle button ui matches collapsed sidebar state on entry (default closed)
             if (toggleSidebarBtn) {
                 toggleSidebarBtn.title = 'show properties';
@@ -1886,6 +1894,7 @@ class FlowchartBuilder {
             mainContent.classList.add('sidebar_collapsed');
             if (runFeedBar) runFeedBar.classList.add('sidebar_collapsed');
             if (startButtonContainer) startButtonContainer.classList.add('sidebar_collapsed');
+            if (sidebarToggleContainer) sidebarToggleContainer.classList.add('sidebar_collapsed');
             
             // switch to execution panel
             this.showExecutionPanel();

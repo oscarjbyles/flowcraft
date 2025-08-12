@@ -166,6 +166,48 @@
   "annotations": [],
   "executions": [
     {
+      "execution_id": "f1a4b223-a3ce-4772-9c04-5d637e0673ed",
+      "timestamp": "2025-08-12T23:23:28.297996",
+      "flowchart_name": "if_test",
+      "status": "success",
+      "total_nodes": 5,
+      "successful_nodes": 2,
+      "completed_nodes": 2,
+      "success_percentage": 40.0,
+      "completed_percentage": 40.0,
+      "failed_node": null,
+      "elapsed_ms": 402,
+      "execution_time": "0.402s"
+    },
+    {
+      "execution_id": "99f0af94-212a-4415-b657-bd8632b8d904",
+      "timestamp": "2025-08-12T23:22:18.770320",
+      "flowchart_name": "if_test",
+      "status": "success",
+      "total_nodes": 5,
+      "successful_nodes": 2,
+      "completed_nodes": 2,
+      "success_percentage": 40.0,
+      "completed_percentage": 40.0,
+      "failed_node": null,
+      "elapsed_ms": 316,
+      "execution_time": "0.316s"
+    },
+    {
+      "execution_id": "681fffc1-82e3-4473-b4d2-70e90d095409",
+      "timestamp": "2025-08-12T22:05:22.309729",
+      "flowchart_name": "if_test",
+      "status": "success",
+      "total_nodes": 5,
+      "successful_nodes": 2,
+      "completed_nodes": 2,
+      "success_percentage": 40.0,
+      "completed_percentage": 40.0,
+      "failed_node": null,
+      "elapsed_ms": 277,
+      "execution_time": "0.277s"
+    },
+    {
       "execution_id": "632daafc-e1cc-4734-95b9-f119ce76634e",
       "timestamp": "2025-08-12T21:11:54.574124",
       "flowchart_name": "if_test",
