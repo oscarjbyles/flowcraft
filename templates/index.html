@@ -118,34 +118,34 @@
                     </div>
 
                     <div class="form_group">
-                        <label class="form_label">history</label>
-                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; align-items:center; gap:12px;">
-                            <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">delete_sweep</span>
-                            <span style="font-size: 0.9rem;">clear execution history for current flowchart</span>
-                            <div style="flex:1;"></div>
-                            <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn" style="text-transform: lowercase;">
-                                <span class="material-icons">delete</span>
-                                clear history
-                            </button>
+                        <label class="form_label">clear history</label>
+                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; flex-direction: column; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">history_toggle_off</span>
+                                <span style="font-size: 0.9rem;">clear execution history for current flowchart</span>
+                                <div style="flex:1;"></div>
+                                <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn">
+                                    <span class="material-icons">cleaning_services</span>
+                                    Clear Executions
+                                </button>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7;">
+                                this removes all files under <code>history/&lt;flowchart&gt;</code>.
+                            </div>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
-                            this removes all files under <code>history/&lt;flowchart&gt;</code>.
-                        </div>
-                    </div>
-
-                    <div class="form_group">
-                        <label class="form_label">executions</label>
-                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; align-items:center; gap:12px;">
-                            <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">history_toggle_off</span>
-                            <span style="font-size: 0.9rem;">clear executions key and remove history files</span>
-                            <div style="flex:1;"></div>
-                            <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn" style="text-transform: lowercase;">
-                                <span class="material-icons">cleaning_services</span>
-                                clear executions
-                            </button>
-                        </div>
-                        <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
-                            this resets `executions` in the flowchart json and deletes all related history entries.
+                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; flex-direction: column; gap:12px; margin-top: 12px;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">delete_sweep</span>
+                                <span style="font-size: 0.9rem;">clear executions key and remove history files</span>
+                                <div style="flex:1;"></div>
+                                <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn">
+                                    <span class="material-icons">delete</span>
+                                    Clear Executions & History
+                                </button>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7;">
+                                this resets `executions` in the flowchart json and deletes all related history entries.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -238,7 +238,7 @@
                         <span class="dropdown_arrow material-icons">folder_open</span>
                     </div>
                     <div class="create_flowchart_link_container" style="margin-top: 8px; text-align: left;">
-                        <button type="button" id="create_python_script_btn" class="create_flowchart_link" style="background: none; border: none; cursor: pointer; margin-top: -6px;">
+                        <button type="button" id="create_python_script_btn" class="create_flowchart_link" style="background: none; border: none; cursor: pointer; margin-top: -6px; padding-left: 0px;">
                             <span class="material-icons create_python_script_btn_span" style="margin-top:1px">add</span>
                             <span class="create_python_script_text">create python script</span>
                         </button>
@@ -394,16 +394,19 @@
                 
                 <!-- if-to-python connection variables dropdown -->
                 <div class="form_group" id="if_connection_variables_section" style="display: none;">
-                    <label class="form_label">if conditions</label>
+                    <label class="form_label">create condition</label>
                     <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
                         <div id="if_variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
                             <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">hourglass_empty</span>
                             <p>analyzing python node returns...</p>
                         </div>
                         <div id="if_variables_list" style="display: none;">
-                              <select id="if_variables_dropdown" class="form_input" style="width: 100%; margin-bottom: 8px;">
-                                <option value="">select a variable</option>
-                            </select>
+                              <label class="form_label" for="if_variables_dropdown" style="margin: 0 0 6px 0;">variable</label>
+                              <div class="dropdown_container" style="width: 100%; margin-bottom: 8px;">
+                                  <input type="text" id="if_variables_dropdown" class="form_input dropdown_input" placeholder="select a variable" readonly>
+                                  <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                                  <div class="dropdown_menu" id="if_variables_dropdown_menu"></div>
+                              </div>
                               
 
                               <!-- condition builder for if→python connection -->
@@ -418,14 +421,11 @@
                                       </div>
                                       <div>
                                           <label class="form_label" style="margin: 0 0 6px 0;">operator</label>
-                                          <select id="if_operator_dropdown" class="form_input">
-                                              <option value="==">==</option>
-                                              <option value="===">===</option>
-                                              <option value=">">></option>
-                                              <option value="<"><</option>
-                                              <option value=">=">>=</option>
-                                              <option value="<="><=</option>
-                                          </select>
+                                          <div class="dropdown_container">
+                                              <input type="text" id="if_operator_dropdown" class="form_input dropdown_input" placeholder="select operator" readonly>
+                                              <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                                              <div class="dropdown_menu" id="if_operator_dropdown_menu"></div>
+                                          </div>
                                       </div>
                                       <div>
                                           <label class="form_label" style="margin: 0 0 6px 0;">compare to</label>
@@ -438,10 +438,6 @@
                                           </button>
                                       </div>
                                   </div>
-
-                                  <div id="if_conditions_list" style="margin-top: 12px;">
-                                      <!-- conditions will be rendered here -->
-                                  </div>
                               </div>
                               <!-- end condition builder -->
                         </div>
@@ -453,6 +449,16 @@
                             <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">info</span>
                             <p>no return variables available</p>
                             <p style="font-size: 0.8em; margin-top: 8px;">the python node may not return any data</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- active if conditions section -->
+                <div class="form_group" id="if_active_conditions_section" style="display: none;">
+                    <label class="form_label">active if conditions</label>
+                    <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px;">
+                        <div id="active_if_conditions_list">
+                            <!-- conditions will be rendered here -->
                         </div>
                     </div>
                 </div>
@@ -482,7 +488,7 @@
                 <div class="form_group">
                     <button class="btn btn_secondary" id="refresh_variables_btn" style="width: 100%; margin-bottom: 8px;">
                         <span class="material-icons">refresh</span>
-                        <span class="delete_button_text_inner">refresh analysis</span>
+                        <span class="delete_button_text_inner">Refresh Analysis</span>
                     </button>
                     <button class="btn btn_secondary btn_danger_subtle" id="delete_link_btn" style="width: 100%;">
                         <span class="material-icons">delete</span>
@@ -560,7 +566,7 @@
                 <!-- 2. node file info -->
                 <div class="form_group">
                     <label class="form_label">node file info</label>
-                    <div id="node_file_info" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                    <div id="node_file_info" style="background: var(--surface-variant); border-radius: 4px; padding: 0px; margin-bottom: 16px;">
                         <div id="node_file_content">
                             <p style="opacity: 0.7; text-align: center; padding: 20px;">select a node to view file details</p>
                         </div>
@@ -594,14 +600,16 @@
                     </div>
                 </div>
 
+                <!-- 4.5 returns (data out) - detailed variables list for python nodes after execution -->
+                <div class="form_group" id="python_returns_group" style="display: none;">
+                    <label class="form_label">returns (data out)</label>
+                    <div id="python_returns_content" style="background: var(--surface-variant); border-radius: 4px; padding: 12px;"></div>
+                </div>
+
                 <!-- 5. console output -->
                 <div class="form_group">
                     <label class="form_label">console output</label>
-                    <div id="console_output_log" style="max-height: 600px; overflow-y: auto; background: #1a1a1a; color: #00ff00; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
-                        <div id="console_content">
-                            <!-- console output will be displayed here -->
-                        </div>
-                    </div>
+                    <div id="console_output_log" style="max-height: 300px; overflow-y: auto; background: #1a1a1a; color: var(--on-surface); border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: pre-wrap;"></div>
                 </div>
 
                 <!-- data save run-mode details (shown only when selecting a data_save node in run mode) -->
@@ -662,7 +670,7 @@
                 <label class="form_label" for="new_flowchart_name">flowchart name</label>
                 <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
                 <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">
-                    use letters, numbers, spaces, hyphens, and underscores only
+                    use letters, numbers, hyphens, and underscores only (no spaces)
                 </div>
             </div>
             <div class="modal_actions">
@@ -759,6 +767,16 @@
     <!-- component modules: refactored sidebar (order matters) -->
     <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.content.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.constants.js"></script>
+    <script src="/static/js/components/sidebar/ui/Dropdowns.js"></script>
+    <script src="/static/js/components/sidebar/ui/Visibility.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.execution.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.single.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.link.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.multi.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.group.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.annotation.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.status.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.settings.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.selection.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.nodes.js"></script>

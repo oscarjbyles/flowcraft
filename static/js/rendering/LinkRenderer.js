@@ -971,9 +971,13 @@ class LinkRenderer {
                 const isSelected = this.state.selectedLink && 
                     link.source === this.state.selectedLink.source && 
                     link.target === this.state.selectedLink.target;
-                
-                const nodeColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
-                const fillColor = isSelected ? 'var(--primary-color)' : 'var(--surface)';
+                // runtime condition result tinting
+                const linkObj = this.state.getLink(link.source, link.target) || link;
+                const rcond = (linkObj && linkObj.runtime_condition) || null; // 'true' | 'false' | null
+                const runtimeStroke = rcond === 'true' ? '#4caf50' : (rcond === 'false' ? '#f44336' : null);
+                const runtimeFill = rcond === 'true' ? '#0e2a16' : (rcond === 'false' ? '#2A0E0E' : null);
+                const nodeColor = runtimeStroke || (isSelected ? 'var(--primary-color)' : 'var(--border-color)');
+                const fillColor = runtimeFill || (isSelected ? 'var(--primary-color)' : 'var(--surface)');
                 
                 // create small circular node
                 this.linkGroup.append('circle')
@@ -1075,9 +1079,14 @@ class LinkRenderer {
             const isSelected = this.state.selectedLink && 
                 d.source === this.state.selectedLink.source && 
                 d.target === this.state.selectedLink.target;
+            // use runtime condition if present; override selection tint
+            const linkObj = this.state.getLink(d.source, d.target) || d;
+            const rcond = (linkObj && linkObj.runtime_condition) || null;
+            const runtimeStroke = rcond === 'true' ? '#4caf50' : (rcond === 'false' ? '#f44336' : null);
+            const runtimeFill = rcond === 'true' ? '#0e2a16' : (rcond === 'false' ? '#2A0E0E' : null);
             
-            const nodeColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
-            const fillColor = isSelected ? 'var(--primary-color)' : 'var(--surface)';
+            const nodeColor = runtimeStroke || (isSelected ? 'var(--primary-color)' : 'var(--border-color)');
+            const fillColor = runtimeFill || (isSelected ? 'var(--primary-color)' : 'var(--surface)');
             
             node
                 .style('stroke', nodeColor)

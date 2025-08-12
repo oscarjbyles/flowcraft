@@ -105,6 +105,8 @@
             if (app && app.state && typeof app.state.flushPendingSavesOnExit === 'function') {
                 app.state.flushPendingSavesOnExit();
             }
+            // clear transient runtime visuals before teardown/navigation so no green/red persists
+            try { if (app && typeof app.clearAllNodeColorState === 'function') { app.clearAllNodeColorState(); } } catch (_) {}
         } catch (_) {}
         try {
             if (window.flowchartApp) {

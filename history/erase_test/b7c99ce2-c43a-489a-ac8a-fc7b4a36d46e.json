@@ -1,0 +1,151 @@
+{
+  "execution_id": "b7c99ce2-c43a-489a-ac8a-fc7b4a36d46e",
+  "timestamp": "2025-08-12T13:45:08.461709",
+  "flowchart_name": "erase_test",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1755001662191.902,
+      1755001665921.108
+    ],
+    "results": [
+      {
+        "node_id": 1755001662191.902,
+        "node_name": "python node",
+        "python_file": "nodes/dash_test/node1.py",
+        "success": true,
+        "output": "generated random number: 2.97046632597632",
+        "error": null,
+        "runtime": 3144,
+        "timestamp": "13:45:02",
+        "return_value": 2.97046632597632,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1755001665921.108,
+        "node_name": "python node",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "8CwpCNeL6n\ndbm52E6fpM\n4OU9k2ZZdb\nLryUfxpgjK\nnGqxhheRh3\niSqsh9b1wn",
+        "error": null,
+        "runtime": 6148,
+        "timestamp": "13:45:08",
+        "return_value": [
+          1,
+          [
+            "8CwpCNeL6n",
+            "dbm52E6fpM",
+            "4OU9k2ZZdb",
+            "LryUfxpgjK",
+            "nGqxhheRh3",
+            "iSqsh9b1wn"
+          ]
+        ],
+        "function_name": "my_function"
+      }
+    ],
+    "data_saves": [],
+    "feed": [
+      {
+        "node_id": 1755001662191.902,
+        "node_name": "python node",
+        "started_at": "2025-08-12T12:44:59.187Z",
+        "finished_at": "2025-08-12T12:45:02.306Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "generated random number: 2.97046632597632",
+            "ts": "2025-08-12T12:44:59.335Z"
+          }
+        ],
+        "elapsed_ms": 3119
+      },
+      {
+        "node_id": 1755001665921.108,
+        "node_name": "python node",
+        "started_at": "2025-08-12T12:45:02.321Z",
+        "finished_at": "2025-08-12T12:45:08.455Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "8CwpCNeL6n",
+            "ts": "2025-08-12T12:45:03.440Z"
+          },
+          {
+            "text": "dbm52E6fpM",
+            "ts": "2025-08-12T12:45:04.439Z"
+          },
+          {
+            "text": "4OU9k2ZZdb",
+            "ts": "2025-08-12T12:45:05.441Z"
+          },
+          {
+            "text": "LryUfxpgjK",
+            "ts": "2025-08-12T12:45:06.440Z"
+          },
+          {
+            "text": "nGqxhheRh3",
+            "ts": "2025-08-12T12:45:07.440Z"
+          },
+          {
+            "text": "iSqsh9b1wn",
+            "ts": "2025-08-12T12:45:08.441Z"
+          },
+          {
+            "text": "8CwpCNeL6n",
+            "ts": "2025-08-12T12:45:08.455Z"
+          },
+          {
+            "text": "dbm52E6fpM",
+            "ts": "2025-08-12T12:45:08.455Z"
+          },
+          {
+            "text": "4OU9k2ZZdb",
+            "ts": "2025-08-12T12:45:08.455Z"
+          },
+          {
+            "text": "LryUfxpgjK",
+            "ts": "2025-08-12T12:45:08.455Z"
+          },
+          {
+            "text": "nGqxhheRh3",
+            "ts": "2025-08-12T12:45:08.455Z"
+          }
+        ],
+        "elapsed_ms": 6134
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 2,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755001662191.902,
+          "name": "python node",
+          "x": -4302.0908203125,
+          "y": -1782.0570068359375,
+          "pythonFile": "nodes/dash_test/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755001665921.108,
+          "name": "python node",
+          "x": -4281.517578125,
+          "y": -1567.7567138671875,
+          "pythonFile": "nodes/dash_test/node2.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755001662191.902,
+          "target": 1755001665921.108
+        }
+      ],
+      "groups": []
+    }
+  }
+}

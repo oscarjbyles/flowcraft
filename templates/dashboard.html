@@ -30,9 +30,9 @@
         .bar_label { position:absolute; bottom:-16px; font-size:.7rem; opacity:.7; }
         .bar_value { position:absolute; top:-12px; font-size:.5rem; opacity:.8; }
         .table_wrap { background: var(--surface-variant); border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
-        .table { width:100%; border-collapse: collapse; }
-        .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border-color); text-align:left; font-size:.9rem; }
-        .table th:last-child, .table td:last-child { width: 76px; }
+        .table { width:100%; border-collapse: collapse; table-layout: fixed; }
+        .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border-color); text-align:left; font-size:.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .table th:last-child, .table td:last-child { width: 112px; }
         .table th { background:#242424; }
         .status_badge { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:.8rem; }
         .status_success { background: rgba(76,175,80,.15); color:#66bb6a; }
@@ -152,7 +152,24 @@
                 if (close_btn){ close_btn.addEventListener('click', closeCreateModal); }
                 if (cancel_btn){ cancel_btn.addEventListener('click', closeCreateModal); }
                 if (confirm_btn){ confirm_btn.addEventListener('click', confirmCreate); }
-                if (name_input){ name_input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmCreate(); }); }
+                if (name_input){ 
+                    name_input.addEventListener('keydown', (e) => { 
+                        if (e.key === 'Enter') confirmCreate(); 
+                    });
+                    // prevent spaces from being entered
+                    name_input.addEventListener('keypress', (e) => {
+                        if (e.key === ' ') {
+                            e.preventDefault();
+                        }
+                    });
+                    // also prevent paste of content with spaces
+                    name_input.addEventListener('paste', (e) => {
+                        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                        if (pastedText.includes(' ')) {
+                            e.preventDefault();
+                        }
+                    });
+                }
 
                 if (!selector || !dropdown) return;
 
@@ -544,6 +561,13 @@
                             <div class="dash_title">recent executions</div>
                             <div class="table_wrap">
                                 <table class="table">
+                                    <colgroup>
+                                        <col style="width: calc((100% - 112px) / 4);">
+                                        <col style="width: calc((100% - 112px) / 4);">
+                                        <col style="width: calc((100% - 112px) / 4);">
+                                        <col style="width: calc((100% - 112px) / 4);">
+                                        <col style="width: 112px;">
+                                    </colgroup>
                                     <thead>
                                         <tr>
                                             <th>status</th>
@@ -622,7 +646,7 @@
                 <label class="form_label" for="new_flowchart_name">flowchart name</label>
                 <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
                 <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">
-                    use letters, numbers, spaces, hyphens, and underscores only
+                    use letters, numbers, hyphens, and underscores only (no spaces)
                 </div>
             </div>
             <div class="modal_actions">

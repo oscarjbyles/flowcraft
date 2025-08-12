@@ -167,7 +167,7 @@
             <div class="form_group">
                 <label class="form_label" for="new_flowchart_name">flowchart name</label>
                 <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">use letters, numbers, spaces, hyphens, and underscores only</div>
+                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">use letters, numbers, hyphens, and underscores only (no spaces)</div>
             </div>
             <div class="modal_actions">
                 <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
@@ -381,6 +381,19 @@
                     } catch(_) { alert('error creating flowchart'); }
                 };
                 newFlowchartNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmCreate.click(); });
+                // prevent spaces from being entered
+                newFlowchartNameInput.addEventListener('keypress', (e) => {
+                    if (e.key === ' ') {
+                        e.preventDefault();
+                    }
+                });
+                // also prevent paste of content with spaces
+                newFlowchartNameInput.addEventListener('paste', (e) => {
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    if (pastedText.includes(' ')) {
+                        e.preventDefault();
+                    }
+                });
             }
             // simple file explorer
             const tbody = document.getElementById('explorer_tbody');

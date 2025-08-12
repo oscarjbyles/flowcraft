@@ -206,53 +206,20 @@
 
     Sidebar.prototype.showSuccess = function(message) {
         this.state.emit('statusUpdate', message);
-        this.flashStatusBar(message, 'success');
+        if (typeof this.updateStatus === 'function') this.updateStatus(message, 'success');
     };
 
     Sidebar.prototype.showError = function(message) {
         this.state.emit('statusUpdate', `error: ${message}`);
-        this.flashStatusBar(message, 'error');
+        if (typeof this.updateStatus === 'function') this.updateStatus(`error: ${message}`, 'error');
     };
 
     Sidebar.prototype.showWarning = function(message) {
         this.state.emit('statusUpdate', `warning: ${message}`);
-        this.flashStatusBar(message, 'info');
+        if (typeof this.updateStatus === 'function') this.updateStatus(`warning: ${message}`, 'warning');
     };
 
-    Sidebar.prototype.flashStatusBar = function(message, type = 'info') {
-        const statusElement = document.getElementById('status_text');
-        const statusBar = document.querySelector('.status_bar');
-        if (!statusElement || !statusBar) return;
-
-        // capture default text once
-        if (!this._defaultStatusTextCaptured) {
-            this._defaultStatusText = statusElement.textContent || 'ready';
-            this._defaultStatusTextCaptured = true;
-        }
-
-        // set message
-        statusElement.textContent = message;
-
-        // choose subtle background based on type
-        const originalBg = statusBar.style.backgroundColor;
-        let bgColor = 'var(--surface-color)';
-        if (type === 'success') {
-            bgColor = '#0e2a16';
-        } else if (type === 'error') {
-            bgColor = '#2A0E0E';
-        }
-        statusBar.style.backgroundColor = bgColor;
-
-        // reset after a short delay
-        if (this._statusResetTimeout) {
-            clearTimeout(this._statusResetTimeout);
-        }
-        this._statusResetTimeout = setTimeout(() => {
-            statusBar.style.backgroundColor = originalBg || 'var(--surface-color)';
-            statusElement.textContent = '';
-            this._statusResetTimeout = null;
-        }, 3000);
-    };
+    // flashStatusBar deprecated in favor of updateStatus in Sidebar.status.js
 })();
 
 

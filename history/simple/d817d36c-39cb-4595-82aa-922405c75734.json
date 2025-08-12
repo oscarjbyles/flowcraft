@@ -1,0 +1,267 @@
+{
+  "execution_id": "d817d36c-39cb-4595-82aa-922405c75734",
+  "timestamp": "2025-08-12T18:19:42.816735",
+  "flowchart_name": "simple",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754654709071.8608,
+      1754904147880.503,
+      1754653519066.0964,
+      1754908819721.7458,
+      1754693832673.4893,
+      1754732651225.0054
+    ],
+    "results": [
+      {
+        "node_id": 1754654709071.8608,
+        "node_name": "input + sleep",
+        "python_file": "nodes/test2/node4.py",
+        "success": true,
+        "output": "Enter value A: 10",
+        "error": null,
+        "runtime": 1165,
+        "timestamp": "18:19:42",
+        "return_value": 10,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754653519066.0964,
+        "node_name": "square input",
+        "python_file": "nodes/test2/node1.py",
+        "success": true,
+        "output": "value before: 10\nvalue after: 100",
+        "error": null,
+        "runtime": 159,
+        "timestamp": "18:19:42",
+        "return_value": 100,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754693832673.4893,
+        "node_name": "nothing1",
+        "python_file": "nodes/test2/nothing1.py",
+        "success": false,
+        "output": "",
+        "error": "missing required function arguments: valueA",
+        "runtime": 39,
+        "timestamp": "18:19:42",
+        "return_value": null
+      },
+      {
+        "node_id": 1754867312491.0635,
+        "node_name": "valueA",
+        "python_file": "nodes/test2/node4.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "18:19:42",
+        "return_value": {
+          "valueA": 10
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "valueA",
+          "variable_name": "valueA"
+        }
+      }
+    ],
+    "data_saves": [
+      {
+        "node_name": "valueA",
+        "variable_name": "valueA",
+        "variable_content": [
+          "integer",
+          10
+        ]
+      }
+    ],
+    "feed": [
+      {
+        "node_id": 1754654709071.8608,
+        "node_name": "input + sleep",
+        "started_at": "2025-08-12T17:19:41.464Z",
+        "finished_at": "2025-08-12T17:19:42.592Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "Enter value A: 10",
+            "ts": "2025-08-12T17:19:41.584Z"
+          }
+        ],
+        "elapsed_ms": 1128
+      },
+      {
+        "node_id": 1754653519066.0964,
+        "node_name": "square input",
+        "started_at": "2025-08-12T17:19:42.640Z",
+        "finished_at": "2025-08-12T17:19:42.769Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "value before: 10",
+            "ts": "2025-08-12T17:19:42.763Z"
+          },
+          {
+            "text": "value after: 100",
+            "ts": "2025-08-12T17:19:42.764Z"
+          }
+        ],
+        "elapsed_ms": 129
+      },
+      {
+        "node_id": 1754693832673.4893,
+        "node_name": "nothing1",
+        "started_at": "2025-08-12T17:19:42.790Z",
+        "finished_at": "2025-08-12T17:19:42.809Z",
+        "success": false,
+        "lines": [],
+        "elapsed_ms": 38
+      }
+    ],
+    "total_nodes": 6,
+    "successful_nodes": 2,
+    "error_message": "execution stopped at node: nothing1",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754653519066.0964,
+          "name": "square input",
+          "x": 347.2919006347656,
+          "y": -741.5102958679199,
+          "pythonFile": "nodes/test2/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754654709071.8608,
+          "name": "input + sleep",
+          "x": 172.51415252685547,
+          "y": -847.2426147460938,
+          "pythonFile": "nodes/test2/node4.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754693832673.4893,
+          "name": "nothing1",
+          "x": 155.96807861328125,
+          "y": -490.8939514160156,
+          "pythonFile": "nodes/test2/nothing1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754732651225.0054,
+          "name": "python node",
+          "x": 183.34535217285156,
+          "y": -326.4619140625,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754867312491.0635,
+          "name": "valueA",
+          "x": 364.41533549901936,
+          "y": -843.4198437359335,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 9,
+              "name": "valueA",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754903834540.247,
+          "name": "Input Node",
+          "x": -94.47918701171875,
+          "y": -847.2426147460938,
+          "pythonFile": "nodes/test2/node4.py",
+          "description": "input parameters",
+          "type": "input_node"
+        },
+        {
+          "id": 1754904147880.503,
+          "name": "if condition",
+          "x": 172.51415252685547,
+          "y": -767.2426147460938,
+          "pythonFile": "",
+          "description": "",
+          "type": "if_node"
+        },
+        {
+          "id": 1754908819721.7458,
+          "name": "python node",
+          "x": -120.53990173339844,
+          "y": -584.7970581054688,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754654709071.8608,
+          "target": 1754653519066.0964
+        },
+        {
+          "source": 1754653519066.0964,
+          "target": 1754693832673.4893
+        },
+        {
+          "source": 1754693832673.4893,
+          "target": 1754732651225.0054
+        },
+        {
+          "selectable": false,
+          "source": 1754654709071.8608,
+          "style": "dashed",
+          "target": 1754867312491.0635
+        },
+        {
+          "selectable": false,
+          "source": 1754903834540.247,
+          "style": "dashed",
+          "target": 1754654709071.8608,
+          "type": "input_connection"
+        },
+        {
+          "selectable": false,
+          "source": 1754654709071.8608,
+          "target": 1754904147880.503
+        },
+        {
+          "source": 1754904147880.503,
+          "target": 1754908819721.7458,
+          "runtime_condition": "false",
+          "runtime_details": {
+            "variables": {
+              "valueA": 10
+            },
+            "conditions": [],
+            "final": false
+          }
+        }
+      ],
+      "groups": [
+        {
+          "description": "",
+          "id": 1754694400800.869,
+          "name": "group name",
+          "nodeIds": [
+            1754653519066.0964,
+            1754654709071.8608
+          ]
+        }
+      ]
+    }
+  }
+}

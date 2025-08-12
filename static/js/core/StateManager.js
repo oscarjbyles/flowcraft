@@ -58,8 +58,15 @@ class StateManager extends EventEmitter {
      * return a plain object representing current flowchart state for persistence
      */
     getSerializableData() {
+        // strip transient runtime-only fields before persisting (e.g., data_save runtimeStatus)
+        const sanitizedNodes = (this.nodes || []).map((node) => {
+            if (!node || typeof node !== 'object') return node;
+            const { runtimeStatus, ...rest } = node;
+            return rest;
+        });
+
         return {
-            nodes: this.nodes,
+            nodes: sanitizedNodes,
             links: this.links,
             groups: this.groups,
             annotations: this.annotations
@@ -691,12 +698,7 @@ class StateManager extends EventEmitter {
     }
 
     async save(isAutosave = false) {
-        const data = {
-            nodes: this.nodes,
-            links: this.links,
-            groups: this.groups,
-            annotations: this.annotations
-        };
+        const data = this.getSerializableData();
 
         const result = await this.storage.save(data, isAutosave);
         

@@ -2,6 +2,14 @@
 (function(){
     if (!window.Sidebar) return;
 
+    // close all dropdown menus in the document except the provided one
+    Sidebar.prototype._closeAllDropdownMenus = function(exceptMenu) {
+        const menus = document.querySelectorAll('.dropdown_menu');
+        menus.forEach((menu) => {
+            if (menu !== exceptMenu) menu.style.display = 'none';
+        });
+    };
+
     Sidebar.prototype.initializeIfConditionBuilder = function(link) {
         const addBtn = document.getElementById('if_add_condition_btn');
         if (!addBtn) return;
@@ -11,13 +19,25 @@
             const existing = this.getIfConditionsForLink(link);
             combinerContainer.style.display = existing.length === 0 ? 'none' : 'block';
         }
+        // setup custom dropdowns
+        this.setupIfVariablesDropdown();
+        this.setupIfOperatorDropdown();
+        // enforce disabled state until all inputs are filled
+        const varInput = document.getElementById('if_variables_dropdown');
+        const opInput = document.getElementById('if_operator_dropdown');
+        const valueInput = document.getElementById('if_compare_value_input');
+        this.updateIfAddConditionButtonState();
+        const self = this;
+        if (valueInput) {
+            valueInput.addEventListener('input', function(){ self.updateIfAddConditionButtonState(); });
+        }
         addBtn.onclick = () => {
             const varDropdown = document.getElementById('if_variables_dropdown');
             const operatorDropdown = document.getElementById('if_operator_dropdown');
             const valueInput = document.getElementById('if_compare_value_input');
             const combinerDropdown = document.getElementById('if_condition_combiner');
-            const variable = varDropdown.value;
-            const operator = operatorDropdown.value;
+            const variable = varDropdown.dataset.value || '';
+            const operator = operatorDropdown.dataset.value || '';
             const compareValue = valueInput.value;
             const existingBefore = this.getIfConditionsForLink(link);
             const combiner = existingBefore.length === 0 ? undefined : (combinerDropdown.value || 'and');
@@ -33,7 +53,81 @@
             this.renderIfConditions(link);
             if (combinerContainer) combinerContainer.style.display = 'block';
             this.showSuccess('condition added');
+            this.updateIfAddConditionButtonState();
         };
+    };
+
+    Sidebar.prototype.updateIfAddConditionButtonState = function() {
+        const addBtn = document.getElementById('if_add_condition_btn');
+        const varInput = document.getElementById('if_variables_dropdown');
+        const opInput = document.getElementById('if_operator_dropdown');
+        const valueInput = document.getElementById('if_compare_value_input');
+        if (!addBtn || !varInput || !opInput || !valueInput) return;
+        const hasVar = !!(varInput.dataset && varInput.dataset.value);
+        const hasOp = !!(opInput.dataset && opInput.dataset.value);
+        const hasVal = String(valueInput.value || '').trim().length > 0;
+        const enabled = hasVar && hasOp && hasVal;
+        addBtn.disabled = !enabled;
+        addBtn.style.opacity = enabled ? '' : '0.6';
+        addBtn.style.cursor = enabled ? '' : 'not-allowed';
+    };
+
+    Sidebar.prototype.setupIfVariablesDropdown = function() {
+        const input = document.getElementById('if_variables_dropdown');
+        const menu = document.getElementById('if_variables_dropdown_menu');
+        if (!input || !menu) return;
+        const container = input.closest('.dropdown_container');
+        const openMenu = () => { this._closeAllDropdownMenus(menu); const D = window.SidebarDropdowns; if (D) D.open(menu); else menu.style.display = 'block'; };
+        const closeMenu = () => { const D = window.SidebarDropdowns; if (D) D.close(menu); else menu.style.display = 'none'; };
+        input.addEventListener('click', (e) => { e.stopPropagation(); openMenu(); });
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) closeMenu();
+        });
+        // items are populated when variables are loaded
+        menu.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-value]');
+            if (!item) return;
+            input.value = item.dataset.label || item.dataset.value;
+            input.dataset.value = item.dataset.value;
+            closeMenu();
+            if (typeof this.updateIfAddConditionButtonState === 'function') this.updateIfAddConditionButtonState();
+        });
+    };
+
+    Sidebar.prototype.setupIfOperatorDropdown = function() {
+        const input = document.getElementById('if_operator_dropdown');
+        const menu = document.getElementById('if_operator_dropdown_menu');
+        if (!input || !menu) return;
+        const container = input.closest('.dropdown_container');
+        const openMenu = () => { this._closeAllDropdownMenus(menu); const D = window.SidebarDropdowns; if (D) D.open(menu); else menu.style.display = 'block'; };
+        const closeMenu = () => { const D = window.SidebarDropdowns; if (D) D.close(menu); else menu.style.display = 'none'; };
+        input.addEventListener('click', (e) => { e.stopPropagation(); openMenu(); });
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) closeMenu();
+        });
+        const operators = [
+            { value: '==', label: 'equals' },
+            { value: '===', label: 'strictly equals' },
+            { value: '>', label: 'greater than' },
+            { value: '<', label: 'less than' },
+            { value: '>=', label: 'greater than or equal' },
+            { value: '<=', label: 'less than or equal' }
+        ];
+        menu.innerHTML = operators.map(op => `
+            <div class="dropdown_item" data-value="${op.value}" data-label="${op.label}" style="display:flex; align-items:center; gap:8px; justify-content: space-between;">
+                <span style="font-family: monospace;">${op.value}</span>
+                <span style="opacity:0.8;">${op.label}</span>
+            </div>
+        `).join('');
+        menu.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-value]');
+            if (!item) return;
+            // show symbol and description in the input for clarity
+            input.value = `${item.dataset.value} ${item.dataset.label}`;
+            input.dataset.value = item.dataset.value;
+            closeMenu();
+            if (typeof this.updateIfAddConditionButtonState === 'function') this.updateIfAddConditionButtonState();
+        });
     };
 
     Sidebar.prototype.getIfConditionsForLink = function(link) {
@@ -51,11 +145,18 @@
         existing.splice(index, 1);
         this.setIfConditionsForLink(link, [...existing]);
         this.renderIfConditions(link);
+        // hide combiner when there are no active conditions
+        const combinerContainer = document.getElementById('if_combiner_container');
+        if (combinerContainer) {
+            combinerContainer.style.display = existing.length === 0 ? 'none' : 'block';
+        }
         this.showSuccess('condition removed');
     };
 
     Sidebar.prototype.renderIfConditions = function(link) {
-        const container = document.getElementById('if_conditions_list');
+        // new location for active conditions
+        const container = document.getElementById('active_if_conditions_list') || document.getElementById('if_conditions_list');
+        const section = document.getElementById('if_active_conditions_section');
         if (!container) return;
         const conditions = this.getIfConditionsForLink(link);
         container.innerHTML = '';
@@ -64,8 +165,10 @@
             empty.style.cssText = 'text-align:center; opacity:.7; padding: 8px; font-size:.85em;';
             empty.textContent = 'no conditions yet';
             container.appendChild(empty);
+        if (section) { const V = window.SidebarVisibility; if (V) V.hide(section); else section.style.display = 'none'; }
             return;
         }
+        if (section) { const V = window.SidebarVisibility; if (V) V.show(section, 'block'); else section.style.display = 'block'; }
         conditions.forEach((c, idx) => {
             const row = document.createElement('div');
             row.style.cssText = 'display:flex; align-items:center; gap:8px; background: var(--surface); border:1px solid var(--border-color); border-radius:4px; padding:8px; margin-bottom:6px;';
@@ -149,11 +252,11 @@
 
     Sidebar.prototype.showIfVariablesState = function(state) {
         const states = ['loading', 'list', 'error', 'empty'];
+        const V = window.SidebarVisibility;
         states.forEach(s => {
             const div = document.getElementById(`if_variables_${s}`);
-            if (div) {
-                div.style.display = s === state ? 'block' : 'none';
-            }
+            if (!div) return;
+            if (V) V.setVisible(div, s === state, 'block'); else div.style.display = s === state ? 'block' : 'none';
         });
     };
 
@@ -163,20 +266,22 @@
     };
 
     Sidebar.prototype.displayConnectionNodeVariables = function(variables) {
-        const dropdown = document.getElementById('if_variables_dropdown');
-        if (!dropdown) return;
+        const input = document.getElementById('if_variables_dropdown');
+        const menu = document.getElementById('if_variables_dropdown_menu');
+        if (!input || !menu) return;
         if (!variables || variables.length === 0) {
             this.showIfVariablesState('empty');
             return;
         }
-        dropdown.innerHTML = '<option value="">select a variable from if node</option>';
-        variables.forEach(variable => {
-            const option = document.createElement('option');
-            option.value = variable.name;
-            option.textContent = variable.name;
-            dropdown.appendChild(option);
-        });
-        dropdown.onchange = () => {};
+        menu.innerHTML = variables.map(v => `
+            <div class="dropdown_item" data-value="${v.name}" data-label="${v.name}" style="font-family: monospace;">
+                ${v.name}
+            </div>
+        `).join('');
+        // reset selection placeholder
+        input.value = '';
+        input.dataset.value = '';
+        if (typeof this.updateIfAddConditionButtonState === 'function') this.updateIfAddConditionButtonState();
         this.showIfVariablesState('list');
     };
 
@@ -258,17 +363,15 @@
     };
 
     Sidebar.prototype.showIfNodeVariablesState = function(state) {
+        const V = window.SidebarVisibility;
         const states = ['loading', 'list', 'error', 'empty'];
         states.forEach(s => {
             const div = document.getElementById(`if_node_variables_${s}`);
-            if (div) {
-                div.style.display = s === state ? 'block' : 'none';
-            }
+            if (!div) return;
+            if (V) V.setVisible(div, s === state, 'block'); else div.style.display = s === state ? 'block' : 'none';
         });
         const contentDiv = document.getElementById('if_node_variables_content');
-        if (contentDiv) {
-            contentDiv.style.display = state === 'list' ? 'block' : 'none';
-        }
+        if (contentDiv) { if (V) V.setVisible(contentDiv, state === 'list', 'block'); else contentDiv.style.display = state === 'list' ? 'block' : 'none'; }
     };
 
     Sidebar.prototype.showIfNodeVariablesError = function(message) {
@@ -302,17 +405,6 @@
         });
         Object.keys(groupedVariables).forEach(sourceNodeName => {
             const nodeVariables = groupedVariables[sourceNodeName];
-            const sourceHeader = document.createElement('div');
-            sourceHeader.style.cssText = `
-                font-size: 0.9em;
-                font-weight: 500;
-                color: var(--primary-color);
-                margin: 12px 0 8px 0;
-                padding-bottom: 4px;
-                border-bottom: 1px solid var(--border-color);
-            `;
-            sourceHeader.textContent = `from: ${sourceNodeName}`;
-            contentDiv.appendChild(sourceHeader);
             nodeVariables.forEach(variable => {
                 const item = document.createElement('div');
                 item.style.cssText = `

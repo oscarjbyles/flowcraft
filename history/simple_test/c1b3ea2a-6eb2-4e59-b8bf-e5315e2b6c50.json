@@ -1,0 +1,146 @@
+{
+  "execution_id": "c1b3ea2a-6eb2-4e59-b8bf-e5315e2b6c50",
+  "timestamp": "2025-08-12T19:45:20.773434",
+  "flowchart_name": "simple_test",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1755024030539.6775,
+      1755024031033.2324,
+      1755024032572.426
+    ],
+    "results": [
+      {
+        "node_id": 1755024030539.6775,
+        "node_name": "test1",
+        "python_file": "nodes/1.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 145,
+        "timestamp": "19:45:20",
+        "return_value": [
+          3,
+          4
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1755024031033.2324,
+        "node_name": "test2",
+        "python_file": "nodes/2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 127,
+        "timestamp": "19:45:20",
+        "return_value": 5,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1755024032572.426,
+        "node_name": "test3",
+        "python_file": "nodes/3.py",
+        "success": false,
+        "output": "",
+        "error": "missing required function arguments: varZ",
+        "runtime": 26,
+        "timestamp": "19:45:20",
+        "return_value": null
+      }
+    ],
+    "data_saves": [],
+    "feed": [
+      {
+        "node_id": 1755024030539.6775,
+        "node_name": "test1",
+        "started_at": "2025-08-12T18:45:20.489Z",
+        "finished_at": "2025-08-12T18:45:20.611Z",
+        "success": true,
+        "lines": [],
+        "elapsed_ms": 122
+      },
+      {
+        "node_id": 1755024030539.6775,
+        "node_name": "test1",
+        "started_at": "2025-08-12T18:45:20.468Z",
+        "lines": [],
+        "finished_at": "2025-08-12T18:45:20.612Z",
+        "success": true,
+        "elapsed_ms": 144
+      },
+      {
+        "node_id": 1755024031033.2324,
+        "node_name": "test2",
+        "started_at": "2025-08-12T18:45:20.626Z",
+        "finished_at": "2025-08-12T18:45:20.742Z",
+        "success": true,
+        "lines": [],
+        "elapsed_ms": 116
+      },
+      {
+        "node_id": 1755024031033.2324,
+        "node_name": "test2",
+        "started_at": "2025-08-12T18:45:20.616Z",
+        "lines": [],
+        "finished_at": "2025-08-12T18:45:20.742Z",
+        "success": true,
+        "elapsed_ms": 126
+      },
+      {
+        "node_id": 1755024032572.426,
+        "node_name": "test3",
+        "started_at": "2025-08-12T18:45:20.756Z",
+        "finished_at": "2025-08-12T18:45:20.769Z",
+        "success": false,
+        "lines": [],
+        "elapsed_ms": 25
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 2,
+    "error_message": "execution stopped at node: test3",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755024030539.6775,
+          "name": "test1",
+          "x": 183.75961303710938,
+          "y": 373.5951843261719,
+          "pythonFile": "nodes/1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755024031033.2324,
+          "name": "test2",
+          "x": 364.3850402832031,
+          "y": 373.5951843261719,
+          "pythonFile": "nodes/2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755024032572.426,
+          "name": "test3",
+          "x": 274.0723114013672,
+          "y": 572.7184448242188,
+          "pythonFile": "nodes/3.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755024030539.6775,
+          "target": 1755024032572.426
+        },
+        {
+          "source": 1755024031033.2324,
+          "target": 1755024032572.426
+        }
+      ],
+      "groups": []
+    }
+  }
+}

@@ -209,23 +209,38 @@
     };
 
     Sidebar.prototype.showArgumentsLoading = function() {
-        document.getElementById('arguments_loading').style.display = 'block';
-        document.getElementById('arguments_content').style.display = 'none';
-        document.getElementById('arguments_empty').style.display = 'none';
+        const V = window.SidebarVisibility;
+        if (V) {
+            V.show('arguments_loading', 'block');
+            V.hide('arguments_content');
+            V.hide('arguments_empty');
+        } else {
+            document.getElementById('arguments_loading').style.display = 'block';
+            document.getElementById('arguments_content').style.display = 'none';
+            document.getElementById('arguments_empty').style.display = 'none';
+        }
     };
 
     Sidebar.prototype.showReturnsLoading = function() {
-        document.getElementById('returns_loading').style.display = 'block';
-        document.getElementById('returns_content').style.display = 'none';
-        document.getElementById('returns_empty').style.display = 'none';
+        const V = window.SidebarVisibility;
+        if (V) {
+            V.show('returns_loading', 'block');
+            V.hide('returns_content');
+            V.hide('returns_empty');
+        } else {
+            document.getElementById('returns_loading').style.display = 'block';
+            document.getElementById('returns_content').style.display = 'none';
+            document.getElementById('returns_empty').style.display = 'none';
+        }
     };
 
     Sidebar.prototype.populateArguments = function(formalParams, inputVars) {
+        const V = window.SidebarVisibility;
         const argumentsContent = document.getElementById('arguments_content');
         const allArguments = [...formalParams, ...inputVars];
         if (allArguments.length === 0) {
-            document.getElementById('arguments_loading').style.display = 'none';
-            document.getElementById('arguments_empty').style.display = 'block';
+            if (V) { V.hide('arguments_loading'); V.show('arguments_empty', 'block'); }
+            else { document.getElementById('arguments_loading').style.display = 'none'; document.getElementById('arguments_empty').style.display = 'block'; }
             return;
         }
         argumentsContent.innerHTML = '';
@@ -267,15 +282,16 @@
             `;
             argumentsContent.appendChild(item);
         });
-        document.getElementById('arguments_loading').style.display = 'none';
-        document.getElementById('arguments_content').style.display = 'block';
+        if (V) { V.hide('arguments_loading'); V.show('arguments_content', 'block'); }
+        else { document.getElementById('arguments_loading').style.display = 'none'; document.getElementById('arguments_content').style.display = 'block'; }
     };
 
     Sidebar.prototype.populateReturns = function(returns) {
+        const V = window.SidebarVisibility;
         const returnsContent = document.getElementById('returns_content');
         if (returns.length === 0) {
-            document.getElementById('returns_loading').style.display = 'none';
-            document.getElementById('returns_empty').style.display = 'block';
+        if (V) { V.hide('returns_loading'); V.show('returns_empty', 'block'); }
+        else { document.getElementById('returns_loading').style.display = 'none'; document.getElementById('returns_empty').style.display = 'block'; }
             return;
         }
         returnsContent.innerHTML = '';
@@ -324,8 +340,8 @@
             });
             returnsContent.appendChild(item);
         });
-        document.getElementById('returns_loading').style.display = 'none';
-        document.getElementById('returns_content').style.display = 'block';
+        if (V) { V.hide('returns_loading'); V.show('returns_content', 'block'); }
+        else { document.getElementById('returns_loading').style.display = 'none'; document.getElementById('returns_content').style.display = 'block'; }
     };
 
     // input node: populate inputs list with variable names and their line numbers from associated python script
@@ -496,7 +512,7 @@
     // data save: name data removed from ui; no initialization needed
 
     Sidebar.prototype.showArgumentsError = function(message) {
-        document.getElementById('arguments_loading').style.display = 'none';
+        if (V) V.hide('arguments_loading'); else document.getElementById('arguments_loading').style.display = 'none';
         document.getElementById('arguments_content').innerHTML = `
             <div style="text-align: center; padding: 20px; color: #f44336;">
                 <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>
@@ -507,7 +523,7 @@
     };
 
     Sidebar.prototype.showReturnsError = function(message) {
-        document.getElementById('returns_loading').style.display = 'none';
+        if (V) V.hide('returns_loading'); else document.getElementById('returns_loading').style.display = 'none';
         document.getElementById('returns_content').innerHTML = `
             <div style="text-align: center; padding: 20px; color: #f44336;">
                 <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>

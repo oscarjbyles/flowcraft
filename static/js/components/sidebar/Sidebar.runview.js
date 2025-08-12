@@ -2,42 +2,23 @@
 (function(){
     if (!window.Sidebar) return;
 
-    Sidebar.prototype.updateStatus = function(message) {
-        const statusElement = document.getElementById('status_text');
-        const statusBar = document.querySelector('.status_bar');
-        if (!statusElement || !statusBar) return;
-        if (!this._defaultStatusTextCaptured) {
-            this._defaultStatusText = statusElement.textContent || 'ready';
-            this._defaultStatusTextCaptured = true;
-        }
-        statusElement.textContent = message;
-        const lower = String(message || '').toLowerCase();
-        let bg = null;
-        if (/warning:/.test(lower) || /no python file assigned/.test(lower)) {
-            bg = '#2A0E0E';
-        } else if (/error/.test(lower) || /failed/.test(lower)) {
-            bg = '#2A0E0E';
-        } else if (/success/.test(lower)) {
-            bg = '#0e2a16';
-        }
-        const originalBg = statusBar.style.backgroundColor;
-        statusBar.style.backgroundColor = bg;
-        if (this._statusResetTimeout) clearTimeout(this._statusResetTimeout);
-        this._statusResetTimeout = setTimeout(() => {
-            statusBar.style.backgroundColor = originalBg || 'var(--surface-color)';
-            statusElement.textContent = '';
-            this._statusResetTimeout = null;
-        }, 3000);
-    };
+    // note: updateStatus unified in Sidebar.status.js
 
     Sidebar.prototype.updateRunModeNodeDetails = function(selection) {
         const nodeFileContent = document.getElementById('node_file_content');
         const executionTimeRow = document.getElementById('execution_time_row');
         const executionTimeText = document.getElementById('execution_time_text');
         const executionTimestamp = document.getElementById('execution_timestamp');
+        // node-specific status elements (we repurpose the global status block when a node is selected)
+        const executionStatusText = document.getElementById('execution_status_text');
+        const executionStatusIcon = document.querySelector('#execution_status .material-icons');
+        const executionStatusBox = document.getElementById('execution_status');
         const nodeInputContent = document.getElementById('node_input_content');
         const nodeOutputContent = document.getElementById('node_output_content');
-        const consoleContent = document.getElementById('console_content');
+        const consoleLogEl = document.getElementById('console_output_log');
+        // returns (data out) block
+        const pythonReturnsGroup = document.getElementById('python_returns_group');
+        const pythonReturnsContent = document.getElementById('python_returns_content');
         const progressText = document.getElementById('execution_progress_text');
         const executionStatusGroup = document.getElementById('execution_status')?.closest('.form_group');
         const nodeFileInfoGroup = document.getElementById('node_file_info')?.closest('.form_group');
@@ -67,13 +48,8 @@
             const nodeId = selection.nodes[0];
             const node = this.state.getNode(nodeId);
             if (node) {
-                if (progressGroup) {
-                    if (node.type === 'python_file') {
-                        progressGroup.style.display = 'none';
-                    } else {
-                        progressGroup.style.display = '';
-                    }
-                }
+                // progress should only be visible when no nodes are selected
+                if (progressGroup) progressGroup.style.display = 'none';
                 if (node.type === 'python_file') {
                     if (nodeInputGroup) nodeInputGroup.style.display = 'none';
                     if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
@@ -81,8 +57,136 @@
                     if (nodeInputGroup) nodeInputGroup.style.display = '';
                     if (nodeOutputGroup) nodeOutputGroup.style.display = '';
                 }
+                // if splitter: show only the execution status section in run mode
+                if (node.type === 'if_node') {
+                    if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
+                    if (nodeInputGroup) nodeInputGroup.style.display = 'none';
+                    if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
+                    if (consoleGroup) consoleGroup.style.display = 'none';
+                    if (dataSaveGroup) dataSaveGroup.style.display = 'none';
+                    if (progressGroup) progressGroup.style.display = 'none';
+                    if (executionTimeRow) executionTimeRow.style.display = 'none';
+                    // neutral per-node status for splitters (they do not execute like python nodes)
+                    if (executionStatusText) executionStatusText.textContent = 'node not executed';
+                    if (executionStatusIcon) { executionStatusIcon.textContent = 'hourglass_empty'; executionStatusIcon.style.color = ''; }
+                    return;
+                }
+                // input node: only show execution status indicating whether its values were passed to the python node
+                if (node.type === 'input_node') {
+                    if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
+                    if (nodeInputGroup) nodeInputGroup.style.display = 'none';
+                    if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
+                    if (consoleGroup) consoleGroup.style.display = 'none';
+                    if (dataSaveGroup) dataSaveGroup.style.display = 'none';
+                    if (progressGroup) progressGroup.style.display = 'none';
+                    if (executionTimeRow) executionTimeRow.style.display = 'none';
+                    // determine the associated python node and its latest execution result
+                    let pythonNode = null;
+                    try {
+                        if (typeof node.targetNodeId !== 'undefined' && node.targetNodeId !== null) {
+                            const t = this.state.getNode(node.targetNodeId);
+                            if (t && t.type === 'python_file') pythonNode = t;
+                        }
+                        if (!pythonNode) {
+                            for (const link of this.state.links) {
+                                if (link.source === node.id) {
+                                    const t = this.state.getNode(link.target);
+                                    if (t && t.type === 'python_file') { pythonNode = t; break; }
+                                }
+                            }
+                        }
+                    } catch(_) {}
+                    const pyResult = pythonNode && window.flowchartApp && window.flowchartApp.nodeExecutionResults
+                        ? window.flowchartApp.nodeExecutionResults.get(pythonNode.id)
+                        : null;
+                    const setStatus = (text, color, icon) => {
+                        if (executionStatusText) executionStatusText.textContent = text;
+                        if (executionStatusIcon) {
+                            executionStatusIcon.textContent = icon || 'info';
+                            if ((icon || 'info') === 'hourglass_empty') {
+                                executionStatusIcon.style.color = '';
+                            } else {
+                                executionStatusIcon.style.color = color || 'var(--on-surface)';
+                            }
+                        }
+                    };
+                    if (pyResult) {
+                        const usedInputs = !!(pyResult && (pyResult.input_used || (pyResult.input_values && Object.keys(pyResult.input_values || {}).length > 0)));
+                        if (pyResult.success && usedInputs) {
+                            setStatus('input used in python file', '#66bb6a', 'check_circle');
+                            try {
+                                const inputNode = node; // current node is the input node
+                                inputNode.runtimeStatus = 'success';
+                                // also apply the standard completed class like python nodes
+                                if (window.flowchartApp && typeof window.flowchartApp.setNodeState === 'function') {
+                                    window.flowchartApp.setNodeState(inputNode.id, 'completed');
+                                } else if (this.setNodeState) {
+                                    this.setNodeState(inputNode.id, 'completed');
+                                }
+                                if (window.flowchartApp && window.flowchartApp.nodeRenderer) {
+                                    window.flowchartApp.nodeRenderer.updateNodeStyles();
+                                } else if (this.nodeRenderer && typeof this.nodeRenderer.updateNodeStyles === 'function') {
+                                    this.nodeRenderer.updateNodeStyles();
+                                }
+                            } catch (_) {}
+                        } else if (pyResult.success && !usedInputs) {
+                            setStatus('python ran (no input values used)', '#90caf9', 'info');
+                        } else {
+                            setStatus('python failed to run', '#f44336', 'error');
+                        }
+                    } else {
+                        setStatus('waiting for python node execution', '#ff9800', 'hourglass_empty');
+                    }
+                    return;
+                }
                 this.displayNodeFileInfo(node, nodeFileContent);
                 const executionResult = window.flowchartApp?.nodeExecutionResults?.get(nodeId);
+
+                // node-specific status rendering: always first section under header
+                // all comments in lower case
+                const setStatus = (text, color, icon) => {
+                    if (executionStatusText) {
+                        executionStatusText.textContent = text;
+                        // do not set inline color on the status text
+                    }
+                    if (executionStatusIcon) {
+                        executionStatusIcon.textContent = icon || 'info';
+                        // avoid inline color for hourglass icon; otherwise keep provided color or fallback
+                        if ((icon || 'info') === 'hourglass_empty') {
+                            executionStatusIcon.style.color = '';
+                        } else {
+                            executionStatusIcon.style.color = color || 'var(--on-surface)';
+                        }
+                    }
+                    if (executionStatusBox) {
+                        // keep background consistent; only adjust text/icon color
+                    }
+                    // if status indicates node not executed, hide the execution time block
+                    try {
+                        if (executionTimeRow && String(text).toLowerCase().includes('node not executed')) {
+                            executionTimeRow.style.display = 'none';
+                        }
+                    } catch(_) {}
+                };
+
+                if (executionResult) {
+                    // show time row for executed nodes
+                    if (executionTimeRow) executionTimeRow.style.display = 'flex';
+                    if (executionResult.success) {
+                        setStatus('node executed successfully', '#66bb6a', 'check_circle');
+                    } else {
+                        setStatus('node returned an error', '#f44336', 'error');
+                    }
+                } else {
+                    // hide time row when node was not executed
+                    if (executionTimeRow) executionTimeRow.style.display = 'none';
+                    // default pre-execution status; for python nodes show clearer message
+                    if (node.type === 'python_file') {
+                        setStatus('waiting for execution', '#ff9800', 'hourglass_empty');
+                    } else {
+                        setStatus('node not executed', '#ff9800', 'hourglass_empty');
+                    }
+                }
                 // if this is a data_save node, only show the data save block
                 if (node.type === 'data_save') {
                     // hide python-specific groups
@@ -90,8 +194,12 @@
                     if (nodeInputGroup) nodeInputGroup.style.display = 'none';
                     if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
                     if (consoleGroup) consoleGroup.style.display = 'none';
+                    // hide time row for data save nodes
+                    if (executionTimeRow) executionTimeRow.style.display = 'none';
                     // hide data save group until we have an execution result (i.e., only show while/after running)
                     if (!executionResult) {
+                        // show clearer pre-execution status for data_save nodes
+                        setStatus('waiting for python node execution', '#ff9800', 'hourglass_empty');
                         if (dataSaveGroup) dataSaveGroup.style.display = 'none';
                         return; // nothing to render for data_save before running
                     }
@@ -142,10 +250,135 @@
                             historyConfirmation.className = 'data_save_history data_save_history_waiting';
                         }
                     }
-                    return; // stop further python-node UI rendering
+                    return; // stop further python-node ui rendering
                 }
+                // show/hide and populate 'returns (data out)' for python nodes
+                try {
+                    if (node.type === 'python_file') {
+                        if (!executionResult) {
+                            if (pythonReturnsGroup) pythonReturnsGroup.style.display = 'none';
+                            if (pythonReturnsContent) pythonReturnsContent.innerHTML = '';
+                        } else {
+                            if (pythonReturnsGroup) pythonReturnsGroup.style.display = '';
+                            if (pythonReturnsContent) {
+                                // clear existing
+                                pythonReturnsContent.innerHTML = '';
+                                const ret = executionResult.return_value;
+
+                                // helper: create a single return row with name then value
+                                const makeRow = (labelText, value) => {
+                                    const row = document.createElement('div');
+                                    row.style.display = 'flex';
+                                    row.style.gap = '8px';
+                                    row.style.alignItems = 'baseline';
+                                    const nameEl = document.createElement('span');
+                                    nameEl.style.color = '#c8e6c9';
+                                    nameEl.style.minWidth = '120px';
+                                    nameEl.style.fontWeight = '600';
+                                    nameEl.textContent = String(labelText);
+                                    const valueEl = document.createElement('span');
+                                    try { valueEl.textContent = typeof value === 'string' ? value : JSON.stringify(value); }
+                                    catch(_) { valueEl.textContent = String(value); }
+                                    row.appendChild(nameEl);
+                                    row.appendChild(valueEl);
+                                    pythonReturnsContent.appendChild(row);
+                                    return { row, nameEl, valueEl };
+                                };
+
+                                // assign a unique render key to prevent duplicate async renders
+                                const renderKey = `${node.id}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                                try { pythonReturnsContent.dataset.renderKey = renderKey; } catch(_) {}
+                                const isStale = () => {
+                                    try { return pythonReturnsContent.dataset.renderKey !== renderKey; } catch(_) { return false; }
+                                };
+                                const safeMakeRow = (labelText, value) => {
+                                    if (isStale()) return { row: null, nameEl: { textContent: '' }, valueEl: null };
+                                    return makeRow(labelText, value);
+                                };
+
+                                // helper: analyze this node's python to infer variable names for tuple/list/primitive
+                                const fetchReturnVariableInfo = async () => {
+                                    try {
+                                        if (!node.pythonFile) return { groups: [], flat: [] };
+                                        const resp = await fetch('/api/analyze-python-function', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ python_file: node.pythonFile })
+                                        });
+                                        const info = await resp.json();
+                                        const returns = Array.isArray(info.returns) ? info.returns : [];
+                                        // group return items by line so tuple elements from the same return are together
+                                        const groupsMap = new Map();
+                                        returns.forEach(it => {
+                                            const ln = (it && typeof it.line === 'number') ? it.line : -1;
+                                            if (!groupsMap.has(ln)) groupsMap.set(ln, []);
+                                            groupsMap.get(ln).push(it);
+                                        });
+                                        const groups = Array.from(groupsMap.values());
+                                        return { groups, flat: returns };
+                                    } catch(_) { return { groups: [], flat: [] }; }
+                                };
+
+                                (async () => {
+                                    if (ret == null) {
+                                        if (!isStale()) {
+                                            const row = document.createElement('div');
+                                            row.textContent = 'no variables returned';
+                                            pythonReturnsContent.appendChild(row);
+                                        }
+                                        return;
+                                    }
+
+                                    // dict: show each key/value; keys are treated as variable names
+                                    if (typeof ret === 'object' && !Array.isArray(ret)) {
+                                        const entries = Object.entries(ret);
+                                        if (entries.length === 0) {
+                                            if (!isStale()) {
+                                                const row = document.createElement('div');
+                                                row.textContent = 'no variables returned';
+                                                pythonReturnsContent.appendChild(row);
+                                            }
+                                        } else {
+                                            entries.forEach(([key, val]) => { if (!isStale()) safeMakeRow(key, val); });
+                                        }
+                                        return;
+                                    }
+
+                                    // for arrays/tuples or primitive values, use analyzer to label by variable names from the script
+                                    const { groups, flat } = await fetchReturnVariableInfo();
+
+                                    if (isStale()) return; // abort if a newer render started
+
+                                    // try to find a group whose number of variables matches array length
+                                    if (Array.isArray(ret)) {
+                                        const varGroup = groups.find(g => (g.filter(x => x && x.type === 'variable').length === ret.length));
+                                        if (varGroup) {
+                                            const names = varGroup.filter(x => x && x.type === 'variable').map(x => x.name);
+                                            for (let i = 0; i < ret.length; i++) {
+                                                const label = names[i] || `item_${i}`;
+                                                safeMakeRow(label, ret[i]);
+                                            }
+                                        } else {
+                                            // fallback: use generic item_i labels
+                                            for (let i = 0; i < ret.length; i++) {
+                                                safeMakeRow(`item_${i}`, ret[i]);
+                                            }
+                                        }
+                                        return;
+                                    }
+
+                                    // primitive: if exactly one variable is reported, use that name; else use 'return_value'
+                                    const onlyVars = flat.filter(x => x && x.type === 'variable');
+                                    const label = (onlyVars.length === 1 && onlyVars[0].name) ? onlyVars[0].name : 'return_value';
+                                    safeMakeRow(label, ret);
+                                })();
+                            }
+                        }
+                    } else {
+                        if (pythonReturnsGroup) pythonReturnsGroup.style.display = 'none';
+                    }
+                } catch(_) {}
                 if (executionResult) {
-                    if (executionTimeRow) executionTimeRow.style.display = 'flex';
                     const _rt = executionResult.runtime || 0;
                     executionTimeText.textContent = `${(_rt/1000).toFixed(3)}s`;
                     executionTimestamp.textContent = executionResult.timestamp;
@@ -164,57 +397,30 @@
                                 nodeOutputContent.textContent = 'no returns';
                             }
                         }
-                        if (consoleContent) {
+                        if (consoleLogEl) {
                             const rawOutput = executionResult.output || '';
                             const lines = rawOutput.split(/\r?\n/).filter(l => l.trim().length > 0);
-                            if (lines.length === 0) {
-                                consoleContent.textContent = 'no console output';
-                            } else {
-                                const escapeHtml = (txt) => {
-                                    try {
-                                        return window.flowchartApp && typeof window.flowchartApp.escapeHtml === 'function'
-                                            ? window.flowchartApp.escapeHtml(txt)
-                                            : String(txt)
-                                                .replaceAll('&', '&amp;')
-                                                .replaceAll('<', '&lt;')
-                                                .replaceAll('>', '&gt;')
-                                                .replaceAll('"', '&quot;')
-                                                .replaceAll("'", '&#39;');
-                                    } catch (e) {
-                                        return String(txt);
-                                    }
-                                };
-                                consoleContent.innerHTML = lines.map(line => `
-<div style="
-    margin-bottom: 8px;
-    background: var(--surface-variant);
-    border-left: 3px solid var(--secondary);
-    padding: 8px 12px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85em;
-    color: var(--on-surface);
-    border-radius: 0 6px 6px 0;
-    opacity: 0.9;
-    white-space: pre-wrap;
-">${escapeHtml(line)}</div>`).join('');
-                            }
+                            consoleLogEl.textContent = lines.length ? lines.join('\n') : 'no console output';
                         }
                     } else {
-                        if (nodeInputContent) nodeInputContent.innerHTML = `<span style="color: #f44336;">execution failed</span>`;
-                        if (nodeOutputContent) nodeOutputContent.innerHTML = `<span style="color: #f44336;">execution failed</span>`;
-                        consoleContent.innerHTML = `<span style="color: #f44336;">${executionResult.error || 'unknown error'}</span>`;
+                        if (nodeInputContent) nodeInputContent.textContent = 'execution failed';
+                        if (nodeOutputContent) nodeOutputContent.textContent = 'execution failed';
+                        if (consoleLogEl) consoleLogEl.textContent = executionResult.error || 'unknown error';
                     }
                 } else {
-                    if (executionTimeRow) executionTimeRow.style.display = 'none';
                     if (nodeInputContent) nodeInputContent.textContent = 'no inputs - node not executed';
                     if (nodeOutputContent) nodeOutputContent.textContent = 'no returns - node not executed';
-                    consoleContent.textContent = 'no console output - node not executed';
+                    if (consoleLogEl) consoleLogEl.textContent = 'no console output - node not executed';
                 }
             }
         } else if (selection.nodes.length > 1) {
             if (executionStatusGroup) executionStatusGroup.style.display = '';
+            // restore neutral styling for multi-select
+            if (executionStatusText) executionStatusText.style.color = '';
+            if (executionStatusIcon) executionStatusIcon.style.color = 'var(--on-surface)';
             if (executionTimeGroup) executionTimeGroup.style.display = '';
-            if (progressGroup) progressGroup.style.display = '';
+            // progress should only be visible when no nodes are selected
+            if (progressGroup) progressGroup.style.display = 'none';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = '';
             if (nodeInputGroup) nodeInputGroup.style.display = 'none';
             if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
@@ -232,10 +438,24 @@
             if (executionTimeRow) executionTimeRow.style.display = 'none';
             if (nodeInputContent) nodeInputContent.textContent = 'select a single node to view inputs';
             if (nodeOutputContent) nodeOutputContent.textContent = 'select a single node to view returns';
-            consoleContent.textContent = 'select a single node to view console output';
+            if (consoleLogEl) consoleLogEl.textContent = 'select a single node to view console output';
         } else {
             if (executionStatusGroup) executionStatusGroup.style.display = '';
-            if (progressGroup) progressGroup.style.display = '';
+            // restore neutral styling for no selection; let global status control the message
+            if (executionStatusText) executionStatusText.style.color = '';
+            if (executionStatusIcon) executionStatusIcon.style.color = 'var(--on-surface)';
+            // when selecting an if condition (if->python link), hide progress
+            let hideProgressForIfLink = false;
+            let isAnyLinkSelected = false;
+            try {
+                if (selection && selection.link) {
+                    isAnyLinkSelected = true;
+                    const s = this.state.getNode(selection.link.source);
+                    const t = this.state.getNode(selection.link.target);
+                    hideProgressForIfLink = !!(s && t && s.type === 'if_node' && t.type === 'python_file');
+                }
+            } catch(_) { hideProgressForIfLink = false; }
+            if (progressGroup) progressGroup.style.display = hideProgressForIfLink ? 'none' : '';
             if (nodeFileInfoGroup) nodeFileInfoGroup.style.display = 'none';
             if (nodeInputGroup) nodeInputGroup.style.display = 'none';
             if (nodeOutputGroup) nodeOutputGroup.style.display = 'none';
@@ -244,7 +464,8 @@
             const app = window.flowchartApp;
             const isRunning = !!(app && app._elapsedTimer);
             const hasLast = !!(app && (app.lastExecutionElapsedMs || app.lastExecutionElapsedMs === 0));
-            if (executionTimeRow && (isRunning || hasLast)) executionTimeRow.style.display = 'flex';
+            // hide execution time row when a link (e.g., if condition) is selected
+            if (executionTimeRow) executionTimeRow.style.display = isAnyLinkSelected ? 'none' : ((isRunning || hasLast) ? 'flex' : 'none');
             if (progressText && window.flowchartApp) {
                 const order = window.flowchartApp.calculateNodeOrder ? window.flowchartApp.calculateNodeOrder() : [];
                 const total = order.length;
@@ -277,23 +498,30 @@
         const pythonFile = node.pythonFile || 'not assigned';
         if (pythonFile === 'not assigned') {
             container.innerHTML = `
-                <div style="font-size: 0.8em; opacity: 0.8; text-align: center; padding: 20px;">
+                <div class="info_empty">
                     no python file assigned
                 </div>
             `;
             return;
         }
+        const funcNameId = `function_name_value_${node.id}`;
+        const totalLinesId = `total_lines_value_${node.id}`;
         container.innerHTML = `
-            <div style="margin-bottom: 8px;">
-                <div style="font-size: 0.9em; font-weight: 500; margin-bottom: 4px;">
-                    file path:
+            <div id="node_file_details_card" class="data_save_details_card">
+                <div class="data_save_details_grid">
+                    <div class="data_save_field">
+                        <div class="data_save_label">file path</div>
+                        <div id="node_file_path_${node.id}" class="data_save_value data_save_value_monospace">${pythonFile}</div>
+                    </div>
+                    <div class="data_save_field">
+                        <div class="data_save_label">function</div>
+                        <div id="${funcNameId}" class="data_save_value data_save_value_monospace">analyzing...</div>
+                    </div>
+                    <div class="data_save_field">
+                        <div class="data_save_label">total lines</div>
+                        <div id="${totalLinesId}" class="data_save_value">-</div>
+                    </div>
                 </div>
-                <div style="font-size: 0.8em; opacity: 0.8; font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px;">
-                    ${pythonFile}
-                </div>
-            </div>
-            <div id="function_info_${node.id}" style="font-size: 0.8em; opacity: 0.8;">
-                analyzing function...
             </div>
         `;
         this.fetchFunctionInfo(pythonFile, node.id);
@@ -307,23 +535,37 @@
                 body: JSON.stringify({ python_file: pythonFile })
             });
             const result = await response.json();
-            const infoElement = document.getElementById(`function_info_${nodeId}`);
-            if (result.success && infoElement) {
-                const fileResponse = await fetch(`/nodes/${pythonFile.replace('nodes/', '')}`);
-                const fileContent = await fileResponse.text();
-                const totalLines = fileContent.split('\n').length;
-                infoElement.innerHTML = `
-                    function: <span style="font-family: monospace;">${result.function_name}</span><br>
-                    total lines: ${totalLines}
-                `;
-            } else if (infoElement) {
-                infoElement.innerHTML = 'function analysis failed';
+            const nameEl = document.getElementById(`function_name_value_${nodeId}`);
+            const linesEl = document.getElementById(`total_lines_value_${nodeId}`);
+            if (result.success) {
+                const totalLines = (typeof result.total_lines === 'number') ? result.total_lines : null;
+                const functionName = result.function_name || 'unknown';
+                if (nameEl) nameEl.textContent = functionName;
+                if (linesEl) linesEl.textContent = (totalLines !== null ? totalLines : '-');
+                // legacy fallback container handling if present
+                const legacy = document.getElementById(`function_info_${nodeId}`);
+                if (legacy && !legacy.children.length) {
+                    legacy.innerHTML = `
+                        <div class="data_save_field">
+                            <div class="data_save_label">function</div>
+                            <div class="data_save_value data_save_value_monospace">${functionName}</div>
+                        </div>
+                        <div class="data_save_field">
+                            <div class="data_save_label">total lines</div>
+                            <div class="data_save_value">${totalLines !== null ? totalLines : '-'}</div>
+                        </div>
+                    `;
+                }
+            } else {
+                if (nameEl) nameEl.textContent = 'analysis failed';
+                const legacy = document.getElementById(`function_info_${nodeId}`);
+                if (legacy) legacy.textContent = 'function analysis failed';
             }
         } catch (error) {
-            const infoElement = document.getElementById(`function_info_${nodeId}`);
-            if (infoElement) {
-                infoElement.innerHTML = 'unable to analyze function';
-            }
+            const nameEl = document.getElementById(`function_name_value_${nodeId}`);
+            if (nameEl) nameEl.textContent = 'unable to analyze function';
+            const legacy = document.getElementById(`function_info_${nodeId}`);
+            if (legacy) legacy.textContent = 'unable to analyze function';
         }
     };
 })();

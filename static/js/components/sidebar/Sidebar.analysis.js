@@ -107,12 +107,12 @@
     };
 
     Sidebar.prototype.showVariablesState = function(state) {
+        const V = window.SidebarVisibility;
         const states = ['loading', 'list', 'error', 'empty'];
         states.forEach(s => {
             const div = document.getElementById(`variables_${s}`);
-            if (div) {
-                div.style.display = s === state ? 'block' : 'none';
-            }
+            if (!div) return;
+            if (V) V.setVisible(div, s === state, 'block'); else div.style.display = s === state ? 'block' : 'none';
         });
     };
 
@@ -123,38 +123,48 @@
 
     Sidebar.prototype.displayVariables = function(variables) {
         const listDiv = document.getElementById('variables_list');
-        if (!variables || variables.length === 0) {
-            this.showVariablesState('empty');
-            return;
-        }
+        if (!variables || variables.length === 0) { this.showVariablesState('empty'); return; }
         listDiv.innerHTML = '';
         variables.forEach(variable => {
-            const variableDiv = document.createElement('div');
-            variableDiv.className = 'variable_item';
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'variable_name';
-            nameDiv.textContent = variable.name;
-            const tagsDiv = document.createElement('div');
-            tagsDiv.style.marginBottom = '4px';
-            const typeSpan = document.createElement('span');
-            typeSpan.className = 'variable_type';
-            typeSpan.textContent = this.formatVariableType(variable.type);
-            tagsDiv.appendChild(typeSpan);
+            const item = document.createElement('div');
+            item.style.cssText = `
+                background: var(--surface-color);
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                padding: 8px 10px;
+                margin-bottom: 6px;
+            `;
+            // name row
+            const nameRow = document.createElement('div');
+            nameRow.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:4px;';
+            const nameEl = document.createElement('span');
+            nameEl.textContent = variable.name || '-';
+            nameEl.style.cssText = 'font-family: monospace; font-weight: 600;';
+            nameRow.appendChild(nameEl);
+            item.appendChild(nameRow);
+            // tags row
+            const tagsRow = document.createElement('div');
+            tagsRow.style.cssText = 'display:flex; align-items:center; gap:6px; flex-wrap: wrap; margin-bottom:6px;';
+            const typeChip = document.createElement('span');
+            typeChip.textContent = this.formatVariableType(variable.type);
+            typeChip.style.cssText = 'font-size: 0.72rem; opacity: 0.85; padding: 2px 6px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);';
+            tagsRow.appendChild(typeChip);
             if (variable.confidence) {
-                const confidenceSpan = document.createElement('span');
-                confidenceSpan.className = `variable_confidence confidence_${variable.confidence}`;
-                confidenceSpan.textContent = variable.confidence;
-                tagsDiv.appendChild(confidenceSpan);
+                const confChip = document.createElement('span');
+                confChip.textContent = String(variable.confidence);
+                confChip.style.cssText = 'font-size: 0.72rem; opacity: 0.85; padding: 2px 6px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);';
+                tagsRow.appendChild(confChip);
             }
-            const detailsDiv = document.createElement('div');
-            detailsDiv.className = 'variable_details';
-            detailsDiv.innerHTML = this.formatVariableDetails(variable);
-            variableDiv.appendChild(nameDiv);
-            variableDiv.appendChild(tagsDiv);
-            if (detailsDiv.innerHTML) {
-                variableDiv.appendChild(detailsDiv);
+            item.appendChild(tagsRow);
+            // details row
+            const detailsText = this.formatVariableDetails(variable);
+            if (detailsText) {
+                const detailsEl = document.createElement('div');
+                detailsEl.textContent = detailsText;
+                detailsEl.style.cssText = 'font-size: 0.78rem; opacity: 0.8;';
+                item.appendChild(detailsEl);
             }
-            listDiv.appendChild(variableDiv);
+            listDiv.appendChild(item);
         });
         this.showVariablesState('list');
     };

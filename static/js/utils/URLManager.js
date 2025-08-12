@@ -61,6 +61,9 @@ class URLManager {
         // update browser url without page reload
         window.history.pushState({ flowchart: displayName }, '', newURL);
         
+        // refresh internal params to reflect latest url
+        this.params = new URLSearchParams(window.location.search);
+
         console.log(`[URLManager] Updated URL to flowchart: ${displayName}`);
     }
 
@@ -115,6 +118,9 @@ class URLManager {
      * - data matrix uses ?flowchart_name=filename
      */
     buildUrlPreserveContext(path, overrides = {}) {
+        // always work with the freshest params from the current location
+        this.params = new URLSearchParams(window.location.search);
+
         const url = new URL(path, window.location.origin);
         const mode = overrides.mode || this.getMode();
         const display = overrides.display || this.getFlowchartDisplayNamePreferred();

@@ -82,7 +82,9 @@ try:
         'return_value': result,
         'function_name': '{function_name}',
         'function_args': {repr(call_args)},
-        'input_values': {repr(input_values)}
+        'input_values': {repr(input_values)},
+        'input_calls': input_call_count,
+        'input_used': bool(input_call_count > 0)
     }}
     print("__RESULT_START__")
     print(json.dumps(output_data, default=str))
@@ -93,7 +95,9 @@ except Exception as e:
         'error': str(e),
         'function_name': '{function_name}',
         'function_args': {repr(call_args)},
-        'input_values': {repr(input_values)}
+        'input_values': {repr(input_values)},
+        'input_calls': input_call_count,
+        'input_used': bool(input_call_count > 0)
     }}
     print("__RESULT_START__")
     print(json.dumps(output_data, default=str))
@@ -214,7 +218,9 @@ try:
         'return_value': result,
         'function_name': '{function_name}',
         'function_args': {repr(call_args)},
-        'input_values': {repr(input_values)}
+        'input_values': {repr(input_values)},
+        'input_calls': input_call_count,
+        'input_used': bool(input_call_count > 0)
     }}
     print("__RESULT_START__")
     print(json.dumps(output_data, default=str))
@@ -225,7 +231,9 @@ except Exception as e:
         'error': str(e),
         'function_name': '{function_name}',
         'function_args': {repr(call_args)},
-        'input_values': {repr(input_values)}
+        'input_values': {repr(input_values)},
+        'input_calls': input_call_count,
+        'input_used': bool(input_call_count > 0)
     }}
     print("__RESULT_START__")
     print(json.dumps(output_data, default=str))

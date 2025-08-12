@@ -731,8 +731,16 @@ class NodeRenderer {
 
             // not selected: restore base styling for special nodes that use inline fills
             if (d.type === 'input_node') {
-                rect.style('fill', '#170d1d');
-                rect.style('stroke', null);
+                if (d.runtimeStatus === 'success') {
+                    rect.style('fill', '#4caf50');
+                    rect.style('stroke', '#388e3c');
+                } else if (d.runtimeStatus === 'error') {
+                    rect.style('fill', '#f44336');
+                    rect.style('stroke', '#d32f2f');
+                } else {
+                    rect.style('fill', '#170d1d');
+                    rect.style('stroke', null);
+                }
                 rect.style('stroke-width', null);
             } else if (d.type === 'if_node') {
                 rect.style('fill', '#091516');
@@ -741,8 +749,16 @@ class NodeRenderer {
                 rect.style('stroke-dasharray', '5,5');
                 rect.style('stroke-width', '2');
             } else if (d.type === 'data_save') {
-                rect.style('fill', 'rgb(62, 32, 0)');
-                rect.style('stroke', null);
+                if (d.runtimeStatus === 'success') {
+                    rect.style('fill', '#4caf50');
+                    rect.style('stroke', '#388e3c');
+                } else if (d.runtimeStatus === 'error') {
+                    rect.style('fill', '#f44336');
+                    rect.style('stroke', '#d32f2f');
+                } else {
+                    rect.style('fill', 'rgb(62, 32, 0)');
+                    rect.style('stroke', null);
+                }
                 rect.style('stroke-dasharray', null);
                 rect.style('stroke-width', '2');
             } else {

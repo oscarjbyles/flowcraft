@@ -1,0 +1,162 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755025475256.4958,
+      "magnet_partner_id": 1755031224131.5889,
+      "name": "1",
+      "pythonFile": "nodes/1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 136.93893432617188,
+      "y": -19.404763221740723
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755025477206.281,
+      "name": "3",
+      "pythonFile": "nodes/3.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 262.91326904296875,
+      "y": 238.85316467285156
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755025477747.9363,
+      "name": "2",
+      "pythonFile": "nodes/2.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 403.42806243896484,
+      "y": 13.20263671875
+    },
+    {
+      "id": 1755031470751.8867,
+      "x": 3.3080627949262564,
+      "y": 85.95684688259334,
+      "name": "varX",
+      "type": "data_save",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 80,
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 8,
+          "name": "varX",
+          "type": "variable"
+        }
+      }
+    }
+  ],
+  "links": [
+    {
+      "source": 1755025475256.4958,
+      "target": 1755025477206.281
+    },
+    {
+      "source": 1755025477747.9363,
+      "target": 1755025477206.281
+    },
+    {
+      "source": 1755025475256.4958,
+      "target": 1755031470751.8867,
+      "selectable": false,
+      "style": "dashed"
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "executions": [
+    {
+      "execution_id": "25cedcb4-48c4-4650-8f9c-6c7b6e0793af",
+      "timestamp": "2025-08-12T21:44:33.761334",
+      "flowchart_name": "simple_test",
+      "status": "success",
+      "total_nodes": 3,
+      "successful_nodes": 3,
+      "completed_nodes": 3,
+      "success_percentage": 100.0,
+      "completed_percentage": 100.0,
+      "failed_node": null,
+      "elapsed_ms": 379,
+      "execution_time": "0.379s"
+    },
+    {
+      "execution_id": "3e17ae94-651a-4492-9f01-b0347f1e5cc8",
+      "timestamp": "2025-08-12T21:42:57.708798",
+      "flowchart_name": "simple_test",
+      "status": "success",
+      "total_nodes": 4,
+      "successful_nodes": 3,
+      "completed_nodes": 3,
+      "success_percentage": 75.0,
+      "completed_percentage": 75.0,
+      "failed_node": null,
+      "elapsed_ms": 523,
+      "execution_time": "0.523s"
+    },
+    {
+      "execution_id": "6ae77c02-afd4-4af9-8f18-5771acf0dc36",
+      "timestamp": "2025-08-12T21:42:29.131946",
+      "flowchart_name": "simple_test",
+      "status": "stopped",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "3",
+      "elapsed_ms": 0,
+      "execution_time": "0.000s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "6e689c4b-1d2c-45ce-bb2a-47b8b641d5fb",
+      "timestamp": "2025-08-12T21:39:53.359302",
+      "flowchart_name": "simple_test",
+      "status": "success",
+      "total_nodes": 3,
+      "successful_nodes": 3,
+      "completed_nodes": 3,
+      "success_percentage": 100.0,
+      "completed_percentage": 100.0,
+      "failed_node": null,
+      "elapsed_ms": 476,
+      "execution_time": "0.476s"
+    },
+    {
+      "execution_id": "cf593c3e-9836-4181-a073-8396ce34801c",
+      "timestamp": "2025-08-12T21:37:13.517705",
+      "flowchart_name": "simple_test",
+      "status": "success",
+      "total_nodes": 3,
+      "successful_nodes": 3,
+      "completed_nodes": 3,
+      "success_percentage": 100.0,
+      "completed_percentage": 100.0,
+      "failed_node": null,
+      "elapsed_ms": 489,
+      "execution_time": "0.489s"
+    },
+    {
+      "execution_id": "f38fd35f-8117-4fc2-a1f3-1f78bce737fa",
+      "timestamp": "2025-08-12T21:36:52.954871",
+      "flowchart_name": "simple_test",
+      "status": "success",
+      "total_nodes": 3,
+      "successful_nodes": 3,
+      "completed_nodes": 3,
+      "success_percentage": 100.0,
+      "completed_percentage": 100.0,
+      "failed_node": null,
+      "elapsed_ms": 369,
+      "execution_time": "0.369s"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "execution_id": "6ae77c02-afd4-4af9-8f18-5771acf0dc36",
+  "timestamp": "2025-08-12T21:42:29.131946",
+  "flowchart_name": "simple_test",
+  "execution_data": {
+    "status": "stopped",
+    "execution_order": [
+      1755031224131.5889,
+      1755025477206.281
+    ],
+    "results": [
+      {
+        "node_id": 1755025477206.281,
+        "node_name": "3",
+        "python_file": "nodes/3.py",
+        "success": false,
+        "output": "",
+        "error": "execution was cancelled by user",
+        "runtime": 0,
+        "timestamp": "21:42:28",
+        "return_value": null
+      }
+    ],
+    "data_saves": [],
+    "feed": [],
+    "total_nodes": 2,
+    "successful_nodes": 0,
+    "error_message": "execution stopped by user",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755025475256.4958,
+          "name": "1",
+          "x": 136.93893432617188,
+          "y": -19.404763221740723,
+          "pythonFile": "nodes/1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755025477206.281,
+          "name": "3",
+          "x": 262.91326904296875,
+          "y": 238.85316467285156,
+          "pythonFile": "nodes/3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755025477747.9363,
+          "name": "2",
+          "x": 403.42806243896484,
+          "y": 13.20263671875,
+          "pythonFile": "nodes/2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755031224131.5889,
+          "name": "if condition",
+          "x": 136.93893432617188,
+          "y": 60.59523677825928,
+          "pythonFile": "",
+          "description": "",
+          "type": "if_node"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755025475256.4958,
+          "target": 1755025477206.281
+        },
+        {
+          "source": 1755025477747.9363,
+          "target": 1755025477206.281
+        },
+        {
+          "source": 1755025475256.4958,
+          "target": 1755031224131.5889,
+          "selectable": false
+        }
+      ],
+      "groups": []
+    }
+  }
+}

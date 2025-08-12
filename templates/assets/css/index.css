@@ -719,7 +719,9 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     padding: 8px 0;
 }
 .run_feed_item.success {}
+/* only error lines should show the dark red background */
 .run_feed_item.error {}
+.run_feed_item.error .run_feed_line { background: #2A0E0E; }
 
 .run_feed_item_title { font-size: 1.05rem; font-weight: 600; }
 .run_feed_output {
@@ -745,8 +747,32 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     align-self: flex-end;
 }
 
+/* placeholder when live feed is empty */
+.run_feed_placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0.7;
+    font-style: italic;
+    padding: 40px 0;
+    min-height: 200px;
+}
+
 /* compact status text and actions */
 .status_bar #status_text { margin-right: 8px; }
+
+/* console output: simplify to match other log blocks */
+#console_output_log {
+    background: #1a1a1a;
+    color: var(--on-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px !important;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+}
 
 /* compact, unobtrusive button styling for status bar */
 #clear_history_status_btn {
@@ -1098,6 +1124,34 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-right: none;
 }
 
+/* node file info card - improve readability in run mode */
+.node_file_card {
+    background: var(--surface-variant);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+}
+.node_file_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.node_file_header .material-icons { font-size: 18px; }
+.node_file_meta { display: flex; flex-direction: column; gap: 10px; }
+.node_file_row { display: grid; grid-template-columns: 110px 1fr; align-items: start; gap: 10px; }
+.node_file_group { display: grid; grid-auto-rows: minmax(0, auto); gap: 10px; }
+.node_file_label { font-size: 0.8rem; opacity: .8; text-transform: lowercase; }
+.node_file_value {
+    font-size: 0.9rem;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+.node_file_value_mono { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #90caf9; background: rgba(25,118,210,.08); border-color: rgba(25,118,210,.3); }
+
 /* pin footer actions at bottom of properties sidebar */
 .properties_footer {
     border-top: 1px solid var(--border-color);
@@ -1380,8 +1434,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* data save details panel - improved readability */
 .data_save_details_card {
   background: var(--surface-variant);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 16px;
   margin-top: 8px;
 }

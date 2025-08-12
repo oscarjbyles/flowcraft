@@ -140,6 +140,14 @@
       "target": 1754904147880.503
     },
     {
+      "runtime_condition": "false",
+      "runtime_details": {
+        "variables": {
+          "valueA": 10
+        },
+        "conditions": [],
+        "final": false
+      },
       "source": 1754904147880.503,
       "target": 1754908819721.7458
     }
@@ -155,5 +163,37 @@
       ]
     }
   ],
-  "annotations": []
+  "annotations": [],
+  "executions": [
+    {
+      "execution_id": "5e688682-0ea0-447b-9123-1bc51afa51d7",
+      "timestamp": "2025-08-12T18:38:40.662177",
+      "flowchart_name": "simple",
+      "status": "failed",
+      "total_nodes": 6,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 33.3,
+      "completed_percentage": 50.0,
+      "failed_node": "nothing1",
+      "elapsed_ms": 1428,
+      "execution_time": "1.428s",
+      "error_snippet": "missing required function arguments: valueA"
+    },
+    {
+      "execution_id": "d817d36c-39cb-4595-82aa-922405c75734",
+      "timestamp": "2025-08-12T18:19:42.816735",
+      "flowchart_name": "simple",
+      "status": "failed",
+      "total_nodes": 6,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 33.3,
+      "completed_percentage": 50.0,
+      "failed_node": "nothing1",
+      "elapsed_ms": 1363,
+      "execution_time": "1.363s",
+      "error_snippet": "missing required function arguments: valueA"
+    }
+  ]
 }

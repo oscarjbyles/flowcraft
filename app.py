@@ -40,12 +40,14 @@ from backend.routes.ui import ui_bp  # noqa: E402
 from backend.routes.flowcharts import flowcharts_bp  # noqa: E402
 from backend.routes.files import files_bp  # noqa: E402
 from backend.routes.execution import execution_bp  # noqa: E402
+from backend.routes.analysis import analysis_bp  # noqa: E402
 from backend.routes.editors import editors_bp  # noqa: E402
 
 app.register_blueprint(ui_bp)
 app.register_blueprint(flowcharts_bp)
 app.register_blueprint(files_bp)
 app.register_blueprint(execution_bp)
+app.register_blueprint(analysis_bp)
 app.register_blueprint(editors_bp)
 
 

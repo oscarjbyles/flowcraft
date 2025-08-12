@@ -6,6 +6,9 @@
         constructor(sidebar) {
             this.sidebar = sidebar;
             this.registry = this.buildRegistry();
+            try {
+                this.runController = new (window.SidebarRunViewController || function(){}) (sidebar);
+            } catch (_) { this.runController = null; }
         }
 
         // registry maps mode/selection/node_type to section visibility and hooks
@@ -39,7 +42,7 @@
                                 }
                             },
                             if_node: {
-                                header: 'IF CONDITION',
+                                header: 'IF SPLITTER',
                                 show: ['if_node_variables_section'],
                                 hide: [
                                     'python_file',
@@ -47,7 +50,8 @@
                                     'returns_section',
                                     'input_node_inputs_section',
                                     'data_save_variable_section',
-                                    'data_save_name_section'
+                                    'data_save_name_section',
+                                    'python_quick_actions'
                                 ],
                                 after: (node) => {
                                     this.sidebar.analyzeIfNodeVariables(node);
@@ -104,7 +108,27 @@
                 },
                 run: {
                     default: { panel: 'execution', sections: {} },
-                    single: { panel: 'execution', sections: {} },
+                    // ensure header updates for all node types while in run mode
+                    single: {
+                        panel: 'execution',
+                        byType: {
+                            input_node: {
+                                header: 'INPUT NODE'
+                            },
+                            if_node: {
+                                header: 'IF SPLITTER'
+                            },
+                            data_save: {
+                                header: 'DATA SAVE'
+                            },
+                            python_file: {
+                                header: 'PYTHON NODE'
+                            }
+                        },
+                        fallback: {
+                            header: 'NODE'
+                        }
+                    },
                     multi: { panel: 'execution', sections: {} },
                     link: { panel: 'execution', sections: {} },
                     group: { panel: 'execution', sections: {} },
@@ -145,9 +169,50 @@
                     }
                     if (typeof typeConf.after === 'function') typeConf.after(node);
                 }
+                // removed recursive single panel controller render to avoid re-entering content engine
             } else {
                 // non-single contexts rely on existing specialized methods
-                this.updateHeader(null);
+                if (context === 'link' && selection && selection.link) {
+                    const sourceNode = this.sidebar.state.getNode(selection.link.source);
+                    const targetNode = this.sidebar.state.getNode(selection.link.target);
+                    const involvesIfNode = !!(sourceNode && sourceNode.type === 'if_node') || !!(targetNode && targetNode.type === 'if_node');
+                    if (involvesIfNode) {
+                        this.updateHeader('IF CONDITION');
+                    } else {
+                        this.updateHeader(null);
+                    }
+                    // let link panel controller render in build mode
+                    if (!this.sidebar.state.isRunMode && window.SidebarLinkPanelController) {
+                        try {
+                            if (!this._linkCtrl) this._linkCtrl = new window.SidebarLinkPanelController(this.sidebar);
+                            this._linkCtrl.render(selection);
+                        } catch(_) {}
+                    }
+                } else {
+                    this.updateHeader(null);
+                    // multi/group/annotation controllers (build mode)
+                    if (!this.sidebar.state.isRunMode) {
+                        try {
+                            if (context === 'multi' && window.SidebarMultiPanelController) {
+                                if (!this._multiCtrl) this._multiCtrl = new window.SidebarMultiPanelController(this.sidebar);
+                                this._multiCtrl.render(selection.nodes || []);
+                            }
+                            if (context === 'group' && selection.group && window.SidebarGroupPanelController) {
+                                if (!this._groupCtrl) this._groupCtrl = new window.SidebarGroupPanelController(this.sidebar);
+                                this._groupCtrl.render(selection.group);
+                            }
+                            if (context === 'annotation' && selection.annotation && window.SidebarAnnotationPanelController) {
+                                if (!this._annCtrl) this._annCtrl = new window.SidebarAnnotationPanelController(this.sidebar);
+                                this._annCtrl.render(selection.annotation);
+                            }
+                        } catch(_) {}
+                    }
+                }
+            }
+
+            // if we are in run mode, let the controller populate dynamic sections for selection
+            if (this.sidebar.state && this.sidebar.state.isRunMode && this.runController && typeof this.runController.render === 'function') {
+                try { this.runController.render(selection); } catch(_) {}
             }
         }
 
@@ -168,16 +233,18 @@
 
         activatePanel(key) {
             this.sidebar.hideAllPanels();
-            const map = {
-                default: this.sidebar.contentPanels.default,
-                single: this.sidebar.contentPanels.single,
-                multi: this.sidebar.contentPanels.multi,
-                group: this.sidebar.contentPanels.group,
-                link: this.sidebar.contentPanels.link,
-                annotation: this.sidebar.contentPanels.annotation,
-                execution: this.sidebar.contentPanels.execution
+            const C = window.SidebarConstants;
+            const idMap = {
+                default: C?.ids?.defaultPanel || 'default_properties',
+                single: C?.ids?.singlePanel || 'single_node_properties',
+                multi: C?.ids?.multiPanel || 'multi_select_properties',
+                group: C?.ids?.groupPanel || 'group_properties',
+                link: C?.ids?.linkPanel || 'link_properties',
+                annotation: C?.ids?.annotationPanel || 'annotation_properties',
+                execution: C?.ids?.executionPanel || 'run_execution_properties'
             };
-            const panel = map[key];
+            const panelId = idMap[key];
+            const panel = panelId ? document.getElementById(panelId) : null;
             if (panel) panel.classList.add('active');
         }
 
@@ -206,8 +273,9 @@
 
         updateHeader(text) {
             try {
-                const header = document.getElementById('properties_header');
-                const headerText = document.getElementById('properties_header_text');
+                const C = window.SidebarConstants;
+                const header = document.getElementById(C?.ids?.propertiesHeader || 'properties_header');
+                const headerText = document.getElementById(C?.ids?.propertiesHeaderText || 'properties_header_text');
                 if (!header || !headerText) return;
                 if (text) {
                     headerText.textContent = String(text).toUpperCase();

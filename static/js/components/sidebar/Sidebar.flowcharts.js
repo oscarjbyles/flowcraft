@@ -17,6 +17,16 @@
         const dmBtn = document.getElementById('data_matrix_btn');
         if (dmBtn) {
             dmBtn.addEventListener('click', () => {
+                // if leaving run mode, perform full clear same as clear button
+                try {
+                    if (window.flowchartApp && window.flowchartApp.state && window.flowchartApp.state.isRunMode) {
+                        if (typeof window.flowchartApp.clearRunModeState === 'function') {
+                            window.flowchartApp.clearRunModeState();
+                        } else if (typeof window.flowchartApp.clearAllNodeColorState === 'function') {
+                            window.flowchartApp.clearAllNodeColorState();
+                        }
+                    }
+                } catch (_) {}
                 const url = this.urlManager.buildUrlPreserveContext('/data');
                 window.location.href = url;
             });
@@ -40,11 +50,27 @@
             }
         });
 
-        document.getElementById('new_flowchart_name').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                this.createNewFlowchart();
-            }
-        });
+        const nameInput = document.getElementById('new_flowchart_name');
+        if (nameInput) {
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.createNewFlowchart();
+                }
+            });
+            // prevent spaces from being entered
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === ' ') {
+                    e.preventDefault();
+                }
+            });
+            // also prevent paste of content with spaces
+            nameInput.addEventListener('paste', (e) => {
+                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                if (pastedText.includes(' ')) {
+                    e.preventDefault();
+                }
+            });
+        }
 
         try {
             const params = new URLSearchParams(window.location.search);

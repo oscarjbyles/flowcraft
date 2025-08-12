@@ -60,6 +60,10 @@ class FlowchartBuilder {
         this.nodeVariables = new Map(); // nodeId -> returned variables from function
         // live feed for persistence: array of { node_id, node_name, started_at, finished_at, success, lines: [{text, ts}] }
         this.executionFeed = [];
+
+        // runtime branch control: nodes blocked by false if arms in the current run
+        // all comments in lower case
+        this.blockedNodeIds = new Set();
         
         // setup core event listeners
         this.setupCoreEvents();
@@ -487,6 +491,8 @@ class FlowchartBuilder {
         const dashboardBtn = document.getElementById('dashboard_btn');
         if (dashboardBtn) {
             dashboardBtn.addEventListener('click', () => {
+                // if leaving run mode, perform full clear same as clear button
+                try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } else { this.clearAllNodeColorState(); } } catch (_) {}
                 const currentFlow = this.state?.storage?.getCurrentFlowchart?.();
                 let url = '/dashboard';
                 if (currentFlow) {
@@ -498,6 +504,8 @@ class FlowchartBuilder {
         }
 
         document.getElementById('build_btn').addEventListener('click', () => {
+            // if leaving run mode, perform full clear same as clear button
+            try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } } catch (_) {}
             this.switchToBuildMode();
             // persist mode in url
             const u = new URL(window.location.href);
@@ -509,6 +517,8 @@ class FlowchartBuilder {
         const scriptsBtn = document.getElementById('scripts_btn');
         if (scriptsBtn) {
             scriptsBtn.addEventListener('click', () => {
+                // if leaving run mode, perform full clear same as clear button
+                try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } else { this.clearAllNodeColorState(); } } catch (_) {}
                 // preserve current flowchart in url when navigating
                 const currentFlow = this.state?.storage?.getCurrentFlowchart?.();
                 let url = '/scripts';
@@ -533,6 +543,8 @@ class FlowchartBuilder {
         const settingsBtn = document.getElementById('settings_btn');
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
+                // if leaving run mode, perform full clear same as clear button
+                try { if (this.state && this.state.isRunMode && typeof this.clearRunModeState === 'function') { this.clearRunModeState(); } else if (this.state && this.state.isRunMode) { this.clearAllNodeColorState(); } } catch (_) {}
                 this.switchToSettingsMode();
                 const u = new URL(window.location.href);
                 u.searchParams.set('mode', 'settings');
@@ -621,10 +633,17 @@ class FlowchartBuilder {
         const clearRunBtn = document.getElementById('execute_clear_btn');
         if (clearRunBtn) {
             clearRunBtn.addEventListener('click', () => {
-                this.resetNodeStates();
-                this.clearOutput();
-                this.clearExecutionFeed();
-                this.updateExecutionStatus('info', 'cleared');
+                // centralised clear used by clear button and when leaving run mode
+                if (typeof this.clearRunModeState === 'function') {
+                    this.clearRunModeState();
+                } else {
+                    // fallback in case method is not available
+                    this.resetNodeStates();
+                    this.clearOutput();
+                    this.clearExecutionFeed();
+                    this.updateExecutionStatus('info', 'cleared');
+                    try { this.clearIfRuntimeIndicators(); } catch (_) {}
+                }
             });
         }
 
@@ -682,6 +701,18 @@ class FlowchartBuilder {
 
         // initialize button states on load
         updateRunFeedButtons();
+
+        // ensure a placeholder is visible in the live execution feed when empty
+        try {
+            const list = document.getElementById('run_feed_list');
+            if (list && list.children.length === 0) {
+                const placeholder = document.createElement('div');
+                placeholder.id = 'run_feed_placeholder';
+                placeholder.className = 'run_feed_placeholder';
+                placeholder.textContent = 'waiting for execution';
+                list.appendChild(placeholder);
+            }
+        } catch (_) {}
 
         // resizable top border for run feed (drag to resize height)
         if (runFeedResizer && runFeedBar) {
@@ -1476,6 +1507,8 @@ class FlowchartBuilder {
         this.isAutoTrackEnabled = true;
         this.userDisabledTracking = false;
         if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
+        // ensure any stale runtime indicators are cleared when entering run
+        try { this.clearIfRuntimeIndicators(); } catch (_) {}
     }
 
             // history mode removed
@@ -1677,10 +1710,18 @@ class FlowchartBuilder {
             const group = d3.select(this);
             const rect = group.select('.node');
             const isErr = rect.classed('error');
-            if (!isErr) return;
+            // also flag python nodes with no associated python file
+            const isPythonMissingFile = d && d.type === 'python_file' && (!d.pythonFile || String(d.pythonFile).trim() === '');
+            const shouldMark = isErr || isPythonMissingFile;
+            if (!shouldMark) return;
             const width = d.width || 120;
-            const x = width / 2 + 18;
-            const y = -18;
+            const height = Geometry.getNodeHeight(d);
+            // place the badge left of the node and align its top with the node's top edge
+            const topLeftX = -width / 2;
+            const topLeftY = -height / 2;
+            const offsetX = -18; // moved 4px further left
+            const x = topLeftX + offsetX;
+            const y = topLeftY + 12; // circle radius is 12, so top aligns with node top
             group.append('circle')
                 .attr('class', 'error_circle')
                 .attr('cx', x)
@@ -1783,9 +1824,12 @@ class FlowchartBuilder {
             
             // reset node colors when leaving run mode
             if (previousMode === 'run' || previousMode === 'history') {
-                this.resetNodeStates();
+                // centralised clear to wipe all runtime colour state
+                this.clearAllNodeColorState();
                 // hide all play buttons when leaving run mode
                 this.nodeRenderer.hideAllPlayButtons();
+                // clear runtime condition indicators when exiting run
+                try { this.clearIfRuntimeIndicators(); } catch (_) {}
             }
             
             // suppressed: build mode notification
@@ -1890,11 +1934,17 @@ class FlowchartBuilder {
             if (mainContent) mainContent.classList.add('full_width');
 
             // hide other special panels
+            // also hide live execution feed when entering settings
+            try { const runFeedBar = document.getElementById('run_feed_bar'); if (runFeedBar) runFeedBar.style.display = 'none'; } catch (_) {}
             this.hideExecutionPanel();
 
             // show full page settings
             this.showSettingsPage();
             this.updateStatusBar('settings');
+            // if we came from run/history, also clear runtime condition indicators
+            if (previousMode === 'run' || previousMode === 'history') {
+                try { this.clearIfRuntimeIndicators(); } catch (_) {}
+            }
         }
         
         // ensure multiselect button is visible again only in build mode
@@ -1904,6 +1954,24 @@ class FlowchartBuilder {
                 groupSelectBtn.style.display = '';
             }
         }
+    }
+
+    // clear all runtime condition flags on if→python links (used when clearing run or leaving run mode)
+    clearIfRuntimeIndicators() {
+        try {
+            const links = Array.isArray(this.state.links) ? this.state.links : [];
+            links.forEach(l => {
+                const s = this.state.getNode(l.source);
+                const t = this.state.getNode(l.target);
+                if (s && t && s.type === 'if_node' && t.type === 'python_file') {
+                    this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                }
+            });
+            // re-render if-to-python nodes to reflect cleared state
+            if (this.linkRenderer && typeof this.linkRenderer.renderIfToPythonNodes === 'function') {
+                this.linkRenderer.renderIfToPythonNodes();
+            }
+        } catch (_) {}
     }
 
     updateFlowViewUI(isFlowView) {
@@ -1969,6 +2037,13 @@ class FlowchartBuilder {
             // keep execution panel visible and show run-mode default (status + progress)
             this.showExecutionPanel();
             this.state.emit('updateSidebar');
+            // when in run mode and nothing is selected, ensure global status reflects the last run outcome
+            try {
+                const s = String(this.lastExecutionStatus || 'idle');
+                if (['completed', 'stopped', 'failed', 'error'].includes(s)) {
+                    this.updateExecutionStatus(s, '');
+                }
+            } catch (_) {}
         } else {
             this.sidebar.showDefaultPanel();
         }
@@ -2053,6 +2128,19 @@ class FlowchartBuilder {
         this.clearOutput();
         // reset live feed for this run
         this.executionFeed = [];
+        // reset blocked branches
+        this.blockedNodeIds.clear();
+        // clear any previous runtime condition indicators on if→python links
+        try {
+            const links = Array.isArray(this.state.links) ? this.state.links : [];
+            links.forEach(l => {
+                const s = this.state.getNode(l.source);
+                const t = this.state.getNode(l.target);
+                if (s && t && s.type === 'if_node' && t.type === 'python_file') {
+                    this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                }
+            });
+        } catch (_) {}
         
         // update execution status
         this.updateExecutionStatus('running', `executing ${executionOrder.length} nodes`);
@@ -2202,7 +2290,7 @@ class FlowchartBuilder {
                 }
             }
 
-            // also include synthesized results for data_save nodes (not part of executionOrder)
+                // also include synthesized results for data_save nodes (not part of executionOrder)
             try {
                 const dataSaveNodes = this.state.nodes.filter(n => n.type === 'data_save');
                 for (const ds of dataSaveNodes) {
@@ -2257,12 +2345,29 @@ class FlowchartBuilder {
                 }
             } catch (_) {}
             
+            // sanitize feed to ensure no duplicate line texts per node before saving history
+            const sanitizedFeed = Array.isArray(this.executionFeed) ? this.executionFeed.map(entry => {
+                try {
+                    const seen = new Set();
+                    const uniqueLines = [];
+                    (entry.lines || []).forEach(l => {
+                        const t = (l && typeof l.text === 'string') ? l.text.trim() : '';
+                        if (!t || seen.has(t)) return;
+                        seen.add(t);
+                        uniqueLines.push({ text: t, ts: l.ts || new Date().toISOString() });
+                    });
+                    return { ...entry, lines: uniqueLines };
+                } catch (_) {
+                    return entry;
+                }
+            }) : [];
+
             const executionData = {
                 status: status,
                 execution_order: executionOrder.map(node => node.id),
                 results: results,
                 data_saves: dataSaves,
-                feed: this.executionFeed,
+                feed: sanitizedFeed,
                 // exclude data_save nodes from counts by only considering the computed execution order
                 total_nodes: executionOrder.length,
                 successful_nodes: results.filter(r => r.success && executionOrder.some(node => node.id === r.node_id)).length,
@@ -2404,6 +2509,15 @@ class FlowchartBuilder {
             if (list) {
                 list.innerHTML = '';
                 const feed = Array.isArray(executionData.feed) ? executionData.feed : [];
+                // prefer per-node runtimes saved in results; fallback to elapsed_ms from feed
+                const resultsArr = Array.isArray(executionData.results) ? executionData.results : [];
+                const runtimeById = new Map();
+                try {
+                    resultsArr.forEach(r => {
+                        const ms = parseInt(r && r.runtime != null ? r.runtime : 0, 10);
+                        if (!isNaN(ms)) runtimeById.set(r.node_id, ms);
+                    });
+                } catch (_) {}
                 feed.forEach(entry => {
                     const item = document.createElement('div');
                     item.className = 'run_feed_item ' + (entry.success ? 'success' : (entry.success === false ? 'error' : ''));
@@ -2420,7 +2534,22 @@ class FlowchartBuilder {
                     });
                     const metaCol = document.createElement('div');
                     metaCol.className = 'run_feed_meta';
-                    metaCol.textContent = (entry.finished_at || entry.started_at || '').replace('T', ' ').split('.')[0];
+                    // restore both time and duration; prefer saved node runtime, fallback to elapsed from feed
+                    try {
+                        const tsIso = entry.finished_at || entry.started_at || '';
+                        const dt = tsIso ? new Date(tsIso) : null;
+                        const timeStr = (dt && !isNaN(dt.getTime())) ? dt.toLocaleTimeString() : ((tsIso || '').replace('T',' ').split('.')[0]);
+                        const rtMs = runtimeById.has(entry.node_id) ? runtimeById.get(entry.node_id) : null;
+                        let secText = '';
+                        if (typeof rtMs === 'number' && !isNaN(rtMs) && rtMs >= 0) {
+                            secText = `${(rtMs / 1000).toFixed(3)}s`;
+                        } else if (typeof entry.elapsed_ms === 'number') {
+                            secText = `${(entry.elapsed_ms / 1000).toFixed(3)}s`;
+                        }
+                        metaCol.textContent = secText ? `${timeStr}  ·  ${secText}` : timeStr;
+                    } catch (_) {
+                        metaCol.textContent = (entry.finished_at || entry.started_at || '').replace('T', ' ').split('.')[0];
+                    }
                     item.appendChild(title);
                     item.appendChild(outCol);
                     item.appendChild(metaCol);
@@ -2428,10 +2557,48 @@ class FlowchartBuilder {
                 });
             }
         } catch (_) {}
-        
-        // update execution status
+
+        // update execution status and top time row with restored elapsed/timestamp
+        try {
+            // compute elapsed by summing per-node runtimes that are part of the execution order
+            const orderIds = new Set(Array.isArray(executionData.execution_order) ? executionData.execution_order : []);
+            const resultsArr = Array.isArray(executionData.results) ? executionData.results : [];
+            let elapsedMs = 0;
+            for (const r of resultsArr) {
+                if (orderIds.size === 0 || orderIds.has(r.node_id)) {
+                    const ms = parseInt(r.runtime || 0, 10);
+                    if (!isNaN(ms)) elapsedMs += ms;
+                }
+            }
+            // prefer a finished_at from feed; fallback to started_at
+            let tsIso = '';
+            try {
+                const feed = Array.isArray(executionData.feed) ? executionData.feed : [];
+                const finished = feed.filter(e => e && e.finished_at).slice(-1)[0];
+                if (finished && finished.finished_at) tsIso = finished.finished_at;
+                else if (feed.length && feed[0] && feed[0].started_at) tsIso = feed[0].started_at;
+            } catch (_) {}
+            let tsShort = '';
+            if (tsIso) {
+                try {
+                    const d = new Date(tsIso);
+                    if (!isNaN(d.getTime())) tsShort = d.toLocaleTimeString();
+                } catch (_) {}
+            }
+            // apply to ui and persistent snapshot used by sidebar when no node selected
+            const timeRow = document.getElementById('execution_time_row');
+            const timeText = document.getElementById('execution_time_text');
+            const timestampEl = document.getElementById('execution_timestamp');
+            if (timeRow) timeRow.style.display = 'flex';
+            if (timeText) timeText.textContent = `${(elapsedMs / 1000).toFixed(3)}s`;
+            if (timestampEl) timestampEl.textContent = tsShort || (timestampEl.textContent || '');
+            this.lastExecutionElapsedMs = elapsedMs;
+            this.lastExecutionTimestampString = tsShort || this.lastExecutionTimestampString || '';
+        } catch (_) {}
+
+        // update execution status line
         const statusText = executionData.status === 'success' ? 'completed' : 
-                          executionData.status === 'failed' ? 'failed' : 'stopped';
+                          executionData.status === 'failed' ? 'failed' : (executionData.status || 'stopped');
         this.updateExecutionStatus(statusText, `historical execution - ${executionData.successful_nodes}/${executionData.total_nodes} nodes completed`);
     }
 
@@ -2524,6 +2691,19 @@ class FlowchartBuilder {
         this.updateExecutionStatus('running', `resuming execution: ${nodesToExecute.length} nodes`);
         
         try {
+            // reset blocked branches at resume start
+            this.blockedNodeIds.clear();
+            // clear any previous runtime condition indicators on if→python links
+            try {
+                const links = Array.isArray(this.state.links) ? this.state.links : [];
+                links.forEach(l => {
+                    const s = this.state.getNode(l.source);
+                    const t = this.state.getNode(l.target);
+                    if (s && t && s.type === 'if_node' && t.type === 'python_file') {
+                        this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                    }
+                });
+            } catch (_) {}
             // execute nodes one by one with live feedback, starting with initial variables
             let currentVariables = { ...initialVariables };
             
@@ -2577,6 +2757,18 @@ class FlowchartBuilder {
 
     async executeNodeLiveWithVariables(node, currentIndex, totalNodes, accumulatedVariables) {
         // this is similar to executeNodeLive but with accumulated variables from previous execution
+        // skip blocked nodes silently
+        if (this.blockedNodeIds && this.blockedNodeIds.has(node.id)) {
+            return true;
+        }
+        // handle if splitter nodes without executing python
+        if (node && node.type === 'if_node') {
+            await this.evaluateIfNodeAndBlockBranches(node);
+            // mark as completed for visual feedback without running
+            this.setNodeState(node.id, 'completed');
+            this.updateNodeDetails(node, 'completed', 0);
+            return true;
+        }
         this.setNodeState(node.id, 'running');
         this.addNodeLoadingAnimation(node.id);
         this.updateExecutionStatus('running', `executing node ${currentIndex}/${totalNodes}: ${node.name}`);
@@ -2624,7 +2816,8 @@ class FlowchartBuilder {
                 return_value: result.return_value,
                 function_name: result.function_name,
                 function_args: result.function_args,
-                input_values: result.input_values
+                input_values: result.input_values,
+                input_used: !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)))
             });
             
             // remove loading animation
@@ -2650,6 +2843,29 @@ class FlowchartBuilder {
                 
                 // update node details in sidebar
                 this.updateNodeDetails(node, 'completed', result.runtime);
+
+                // auto-highlight associated input node in green when inputs were used successfully
+                try {
+                    const usedInputs = !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)));
+                    if (node.type === 'python_file' && usedInputs) {
+                        let inputNode = (this.state.nodes || []).find(n => n && n.type === 'input_node' && n.targetNodeId === node.id);
+                        if (!inputNode) {
+                            const linkFromInput = (this.state.links || []).find(l => {
+                                if (!l) return false;
+                                const src = this.state.getNode(l.source);
+                                return !!(src && src.type === 'input_node' && l.target === node.id);
+                            });
+                            if (linkFromInput) inputNode = this.state.getNode(linkFromInput.source);
+                        }
+                        if (inputNode) {
+                            inputNode.runtimeStatus = 'success';
+                            this.setNodeState(inputNode.id, 'completed');
+                            if (this.nodeRenderer && typeof this.nodeRenderer.updateNodeStyles === 'function') {
+                                this.nodeRenderer.updateNodeStyles();
+                            }
+                        }
+                    }
+                } catch (_) {}
                 
                 return true;
             } else {
@@ -2687,6 +2903,18 @@ class FlowchartBuilder {
 
     async executeNodeLive(node, nodeIndex, totalNodes) {
         try {
+            // skip blocked nodes silently
+            if (this.blockedNodeIds && this.blockedNodeIds.has(node.id)) {
+                return true;
+            }
+            // handle if splitter nodes without executing python
+            if (node && node.type === 'if_node') {
+                await this.evaluateIfNodeAndBlockBranches(node);
+                // mark as completed for visual feedback without running
+                this.setNodeState(node.id, 'completed');
+                this.updateNodeDetails(node, 'completed', 0);
+                return true;
+            }
             // remember current executing node for immediate tracking when toggled on mid-run
             this.currentExecutingNodeId = node && node.id;
             // set node to running state with loading animation
@@ -2773,6 +3001,17 @@ class FlowchartBuilder {
                         const elapsedMs = Math.max(0, finishedAt.getTime() - startTime);
                         const elapsedSec = (elapsedMs / 1000).toFixed(3);
                         metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
+                        // also persist these values into the corresponding feed entry for restoration
+                        try {
+                            let entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
+                            if (!entry) {
+                                entry = { node_id: node.id, node_name: node.name, started_at: new Date(startTime).toISOString(), lines: [] };
+                                this.executionFeed.push(entry);
+                            }
+                            entry.finished_at = finishedAt.toISOString();
+                            entry.success = !!result.success;
+                            entry.elapsed_ms = elapsedMs;
+                        } catch (_) {}
                         item.appendChild(title);
                         item.appendChild(outCol);
                         item.appendChild(metaCol);
@@ -2780,6 +3019,14 @@ class FlowchartBuilder {
                     }
                     const bar = document.getElementById('run_feed_bar');
                     if (bar) bar.scrollTop = bar.scrollHeight;
+                    // if we created a completed item, ensure placeholder is removed
+                    try {
+                        const listEl = document.getElementById('run_feed_list');
+                        const placeholder = document.getElementById('run_feed_placeholder');
+                        if (listEl && placeholder && placeholder.parentElement === listEl) {
+                            placeholder.remove();
+                        }
+                    } catch (_) {}
                 }
             } catch (_) {}
 
@@ -2789,6 +3036,15 @@ class FlowchartBuilder {
                 if (entry) {
                     entry.finished_at = new Date().toISOString();
                     entry.success = !!result.success;
+                    // compute and persist elapsed so it can be restored later from data matrix
+                    try {
+                        const start = entry.started_at ? new Date(entry.started_at).getTime() : NaN;
+                        const end = new Date(entry.finished_at).getTime();
+                        const elapsedMs = (!isNaN(start) && !isNaN(end) && end >= start)
+                            ? (end - start)
+                            : (typeof result.runtime === 'number' ? result.runtime : undefined);
+                        if (typeof elapsedMs === 'number') entry.elapsed_ms = elapsedMs;
+                    } catch (_) {}
                     const combined = ((result.output || '') + (result.error ? `\n${result.error}` : '')).trim();
                     if (combined && entry.lines.length === 0) {
                         combined.split(/\r?\n/).filter(Boolean).forEach(l => {
@@ -2821,12 +3077,43 @@ class FlowchartBuilder {
                     timestamp: new Date().toLocaleTimeString(),
                     return_value: result.return_value,
                     function_name: result.function_name,
-                    input_args: result.input_args
+                    input_args: result.input_args,
+                    input_values: result.input_values,
+                    input_used: !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)))
                 });
                 
                 // set node to completed state (green)
                 this.setNodeState(node.id, 'completed');
                 this.updateNodeDetails(node, 'completed', runtime, result.output);
+
+                // auto-highlight associated input node in green when inputs were used successfully
+                try {
+                    const usedInputs = !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)));
+                    if (node.type === 'python_file' && usedInputs) {
+                        let inputNode = (this.state.nodes || []).find(n => n && n.type === 'input_node' && n.targetNodeId === node.id);
+                        if (!inputNode) {
+                            const linkFromInput = (this.state.links || []).find(l => {
+                                if (!l) return false;
+                                const src = this.state.getNode(l.source);
+                                return !!(src && src.type === 'input_node' && l.target === node.id);
+                            });
+                            if (linkFromInput) inputNode = this.state.getNode(linkFromInput.source);
+                        }
+                        if (inputNode) {
+                            inputNode.runtimeStatus = 'success';
+                            this.setNodeState(inputNode.id, 'completed');
+                            if (this.nodeRenderer && typeof this.nodeRenderer.updateNodeStyles === 'function') {
+                                this.nodeRenderer.updateNodeStyles();
+                            }
+                        }
+                    }
+                } catch (_) {}
+
+                // if this was a data_save node (synthetic), theme it green as success
+                if (node.type === 'data_save') {
+                    node.runtimeStatus = 'success';
+                    if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
+                }
                 
                 const returnValueText = result.return_value !== null && result.return_value !== undefined 
                     ? `\nReturned: ${JSON.stringify(result.return_value)}` 
@@ -2844,13 +3131,19 @@ class FlowchartBuilder {
                     timestamp: new Date().toLocaleTimeString(),
                     return_value: null,
                     function_name: result.function_name,
-                    input_args: result.input_args
+                    input_args: result.input_args,
+                    input_values: result.input_values,
+                    input_used: !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)))
                 });
                 this.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: result.error || 'unknown error' };
                 
                 // set node to error state (red)
                 this.setNodeState(node.id, 'error');
                 this.updateNodeDetails(node, 'error', runtime, result.error);
+                if (node.type === 'data_save') {
+                    node.runtimeStatus = 'error';
+                    if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
+                }
                 this.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${result.error || 'unknown error'}\n`);
                 return false; // failure - will stop execution
             }
@@ -2872,6 +3165,166 @@ class FlowchartBuilder {
             this.updateNodeDetails(node, 'error', 0, error.message);
             this.appendOutput(`[${node.name}] execution error: ${error.message}\n`);
             return false; // failure
+        }
+    }
+
+    // evaluate an if splitter's outgoing link conditions against available upstream variables
+    // and block branches whose conditions evaluate to false for the current run
+    async evaluateIfNodeAndBlockBranches(ifNode) {
+        try {
+            // gather variables from incoming python nodes
+            const incomingLinks = this.state.links.filter(l => l.target === ifNode.id);
+            const vars = {};
+            for (const link of incomingLinks) {
+                const sourceId = link.source;
+                if (!this.nodeVariables.has(sourceId)) continue;
+                const val = this.nodeVariables.get(sourceId);
+                if (val && typeof val === 'object' && val !== null) {
+                    Object.assign(vars, val);
+                } else if (typeof val !== 'undefined') {
+                    const src = this.state.getNode(sourceId);
+                    let mapped = false;
+                    // try to map primitive return value to the real return variable name via analysis
+                    try {
+                        if (src && src.type === 'python_file' && src.pythonFile) {
+                            const resp = await fetch('/api/analyze-python-function', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ python_file: src.pythonFile })
+                            });
+                            const data = await resp.json();
+                            const returns = Array.isArray(data && data.returns) ? data.returns : [];
+                            // prefer single variable name; otherwise first variable-like name
+                            let varName = null;
+                            if (returns.length === 1 && returns[0] && returns[0].name) {
+                                varName = returns[0].name;
+                            } else {
+                                const variableItem = returns.find(r => r && (r.type === 'variable' || typeof r.name === 'string') && r.name);
+                                if (variableItem && variableItem.name) varName = variableItem.name;
+                            }
+                            if (varName && typeof varName === 'string') {
+                                vars[varName] = val;
+                                mapped = true;
+                            }
+                        }
+                    } catch (_) {}
+                    if (!mapped) {
+                        const key = (src && src.name) ? src.name.toLowerCase().replace(/[^a-z0-9_]/g, '_') : `node_${sourceId}`;
+                        vars[key] = val;
+                    }
+                }
+            }
+
+            // evaluate outgoing links
+            const outgoingLinks = this.state.links.filter(l => l.source === ifNode.id);
+            if (!outgoingLinks.length) return;
+
+            // helper to evaluate a single condition object { variable, operator, value, combiner? }
+            const evalSingle = (variableName, operator, compareRaw) => {
+                const left = vars.hasOwnProperty(variableName) ? vars[variableName] : undefined;
+                if (typeof left === 'undefined') return false;
+                let right = compareRaw;
+                // basic type coercion based on left type
+                if (typeof left === 'number') {
+                    const n = Number(right);
+                    right = Number.isNaN(n) ? right : n;
+                } else if (typeof left === 'boolean') {
+                    if (String(right).toLowerCase() === 'true') right = true;
+                    else if (String(right).toLowerCase() === 'false') right = false;
+                }
+                switch (operator) {
+                    case '===': return left === right;
+                    case '==': return left == right; // eslint-disable-line eqeqeq
+                    case '>': return Number(left) > Number(right);
+                    case '<': return Number(left) < Number(right);
+                    case '>=': return Number(left) >= Number(right);
+                    case '<=': return Number(left) <= Number(right);
+                    default: return false;
+                }
+            };
+
+            const trueTargets = [];
+            const falseTargets = [];
+            for (const link of outgoingLinks) {
+                const meta = this.state.getLink(link.source, link.target) || link;
+                const conditions = Array.isArray(meta.conditions) ? meta.conditions : [];
+                if (conditions.length === 0) {
+                    // no conditions means this arm is not taken by default
+                    falseTargets.push(link.target);
+                    // mark link as false in runtime
+                    try { this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: [], final: false } }); } catch (_) {}
+                    continue;
+                }
+                // evaluate left-to-right with optional combiner on subsequent conditions (default 'and')
+                const details = [];
+                let result = evalSingle(conditions[0].variable, conditions[0].operator, conditions[0].value);
+                details.push({
+                    variable: conditions[0].variable,
+                    operator: conditions[0].operator,
+                    value: conditions[0].value,
+                    left: Object.prototype.hasOwnProperty.call(vars, conditions[0].variable) ? vars[conditions[0].variable] : undefined,
+                    result
+                });
+                for (let i = 1; i < conditions.length; i++) {
+                    const c = conditions[i];
+                    const next = evalSingle(c.variable, c.operator, c.value);
+                    const comb = (c.combiner || 'and').toLowerCase();
+                    details.push({
+                        variable: c.variable,
+                        operator: c.operator,
+                        value: c.value,
+                        combiner: comb,
+                        left: Object.prototype.hasOwnProperty.call(vars, c.variable) ? vars[c.variable] : undefined,
+                        result: next
+                    });
+                    if (comb === 'or') result = result || next; else result = result && next;
+                }
+                if (result) {
+                    trueTargets.push(link.target);
+                    try { this.state.updateLink(link.source, link.target, { runtime_condition: 'true', runtime_details: { variables: { ...vars }, conditions: details, final: true } }); } catch (_) {}
+                } else {
+                    falseTargets.push(link.target);
+                    try { this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: details, final: false } }); } catch (_) {}
+                }
+            }
+
+            // block all false arms (and their downstream nodes where appropriate)
+            for (const tgt of falseTargets) {
+                this.blockBranchFrom(tgt);
+            }
+            // ensure true arm immediate targets are unblocked if previously marked
+            for (const tgt of trueTargets) {
+                if (this.blockedNodeIds.has(tgt)) this.blockedNodeIds.delete(tgt);
+            }
+        } catch (e) {
+            console.warn('if evaluation error', e);
+        }
+    }
+
+    // block a branch starting from a node id, but stop at merge points that also have
+    // incoming links from nodes not in the blocked set (so other paths can still proceed)
+    blockBranchFrom(startNodeId) {
+        const queue = [startNodeId];
+        const localVisited = new Set();
+        while (queue.length) {
+            const currentId = queue.shift();
+            if (localVisited.has(currentId)) continue;
+            localVisited.add(currentId);
+
+            // add to global blocked set
+            this.blockedNodeIds.add(currentId);
+
+            // traverse outgoing links
+            const outgoing = this.state.links.filter(l => l.source === currentId);
+            for (const l of outgoing) {
+                const targetId = l.target;
+                if (localVisited.has(targetId)) continue;
+                // check if target has any incoming from outside blocked area
+                const incomers = this.state.links.filter(il => il.target === targetId);
+                const hasAlternative = incomers.some(il => !this.blockedNodeIds.has(il.source) && !localVisited.has(il.source));
+                if (!hasAlternative) {
+                    queue.push(targetId);
+                }
+            }
         }
     }
 
@@ -2935,17 +3388,17 @@ class FlowchartBuilder {
                     // skip lines inside the result block
                     return;
                 }
-                if (!line || !line.trim()) return;
+                // normalize whitespace to improve duplicate detection
+                line = line.trim();
+                if (!line) return;
                 // append live output to the sidebar console if this node is selected
                 const selected = Array.from(this.state.selectedNodes);
                 if (selected.length === 1 && selected[0] === node.id) {
-                    const consoleContent = document.getElementById('console_content');
-                    if (consoleContent) {
-                        const div = document.createElement('div');
-                        div.textContent = line;
-                        consoleContent.appendChild(div);
-                        const container = document.getElementById('console_output_log');
-                        if (container) container.scrollTop = container.scrollHeight;
+                    const container = document.getElementById('console_output_log');
+                    if (container) {
+                        const current = container.textContent || '';
+                        container.textContent = current ? (current + '\n' + line) : line;
+                        container.scrollTop = container.scrollHeight;
                     }
                 }
                 // also append a live line to the bottom feed for this node
@@ -2964,14 +3417,18 @@ class FlowchartBuilder {
                             };
                             this.executionFeed.push(entry);
                         }
-                        entry.lines.push({ text: line, ts: new Date().toISOString() });
+                        // avoid duplicating any identical line text already present in this entry
+                        const hasTextAlready = entry.lines.some(l => (l && typeof l.text === 'string') ? l.text === line : false);
+                        if (!hasTextAlready) {
+                            entry.lines.push({ text: line, ts: new Date().toISOString() });
+                        }
                     } catch (_) {}
 
                     const list = document.getElementById('run_feed_list');
                     if (list) {
                         // reuse or create a current running item for this node
                         const runningId = `run_feed_running_${node.id}`;
-                        let item = document.getElementById(runningId);
+                    let item = document.getElementById(runningId);
                         if (!item) {
                             item = document.createElement('div');
                             item.id = runningId;
@@ -2988,6 +3445,11 @@ class FlowchartBuilder {
                             item.appendChild(outCol);
                             item.appendChild(metaCol);
                             list.appendChild(item);
+                        // remove placeholder if present since we now have content
+                        const placeholder = document.getElementById('run_feed_placeholder');
+                        if (placeholder && placeholder.parentElement === list) {
+                            placeholder.remove();
+                        }
                         }
                         const outCol = item.children[1];
                         if (outCol) {
@@ -3046,6 +3508,26 @@ class FlowchartBuilder {
                                     const elapsedSec = (elapsedMs / 1000).toFixed(3);
                                     metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
                                 }
+                                // if failed, append error text lines to the live feed ui
+                                // all comments in lower case
+                                try {
+                                    if (!finalResult.success && finalResult && finalResult.error) {
+                                        const outCol = item.children[1];
+                                        if (outCol) {
+                                            String(finalResult.error)
+                                                .split(/\r?\n/)
+                                                .filter(Boolean)
+                                                .forEach(tl => {
+                                                    const lineDiv = document.createElement('div');
+                                                    lineDiv.className = 'run_feed_line';
+                                                    lineDiv.textContent = tl;
+                                                    outCol.appendChild(lineDiv);
+                                                });
+                                            const list = document.getElementById('run_feed_list');
+                                            if (list) list.scrollTop = list.scrollHeight;
+                                        }
+                                    }
+                                } catch (_) {}
                             }
                             // finalize feed entry data
                             try {
@@ -3053,18 +3535,42 @@ class FlowchartBuilder {
                                 if (entry) {
                                     entry.finished_at = new Date().toISOString();
                                     entry.success = !!finalResult.success;
+                                    try {
+                                        // persist elapsed time for restoration in history view
+                                        const start = entry.started_at ? new Date(entry.started_at).getTime() : callStartTime;
+                                        const end = Date.now();
+                                        const elapsedMs = (typeof start === 'number' && start > 0) ? Math.max(0, end - start) : Math.max(0, end - callStartTime);
+                                        entry.elapsed_ms = elapsedMs;
+                                    } catch (_) {}
                                     // if there was non-streamed output appended at the end by the wrapper, ensure it's included
                                     const tail = (finalResult && finalResult.output) ? String(finalResult.output) : '';
                                     if (tail) {
                                         const tailLines = tail.split(/\r?\n/).filter(Boolean);
-                                        // avoid duplicating if same last line already exists
-                                        const lastText = entry.lines.length ? entry.lines[entry.lines.length - 1].text : null;
+                                        // build a set of existing texts to avoid any duplicates, not just the last line
+                                        const existingTexts = new Set(entry.lines.map(l => l && typeof l.text === 'string' ? l.text : ''));
                                         tailLines.forEach(tl => {
-                                            if (tl !== lastText) {
+                                            if (!existingTexts.has(tl)) {
                                                 entry.lines.push({ text: tl, ts: new Date().toISOString() });
+                                                existingTexts.add(tl);
                                             }
                                         });
                                     }
+                                    // if failed, persist error lines into execution feed
+                                    try {
+                                        if (!finalResult.success && finalResult && finalResult.error) {
+                                            const existingTexts = new Set(entry.lines.map(l => l && typeof l.text === 'string' ? l.text : ''));
+                                            String(finalResult.error)
+                                                .split(/\r?\n/)
+                                                .map(s => s.trim())
+                                                .filter(Boolean)
+                                                .forEach(tl => {
+                                                    if (!existingTexts.has(tl)) {
+                                                        entry.lines.push({ text: tl, ts: new Date().toISOString() });
+                                                        existingTexts.add(tl);
+                                                    }
+                                                });
+                                        }
+                                    } catch (_) {}
                                 }
                             } catch (_) {}
                         } catch (_) {}
@@ -3113,6 +3619,23 @@ class FlowchartBuilder {
             if (sourceNode && sourceNode.type === 'input_node') {
                 inputNodes.push(sourceNode);
                 console.log(`[${targetNode.name}] Found input node: ${sourceNode.name}`);
+            } else if (sourceNode && sourceNode.type === 'if_node') {
+                // bridge variables across an if splitter: pull from upstream python nodes
+                const upstreamLinks = this.state.links.filter(l => l.target === sourceNode.id);
+                upstreamLinks.forEach(ul => {
+                    const upNode = this.state.getNode(ul.source);
+                    if (!upNode) return;
+                    if (upNode.type === 'input_node') {
+                        inputNodes.push(upNode);
+                        console.log(`[${targetNode.name}] Found input node via if: ${upNode.name}`);
+                        return;
+                    }
+                    if (this.nodeVariables.has(upNode.id)) {
+                        const returnValue = this.nodeVariables.get(upNode.id);
+                        regularNodes.push({ node: upNode, returnValue });
+                        console.log(`[${targetNode.name}] Bridged var from upstream of if: ${upNode.name}`, returnValue);
+                    }
+                });
             } else if (sourceNode) {
                 // check if this source node has variables available
                 if (this.nodeVariables.has(sourceNodeId)) {
@@ -3127,19 +3650,42 @@ class FlowchartBuilder {
         
         // collect variables from regular nodes (previous node outputs) -> these become function arguments
         regularNodes.forEach(({ node: sourceNode, returnValue }) => {
-            if (returnValue !== null && returnValue !== undefined) {
-                if (typeof returnValue === 'object' && returnValue.constructor === Object) {
-                    // spread object properties into function args
-                    Object.assign(functionArgs, returnValue);
-                    console.log(`[${targetNode.name}] Spread object from ${sourceNode.name} into function args:`, returnValue);
-                } else {
-                    // try to match with expected formal parameters
-                    const variableName = this.matchVariableToParameter(sourceNode, returnValue, expectedParams, functionArgs);
-                    if (variableName) {
-                        functionArgs[variableName] = returnValue;
-                        console.log(`[${targetNode.name}] Matched function arg ${variableName} = ${returnValue} from ${sourceNode.name}`);
+            if (returnValue === null || typeof returnValue === 'undefined') return;
+
+            // case 1: upstream returned a plain object (e.g., dict from python)
+            if (typeof returnValue === 'object' && returnValue.constructor === Object) {
+                // merge without overwriting already-set parameters
+                Object.keys(returnValue).forEach((key) => {
+                    const val = returnValue[key];
+                    // if this key corresponds to an expected parameter and it's not set yet, set it
+                    if (!Object.prototype.hasOwnProperty.call(functionArgs, key)) {
+                        functionArgs[key] = val;
+                        console.log(`[${targetNode.name}] assigned object key ${key} from ${sourceNode.name}`);
+                    } else {
+                        console.log(`[${targetNode.name}] skipped overwriting existing arg ${key} from ${sourceNode.name}`);
+                    }
+                });
+                return;
+            }
+
+            // case 2: upstream returned an array/tuple — map elements to remaining expected params in order
+            if (Array.isArray(returnValue)) {
+                const remainingParams = expectedParams.filter((p) => !Object.prototype.hasOwnProperty.call(functionArgs, p));
+                for (let i = 0; i < returnValue.length && i < remainingParams.length; i++) {
+                    const paramName = remainingParams[i];
+                    if (!Object.prototype.hasOwnProperty.call(functionArgs, paramName)) {
+                        functionArgs[paramName] = returnValue[i];
+                        console.log(`[${targetNode.name}] mapped tuple/list element to ${paramName} from ${sourceNode.name}`);
                     }
                 }
+                return;
+            }
+
+            // case 3: primitive return — try to match by heuristics
+            const variableName = this.matchVariableToParameter(sourceNode, returnValue, expectedParams, functionArgs);
+            if (variableName && !Object.prototype.hasOwnProperty.call(functionArgs, variableName)) {
+                functionArgs[variableName] = returnValue;
+                console.log(`[${targetNode.name}] matched function arg ${variableName} = ${returnValue} from ${sourceNode.name}`);
             }
         });
         
@@ -3306,9 +3852,12 @@ class FlowchartBuilder {
                     };
                     // push into current map so saveExecutionHistory includes it
                     this.nodeExecutionResults.set(ds.id, synthetic);
+                    // mark the data_save node as success and refresh style in run mode
+                    try { ds.runtimeStatus = 'success'; this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
                     console.log(`[data_save] persisted for node '${ds.name}' with key '${dataKey}'`);
                 } catch (e) {
                     console.warn('failed to synthesize data_save result', e);
+                    try { ds.runtimeStatus = 'error'; this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
                 }
             });
         } catch (e) {
@@ -3522,6 +4071,39 @@ class FlowchartBuilder {
             
         // remove all loading icons
         this.nodeRenderer.nodeGroup.selectAll('.node_loading_icon').remove();
+
+        // clear any runtimeStatus flags on nodes (e.g., data_save success coloring)
+        try {
+            this.state.nodes.forEach(n => { if (n && n.runtimeStatus) delete n.runtimeStatus; });
+            this.nodeRenderer && this.nodeRenderer.updateNodeStyles();
+        } catch (_) {}
+    }
+
+    // clear all visual colour state for nodes (classes, inline fills, and runtime flags)
+    clearAllNodeColorState() {
+        // clear state classes
+        try {
+            this.nodeRenderer.nodeGroup.selectAll('.node')
+                .classed('running', false)
+                .classed('completed', false)
+                .classed('error', false)
+                // clear inline colours to allow base css/theme to apply
+                .style('fill', null)
+                .style('stroke', null)
+                .style('stroke-width', null);
+        } catch (_) {}
+
+        // remove loading icons
+        try { this.nodeRenderer.nodeGroup.selectAll('.node_loading_icon').remove(); } catch (_) {}
+
+        // clear any runtimeStatus flags (e.g., data_save success/error)
+        try {
+            const nodes = Array.isArray(this.state.nodes) ? this.state.nodes : [];
+            nodes.forEach(n => { if (n && n.runtimeStatus) delete n.runtimeStatus; });
+        } catch (_) {}
+
+        // refresh renderer to restore base styles for special node types
+        try { this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
     }
 
     updateExecutionStatus(type, message) {
@@ -3532,14 +4114,43 @@ class FlowchartBuilder {
         const timestampEl = document.getElementById('execution_timestamp');
         const progressText = document.getElementById('execution_progress_text');
         const failureInfo = document.getElementById('execution_failure_info');
+        // when a single node is selected in run mode, the sidebar shows node-specific status.
+        // avoid overwriting that with global status updates.
+        let isSingleNodeSelected = false;
+        try {
+            const selected = Array.from(this.state.selectedNodes || []);
+            isSingleNodeSelected = (selected.length === 1);
+        } catch(_) { isSingleNodeSelected = false; }
         
-        statusElement.textContent = message;
+        // compute display message for global (no-selection) view
+        let displayMessage = message;
+        if (!isSingleNodeSelected) {
+            switch (type) {
+                case 'completed':
+                    displayMessage = 'flowchart executed successfully';
+                    break;
+                case 'stopped':
+                    displayMessage = 'script was stopped by user';
+                    break;
+                case 'error':
+                case 'failed':
+                    displayMessage = 'execution faced an error';
+                    break;
+                default:
+                    // keep provided message for non-terminal states like running/idle
+                    break;
+            }
+        }
+
+        if (!isSingleNodeSelected && statusElement) statusElement.textContent = displayMessage;
         
         // update icon based on status type
         switch (type) {
             case 'running':
-                iconElement.textContent = 'play_arrow';
-                iconElement.style.color = '#2196f3';
+                if (!isSingleNodeSelected && iconElement) {
+                    iconElement.textContent = 'play_arrow';
+                    iconElement.style.color = '#2196f3';
+                }
                 // show elapsed timer
                 if (!this.executionStartTimestamp) {
                     this.executionStartTimestamp = Date.now();
@@ -3547,12 +4158,12 @@ class FlowchartBuilder {
                 // clear last execution snapshot when starting a new run
                 this.lastExecutionElapsedMs = null;
                 this.lastExecutionTimestampString = '';
-                if (timeRow) timeRow.style.display = 'flex';
-                if (failureInfo) failureInfo.style.display = 'none';
+                if (!isSingleNodeSelected && timeRow) timeRow.style.display = 'flex';
+                if (!isSingleNodeSelected && failureInfo) failureInfo.style.display = 'none';
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 this._elapsedTimer = setInterval(() => {
                     const elapsed = Date.now() - this.executionStartTimestamp;
-                    if (timeText) {
+                    if (!isSingleNodeSelected && timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
                         timeText.textContent = `${seconds}s`;
                     }
@@ -3560,115 +4171,146 @@ class FlowchartBuilder {
                 this.lastExecutionStatus = 'running';
                 break;
             case 'completed':
-                iconElement.textContent = 'check_circle';
-                iconElement.style.color = '#4caf50';
+                if (!isSingleNodeSelected && iconElement) {
+                    iconElement.textContent = 'check_circle';
+                    iconElement.style.color = '#4caf50';
+                }
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 {
-                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    const elapsed = this.executionStartTimestamp
+                        ? (Date.now() - this.executionStartTimestamp)
+                        : (typeof this.lastExecutionElapsedMs === 'number' ? this.lastExecutionElapsedMs : 0);
                     this.lastExecutionElapsedMs = elapsed;
-                    if (timeText) {
+                    if (!isSingleNodeSelected && timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
                         timeText.textContent = `${seconds}s`;
                     }
-                    if (timestampEl) {
-                        const now = new Date();
-                        const hh = String(now.getHours()).padStart(2, '0');
-                        const mm = String(now.getMinutes()).padStart(2, '0');
-                        const ss = String(now.getSeconds()).padStart(2, '0');
-                        const ts = `${hh}:${mm}:${ss}`;
+                    if (!isSingleNodeSelected && timestampEl) {
+                        // use restored snapshot if available; otherwise current time
+                        let ts = this.lastExecutionTimestampString;
+                        if (!ts) {
+                            const now = new Date();
+                            const hh = String(now.getHours()).padStart(2, '0');
+                            const mm = String(now.getMinutes()).padStart(2, '0');
+                            const ss = String(now.getSeconds()).padStart(2, '0');
+                            ts = `${hh}:${mm}:${ss}`;
+                        }
                         timestampEl.textContent = ts;
                         this.lastExecutionTimestampString = ts;
                     }
                 }
-                if (timeRow) timeRow.style.display = 'flex';
-                if (failureInfo) failureInfo.style.display = 'none';
+                if (!isSingleNodeSelected && timeRow) timeRow.style.display = 'flex';
+                if (!isSingleNodeSelected && failureInfo) failureInfo.style.display = 'none';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'completed';
                 break;
             case 'error':
-                iconElement.textContent = 'error';
-                iconElement.style.color = '#f44336';
+                if (!isSingleNodeSelected && iconElement) {
+                    iconElement.textContent = 'error';
+                    iconElement.style.color = '#f44336';
+                }
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 {
-                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    const elapsed = this.executionStartTimestamp
+                        ? (Date.now() - this.executionStartTimestamp)
+                        : (typeof this.lastExecutionElapsedMs === 'number' ? this.lastExecutionElapsedMs : 0);
                     this.lastExecutionElapsedMs = elapsed;
-                    if (timeText) {
+                    if (!isSingleNodeSelected && timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
                         timeText.textContent = `${seconds}s`;
                     }
-                    if (timestampEl) {
-                        const now = new Date();
-                        const hh = String(now.getHours()).padStart(2, '0');
-                        const mm = String(now.getMinutes()).padStart(2, '0');
-                        const ss = String(now.getSeconds()).padStart(2, '0');
-                        const ts = `${hh}:${mm}:${ss}`;
+                    if (!isSingleNodeSelected && timestampEl) {
+                        let ts = this.lastExecutionTimestampString;
+                        if (!ts) {
+                            const now = new Date();
+                            const hh = String(now.getHours()).padStart(2, '0');
+                            const mm = String(now.getMinutes()).padStart(2, '0');
+                            const ss = String(now.getSeconds()).padStart(2, '0');
+                            ts = `${hh}:${mm}:${ss}`;
+                        }
                         timestampEl.textContent = ts;
                         this.lastExecutionTimestampString = ts;
                     }
                 }
-                if (timeRow) timeRow.style.display = 'flex';
-                if (failureInfo) failureInfo.style.display = 'none';
+                if (!isSingleNodeSelected && timeRow) timeRow.style.display = 'flex';
+                if (!isSingleNodeSelected && failureInfo) failureInfo.style.display = 'none';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'error';
                 break;
             case 'stopped':
-                iconElement.textContent = 'stop';
-                iconElement.style.color = '#ff9800';
+                if (!isSingleNodeSelected && iconElement) {
+                    iconElement.textContent = 'stop';
+                    iconElement.style.color = '#ff9800';
+                }
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 {
-                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    const elapsed = this.executionStartTimestamp
+                        ? (Date.now() - this.executionStartTimestamp)
+                        : (typeof this.lastExecutionElapsedMs === 'number' ? this.lastExecutionElapsedMs : 0);
                     this.lastExecutionElapsedMs = elapsed;
-                    if (timeText) {
+                    if (!isSingleNodeSelected && timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
                         timeText.textContent = `${seconds}s`;
                     }
-                    if (timestampEl) {
-                        const now = new Date();
-                        const hh = String(now.getHours()).padStart(2, '0');
-                        const mm = String(now.getMinutes()).padStart(2, '0');
-                        const ss = String(now.getSeconds()).padStart(2, '0');
-                        const ts = `${hh}:${mm}:${ss}`;
+                    if (!isSingleNodeSelected && timestampEl) {
+                        let ts = this.lastExecutionTimestampString;
+                        if (!ts) {
+                            const now = new Date();
+                            const hh = String(now.getHours()).padStart(2, '0');
+                            const mm = String(now.getMinutes()).padStart(2, '0');
+                            const ss = String(now.getSeconds()).padStart(2, '0');
+                            ts = `${hh}:${mm}:${ss}`;
+                        }
                         timestampEl.textContent = ts;
                         this.lastExecutionTimestampString = ts;
                     }
                 }
-                if (timeRow) timeRow.style.display = 'flex';
-                if (failureInfo) failureInfo.style.display = 'none';
+                if (!isSingleNodeSelected && timeRow) timeRow.style.display = 'flex';
+                if (!isSingleNodeSelected && failureInfo) failureInfo.style.display = 'none';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'stopped';
                 break;
             case 'failed':
-                iconElement.textContent = 'error';
-                iconElement.style.color = '#f44336';
+                if (!isSingleNodeSelected && iconElement) {
+                    iconElement.textContent = 'error';
+                    iconElement.style.color = '#f44336';
+                }
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 {
-                    const elapsed = this.executionStartTimestamp ? (Date.now() - this.executionStartTimestamp) : 0;
+                    const elapsed = this.executionStartTimestamp
+                        ? (Date.now() - this.executionStartTimestamp)
+                        : (typeof this.lastExecutionElapsedMs === 'number' ? this.lastExecutionElapsedMs : 0);
                     this.lastExecutionElapsedMs = elapsed;
-                    if (timeText) {
+                    if (!isSingleNodeSelected && timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
                         timeText.textContent = `${seconds}s`;
                     }
-                    if (timestampEl) {
-                        const now = new Date();
-                        const hh = String(now.getHours()).padStart(2, '0');
-                        const mm = String(now.getMinutes()).padStart(2, '0');
-                        const ss = String(now.getSeconds()).padStart(2, '0');
-                        const ts = `${hh}:${mm}:${ss}`;
+                    if (!isSingleNodeSelected && timestampEl) {
+                        let ts = this.lastExecutionTimestampString;
+                        if (!ts) {
+                            const now = new Date();
+                            const hh = String(now.getHours()).padStart(2, '0');
+                            const mm = String(now.getMinutes()).padStart(2, '0');
+                            const ss = String(now.getSeconds()).padStart(2, '0');
+                            ts = `${hh}:${mm}:${ss}`;
+                        }
                         timestampEl.textContent = ts;
                         this.lastExecutionTimestampString = ts;
                     }
                 }
-                if (timeRow) timeRow.style.display = 'flex';
+                if (!isSingleNodeSelected && timeRow) timeRow.style.display = 'flex';
                 this.executionStartTimestamp = null;
                 this.lastExecutionStatus = 'failed';
                 break;
             default:
-                iconElement.textContent = 'info';
-                iconElement.style.color = 'var(--on-surface)';
+                if (!isSingleNodeSelected && iconElement) {
+                    iconElement.textContent = 'info';
+                    iconElement.style.color = 'var(--on-surface)';
+                }
                 if (this._elapsedTimer) clearInterval(this._elapsedTimer);
                 // keep last visible time; do not hide the row here
                 // default resets failure info visibility
-                if (failureInfo) failureInfo.style.display = 'none';
+                if (!isSingleNodeSelected && failureInfo) failureInfo.style.display = 'none';
                 this.lastExecutionStatus = 'idle';
         }
 
@@ -3980,30 +4622,20 @@ class FlowchartBuilder {
         const isRunMode = this.state.currentMode === 'run';
         
         if (!isRunMode || selectedNodes.length !== 1) {
-            const consoleContent = document.getElementById('console_content');
-            if (consoleContent) {
-                consoleContent.textContent = this.globalExecutionLog;
-                
-                // scroll to bottom
-                const consoleLog = document.getElementById('console_output_log');
-                if (consoleLog) {
-                    consoleLog.scrollTop = consoleLog.scrollHeight;
-                }
+            const consoleLog = document.getElementById('console_output_log');
+            if (consoleLog) {
+                consoleLog.textContent = this.globalExecutionLog;
+                consoleLog.scrollTop = consoleLog.scrollHeight;
             }
         }
     }
     
     showGlobalExecutionLog() {
         // show the complete execution log in console output
-        const consoleContent = document.getElementById('console_content');
-        if (consoleContent) {
-            consoleContent.textContent = this.globalExecutionLog || 'no execution output yet';
-            
-            // scroll to bottom
-            const consoleLog = document.getElementById('console_output_log');
-            if (consoleLog) {
-                consoleLog.scrollTop = consoleLog.scrollHeight;
-            }
+        const consoleLog = document.getElementById('console_output_log');
+        if (consoleLog) {
+            consoleLog.textContent = this.globalExecutionLog || 'no execution output yet';
+            consoleLog.scrollTop = consoleLog.scrollHeight;
         }
     }
 
@@ -4028,7 +4660,7 @@ class FlowchartBuilder {
         // clear the separate output sections
         const nodeInputContent = document.getElementById('node_input_content');
         const nodeOutputContent = document.getElementById('node_output_content');
-        const consoleContent = document.getElementById('console_content');
+        const consoleContent = document.getElementById('console_output_log');
         
         if (nodeInputContent) {
             nodeInputContent.textContent = 'output cleared';
@@ -4060,6 +4692,12 @@ class FlowchartBuilder {
             const list = document.getElementById('run_feed_list');
             if (list) {
                 list.innerHTML = '';
+                // add placeholder when list is empty
+                const placeholder = document.createElement('div');
+                placeholder.id = 'run_feed_placeholder';
+                placeholder.className = 'run_feed_placeholder';
+                placeholder.textContent = 'waiting for execution';
+                list.appendChild(placeholder);
             }
         } catch (_) {}
     }
@@ -4097,3 +4735,16 @@ class FlowchartBuilder {
 }
 
 window.FlowchartBuilder = FlowchartBuilder;
+
+// extend prototype with a centralized clear for leaving run mode
+// this mirrors the clear button behavior so navigation away from run fully resets ui
+FlowchartBuilder.prototype.clearRunModeState = function() {
+    try { this.resetNodeStates(); } catch (_) {}
+    try { this.clearOutput(); } catch (_) {}
+    try { this.clearExecutionFeed(); } catch (_) {}
+    try { this.updateExecutionStatus('info', 'cleared'); } catch (_) {}
+    try { this.clearIfRuntimeIndicators(); } catch (_) {}
+    try { this.clearAllNodeColorState(); } catch (_) {}
+    // clear selection and ensure default run panel when coming back later
+    try { this.state.clearSelection(); this.state.emit('updateSidebar'); } catch (_) {}
+};

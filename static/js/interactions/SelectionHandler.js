@@ -38,6 +38,33 @@ class SelectionHandler {
             this.events.handleNodeClick(event, node);
         }
         
+        // when in run mode, ensure the right sidebar is open on node click
+        // (remove collapsed classes and sync the toggle button state)
+        if (this.state && this.state.isRunMode) {
+            try {
+                if (window.flowchartApp && window.flowchartApp.sidebar && typeof window.flowchartApp.sidebar.setCollapsed === 'function') {
+                    window.flowchartApp.sidebar.setCollapsed(false);
+                } else if (this.state && this.state.emit) {
+                    // fallback: remove classes directly if sidebar instance is not exposed yet
+                    const propertiesSidebar = document.getElementById('properties_sidebar');
+                    if (propertiesSidebar && propertiesSidebar.classList.contains('collapsed')) {
+                        propertiesSidebar.classList.remove('collapsed');
+                        const mainContent = document.querySelector('.main_content');
+                        const runFeedBar = document.getElementById('run_feed_bar');
+                        const startButtonContainer = document.getElementById('start_button_container');
+                        const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
+                        if (mainContent) mainContent.classList.remove('sidebar_collapsed');
+                        if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
+                        if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
+                        if (toggleSidebarBtn) {
+                            toggleSidebarBtn.title = 'hide properties';
+                            toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
+
         // emit selection update for ui
         this.state.emit('updateNodeStyles');
         this.state.emit('updateLinkStyles');
@@ -48,6 +75,34 @@ class SelectionHandler {
         event.stopPropagation();
         this.events.handleLinkClick(event, link);
         
+        // when in run mode, ensure the right sidebar is open on link click (e.g., if→python circle)
+        // all comments in lower case
+        if (this.state && this.state.isRunMode) {
+            try {
+                if (window.flowchartApp && window.flowchartApp.sidebar && typeof window.flowchartApp.sidebar.setCollapsed === 'function') {
+                    window.flowchartApp.sidebar.setCollapsed(false);
+                } else {
+                    const propertiesSidebar = document.getElementById('properties_sidebar');
+                    if (propertiesSidebar && propertiesSidebar.classList.contains('collapsed')) {
+                        propertiesSidebar.classList.remove('collapsed');
+                        const mainContent = document.querySelector('.main_content');
+                        const runFeedBar = document.getElementById('run_feed_bar');
+                        const startButtonContainer = document.getElementById('start_button_container');
+                        const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
+                        if (mainContent) mainContent.classList.remove('sidebar_collapsed');
+                        if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
+                        if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
+                        if (toggleSidebarBtn) {
+                            toggleSidebarBtn.title = 'hide properties';
+                            toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
+                        }
+                    }
+                }
+            } catch(_) {}
+        }
+
+        // ensure any previously selected nodes are visually deselected when a link (including the if condition circle) is selected
+        this.state.emit('updateNodeStyles');
         this.state.emit('updateLinkStyles');
         this.state.emit('updateSidebar');
     }

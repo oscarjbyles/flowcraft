@@ -1,0 +1,34 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755001662191.902,
+      "name": "python node",
+      "pythonFile": "nodes/dash_test/node1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -4302.0908203125,
+      "y": -1782.0570068359375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755001665921.108,
+      "name": "python node",
+      "pythonFile": "nodes/dash_test/node2.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -4292.0009765625,
+      "y": -1621.2218017578125
+    }
+  ],
+  "links": [
+    {
+      "source": 1755001662191.902,
+      "target": 1755001665921.108
+    }
+  ],
+  "groups": [],
+  "annotations": []
+}

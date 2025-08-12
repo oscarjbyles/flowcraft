@@ -66,4 +66,36 @@ Sidebar.prototype.destroy = function() {
 
 window.Sidebar = Sidebar;
 
+// unified collapse/expand management for right sidebar
+Sidebar.prototype.setCollapsed = function(isCollapsed) {
+    const C = window.SidebarConstants || null;
+    const propertiesSidebar = document.getElementById(C?.ids?.propertiesSidebar || 'properties_sidebar');
+    const mainContent = document.querySelector('.' + ((C && C.classes && C.classes.mainContent) || 'main_content'));
+    const runFeedBar = document.getElementById(C?.ids?.runFeedBar || 'run_feed_bar');
+    const startButtonContainer = document.getElementById(C?.ids?.startButtonContainer || 'start_button_container');
+    const toggleSidebarBtn = document.getElementById(C?.ids?.toggleSidebarBtn || 'toggle_sidebar_btn');
+
+    if (!propertiesSidebar) return;
+
+    if (isCollapsed) {
+        propertiesSidebar.classList.add('collapsed');
+        if (mainContent) mainContent.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (runFeedBar) runFeedBar.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (startButtonContainer) startButtonContainer.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (toggleSidebarBtn) {
+            toggleSidebarBtn.title = (C && C.titles && C.titles.show) || 'show properties';
+            toggleSidebarBtn.innerHTML = (C && C.icons && C.icons.expand) || '<span class="material-icons">chevron_left</span>';
+        }
+    } else {
+        propertiesSidebar.classList.remove('collapsed');
+        if (mainContent) mainContent.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (runFeedBar) runFeedBar.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (startButtonContainer) startButtonContainer.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (toggleSidebarBtn) {
+            toggleSidebarBtn.title = (C && C.titles && C.titles.hide) || 'hide properties';
+            toggleSidebarBtn.innerHTML = (C && C.icons && C.icons.collapse) || '<span class="material-icons">chevron_right</span>';
+        }
+    }
+};
+
 
