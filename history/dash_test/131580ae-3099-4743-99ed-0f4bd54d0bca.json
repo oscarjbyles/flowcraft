@@ -1,6 +1,6 @@
 {
-  "execution_id": "74f0a88d-db53-49e0-8ed7-c361f3cb8406",
-  "timestamp": "2025-08-11T23:09:50.498452",
+  "execution_id": "131580ae-3099-4743-99ed-0f4bd54d0bca",
+  "timestamp": "2025-08-12T12:23:12.875836",
   "flowchart_name": "dash_test",
   "execution_data": {
     "status": "success",
@@ -15,11 +15,11 @@
         "node_name": "node 1",
         "python_file": "nodes/dash_test/node1.py",
         "success": true,
-        "output": "generated random number: 2.2166396802067205",
+        "output": "generated random number: 2.134008957750211",
         "error": null,
-        "runtime": 2362,
-        "timestamp": "23:09:44",
-        "return_value": 2.2166396802067205,
+        "runtime": 2264,
+        "timestamp": "12:23:06",
+        "return_value": 2.134008957750211,
         "function_name": "my_function"
       },
       {
@@ -27,41 +27,41 @@
         "node_name": "node2",
         "python_file": "nodes/dash_test/node2.py",
         "success": true,
-        "output": "hgMIlvm2HU\nrrhfkC5wai\nqMQfLdkWyD\nWSlITpziTO\nSrNK0D51Ho\neNTxOzJKRV",
+        "output": "5iSHq3IBRV\nja1Lm2qIjL\nT2BXC9Bm0O\nv8AC020FOI\nF5HDYT4fcA\njQJoUDD4VX",
         "error": null,
-        "runtime": 6133,
-        "timestamp": "23:09:50",
+        "runtime": 6139,
+        "timestamp": "12:23:12",
         "return_value": [
           1,
           [
-            "hgMIlvm2HU",
-            "rrhfkC5wai",
-            "qMQfLdkWyD",
-            "WSlITpziTO",
-            "SrNK0D51Ho",
-            "eNTxOzJKRV"
+            "5iSHq3IBRV",
+            "ja1Lm2qIjL",
+            "T2BXC9Bm0O",
+            "v8AC020FOI",
+            "F5HDYT4fcA",
+            "jQJoUDD4VX"
           ]
         ],
         "function_name": "my_function"
       },
       {
         "node_id": 1754947542965.7744,
-        "node_name": "hello",
+        "node_name": "this causes problems",
         "python_file": "nodes/dash_test/error_creator.py",
         "success": true,
         "output": "",
         "error": null,
-        "runtime": 130,
-        "timestamp": "23:09:50",
+        "runtime": 119,
+        "timestamp": "12:23:12",
         "return_value": [
           1,
           [
-            "hgMIlvm2HU",
-            "rrhfkC5wai",
-            "qMQfLdkWyD",
-            "WSlITpziTO",
-            "SrNK0D51Ho",
-            "eNTxOzJKRV"
+            "5iSHq3IBRV",
+            "ja1Lm2qIjL",
+            "T2BXC9Bm0O",
+            "v8AC020FOI",
+            "F5HDYT4fcA",
+            "jQJoUDD4VX"
           ]
         ],
         "function_name": "my_function"
@@ -74,7 +74,7 @@
         "output": "",
         "error": null,
         "runtime": 0,
-        "timestamp": "23:09:50",
+        "timestamp": "12:23:12",
         "return_value": {
           "argument1": 1
         },
@@ -93,15 +93,15 @@
         "output": "",
         "error": null,
         "runtime": 0,
-        "timestamp": "23:09:50",
+        "timestamp": "12:23:12",
         "return_value": {
           "random_strings": [
-            "hgMIlvm2HU",
-            "rrhfkC5wai",
-            "qMQfLdkWyD",
-            "WSlITpziTO",
-            "SrNK0D51Ho",
-            "eNTxOzJKRV"
+            "5iSHq3IBRV",
+            "ja1Lm2qIjL",
+            "T2BXC9Bm0O",
+            "v8AC020FOI",
+            "F5HDYT4fcA",
+            "jQJoUDD4VX"
           ]
         },
         "function_name": "data_save",
@@ -127,14 +127,90 @@
         "variable_content": [
           "array",
           [
-            "hgMIlvm2HU",
-            "rrhfkC5wai",
-            "qMQfLdkWyD",
-            "WSlITpziTO",
-            "SrNK0D51Ho",
-            "eNTxOzJKRV"
+            "5iSHq3IBRV",
+            "ja1Lm2qIjL",
+            "T2BXC9Bm0O",
+            "v8AC020FOI",
+            "F5HDYT4fcA",
+            "jQJoUDD4VX"
           ]
         ]
+      }
+    ],
+    "feed": [
+      {
+        "node_id": 1754947169232.756,
+        "node_name": "node 1",
+        "started_at": "2025-08-12T11:23:04.350Z",
+        "finished_at": "2025-08-12T11:23:06.602Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "generated random number: 2.134008957750211",
+            "ts": "2025-08-12T11:23:04.459Z"
+          }
+        ]
+      },
+      {
+        "node_id": 1754947169509.6736,
+        "node_name": "node2",
+        "started_at": "2025-08-12T11:23:06.612Z",
+        "finished_at": "2025-08-12T11:23:12.743Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "5iSHq3IBRV",
+            "ts": "2025-08-12T11:23:07.732Z"
+          },
+          {
+            "text": "ja1Lm2qIjL",
+            "ts": "2025-08-12T11:23:08.729Z"
+          },
+          {
+            "text": "T2BXC9Bm0O",
+            "ts": "2025-08-12T11:23:09.730Z"
+          },
+          {
+            "text": "v8AC020FOI",
+            "ts": "2025-08-12T11:23:10.730Z"
+          },
+          {
+            "text": "F5HDYT4fcA",
+            "ts": "2025-08-12T11:23:11.731Z"
+          },
+          {
+            "text": "jQJoUDD4VX",
+            "ts": "2025-08-12T11:23:12.733Z"
+          },
+          {
+            "text": "5iSHq3IBRV",
+            "ts": "2025-08-12T11:23:12.743Z"
+          },
+          {
+            "text": "ja1Lm2qIjL",
+            "ts": "2025-08-12T11:23:12.743Z"
+          },
+          {
+            "text": "T2BXC9Bm0O",
+            "ts": "2025-08-12T11:23:12.743Z"
+          },
+          {
+            "text": "v8AC020FOI",
+            "ts": "2025-08-12T11:23:12.743Z"
+          },
+          {
+            "text": "F5HDYT4fcA",
+            "ts": "2025-08-12T11:23:12.743Z"
+          }
+        ]
+      },
+      {
+        "node_id": 1754947542965.7744,
+        "node_name": "this causes problems",
+        "started_at": "2025-08-12T11:23:12.760Z",
+        "finished_at": "2025-08-12T11:23:12.871Z",
+        "success": true,
+        "lines": []
       }
     ],
     "total_nodes": 3,
@@ -196,7 +272,7 @@
         },
         {
           "id": 1754947542965.7744,
-          "name": "hello",
+          "name": "this causes problems",
           "x": -88.5515604019165,
           "y": -547.3447265625,
           "pythonFile": "nodes/dash_test/error_creator.py",

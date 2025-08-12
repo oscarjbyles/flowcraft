@@ -10,7 +10,7 @@
     <div id="status_progress" style="display:none; width: 160px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-right: 16px;">
         <div id="status_progress_bar" style="width: 0%; height: 100%; background: #7e57c2; transition: width 120ms ease;"></div>
     </div>
-    <div id="node_coordinates" style="margin-right: 16px; opacity: 0.7; display: flex; align-items: center; gap: 8px;">
+    <div id="node_coordinates" style="margin-right: 16px; opacity: 0.7; display: none; align-items: center; gap: 8px;">
         <span>x:</span>
         <input type="number" id="node_x" class="coordinate_input" style="width: 50px; display: none;" title="x coordinate">
         <span>y:</span>
@@ -21,6 +21,22 @@
         <span>h:</span>
         <input type="number" id="node_height" class="coordinate_input" style="width: 50px; display: none;" title="height">
     </div>
+</div>
+
+<script>
+    // show coordinates only on main builder page in build mode
+    (function() {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode') || 'build';
+            const coordinates = document.getElementById('node_coordinates');
+            // only show on main page (/) in build mode, not on dashboard/scripts/data pages
+            if (coordinates && mode === 'build' && window.location.pathname === '/') {
+                coordinates.style.display = 'flex';
+            }
+        } catch (_) {}
+    })();
+</script>
 </div>
 
 

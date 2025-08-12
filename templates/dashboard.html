@@ -14,10 +14,10 @@
     <style>
         /* dashboard layout */
         .dashboard_container { flex: 1; display:flex; flex-direction: column; padding: 16px; gap: 16px; }
-        .dash_row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-        .dash_columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-        .dash_col_left, .dash_col_right { display: flex; flex-direction: column; gap: 16px; }
-        .dash_card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; height: fit-content; min-height: 0; }
+        .dash_row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; align-items: start; }
+        .dash_columns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; align-items: start; }
+        .dash_col_left, .dash_col_right { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .dash_card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; height: fit-content; min-height: 0; min-width: 0; }
         .dash_title { font-size: 1rem; font-weight: 600; opacity: 0.9; margin-bottom: 10px; text-transform: capitalize; }
         .dash_text { opacity: 0.85; }
         .kpi_grid { display:grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }
@@ -25,13 +25,14 @@
         .kpi_title { font-size: .85rem; opacity: .8; }
         .kpi_value { font-size: 1.6rem; font-weight:700; letter-spacing:.3px; }
         .kpi_sub { font-size:.8rem; opacity:.7; display:flex; align-items:center; gap:6px; }
-        .chart_bar_row { display:flex; gap:8px; align-items:flex-end; height: 120px; background: var(--surface-variant); border:1px solid var(--border-color); border-radius: 10px; padding: 12px; }
-        .bar { width: 16px; background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%); border-radius:6px 6px 0 0; display:flex; align-items:flex-end; justify-content:center; position:relative; }
-        .bar_label { position:absolute; bottom:-18px; font-size:.7rem; opacity:.7; }
-        .bar_value { position:absolute; top:-18px; font-size:.7rem; opacity:.8; }
+        .chart_bar_row { display:flex; gap:8px; align-items:flex-end; height: 120px; background: var(--surface-variant); border:1px solid var(--border-color); border-radius: 10px; padding: 10px 12px 20px; overflow-x: auto; min-width: 0; max-width: 100%; flex-wrap: nowrap; }
+        .bar { width: 16px; background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%); border-radius:6px 6px 0 0; display:flex; align-items:flex-end; justify-content:center; position:relative; flex: 0 0 16px; }
+        .bar_label { position:absolute; bottom:-16px; font-size:.7rem; opacity:.7; }
+        .bar_value { position:absolute; top:-12px; font-size:.5rem; opacity:.8; }
         .table_wrap { background: var(--surface-variant); border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
         .table { width:100%; border-collapse: collapse; }
         .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border-color); text-align:left; font-size:.9rem; }
+        .table th:last-child, .table td:last-child { width: 76px; }
         .table th { background:#242424; }
         .status_badge { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:.8rem; }
         .status_success { background: rgba(76,175,80,.15); color:#66bb6a; }
@@ -47,6 +48,13 @@
         .gap12 { gap:12px; }
         .grow { flex:1; }
         .right { text-align:right; }
+        /* failure spotlight rows - compact single-line items */
+        .failure_rows { display:flex; flex-direction:column; gap:6px; }
+        .failure_row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--border-color); }
+        .failure_row:last-child { border-bottom:none; }
+        .failure_name { font-family: monospace; }
+        .failure_meta { opacity:.7; font-size:.85rem; }
+        .failure_spacer { flex: 0 0 auto; }
         @media (max-width: 1200px) { .kpi_grid { grid-template-columns: repeat(3, 1fr);} }
         @media (max-width: 780px) { .dash_columns { grid-template-columns: 1fr; } .kpi_grid{ grid-template-columns: repeat(2, 1fr);} }
     </style>
@@ -76,8 +84,140 @@
             ['dashboard_btn','build_btn','scripts_btn','run_btn','settings_btn','export_btn','data_matrix_btn'].forEach(id => { const el = document.getElementById(id); if (el){ el.classList.remove('active'); el.classList.remove('run_mode_active'); }});
             const db = document.getElementById('dashboard_btn'); if (db) db.classList.add('active');
 
+            // lightweight flowchart dropdown + create wiring for dashboard page (no full app loaded)
+            setup_flowchart_ui();
+
             // dashboard data wiring
             init_dashboard();
+
+            // minimal sidebar flowchart interactions for dashboard
+            function setup_flowchart_ui(){
+                // dom refs
+                const selector = document.getElementById('flowchart_selector');
+                const dropdown = document.getElementById('flowchart_dropdown');
+                const create_btn = document.getElementById('create_flowchart_btn');
+
+                // set initial selector value from url/localstorage
+                try {
+                    const current_display = urlMgr.getFlowchartDisplayNamePreferred();
+                    if (selector) selector.value = current_display || '';
+                } catch (_) {}
+
+                // create button: open local modal on dashboard
+                const create_modal = document.getElementById('create_flowchart_modal');
+                const name_input = document.getElementById('new_flowchart_name');
+                const close_btn = document.getElementById('close_create_modal');
+                const cancel_btn = document.getElementById('cancel_create_flowchart');
+                const confirm_btn = document.getElementById('confirm_create_flowchart');
+
+                function openCreateModal(){
+                    if (!create_modal) return;
+                    create_modal.classList.add('show');
+                    if (name_input){ name_input.value = ''; name_input.focus(); }
+                }
+                function closeCreateModal(){
+                    if (!create_modal) return;
+                    create_modal.classList.remove('show');
+                }
+                async function confirmCreate(){
+                    if (!name_input) return;
+                    const raw = name_input.value.trim();
+                    if (!raw){ alert('flowchart name is required'); return; }
+                    try {
+                        confirm_btn && (confirm_btn.disabled = true);
+                        const resp = await fetch('/api/flowcharts', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: raw })
+                        });
+                        const data = await resp.json();
+                        if (resp.ok && data && data.status === 'success' && data.flowchart){
+                            const filename = data.flowchart.filename;
+                            const display = data.flowchart.name;
+                            try { urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
+                            // update dashboard url and reload to load new context
+                            const target = urlMgr.buildUrlPreserveContext('/dashboard', { display });
+                            window.location.href = target;
+                        } else {
+                            alert((data && data.message) || 'failed to create flowchart');
+                        }
+                    } catch(_) {
+                        alert('error creating flowchart');
+                    } finally {
+                        confirm_btn && (confirm_btn.disabled = false);
+                    }
+                }
+
+                if (create_btn){ create_btn.addEventListener('click', (e) => { e.preventDefault(); openCreateModal(); }); }
+                if (close_btn){ close_btn.addEventListener('click', closeCreateModal); }
+                if (cancel_btn){ cancel_btn.addEventListener('click', closeCreateModal); }
+                if (confirm_btn){ confirm_btn.addEventListener('click', confirmCreate); }
+                if (name_input){ name_input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmCreate(); }); }
+
+                if (!selector || !dropdown) return;
+
+                // open/close behavior
+                const container = selector.closest('.dropdown_container');
+                selector.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+                document.addEventListener('click', (e) => {
+                    if (container && !container.contains(e.target)) dropdown.classList.remove('show');
+                });
+
+                // fetch and render flowcharts
+                fetch('/api/flowcharts')
+                    .then(r => r.json())
+                    .then(data => {
+                        const list = (data && data.flowcharts) ? data.flowcharts : [];
+                        if (!Array.isArray(list) || list.length === 0){
+                            dropdown.innerHTML = '<div class="dropdown_no_results">no flowcharts found</div>';
+                            return;
+                        }
+                        dropdown.innerHTML = list.map(f => `
+                            <div class="dropdown_item" data-name="${f.name}" data-filename="${f.filename}">
+                                <div class="dropdown_item_content">
+                                    <div class="dropdown_item_name">${f.name}</div>
+                                </div>
+                                <button class="dropdown_delete_btn" data-filename="${f.filename}" data-name="${f.name}" title="delete flowchart">
+                                    <span class="material-icons">delete</span>
+                                </button>
+                            </div>
+                        `).join('');
+
+                        // selection
+                        dropdown.querySelectorAll('.dropdown_item').forEach(item => {
+                            item.addEventListener('click', (e) => {
+                                if (e.target.closest('.dropdown_delete_btn')) return;
+                                const filename = item.getAttribute('data-filename');
+                                const display = item.getAttribute('data-name');
+                                try { urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
+                                selector.value = display;
+                                dropdown.classList.remove('show');
+                                // update url to keep user on dashboard with selected flowchart
+                                const newParams = new URLSearchParams(window.location.search);
+                                newParams.set('flowchart', display);
+                                if (!newParams.get('mode')) newParams.set('mode', urlMgr.getMode());
+                                const newUrl = window.location.pathname + '?' + newParams.toString();
+                                window.location.href = newUrl;
+                            });
+                        });
+
+                        // delete handling (dashboard keeps it simple: redirect to builder for delete)
+                        dropdown.querySelectorAll('.dropdown_delete_btn').forEach(btn => {
+                            btn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                // redirect to builder; deletion ui is richer there
+                                const target = urlMgr.buildUrlPreserveContext('/');
+                                window.location.href = target;
+                            });
+                        });
+                    })
+                    .catch(() => {
+                        dropdown.innerHTML = '<div class="dropdown_no_results">error loading flowcharts</div>';
+                    });
+            }
 
             async function init_dashboard(){
                 // compute flow context compatible with other pages
@@ -129,17 +269,12 @@
                 let history = [];
                 try { history = Array.isArray(flow.executions) ? flow.executions : []; } catch(_) { history = []; }
 
-                // compute coverage + missing/orphan
+                // compute coverage + unassigned/orphan
                 const total_nodes = Array.isArray(flow.nodes) ? flow.nodes.length : 0;
                 const nodes_with_files = (flow.nodes || []).filter(n => (n && typeof n.pythonFile === 'string' && n.pythonFile.trim() !== ''));
                 const nodes_with_files_count = nodes_with_files.length;
-                const norm = (p) => {
-                    if (!p) return '';
-                    const s = String(p).replace(/\\\\/g, '/');
-                    return s.startsWith('nodes/') ? s : `nodes/${s}`;
-                };
-                const file_set = new Set((py_files || []).map(f => String(f.path).replace(/\\\\/g, '/')));
-                const missing_nodes = nodes_with_files.filter(n => !file_set.has(norm(n.pythonFile)));
+                // python nodes without associated files
+                const python_nodes_without_files = (flow.nodes || []).filter(n => n && n.type === 'python_file' && (!n.pythonFile || String(n.pythonFile).trim() === ''));
                 // orphaned nodes: nodes that have no incoming or outgoing links (excluding utility nodes)
                 const utility_types = new Set(['input_node', 'data_save']);
                 const candidate_nodes = (flow.nodes || []).filter(n => n && !utility_types.has(n.type));
@@ -152,19 +287,15 @@
                 const avg_success = total_exec > 0 ? (history.reduce((a, b) => a + (b.success_percentage || 0), 0) / total_exec) : 0;
                 const avg_elapsed_ms = total_exec > 0 ? Math.round(history.reduce((a, b) => a + (b.elapsed_ms || 0), 0) / total_exec) : 0;
                 const fmt_elapsed = (ms) => {
-                    try { ms = parseInt(ms); } catch(_) { return '0ms'; }
-                    if (ms < 1000) return `${ms}ms`;
+                    try { ms = parseInt(ms); } catch(_) { return '0.000s'; }
                     const s = ms / 1000.0;
-                    if (s < 60) return `${s.toFixed(2)}s`;
-                    const m = Math.floor(s / 60);
-                    const r = s - m*60;
-                    return `${m}m ${r.toFixed(1)}s`;
+                    return `${s.toFixed(3)}s`;
                 };
                 if (el_total_exec) el_total_exec.textContent = String(total_exec);
                 if (el_success_rate) el_success_rate.textContent = `${avg_success.toFixed(1)}%`;
                 if (el_avg_time) el_avg_time.textContent = fmt_elapsed(avg_elapsed_ms);
                 if (el_nodes_cov) el_nodes_cov.textContent = `${nodes_with_files_count}/${total_nodes}`;
-                if (el_missing) el_missing.textContent = String(missing_nodes.length);
+                if (el_missing) el_missing.textContent = String(python_nodes_without_files.length);
                 if (el_orphan) el_orphan.textContent = String(orphaned_nodes.length);
 
                 // default editor chooser (same behavior as settings page)
@@ -233,9 +364,9 @@
                     });
                 }
 
-                // execution distribution (last 10 success %)
+                // execution distribution (last 40 success %)
                 if (el_dist) {
-                    const recent = history.slice(0, 10).reverse();
+                    const recent = history.slice(0, 40);
                     if (!recent.length) {
                         el_dist.innerHTML = '<div class="muted" style="padding:8px;">no executions yet</div>';
                     } else {
@@ -244,9 +375,23 @@
                             const pct = Math.max(0, Math.min(100, Number(h.success_percentage || 0)));
                             const bar = document.createElement('div');
                             bar.className = 'bar';
-                            bar.style.height = `${10 + Math.round(pct)}%`;
+                            // color bars based on execution status
+                            const status = (h.status || '').toLowerCase();
+                            if (status === 'success') {
+                                bar.style.background = 'linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%)';
+                            } else if (status === 'failed') {
+                                bar.style.background = 'linear-gradient(180deg, #f44336 0%, #c62828 100%)';
+                            } else if (status === 'stopped') {
+                                bar.style.background = 'linear-gradient(180deg, #ff9800 0%, #e65100 100%)';
+                            } else {
+                                bar.style.background = 'linear-gradient(180deg, #9e9e9e 0%, #616161 100%)';
+                            }
+                            // scale bars to avoid overflow: cap at 85% of container height and add small baseline
+                            const scaled = 5 + Math.round(pct * 0.8);
+                            bar.style.height = `${scaled}%`;
                             const v = document.createElement('div'); v.className = 'bar_value'; v.textContent = `${pct}%`;
-                            const l = document.createElement('div'); l.className = 'bar_label'; l.textContent = String(recent.length - idx);
+                            v.style.transform = 'translateY(-2px)';
+                            const l = document.createElement('div'); l.className = 'bar_label'; l.textContent = String(idx + 1);
                             bar.appendChild(v); bar.appendChild(l);
                             el_dist.appendChild(bar);
                         });
@@ -258,13 +403,13 @@
                     if (!history.length) {
                         el_recent_body.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center; padding:14px;">no executions yet</td></tr>';
                     } else {
-                        const rows = history.slice(0, 6).map(item => {
+                        const rows = history.slice(0, 5).map(item => {
                             const cls = item.status === 'success' ? 'status_success' : (item.status === 'failed' ? 'status_failed' : 'status_info');
                             const badge = `<span class="status_badge ${cls}"><span class="material-icons" style="font-size:16px;">${item.status==='success'?'check_circle':(item.status==='failed'?'error':'info')}</span>${item.status || 'unknown'}</span>`;
                             const nodes = `${item.successful_nodes || 0} / ${item.total_nodes || 0}`;
                             const elapsed = item.execution_time || '-';
                             const when = item.timestamp || '-';
-                            const viewBtn = `<button class="mini_btn" data-id="${item.execution_id}"><span class="material-icons" style="font-size:16px;">visibility</span> view</button>`;
+                            const viewBtn = `<button class="mini_btn" data-id="${item.execution_id}"><span class="material-icons" style="font-size:16px;">visibility</span> View</button>`;
                             return `<tr>
                                 <td>${badge}</td>
                                 <td>${nodes}</td>
@@ -289,29 +434,44 @@
 
                 // failure spotlight
                 if (el_failure_block) {
-                    const failed = history.find(h => (h.status || '').toLowerCase() === 'failed');
-                    if (!failed) {
+                    // find up to 3 most recent failed executions
+                    const failures = (history || []).filter(h => (h.status || '').toLowerCase() === 'failed').slice(0, 3);
+                    if (!failures.length) {
                         el_failure_block.innerHTML = '<div class="muted">no failures in recent executions</div>';
                     } else {
-                        const name = failed.failed_node || 'unknown';
-                        el_failure_block.innerHTML = `
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                                <span class="material-icons" style="color:#f44336;">error</span>
-                                <strong style="color:#f44336; text-transform: lowercase;">execution failed</strong>
-                            </div>
-                            <div class="muted">failed node: <span style="font-family:monospace;">${name}</span></div>
-                            <div class="btn_row" style="margin-top:10px;">
-                                <button class="mini_btn" id="btn_view_failed"><span class="material-icons" style="font-size:16px;">visibility</span> view run</button>
-                            </div>
-                        `;
-                        const v = document.getElementById('btn_view_failed');
-                        if (v) v.onclick = () => {
-                            const u = new URL('/', window.location.origin);
-                            if (flow_display && flow_display !== 'default') u.searchParams.set('flowchart', flow_display);
-                            u.searchParams.set('mode', 'run');
-                            u.searchParams.set('executionId', failed.execution_id);
-                            window.location.href = u.pathname + '?' + u.searchParams.toString();
-                        };
+                        // build compact single-line rows for each failure
+                        const rowsHtml = failures.map((item, idx) => {
+                            const name = item.failed_node || 'unknown';
+                            const errorMsg = item.error_snippet || '-';
+                            const execId = item.execution_id;
+                            const elapsed = item.execution_time || '-';
+                            const progressPct = (typeof item.completed_percentage === 'number')
+                                ? item.completed_percentage
+                                : (item && typeof item.total_nodes === 'number' && item.total_nodes > 0
+                                    ? Math.round(((item.completed_nodes || 0) / item.total_nodes) * 100)
+                                    : 0);
+                            return `
+                                <div class="failure_row">
+                                    <span class="material-icons" style="color:#f44336;">error</span>
+                                    <div class="failure_name" style="border:1px solid var(--border-color); padding: 2px 6px; border-radius: 6px;">${name}</div>
+                                    <div class="failure_meta" style="margin: 0 8px; opacity:.8;">${elapsed} • ${progressPct}%</div>
+                                    <div class="failure_meta" style="flex:1; min-width:0; overflow:hidden; text-overflow: ellipsis; white-space: nowrap;">${errorMsg}</div>
+                                    <div class="failure_spacer"></div>
+                                    <button class="mini_btn" data-fail-btn="${String(execId)}"><span class="material-icons" style="font-size:16px;">visibility</span> View</button>
+                                </div>`;
+                        }).join('');
+                        el_failure_block.innerHTML = `<div class="failure_rows">${rowsHtml}</div>`;
+                        // wire up view buttons to open run with correct execution id
+                        el_failure_block.querySelectorAll('button[data-fail-btn]').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                const id = btn.getAttribute('data-fail-btn');
+                                const u = new URL('/', window.location.origin);
+                                if (flow_display && flow_display !== 'default') u.searchParams.set('flowchart', flow_display);
+                                u.searchParams.set('mode', 'run');
+                                u.searchParams.set('executionId', id);
+                                window.location.href = u.pathname + '?' + u.searchParams.toString();
+                            });
+                        });
                     }
                 }
 
@@ -350,13 +510,13 @@
                             <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">history</span> total runs</div>
                         </div>
                         <div class="kpi_card">
-                            <div class="kpi_title">success rate</div>
+                            <div class="kpi_title">progress rate</div>
                             <div class="kpi_value" id="kpi_success_rate">0%</div>
                             <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">check_circle</span> average</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">average run time</div>
-                            <div class="kpi_value" id="kpi_avg_time">0ms</div>
+                            <div class="kpi_value" id="kpi_avg_time">0.000s</div>
                             <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">schedule</span> per execution</div>
                         </div>
                         <div class="kpi_card">
@@ -365,9 +525,9 @@
                             <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">device_hub</span> nodes with files</div>
                         </div>
                         <div class="kpi_card">
-                            <div class="kpi_title">missing files</div>
+                            <div class="kpi_title">unassigned python nodes</div>
                             <div class="kpi_value" id="kpi_missing">0</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">warning</span> nodes pointing to missing paths</div>
+                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">warning</span> python nodes without files</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">orphaned nodes</div>
@@ -388,7 +548,7 @@
                                         <tr>
                                             <th>status</th>
                                             <th>nodes</th>
-                                            <th>success %</th>
+                                            <th>progress %</th>
                                             <th>elapsed</th>
                                             <th class="right">actions</th>
                                         </tr>
@@ -402,9 +562,8 @@
 
                         <!-- execution distribution -->
                         <div class="dash_card">
-                            <div class="dash_title">execution distribution</div>
+                            <div class="dash_title">execution progress history</div>
                             <div id="distribution_bars" class="chart_bar_row"></div>
-                            <div class="muted" style="margin-top:8px;">last runs (older on left)</div>
                         </div>
                     </div>
 
@@ -448,6 +607,28 @@
 
             </div>
             {% include 'partials/status_bar.html' %}
+        </div>
+    </div>
+    <!-- create flowchart modal (dashboard local) -->
+    <div class="modal_overlay" id="create_flowchart_modal">
+        <div class="modal_content">
+            <div class="modal_header">
+                <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
+                <button class="modal_close" id="close_create_modal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="form_group">
+                <label class="form_label" for="new_flowchart_name">flowchart name</label>
+                <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
+                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">
+                    use letters, numbers, spaces, hyphens, and underscores only
+                </div>
+            </div>
+            <div class="modal_actions">
+                <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
+                <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
+            </div>
         </div>
     </div>
 </body>

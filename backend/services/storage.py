@@ -134,9 +134,17 @@ def _append_execution_summary_to_flowchart(flowchart_name: str, execution_id: st
         success_percentage = (successful_nodes / total_nodes * 100.0) if total_nodes > 0 else 0.0
         completed_percentage = (completed_nodes / total_nodes * 100.0) if total_nodes > 0 else 0.0
         failed_node = None
+        error_snippet = None
         for r in results_in_order:
             if not r.get('success', False):
                 failed_node = r.get('node_name', 'unknown')
+                try:
+                    err_text = r.get('error')
+                    if isinstance(err_text, str) and err_text:
+                        # include first 50 characters of the error message
+                        error_snippet = err_text[:50]
+                except Exception:
+                    pass
                 break
         elapsed_ms = 0
         for r in results_in_order:
@@ -145,20 +153,14 @@ def _append_execution_summary_to_flowchart(flowchart_name: str, execution_id: st
             except Exception:
                 # ignore bad runtimes
                 pass
-        # human friendly string for table display
+        # human friendly string for table display: always seconds with 3 decimals
         def _format_elapsed(ms: int) -> str:
             try:
                 ms = int(ms)
             except Exception:
-                return '0ms'
-            if ms < 1000:
-                return f"{ms}ms"
+                return '0.000s'
             seconds = ms / 1000.0
-            if seconds < 60:
-                return f"{seconds:.2f}s"
-            minutes = int(seconds // 60)
-            rem = seconds - minutes * 60
-            return f"{minutes}m {rem:.1f}s"
+            return f"{seconds:.3f}s"
 
         summary: Dict[str, Any] = {
             'execution_id': execution_id,
@@ -174,6 +176,14 @@ def _append_execution_summary_to_flowchart(flowchart_name: str, execution_id: st
             'elapsed_ms': int(elapsed_ms),
             'execution_time': _format_elapsed(elapsed_ms),
         }
+
+        # add error preview if failed
+        try:
+            status_val = str(execution_data.get('status', ''))
+            if (status_val.lower() == 'failed' or failed_node is not None) and error_snippet:
+                summary['error_snippet'] = error_snippet
+        except Exception:
+            pass
 
         # load, mutate, and save the flowchart json
         flow = load_flowchart(flowchart_name)

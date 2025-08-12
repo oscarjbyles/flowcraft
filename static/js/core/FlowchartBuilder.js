@@ -39,6 +39,10 @@ class FlowchartBuilder {
         // execution state
         this.isExecuting = false;
         this.executionAborted = false;
+        // auto-track state: when true, viewport follows the active node during execution
+        this.isAutoTrackEnabled = false;
+        // when the user manually pans/zooms, we disable auto-track until re-enabled by the user
+        this.userDisabledTracking = false;
         // last execution snapshot for no-selection run view
         this.lastExecutionStatus = 'idle'; // 'running' | 'completed' | 'failed' | 'stopped' | 'error' | 'idle'
         this.lastFailedNode = null; // { id, name, pythonFile, error }
@@ -218,6 +222,16 @@ class FlowchartBuilder {
             if (this.annotationRenderer && this.annotationRenderer.render) {
                 this.annotationRenderer.render();
             }
+            // in run mode, scroll the live feed to the selected node's output
+            try {
+                if (this.state.isRunMode && this.state.selectedNodes.size === 1) {
+                    const nodeId = Array.from(this.state.selectedNodes)[0];
+                    // delay a frame to allow any pending feed dom updates
+                    setTimeout(() => {
+                        this.scrollRunFeedToNode(nodeId);
+                    }, 0);
+                }
+            } catch (_) {}
         });
 
         // when a node is removed in build mode, clear all selections to reset ui state
@@ -275,6 +289,13 @@ class FlowchartBuilder {
                 this.zoomGroup.attr('transform', event.transform);
                 // persist viewport changes with debounce
                 this.scheduleViewportSave();
+                // if the user moved the viewport while executing, disable auto tracking until re-enabled
+                // do not disable for programmatic transforms (event.sourceEvent is null for programmatic)
+                const isUserGesture = !!(event && event.sourceEvent);
+                if (isUserGesture && this.isExecuting && this.isAutoTrackEnabled && !this.userDisabledTracking) {
+                    this.userDisabledTracking = true;
+                    if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
+                }
             });
 
         this.svg.call(this.zoom);
@@ -541,6 +562,32 @@ class FlowchartBuilder {
         document.getElementById('deselect_btn').addEventListener('click', () => {
             this.deselectAll();
         });
+
+        // track toggle button
+        const trackBtn = document.getElementById('track_toggle_btn');
+        if (trackBtn) {
+            const updateTrackBtnUI = () => {
+                if (this.isAutoTrackEnabled && !this.userDisabledTracking) {
+                    trackBtn.classList.add('active');
+                } else {
+                    trackBtn.classList.remove('active');
+                }
+            };
+            trackBtn.addEventListener('click', () => {
+                // user explicitly toggles tracking back on/off
+                const willEnable = !(this.isAutoTrackEnabled && !this.userDisabledTracking);
+                this.isAutoTrackEnabled = willEnable;
+                this.userDisabledTracking = !willEnable ? true : false;
+                updateTrackBtnUI();
+                this.updateStatusBar(willEnable ? 'auto tracking enabled' : 'auto tracking disabled');
+                // if enabling during an active execution, immediately pan to the current node
+                if (willEnable && this.isExecuting && this.currentExecutingNodeId && typeof this.centerOnNode === 'function') {
+                    this.centerOnNode(this.currentExecutingNodeId);
+                }
+            });
+            // expose helper to refresh ui elsewhere
+            this._refreshTrackBtnUI = updateTrackBtnUI;
+        }
         
         // add node buttons
         document.getElementById('python_node_btn').addEventListener('click', () => {
@@ -564,6 +611,8 @@ class FlowchartBuilder {
             if (this.isExecuting) {
                 this.stopExecution();
             } else {
+            // clear the live execution feed when starting a new run
+            this.clearExecutionFeed();
             this.startExecution();
             }
         });
@@ -574,48 +623,116 @@ class FlowchartBuilder {
             clearRunBtn.addEventListener('click', () => {
                 this.resetNodeStates();
                 this.clearOutput();
+                this.clearExecutionFeed();
                 this.updateExecutionStatus('info', 'cleared');
             });
         }
 
-        // run feed up/down buttons
+        // run feed elements
         const runFeedUpBtn = document.getElementById('run_feed_up_btn');
+        const runFeedResetBtn = document.getElementById('run_feed_reset_btn');
         const runFeedDownBtn = document.getElementById('run_feed_down_btn');
         const runFeedBar = document.getElementById('run_feed_bar');
+        const runFeedResizer = document.getElementById('run_feed_resizer');
+
+        const updateRunFeedButtons = () => {
+            if (!runFeedBar) return;
+            const isFull = runFeedBar.classList.contains('full_screen');
+            const isHidden = runFeedBar.classList.contains('hidden');
+            const hasInlineHeight = !!(runFeedBar.style.height && runFeedBar.style.height.trim() !== '');
+            const isNormal = !isFull && !isHidden;
+            const isDefaultNormal = isNormal && !hasInlineHeight;
+            if (runFeedUpBtn) runFeedUpBtn.disabled = isFull;
+            if (runFeedDownBtn) runFeedDownBtn.disabled = isHidden;
+            if (runFeedResetBtn) runFeedResetBtn.disabled = isDefaultNormal;
+        };
 
         if (runFeedUpBtn && runFeedBar) {
             runFeedUpBtn.addEventListener('click', () => {
-                // remove hidden state if present
+                // go to full screen state
                 runFeedBar.classList.remove('hidden');
-                // toggle full screen state
-                runFeedBar.classList.toggle('full_screen');
-                
-                // update button appearance
-                if (runFeedBar.classList.contains('full_screen')) {
-                    runFeedUpBtn.innerHTML = '<span class="material-icons">compress</span>up';
-                    runFeedUpBtn.title = 'restore normal size';
-                } else {
-                    runFeedUpBtn.innerHTML = '<span class="material-icons">expand_less</span>up';
-                    runFeedUpBtn.title = 'expand to full screen';
-                }
+                runFeedBar.classList.add('full_screen');
+                // clear inline height so full screen can stretch properly
+                runFeedBar.style.height = '';
+                updateRunFeedButtons();
+            });
+        }
+
+        if (runFeedResetBtn && runFeedBar) {
+            runFeedResetBtn.addEventListener('click', () => {
+                // restore normal state
+                runFeedBar.classList.remove('hidden');
+                runFeedBar.classList.remove('full_screen');
+                // clear inline height to return to default css height
+                runFeedBar.style.height = '';
+                updateRunFeedButtons();
             });
         }
 
         if (runFeedDownBtn && runFeedBar) {
             runFeedDownBtn.addEventListener('click', () => {
-                // remove full screen state if present
+                // go to hidden state
                 runFeedBar.classList.remove('full_screen');
-                // toggle hidden state
-                runFeedBar.classList.toggle('hidden');
-                
-                // update button appearance
-                if (runFeedBar.classList.contains('hidden')) {
-                    runFeedDownBtn.innerHTML = '<span class="material-icons">expand_less</span>down';
-                    runFeedDownBtn.title = 'show feed';
-                } else {
-                    runFeedDownBtn.innerHTML = '<span class="material-icons">expand_more</span>down';
-                    runFeedDownBtn.title = 'hide feed';
-                }
+                runFeedBar.classList.add('hidden');
+                // clear inline height so future restores start from default
+                runFeedBar.style.height = '';
+                updateRunFeedButtons();
+            });
+        }
+
+        // initialize button states on load
+        updateRunFeedButtons();
+
+        // resizable top border for run feed (drag to resize height)
+        if (runFeedResizer && runFeedBar) {
+            let isDraggingFeed = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            const minHeight = 120; // minimum collapsed height
+            const getMaxHeight = () => window.innerHeight - 80; // leave some space when not full screen
+
+            const onMouseMove = (e) => {
+                if (!isDraggingFeed) return;
+                const deltaY = startY - e.clientY;
+                const maxHeight = getMaxHeight();
+                let newHeight = Math.min(Math.max(startHeight + deltaY, minHeight), maxHeight);
+                // applying height overrides full/hidden states
+                runFeedBar.classList.remove('full_screen');
+                runFeedBar.classList.remove('hidden');
+                runFeedBar.style.height = `${newHeight}px`;
+                updateRunFeedButtons();
+            };
+
+            const onMouseUp = () => {
+                if (!isDraggingFeed) return;
+                isDraggingFeed = false;
+                document.body.style.userSelect = '';
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                runFeedBar.classList.remove('no_transition');
+                // after manual resize, ensure all buttons are active in normal state
+                updateRunFeedButtons();
+            };
+
+            runFeedResizer.addEventListener('mousedown', (e) => {
+                // ignore when already full screen
+                if (runFeedBar.classList.contains('full_screen')) return;
+                isDraggingFeed = true;
+                startY = e.clientY;
+                startHeight = runFeedBar.getBoundingClientRect().height;
+                document.body.style.userSelect = 'none';
+                runFeedBar.classList.add('no_transition');
+                document.addEventListener('mousemove', onMouseMove, { passive: true });
+                document.addEventListener('mouseup', onMouseUp, { once: true });
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isDraggingFeed) return;
+                runFeedBar.classList.remove('no_transition');
+                isDraggingFeed = false;
+                document.body.style.userSelect = '';
+                updateRunFeedButtons();
             });
         }
 
@@ -1355,6 +1472,10 @@ class FlowchartBuilder {
 
     switchToRunMode() {
         this.state.setMode('run');
+        // enable auto tracking by default when entering run mode
+        this.isAutoTrackEnabled = true;
+        this.userDisabledTracking = false;
+        if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
     }
 
             // history mode removed
@@ -1606,6 +1727,7 @@ class FlowchartBuilder {
         const addNodeSection = document.getElementById('add_node_section');
         const canvasContainer = document.querySelector('.canvas_container');
         const settingsPage = document.getElementById('settings_page');
+        const trackBtn = document.getElementById('track_toggle_btn');
         
         // reset all button states
         buildBtn.classList.remove('run_mode_active');
@@ -1636,6 +1758,8 @@ class FlowchartBuilder {
             if (topToolbars) topToolbars.style.display = 'flex';
             if (buildToolbar) buildToolbar.style.display = 'flex'; // show build toolbar
             if (annotationToolbar) annotationToolbar.style.display = 'flex'; // show annotation toolbar
+            // hide auto track button in build mode
+            if (trackBtn) trackBtn.style.display = 'none';
             
             // enable add node section in build mode
             if (addNodeSection) {
@@ -1679,6 +1803,8 @@ class FlowchartBuilder {
             if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in run
             if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in run
+            // show auto track button in run mode
+            if (trackBtn) trackBtn.style.display = '';
             
             // disable add node section in run mode
             if (addNodeSection) {
@@ -1748,6 +1874,8 @@ class FlowchartBuilder {
             if (topToolbars) topToolbars.style.display = 'none';
             if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in settings
             if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in settings
+            // hide auto track button in settings mode (toolbar hidden, but keep explicit)
+            if (trackBtn) trackBtn.style.display = 'none';
             if (addNodeSection) addNodeSection.classList.add('disabled');
             // hide start button if visible
             startButtonContainer.style.display = 'none';
@@ -1948,12 +2076,17 @@ class FlowchartBuilder {
                 // update sidebar progress each step
                 this.updateExecutionStatus('running', `executing ${i + 1} of ${executionOrder.length}`);
                 
-                // if node failed, stop execution immediately
+                // if node failed or execution was aborted, stop execution immediately
                 if (!success) {
-                    this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
-                    // ensure sidebar refresh picks up failure info in no-selection view
-                    this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
-                    await this.saveExecutionHistory('failed', executionOrder, `execution stopped at node: ${node.name}`);
+                    if (this.executionAborted) {
+                        this.updateExecutionStatus('stopped', 'execution stopped by user');
+                        await this.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
+                    } else {
+                        this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
+                        // ensure sidebar refresh picks up failure info in no-selection view
+                        this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
+                        await this.saveExecutionHistory('failed', executionOrder, `execution stopped at node: ${node.name}`);
+                    }
                     return;
                 }
             }
@@ -2013,14 +2146,14 @@ class FlowchartBuilder {
             button.classList.remove('btn_primary');
             button.classList.add('btn_stop');
             icon.textContent = 'stop';
-            text.textContent = ' STOP';
+            text.textContent = ' Stop';
             loadingWheel.style.display = 'block';
         } else {
             // change back to start button
             button.classList.remove('btn_stop');
             button.classList.add('btn_primary');
             icon.textContent = 'play_arrow';
-            text.textContent = ' START';
+            text.textContent = ' Start';
             loadingWheel.style.display = 'none';
         }
     }
@@ -2415,10 +2548,15 @@ class FlowchartBuilder {
                         try { await this.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
                     }
                 } else {
-                    // if node failed, stop execution immediately
-                    this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
-                    this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
-                    await this.saveExecutionHistory('failed', nodesToExecute, `execution stopped at node: ${node.name}`);
+                    // if node failed or execution was aborted, stop execution immediately
+                    if (this.executionAborted) {
+                        this.updateExecutionStatus('stopped', 'execution stopped by user');
+                        await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
+                    } else {
+                        this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
+                        this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
+                        await this.saveExecutionHistory('failed', nodesToExecute, `execution stopped at node: ${node.name}`);
+                    }
                     return;
                 }
             }
@@ -2549,10 +2687,20 @@ class FlowchartBuilder {
 
     async executeNodeLive(node, nodeIndex, totalNodes) {
         try {
+            // remember current executing node for immediate tracking when toggled on mid-run
+            this.currentExecutingNodeId = node && node.id;
             // set node to running state with loading animation
             this.setNodeState(node.id, 'running');
             this.addNodeLoadingAnimation(node.id);
             this.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
+            // auto-follow currently running python nodes if tracking is enabled and not user-disabled
+            if (
+                node && node.type === 'python_file' &&
+                typeof this.centerOnNode === 'function' &&
+                this.isAutoTrackEnabled && !this.userDisabledTracking
+            ) {
+                this.centerOnNode(node.id);
+            }
             
             // show node details in sidebar
             this.updateNodeDetails(node, 'running', Date.now());
@@ -2593,7 +2741,12 @@ class FlowchartBuilder {
                     if (item) {
                         item.classList.add(result.success ? 'success' : 'error');
                         const metaCol = item.children[2];
-                        if (metaCol) metaCol.textContent = new Date().toLocaleTimeString();
+                        if (metaCol) {
+                            const finishedAt = new Date();
+                            const elapsedMs = Math.max(0, finishedAt.getTime() - startTime);
+                            const elapsedSec = (elapsedMs / 1000).toFixed(3);
+                            metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
+                        }
                         item.removeAttribute('id');
                     } else {
                         item = document.createElement('div');
@@ -2603,7 +2756,11 @@ class FlowchartBuilder {
                         title.textContent = node.name;
                         const outCol = document.createElement('div');
                         outCol.className = 'run_feed_output';
-                        const lines = ((result.output || '') + (result.error ? `\n${result.error}` : '')).trim().split(/\r?\n/);
+                        // strip embedded result blocks from non-streamed output
+                        const sanitized = ((result.output || '') + (result.error ? `\n${result.error}` : ''))
+                            .replace(/__RESULT_START__[\s\S]*?__RESULT_END__/g, '')
+                            .trim();
+                        const lines = sanitized.split(/\r?\n/);
                         lines.filter(Boolean).forEach(l => {
                             const lineDiv = document.createElement('div');
                             lineDiv.className = 'run_feed_line';
@@ -2612,7 +2769,10 @@ class FlowchartBuilder {
                         });
                         const metaCol = document.createElement('div');
                         metaCol.className = 'run_feed_meta';
-                        metaCol.textContent = new Date().toLocaleTimeString();
+                        const finishedAt = new Date();
+                        const elapsedMs = Math.max(0, finishedAt.getTime() - startTime);
+                        const elapsedSec = (elapsedMs / 1000).toFixed(3);
+                        metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
                         item.appendChild(title);
                         item.appendChild(outCol);
                         item.appendChild(metaCol);
@@ -2671,7 +2831,7 @@ class FlowchartBuilder {
                 const returnValueText = result.return_value !== null && result.return_value !== undefined 
                     ? `\nReturned: ${JSON.stringify(result.return_value)}` 
                     : '';
-                this.appendOutput(`[${node.name}] execution completed in ${runtime}ms${returnValueText}\n${result.output || ''}\n`);
+                this.appendOutput(`[${node.name}] execution completed in ${(runtime/1000).toFixed(3)}s${returnValueText}\n${result.output || ''}\n`);
                 return true; // success
             } else {
                 // store execution result and remember failed node for no-selection view
@@ -2691,7 +2851,7 @@ class FlowchartBuilder {
                 // set node to error state (red)
                 this.setNodeState(node.id, 'error');
                 this.updateNodeDetails(node, 'error', runtime, result.error);
-                this.appendOutput(`[${node.name}] execution failed after ${runtime}ms\n${result.error || 'unknown error'}\n`);
+                this.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${result.error || 'unknown error'}\n`);
                 return false; // failure - will stop execution
             }
             
@@ -2718,6 +2878,7 @@ class FlowchartBuilder {
     async callNodeExecution(node, inputVariables = {}) {
         // call streaming endpoint to receive live stdout as events
         try {
+            const callStartTime = Date.now();
             const controller = this.currentExecutionController || new AbortController();
             const response = await fetch('/api/execute-node-stream', {
                 method: 'POST',
@@ -2754,8 +2915,27 @@ class FlowchartBuilder {
             const decoder = new TextDecoder();
             let buffer = '';
             let finalResult = null;
+            let inResultBlock = false; // filter out embedded result payload from live feed
 
-            const appendConsole = (line) => {
+            const appendConsole = (rawLine) => {
+                // filter out embedded result block markers and their contents
+                let line = String(rawLine || '');
+                if (line.includes('__RESULT_START__') && line.includes('__RESULT_END__')) {
+                    line = line.replace(/__RESULT_START__[\s\S]*?__RESULT_END__/g, '');
+                    inResultBlock = false;
+                } else if (line.includes('__RESULT_START__')) {
+                    // keep anything before the start marker, then enter skip mode
+                    line = line.split('__RESULT_START__')[0];
+                    inResultBlock = true;
+                } else if (line.includes('__RESULT_END__')) {
+                    // leave skip mode; keep anything after the end marker
+                    line = line.split('__RESULT_END__')[1] || '';
+                    inResultBlock = false;
+                } else if (inResultBlock) {
+                    // skip lines inside the result block
+                    return;
+                }
+                if (!line || !line.trim()) return;
                 // append live output to the sidebar console if this node is selected
                 const selected = Array.from(this.state.selectedNodes);
                 if (selected.length === 1 && selected[0] === node.id) {
@@ -2770,7 +2950,7 @@ class FlowchartBuilder {
                 }
                 // also append a live line to the bottom feed for this node
                 try {
-                    // persist line into execution feed
+                        // persist line into execution feed
                     try {
                         let entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
                         if (!entry) {
@@ -2860,7 +3040,12 @@ class FlowchartBuilder {
                                 // keep id so we can reuse if the same node is run again in the same session; but we want to start a new group next time
                                 // we will remove id right before creating a new running item for this node next time
                                 const metaCol = item.children[2];
-                                if (metaCol) metaCol.textContent = new Date().toLocaleTimeString();
+                                if (metaCol) {
+                                    const finishedAt = new Date();
+                                    const elapsedMs = Math.max(0, finishedAt.getTime() - callStartTime);
+                                    const elapsedSec = (elapsedMs / 1000).toFixed(3);
+                                    metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
+                                }
                             }
                             // finalize feed entry data
                             try {
@@ -3369,7 +3554,7 @@ class FlowchartBuilder {
                     const elapsed = Date.now() - this.executionStartTimestamp;
                     if (timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
-                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                        timeText.textContent = `${seconds}s`;
                     }
                 }, 100);
                 this.lastExecutionStatus = 'running';
@@ -3383,7 +3568,7 @@ class FlowchartBuilder {
                     this.lastExecutionElapsedMs = elapsed;
                     if (timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
-                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                        timeText.textContent = `${seconds}s`;
                     }
                     if (timestampEl) {
                         const now = new Date();
@@ -3409,7 +3594,7 @@ class FlowchartBuilder {
                     this.lastExecutionElapsedMs = elapsed;
                     if (timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
-                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                        timeText.textContent = `${seconds}s`;
                     }
                     if (timestampEl) {
                         const now = new Date();
@@ -3435,7 +3620,7 @@ class FlowchartBuilder {
                     this.lastExecutionElapsedMs = elapsed;
                     if (timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
-                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                        timeText.textContent = `${seconds}s`;
                     }
                     if (timestampEl) {
                         const now = new Date();
@@ -3461,7 +3646,7 @@ class FlowchartBuilder {
                     this.lastExecutionElapsedMs = elapsed;
                     if (timeText) {
                         const seconds = (elapsed / 1000).toFixed(3);
-                        timeText.textContent = `${elapsed}ms (${seconds}s)`;
+                        timeText.textContent = `${seconds}s`;
                     }
                     if (timestampEl) {
                         const now = new Date();
@@ -3503,14 +3688,32 @@ class FlowchartBuilder {
     centerOnNode(nodeId) {
         const node = this.state.getNode(nodeId);
         if (!node) return;
-        const padding = 0;
+        // nodes are positioned by translate(x, y) with their rect centered at (x, y)
         const scale = this.state.transform.k || 1;
-        const targetX = this.state.canvasWidth / 2 - (node.x + (node.width || 120) / 2 + padding) * scale;
-        const targetY = this.state.canvasHeight / 2 - (node.y + 40 /* approx node height mid */) * scale;
-        this.svg.transition()
+
+        // target placement rules:
+        // - horizontal: align node center with the horizontal center of the .canvas_container
+        // - vertical: keep node center 250px from the top of the browser window
+        const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
+        const containerEl = document.querySelector('.canvas_container');
+        if (!svgEl || !containerEl) return;
+
+        const svgRect = svgEl.getBoundingClientRect();
+        const containerRect = containerEl.getBoundingClientRect();
+
+        // desired position of the node center in svg screen coords
+        const desiredSvgX = (containerRect.left - svgRect.left) + (containerRect.width / 2);
+        const desiredSvgY = (250 - svgRect.top);
+
+        // translate so that: scale * node.(x|y) + translate = desiredSvg(X|Y)
+        const targetTranslateX = desiredSvgX - (scale * node.x);
+        const targetTranslateY = desiredSvgY - (scale * node.y);
+
+        this.svg
+            .transition()
             .duration(600)
             .ease(d3.easeCubicOut)
-            .call(this.zoom.transform, d3.zoomIdentity.translate(targetX, targetY).scale(scale));
+            .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
     }
 
     updateNodeDetails(node, state, runtime, output = '') {
@@ -3522,6 +3725,31 @@ class FlowchartBuilder {
         const selectedNodes = Array.from(this.state.selectedNodes);
         if (selectedNodes.length === 1 && selectedNodes[0] === node.id) {
             this.state.emit('updateSidebar');
+            // also ensure the live feed is scrolled to this node's output after it updates
+            try { this.scrollRunFeedToNode(node.id); } catch (_) {}
+        }
+    }
+
+    scrollRunFeedToNode(nodeId) {
+        // find a running or completed feed item for this node and scroll it into view
+        const list = document.getElementById('run_feed_list');
+        if (!list) return;
+        // prefer the running item id if present
+        const running = document.getElementById(`run_feed_running_${nodeId}`);
+        const match = running || Array.from(list.children).find(el => {
+            try {
+                const title = el.querySelector('.run_feed_item_title');
+                if (!title) return false;
+                // compare by name from state to avoid relying on node_name text differences
+                const node = this.state.getNode(nodeId);
+                return node && title.textContent === node.name;
+            } catch (_) { return false; }
+        });
+        if (match && typeof match.scrollIntoView === 'function') {
+            match.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (list && list.lastElementChild) {
+            // fallback: scroll to bottom
+            list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
     }
 
@@ -3822,6 +4050,18 @@ class FlowchartBuilder {
         
         // trigger sidebar update to reflect cleared state
         this.state.emit('updateSidebar');
+    }
+
+    clearExecutionFeed() {
+        // clear internal execution feed data
+        this.executionFeed = [];
+        // clear bottom live feed ui
+        try {
+            const list = document.getElementById('run_feed_list');
+            if (list) {
+                list.innerHTML = '';
+            }
+        } catch (_) {}
     }
 
     // debug methods

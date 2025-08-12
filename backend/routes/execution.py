@@ -4,7 +4,7 @@ import subprocess
 import sys
 from datetime import datetime
 
-from ..services.storage import DEFAULT_FLOWCHART, load_flowchart, save_execution_history, get_execution_history, delete_execution_history
+from ..services.storage import DEFAULT_FLOWCHART, load_flowchart, save_flowchart, save_execution_history, get_execution_history, delete_execution_history
 from ..services.analysis import PythonVariableAnalyzer, extract_returns_from_statement
 from ..services.processes import (
     execute_python_function_with_tracking,
@@ -252,15 +252,9 @@ def get_history():
                     try:
                         ms = int(ms)
                     except Exception:
-                        return '0ms'
-                    if ms < 1000:
-                        return f"{ms}ms"
+                        return '0.000s'
                     seconds = ms / 1000.0
-                    if seconds < 60:
-                        return f"{seconds:.2f}s"
-                    minutes = int(seconds // 60)
-                    rem = seconds - minutes * 60
-                    return f"{minutes}m {rem:.1f}s"
+                    return f"{seconds:.3f}s"
                 try:
                     saved_at_human = datetime.fromisoformat(entry.get('timestamp', '')).strftime('%Y-%m-%d %H:%M:%S')
                 except Exception:
@@ -357,6 +351,46 @@ def clear_history_for_flowchart():
         return jsonify({'status': 'success', 'message': f'cleared {removed} items from history for {flowchart_folder}'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'failed to clear history: {str(e)}'}), 500
+
+
+@execution_bp.route('/history/clear-all', methods=['POST'])
+def clear_executions_and_history():
+    """clear both on-disk history files and the embedded `executions` array in the flowchart json.
+    comments: uses existing delete function to remove files.
+    """
+    try:
+        data = request.json or {}
+        flowchart_name = data.get('flowchart_name', DEFAULT_FLOWCHART)
+
+        # clear disk history using existing delete function in a loop
+        entries = []
+        try:
+            entries = get_execution_history(flowchart_name)
+        except Exception:
+            entries = []
+        removed_count = 0
+        for entry in entries:
+            try:
+                exec_id = entry.get('execution_id')
+                if exec_id and delete_execution_history(flowchart_name, exec_id):
+                    removed_count += 1
+            except Exception:
+                # comments: ignore and continue
+                pass
+
+        # clear embedded executions in flowchart json
+        try:
+            flow = load_flowchart(flowchart_name)
+            if isinstance(flow, dict):
+                flow['executions'] = []
+                save_flowchart(flow, flowchart_name)
+        except Exception:
+            # comments: still report success for history removal even if json update fails
+            pass
+
+        return jsonify({'status': 'success', 'message': f'cleared {removed_count} history entries and reset executions for {flowchart_name}'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'failed to clear executions and history: {str(e)}'}), 500
 
 
 @execution_bp.route('/analyze-connection', methods=['POST'])

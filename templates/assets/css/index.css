@@ -227,6 +227,13 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     background-color: var(--hover-color);
 }
 
+/* disabled/active state for run feed controls */
+.btn[disabled], .btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
 /* subtle danger button for destructive actions in dark mode */
 .btn_danger_subtle {
     background-color: #2A0E0E;
@@ -634,16 +641,35 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     transition: height 0.3s ease, bottom 0.3s ease;
 }
 
+/* disable transitions during drag to avoid lag */
+.run_feed_bar.no_transition {
+    transition: none !important;
+}
+
+/* drag handle at the top edge of the feed */
+.run_feed_resizer {
+    position: absolute;
+    top: -6px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 1102;
+}
+
 /* full screen state - snap to top */
 .run_feed_bar.full_screen {
-    height: calc(100vh - 320px); /* full height minus left sidebar and some padding */
+    top: 0;
     bottom: 0;
+    height: auto;
 }
 
 /* responsive adjustment for full screen mode */
 @media (max-width: 768px) {
   .run_feed_bar.full_screen { 
-    height: calc(100vh - 240px); /* adjust for smaller sidebar */
+    top: 0;
+    bottom: 0;
+    height: auto;
   }
 }
 
@@ -666,7 +692,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     background: var(--surface-color);
     z-index: 1101; /* ensure header stays above other content */
 }
-.run_feed_title { font-weight: 600; text-transform: lowercase; }
+.run_feed_title { font-weight: 600; }
 
 .run_feed_list {
     flex: 1;
@@ -702,8 +728,17 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     font-size: 0.85rem;
     color: var(--on-surface);
     opacity: .9;
+    /* single outer frame so we don't double up borders at the edges */
+    border-top: 1px solid rgba(61, 61, 61, 0.35);
+    border-bottom: 1px solid rgba(61, 61, 61, 0.35);
 }
-.run_feed_line { margin-bottom: 4px; }
+.run_feed_line {
+    margin-bottom: 4px;
+    /* single separator between rows to avoid double borders */
+    border-top: 1px solid rgba(61, 61, 61, 0.35);
+    padding: 4px 0;
+}
+.run_feed_line:first-child { border-top: none; }
 .run_feed_meta {
     font-size: 0.8rem;
     opacity: .8;

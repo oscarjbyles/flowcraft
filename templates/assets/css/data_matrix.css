@@ -36,7 +36,7 @@
 .dm_stat_text { display:flex; flex-direction: column; }
 .dm_stat_label { font-size: .75rem; opacity: .7; text-transform: lowercase; }
 .dm_stat_value { font-size: .95rem; }
-.dm_right { background: transparent; border: none; border-radius: 0; padding: 0px 0px 0px 4px; min-height: 80px; min-width: 0; }
+.dm_right { background: transparent; border: none; border-radius: 0; padding: 0px 0px 0px 5px; min-height: 80px; min-width: 0; }
 .dm_data_bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
 .dm_search_container { flex: 1; max-width: 400px; display: flex; align-items: center; gap: 12px; position: relative; }
 .dm_search_input { flex: 0 0 230px; width: 230px; min-width: 230px; max-width: 230px; padding: 8px 12px 8px 22px; background: transparent; border: none; border-bottom: 1px solid var(--border-color); border-radius: 0; color: var(--on-surface); font-size: 0.9rem; }

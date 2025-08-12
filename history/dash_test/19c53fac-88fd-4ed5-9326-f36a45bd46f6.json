@@ -1,0 +1,360 @@
+{
+  "execution_id": "19c53fac-88fd-4ed5-9326-f36a45bd46f6",
+  "timestamp": "2025-08-12T11:53:48.584181",
+  "flowchart_name": "dash_test",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1754947169232.756,
+      1754947169509.6736,
+      1754947542965.7744,
+      1754990106233.8037,
+      1754990105812.391
+    ],
+    "results": [
+      {
+        "node_id": 1754947169232.756,
+        "node_name": "node 1",
+        "python_file": "nodes/dash_test/node1.py",
+        "success": true,
+        "output": "generated random number: 2.8905723720695065",
+        "error": null,
+        "runtime": 3086,
+        "timestamp": "11:53:42",
+        "return_value": 2.8905723720695065,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947169509.6736,
+        "node_name": "node2",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "SY6Z3lT6Zm\nGkZaDieFsm\nCOP3QpBmTy\nbGLev6m40i\neMZdxc4QSJ\n474dNd49Ku",
+        "error": null,
+        "runtime": 6158,
+        "timestamp": "11:53:48",
+        "return_value": [
+          1,
+          [
+            "SY6Z3lT6Zm",
+            "GkZaDieFsm",
+            "COP3QpBmTy",
+            "bGLev6m40i",
+            "eMZdxc4QSJ",
+            "474dNd49Ku"
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754947542965.7744,
+        "node_name": "hello",
+        "python_file": "nodes/dash_test/error_creator.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 123,
+        "timestamp": "11:53:48",
+        "return_value": [
+          1,
+          [
+            "SY6Z3lT6Zm",
+            "GkZaDieFsm",
+            "COP3QpBmTy",
+            "bGLev6m40i",
+            "eMZdxc4QSJ",
+            "474dNd49Ku"
+          ]
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1754990106233.8037,
+        "node_name": "python node",
+        "python_file": "",
+        "success": false,
+        "output": "",
+        "error": "node_id and python_file are required",
+        "runtime": 18,
+        "timestamp": "11:53:48",
+        "return_value": null
+      },
+      {
+        "node_id": 1754947537905.6792,
+        "node_name": "argument1",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "11:53:48",
+        "return_value": {
+          "argument1": 1
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "argument1",
+          "variable_name": "argument1"
+        }
+      },
+      {
+        "node_id": 1754947539125.4895,
+        "node_name": "random_strings",
+        "python_file": "nodes/dash_test/node2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 0,
+        "timestamp": "11:53:48",
+        "return_value": {
+          "random_strings": [
+            "SY6Z3lT6Zm",
+            "GkZaDieFsm",
+            "COP3QpBmTy",
+            "bGLev6m40i",
+            "eMZdxc4QSJ",
+            "474dNd49Ku"
+          ]
+        },
+        "function_name": "data_save",
+        "input_args": {},
+        "data_save": {
+          "data_name": "random_strings",
+          "variable_name": "random_strings"
+        }
+      }
+    ],
+    "data_saves": [
+      {
+        "node_name": "argument1",
+        "variable_name": "argument1",
+        "variable_content": [
+          "integer",
+          1
+        ]
+      },
+      {
+        "node_name": "random_strings",
+        "variable_name": "random_strings",
+        "variable_content": [
+          "array",
+          [
+            "SY6Z3lT6Zm",
+            "GkZaDieFsm",
+            "COP3QpBmTy",
+            "bGLev6m40i",
+            "eMZdxc4QSJ",
+            "474dNd49Ku"
+          ]
+        ]
+      }
+    ],
+    "feed": [
+      {
+        "node_id": 1754947169232.756,
+        "node_name": "node 1",
+        "started_at": "2025-08-12T10:53:39.095Z",
+        "finished_at": "2025-08-12T10:53:42.142Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "generated random number: 2.8905723720695065",
+            "ts": "2025-08-12T10:53:39.248Z"
+          }
+        ]
+      },
+      {
+        "node_id": 1754947169509.6736,
+        "node_name": "node2",
+        "started_at": "2025-08-12T10:53:42.173Z",
+        "finished_at": "2025-08-12T10:53:48.302Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "SY6Z3lT6Zm",
+            "ts": "2025-08-12T10:53:43.289Z"
+          },
+          {
+            "text": "GkZaDieFsm",
+            "ts": "2025-08-12T10:53:44.287Z"
+          },
+          {
+            "text": "COP3QpBmTy",
+            "ts": "2025-08-12T10:53:45.289Z"
+          },
+          {
+            "text": "bGLev6m40i",
+            "ts": "2025-08-12T10:53:46.288Z"
+          },
+          {
+            "text": "eMZdxc4QSJ",
+            "ts": "2025-08-12T10:53:47.289Z"
+          },
+          {
+            "text": "474dNd49Ku",
+            "ts": "2025-08-12T10:53:48.289Z"
+          },
+          {
+            "text": "SY6Z3lT6Zm",
+            "ts": "2025-08-12T10:53:48.303Z"
+          },
+          {
+            "text": "GkZaDieFsm",
+            "ts": "2025-08-12T10:53:48.303Z"
+          },
+          {
+            "text": "COP3QpBmTy",
+            "ts": "2025-08-12T10:53:48.303Z"
+          },
+          {
+            "text": "bGLev6m40i",
+            "ts": "2025-08-12T10:53:48.303Z"
+          },
+          {
+            "text": "eMZdxc4QSJ",
+            "ts": "2025-08-12T10:53:48.303Z"
+          }
+        ]
+      },
+      {
+        "node_id": 1754947542965.7744,
+        "node_name": "hello",
+        "started_at": "2025-08-12T10:53:48.444Z",
+        "finished_at": "2025-08-12T10:53:48.558Z",
+        "success": true,
+        "lines": []
+      },
+      {
+        "node_id": 1754990106233.8037,
+        "node_name": "python node",
+        "started_at": "2025-08-12T10:53:48.570Z",
+        "finished_at": "2025-08-12T10:53:48.579Z",
+        "success": false,
+        "lines": [
+          {
+            "text": "node_id and python_file are required",
+            "ts": "2025-08-12T10:53:48.579Z"
+          }
+        ]
+      }
+    ],
+    "total_nodes": 5,
+    "successful_nodes": 3,
+    "error_message": "execution stopped at node: python node",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1754947169232.756,
+          "name": "node 1",
+          "x": 53.42086410522461,
+          "y": -913.5538940429688,
+          "pythonFile": "nodes/dash_test/node1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754947169509.6736,
+          "name": "node2",
+          "x": 53.42086410522461,
+          "y": -715.8539428710938,
+          "pythonFile": "nodes/dash_test/node2.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754947537905.6792,
+          "name": "argument1",
+          "x": 326.7510131722368,
+          "y": -703.912438576212,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 15,
+              "name": "argument1",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754947539125.4895,
+          "name": "random_strings",
+          "x": 240.50607903342126,
+          "y": -587.1500662036618,
+          "pythonFile": "",
+          "description": "",
+          "type": "data_save",
+          "dataSource": {
+            "origin": "returns",
+            "variable": {
+              "line": 15,
+              "name": "random_strings",
+              "type": "variable"
+            }
+          }
+        },
+        {
+          "id": 1754947542965.7744,
+          "name": "hello",
+          "x": -88.5515604019165,
+          "y": -547.3447265625,
+          "pythonFile": "nodes/dash_test/error_creator.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754990105812.391,
+          "name": "python node",
+          "x": 52.626121520996094,
+          "y": -330.58892822265625,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1754990106233.8037,
+          "name": "python node",
+          "x": -343.62322998046875,
+          "y": -350.1710510253906,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1754947169232.756,
+          "target": 1754947169509.6736
+        },
+        {
+          "selectable": false,
+          "source": 1754947169509.6736,
+          "style": "dashed",
+          "target": 1754947537905.6792
+        },
+        {
+          "selectable": false,
+          "source": 1754947169509.6736,
+          "style": "dashed",
+          "target": 1754947539125.4895
+        },
+        {
+          "source": 1754947169509.6736,
+          "target": 1754947542965.7744
+        },
+        {
+          "source": 1754947542965.7744,
+          "target": 1754990106233.8037
+        },
+        {
+          "source": 1754947542965.7744,
+          "target": 1754990105812.391
+        }
+      ],
+      "groups": []
+    }
+  }
+}

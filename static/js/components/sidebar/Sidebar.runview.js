@@ -147,7 +147,7 @@
                 if (executionResult) {
                     if (executionTimeRow) executionTimeRow.style.display = 'flex';
                     const _rt = executionResult.runtime || 0;
-                    executionTimeText.textContent = `${_rt}ms (${(_rt/1000).toFixed(3)}s)`;
+                    executionTimeText.textContent = `${(_rt/1000).toFixed(3)}s`;
                     executionTimestamp.textContent = executionResult.timestamp;
                     if (executionResult.success) {
                         if (nodeInputContent) {

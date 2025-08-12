@@ -113,14 +113,24 @@
         } catch (_) {}
     }
 
+    // backgrounding should only flush saves, not destroy the app (prevents disappearing diagram on tab return)
+    function handleBackgroundFlush() {
+        try {
+            const app = window.flowchartApp;
+            if (app && app.state && typeof app.state.flushPendingSavesOnExit === 'function') {
+                app.state.flushPendingSavesOnExit();
+            }
+        } catch (_) {}
+    }
+
     // use pagehide (fires on bfcache and normal navigations)
     window.addEventListener('pagehide', handleExit, { capture: true });
     // fallback for some browsers
     window.addEventListener('beforeunload', handleExit, { capture: true });
-    // ensure backgrounding also triggers a flush
+    // ensure backgrounding only flushes (do not destroy on hidden tab)
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-            handleExit();
+            handleBackgroundFlush();
         }
     }, { capture: true });
 
