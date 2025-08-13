@@ -1,0 +1,156 @@
+{
+  "execution_id": "c1e9d134-7ab5-4327-a60d-ab491a994367",
+  "timestamp": "2025-08-13T12:00:16.812079",
+  "flowchart_name": "if_test",
+  "execution_data": {
+    "status": "success",
+    "execution_order": [
+      1755082744388.5903,
+      1755082745159.684,
+      1755082527684.448
+    ],
+    "results": [
+      {
+        "node_id": 1755082744388.5903,
+        "node_name": "python node",
+        "python_file": "nodes/1.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 141,
+        "timestamp": "12:00:16",
+        "return_value": [
+          3,
+          4
+        ],
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1755082745159.684,
+        "node_name": "python node",
+        "python_file": "nodes/2.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 245,
+        "timestamp": "12:00:16",
+        "return_value": 5,
+        "function_name": "my_function"
+      },
+      {
+        "node_id": 1755082527684.448,
+        "node_name": "python node",
+        "python_file": "nodes/3.py",
+        "success": true,
+        "output": "",
+        "error": null,
+        "runtime": 123,
+        "timestamp": "12:00:16",
+        "return_value": 12,
+        "function_name": "my_function"
+      }
+    ],
+    "data_saves": [],
+    "feed": [
+      {
+        "node_id": 1755082744388.5903,
+        "node_name": "python node",
+        "started_at": "2025-08-13T11:00:16.302Z",
+        "finished_at": "2025-08-13T11:00:16.423Z",
+        "success": true,
+        "lines": [],
+        "elapsed_ms": 121
+      },
+      {
+        "node_id": 1755082744388.5903,
+        "node_name": "python node",
+        "started_at": "2025-08-13T11:00:16.288Z",
+        "lines": [],
+        "finished_at": "2025-08-13T11:00:16.429Z",
+        "success": true,
+        "elapsed_ms": 141
+      },
+      {
+        "node_id": 1755082745159.684,
+        "node_name": "python node",
+        "started_at": "2025-08-13T11:00:16.443Z",
+        "finished_at": "2025-08-13T11:00:16.675Z",
+        "success": true,
+        "lines": [],
+        "elapsed_ms": 232
+      },
+      {
+        "node_id": 1755082745159.684,
+        "node_name": "python node",
+        "started_at": "2025-08-13T11:00:16.431Z",
+        "lines": [],
+        "finished_at": "2025-08-13T11:00:16.675Z",
+        "success": true,
+        "elapsed_ms": 244
+      },
+      {
+        "node_id": 1755082527684.448,
+        "node_name": "python node",
+        "started_at": "2025-08-13T11:00:16.691Z",
+        "finished_at": "2025-08-13T11:00:16.801Z",
+        "success": true,
+        "lines": [],
+        "elapsed_ms": 110
+      },
+      {
+        "node_id": 1755082527684.448,
+        "node_name": "python node",
+        "started_at": "2025-08-13T11:00:16.678Z",
+        "lines": [],
+        "finished_at": "2025-08-13T11:00:16.801Z",
+        "success": true,
+        "elapsed_ms": 123
+      }
+    ],
+    "total_nodes": 3,
+    "successful_nodes": 3,
+    "error_message": null,
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755082527684.448,
+          "name": "python node",
+          "x": 223.2897491455078,
+          "y": 336.42333984375,
+          "pythonFile": "nodes/3.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755082744388.5903,
+          "name": "python node",
+          "x": 44.40082931518555,
+          "y": 158.22767639160156,
+          "pythonFile": "nodes/1.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755082745159.684,
+          "name": "python node",
+          "x": 431.59136962890625,
+          "y": 156.49139404296875,
+          "pythonFile": "nodes/2.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755082744388.5903,
+          "target": 1755082527684.448
+        },
+        {
+          "source": 1755082745159.684,
+          "target": 1755082527684.448
+        }
+      ],
+      "groups": []
+    }
+  }
+}

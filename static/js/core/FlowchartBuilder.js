@@ -43,6 +43,8 @@ class FlowchartBuilder {
         // execution state
         this.isExecuting = false;
         this.executionAborted = false;
+		// guard to prevent double-start on rapid clicks
+		this.executionStarting = false;
         // auto-track state: when true, viewport follows the active node during execution
         this.isAutoTrackEnabled = false;
         // when the user manually pans/zooms, we disable auto-track until re-enabled by the user
@@ -559,16 +561,19 @@ class FlowchartBuilder {
             });
         }
         
-        // start/stop button for execution
-        document.getElementById('execute_start_btn').addEventListener('click', () => {
-            if (this.isExecuting) {
-                this.stopExecution();
-            } else {
-            // clear the live execution feed when starting a new run
-            this.clearExecutionFeed();
-            this.startExecution();
-            }
-        });
+		// start/stop button for execution
+		document.getElementById('execute_start_btn').addEventListener('click', () => {
+			if (this.isExecuting) {
+				this.stopExecution();
+			} else {
+				// prevent rapid double-click from starting two concurrent runs
+				if (this.executionStarting) { return; }
+				this.executionStarting = true;
+				// clear the live execution feed when starting a new run
+				this.clearExecutionFeed();
+				this.startExecution();
+			}
+		});
 
         // clear button for run mode
         const clearRunBtn = document.getElementById('execute_clear_btn');
@@ -2066,6 +2071,8 @@ class FlowchartBuilder {
         // set execution state
         this.isExecuting = true;
         this.executionAborted = false;
+		// clear the starting guard as soon as execution officially begins
+		this.executionStarting = false;
         
         // update ui to show stop button and loading wheel
         this.updateExecutionUI(true);
