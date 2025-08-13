@@ -2,9 +2,9 @@
  requires = ["setuptools>=68", "wheel"]
  build-backend = "setuptools.build_meta"
 
- [project]
- name = "flowcraft"
- version = "0.1.0"
+[project]
+name = "flowcraft"
+version = "0.1.1"
  description = "visual flowchart builder and executor for python nodes"
  readme = "README.md"
  requires-python = ">=3.9"
@@ -34,37 +34,74 @@
  [project.scripts]
  flowcraft = "flowcraft.cli:main"
 
- [tool.setuptools]
- include-package-data = true
+[tool.setuptools]
+include-package-data = true
 
- [tool.setuptools.packages.find]
- where = ["."]
- include = ["flowcraft", "backend*"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flowcraft", "backend*"]
 
-# install top-level static and templates into the flowcraft package at install time
+# install top-level static and templates into the venv prefix under flowcraft/* while preserving subfolders
 [tool.setuptools.data-files]
+# templates (preserve directory structure)
 "flowcraft/templates" = [
-  "templates/*.html",
-  "templates/base/*.html",
-  "templates/partials/*.html",
-  "templates/partials/modals/*.html",
+  "templates/*.html"
+]
+"flowcraft/templates/base" = [
+  "templates/base/*.html"
+]
+"flowcraft/templates/partials" = [
+  "templates/partials/*.html"
+]
+"flowcraft/templates/partials/modals" = [
+  "templates/partials/modals/*.html"
+]
+"flowcraft/templates/macros" = [
   "templates/macros/*.html"
 ]
+
+# static (preserve directory structure)
 "flowcraft/static" = [
   "static/favicon.svg",
-  "static/flowchart.js.backup",
-  "static/css/*.css",
-  "static/css/components/*.css",
-  "static/css/pages/*.css",
-  "static/js/main.js",
-  "static/js/core/*.js",
-  "static/js/interactions/*.js",
-  "static/js/rendering/*.js",
-  "static/js/utils/*.js",
-  "static/js/pages/*.js",
-  "static/js/components/navigation/*.js",
-  "static/js/components/sidebar/*.js",
-  "static/js/components/sidebar/panels/*.js",
+  "static/flowchart.js.backup"
+]
+"flowcraft/static/css" = [
+  "static/css/*.css"
+]
+"flowcraft/static/css/components" = [
+  "static/css/components/*.css"
+]
+"flowcraft/static/css/pages" = [
+  "static/css/pages/*.css"
+]
+"flowcraft/static/js" = [
+  "static/js/main.js"
+]
+"flowcraft/static/js/core" = [
+  "static/js/core/*.js"
+]
+"flowcraft/static/js/interactions" = [
+  "static/js/interactions/*.js"
+]
+"flowcraft/static/js/rendering" = [
+  "static/js/rendering/*.js"
+]
+"flowcraft/static/js/utils" = [
+  "static/js/utils/*.js"
+]
+"flowcraft/static/js/pages" = [
+  "static/js/pages/*.js"
+]
+"flowcraft/static/js/components/navigation" = [
+  "static/js/components/navigation/*.js"
+]
+"flowcraft/static/js/components/sidebar" = [
+  "static/js/components/sidebar/*.js"
+]
+"flowcraft/static/js/components/sidebar/panels" = [
+  "static/js/components/sidebar/panels/*.js"
+]
+"flowcraft/static/js/components/sidebar/ui" = [
   "static/js/components/sidebar/ui/*.js"
 ]
 

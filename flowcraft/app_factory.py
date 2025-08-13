@@ -7,18 +7,18 @@ def _resolve_dir(default_rel: str, env_key: str, app_root: str) -> str:
      # prefer explicit env var; otherwise default to project-relative
      base = os.environ.get(env_key)
      if base:
-         return os.path.abspath(base)
+          return os.path.abspath(base)
      return os.path.abspath(os.path.join(app_root, default_rel))
 
 
 def create_app(config: dict | None = None) -> Flask:
      """create and configure a flask app with all flowcraft blueprints.
- 
+
       config keys/env vars:
         - FLOWCRAFT_DATA_DIR (optional root where nodes/ flowcharts/ history/ live)
       """
      # resolve static and templates folders for both dev (repo) and installed (pip) cases
-     # comments: prefer package-local copies; fallback to repo root; lastly, scan sys.path for data-files install
+     # comments: prefer package-local copies; fallback to repo root; lastly, scan common install prefixes
      pkg_dir = os.path.dirname(os.path.abspath(__file__))
      repo_root = os.path.dirname(pkg_dir)
      project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,9 +38,17 @@ def create_app(config: dict | None = None) -> Flask:
           os.path.join(repo_root, "static"),
      ]
 
-     # final fallback: check common site-packages locations where data-files may land
+     # final fallback: check common site-packages/venv prefixes where data-files may land
      try:
           import sys
+          prefix_bases = [
+               getattr(sys, "prefix", None),
+               getattr(sys, "base_prefix", None),
+               getattr(sys, "exec_prefix", None),
+          ]
+          for base in [b for b in prefix_bases if b]:
+               template_candidates.append(os.path.join(base, "flowcraft", "templates"))
+               static_candidates.append(os.path.join(base, "flowcraft", "static"))
           for base in list(sys.path):
                template_candidates.append(os.path.join(base, "flowcraft", "templates"))
                static_candidates.append(os.path.join(base, "flowcraft", "static"))
