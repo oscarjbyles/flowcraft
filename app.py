@@ -26,8 +26,7 @@ def cleanup_orphaned_temp_files() -> None:
                     cleaned_count += 1
             except Exception:
                 pass
-        if cleaned_count > 0:
-            print(f"cleaned up {cleaned_count} orphaned temporary files")
+        # only log warnings/errors; skip routine info about cleanup
     except Exception as e:
         print(f"warning: could not clean up orphaned temp files: {e}")
 
@@ -74,7 +73,6 @@ if __name__ == '__main__':
     if platform.system() == 'Darwin' and _is_port_open(default_port):
         alt = _find_next_available_port(default_port + 1, default_port + 50)
         if alt is not None:
-            print(f"info: port {default_port} busy on macos, using {alt} instead")
             chosen_port = alt
         else:
             print(f"warning: ports {default_port}-{default_port+50} busy on macos, selecting ephemeral port")

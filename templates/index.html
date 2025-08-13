@@ -20,7 +20,7 @@
 
             <!-- separate right sidebar toggle bar -->
             <div class="sidebar_toggle_container" id="sidebar_toggle_container" style="display: none;">
-                <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties">
+                <button class="btn btn_secondary" id="toggle_sidebar_btn" title="hide properties" data-action="toggle-sidebar">
                     <span class="material-icons">chevron_right</span>
                 </button>
             </div>
@@ -33,6 +33,9 @@
                     </button>
                     <button class="toolbar_btn" id="deselect_btn" title="deselect all">
                         <span class="material-icons">pan_tool</span>
+                    </button>
+                    <button class="toolbar_btn" id="reset_view_btn" title="reset view to first node">
+                        <span class="material-icons">center_focus_strong</span>
                     </button>
                         <button class="toolbar_btn" id="track_toggle_btn" title="auto track active node">
                             <span class="material-icons">gps_fixed</span>
@@ -65,13 +68,18 @@
 
                 <!-- build mode horizontal toolbar -->
             <div class="build_toolbar" id="build_toolbar" style="display:none;">
-                    <button class="btn btn_secondary" id="python_node_btn" title="add python node">
-                        <span class="material-icons">code</span>
-                        Python Node
-                    </button>
-                    <button class="btn btn_secondary" id="if_condition_btn" title="add if condition">
-                        <span class="material-icons">alt_route</span>
-                        IF Condition
+                    <div class="build_toolbar_items" id="build_toolbar_items">
+                        <button class="btn btn_secondary" id="python_node_btn" title="add python node">
+                            <span class="material-icons">code</span>
+                            Python Node
+                        </button>
+                        <button class="btn btn_secondary" id="if_condition_btn" title="add if condition">
+                            <span class="material-icons">alt_route</span>
+                            IF Condition
+                        </button>
+                    </div>
+                    <button class="btn btn_primary build_toolbar_toggle" id="build_toolbar_toggle" title="add" data-action="toggle-build-toolbar">
+                        <span class="material-icons">add</span>
                     </button>
                 </div>
             </div>
@@ -88,7 +96,7 @@
             <!-- full page settings -->
             <div class="settings_page is_hidden" id="settings_page">
                 <div class="u_max_w_900 u_mx_auto">
-                    <h3 class="sidebar_section_title u_mb_16">settings</h3>
+                    <h2 class="settings_section_title">project settings</h2>
 
                     <div class="form_group">
                         <label class="form_label">project root</label>
@@ -119,6 +127,8 @@
                         <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">used when opening files from the app</div>
                     </div>
 
+                    <h2 class="settings_section_title">manage</h2>
+
                     <div class="form_group">
                         <label class="form_label">clear history</label>
                         <div class="data_save_details_card">
@@ -148,8 +158,6 @@
                     </div>
                 </div>
             </div>
-
-            {% include 'partials/status_bar.html' %}
 
             {% include 'partials/run_feed.html' %}
         </div>

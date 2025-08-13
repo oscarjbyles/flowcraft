@@ -1,35 +1,6 @@
 {
-  "nodes": [
-    {
-      "id": 1755032695079.6995,
-      "x": -501.743896484375,
-      "y": -1948.221923828125,
-      "name": "python node",
-      "type": "python_file",
-      "pythonFile": "",
-      "description": "",
-      "groupId": null,
-      "width": 120
-    }
-  ],
+  "nodes": [],
   "links": [],
   "groups": [],
-  "annotations": [],
-  "executions": [
-    {
-      "execution_id": "8a0947ea-d098-4205-84b6-b90ea695739c",
-      "timestamp": "2025-08-12T13:22:44.345347",
-      "flowchart_name": "dash_test",
-      "status": "failed",
-      "total_nodes": 5,
-      "successful_nodes": 3,
-      "completed_nodes": 4,
-      "success_percentage": 60.0,
-      "completed_percentage": 80.0,
-      "failed_node": "python node",
-      "elapsed_ms": 9118,
-      "execution_time": "9.118s",
-      "error_snippet": "name 'argument1' is not defined"
-    }
-  ]
+  "annotations": []
 }

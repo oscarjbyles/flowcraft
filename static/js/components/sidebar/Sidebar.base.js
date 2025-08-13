@@ -73,6 +73,7 @@ window.Sidebar = Sidebar;
 
 // unified collapse/expand management for right sidebar
 Sidebar.prototype.setCollapsed = function(isCollapsed) {
+    try { console.log('[sidebar] setCollapsed called', { isCollapsed }); } catch(_) {}
     const C = window.SidebarConstants || null;
     const propertiesSidebar = document.getElementById(C?.ids?.propertiesSidebar || 'properties_sidebar');
     const mainContent = document.querySelector('.' + ((C && C.classes && C.classes.mainContent) || 'main_content'));
@@ -85,6 +86,8 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
 
     if (isCollapsed) {
         propertiesSidebar.classList.add('collapsed');
+        // ensure hidden when collapsed to avoid initial flash
+        propertiesSidebar.style.display = 'none';
         if (mainContent) mainContent.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (runFeedBar) runFeedBar.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (startButtonContainer) startButtonContainer.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
@@ -95,6 +98,8 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
         }
     } else {
         propertiesSidebar.classList.remove('collapsed');
+        // show when expanded
+        propertiesSidebar.style.display = 'flex';
         if (mainContent) mainContent.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (runFeedBar) runFeedBar.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (startButtonContainer) startButtonContainer.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
@@ -104,6 +109,11 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
             toggleSidebarBtn.innerHTML = (C && C.icons && C.icons.collapse) || '<span class="material-icons">chevron_right</span>';
         }
     }
+
+    try {
+        const finalState = propertiesSidebar.classList.contains('collapsed');
+        console.log('[sidebar] setCollapsed complete', { finalCollapsed: finalState });
+    } catch(_) {}
 };
 
 

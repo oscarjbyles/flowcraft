@@ -46,7 +46,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     height: 100vh;
     background-color: var(--surface-color);
     border-left: 1px solid var(--border-color);
-    display: flex;
+    display: none; /* hidden by default to avoid flash; js shows per-mode */
     flex-direction: column;
     position: fixed;
     right: 0;
@@ -180,6 +180,8 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     /* allow inner flex children to scroll (scripts/dashboard pages) */
     min-height: 0;
     overflow: hidden;
+    /* ensure fixed status bar doesn't cover content */
+    padding-bottom: 32px;
 }
 
 .main_content.full_width {
@@ -293,6 +295,8 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 /* settings page layout: align content with left edge of main content */
 .settings_page .u_max_w_900.u_mx_auto { margin-left: 0; margin-right: 0; }
+/* settings page: fix content width to 900px */
+.settings_page .u_max_w_900.u_mx_auto { width: 900px; }
 
 /* ensure long paths wrap neatly inside the project root block */
 #project_root_path {
@@ -303,6 +307,14 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .form_help_text { font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; }
 .form_text_md { font-size: 0.9rem; }
 .u_opacity_09 { opacity: 0.9; }
+/* settings section title */
+.settings_section_title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 8px 0 16px 0;
+    letter-spacing: .3px;
+    text-transform: capitalize;
+}
 
 #flowchart_canvas {
     width: 100%;
@@ -645,6 +657,12 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     padding: 0 16px;
     font-size: 0.75rem;
     color: var(--on-surface);
+    /* pin to bottom aligned with left sidebar */
+    position: fixed;
+    left: 320px;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
 }
 /* run mode live feed bar at bottom */
 .run_feed_bar {
@@ -726,6 +744,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* responsive adjustment: when sidebar shrinks, align left edge accordingly */
 @media (max-width: 768px) {
   .run_feed_bar { left: 240px; }
+  .status_bar { left: 240px; }
 }
 
 .run_feed_item {
@@ -919,7 +938,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .start_button_container {
     position: absolute;
     top: 14px;
-    right: 470px; /* positioned to the left of the properties sidebar in run mode (450px + 20px gap) */
+    right: 502px; /* moved left to avoid overlap with 38px toggle (in 8px shell) and keep a small gap next to 450px sidebar */
     z-index: 100;
     display: flex;
     align-items: stretch;
@@ -931,22 +950,41 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* compact toggle button icon state */
+/* compact toggle button should be a fixed 38x38 box (including padding) */
+#toggle_sidebar_btn {
+    width: 38px;
+    min-width: 38px;
+    max-width: 38px;
+    height: 58px;
+    min-height: 58px;
+    max-height: 58px;
+    
+    
+    padding: 0; /* ensure total footprint stays 38x38 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-bottom-right-radius: 0px;
+    border-top-right-radius: 0px;
+    border-right-width: 0px;
+}
 #toggle_sidebar_btn .material-icons { font-size: 18px; }
 
 /* separate right sidebar toggle bar (to the right of start/clear toolbar) */
 .sidebar_toggle_container {
     position: absolute;
     top: 14px;
-    right: 420px; /* place just to the right of start toolbar (start at 470px) */
+    right: 450px; /* align with start toolbar cluster; leaves 20px gap from 450px sidebar */
     z-index: 1103; /* ensure above most ui, including right sidebar */
     display: flex;
     align-items: center;
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 8px;
+    padding: 0px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-width: 0px;
 }
 
 /* split start/clear from sidebar toggle into distinct groups */
@@ -967,8 +1005,8 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* collapsed sidebar: hide panel, expand canvas and move start toolbar left */
 .properties_sidebar.collapsed { display: none !important; }
 .main_content.sidebar_collapsed { margin-right: 0 !important; }
-.start_button_container.sidebar_collapsed { right: 80px !important; }
-.sidebar_toggle_container.sidebar_collapsed { right: 20px !important; }
+.start_button_container.sidebar_collapsed { right: 52px !important; }
+.sidebar_toggle_container.sidebar_collapsed { right: 0px !important; }
 .run_feed_bar.sidebar_collapsed { margin-right: 0 !important; }
 
 /* default properties width positioning (when not in run mode, if visible) */
@@ -1489,7 +1527,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .data_save_details_card {
   background: var(--surface-variant);
   border-radius: 4px;
-  padding: 16px;
+  padding: 12px 16px 16px 16px;
   margin-top: 8px;
 }
 

@@ -3,47 +3,16 @@
     {
       "description": "",
       "groupId": null,
-      "id": 1755082527684.448,
+      "id": 1755088625787.7266,
       "name": "python node",
-      "pythonFile": "nodes/3.py",
+      "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 178.51256561279297,
-      "y": 448.3663330078125
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1755082744388.5903,
-      "name": "python node",
-      "pythonFile": "nodes/1.py",
-      "type": "python_file",
-      "width": 120,
-      "x": 14.88861083984375,
-      "y": 236.5877227783203
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1755082745159.684,
-      "name": "python node",
-      "pythonFile": "nodes/2.py",
-      "type": "python_file",
-      "width": 120,
-      "x": 431.59136962890625,
-      "y": 155.47373962402344
+      "x": 365.1304931640625,
+      "y": 296.1100769042969
     }
   ],
-  "links": [
-    {
-      "source": 1755082744388.5903,
-      "target": 1755082527684.448
-    },
-    {
-      "source": 1755082745159.684,
-      "target": 1755082527684.448
-    }
-  ],
+  "links": [],
   "groups": [],
   "annotations": []
 }

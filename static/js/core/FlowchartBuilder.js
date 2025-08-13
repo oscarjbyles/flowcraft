@@ -128,17 +128,22 @@ class FlowchartBuilder {
     }
 
     initializeUI() {
+        try { console.log('[init] initializeUI start'); } catch(_) {}
         // setup sidebar buttons
         this.setupSidebarButtons();
+        try { console.log('[init] initializeUI after setupSidebarButtons'); } catch(_) {}
         
         // setup status bar
         this.setupStatusBar();
+        try { console.log('[init] initializeUI after setupStatusBar'); } catch(_) {}
         
         // setup context menu
         this.setupContextMenu();
+        try { console.log('[init] initializeUI after setupContextMenu'); } catch(_) {}
         
         // setup window events
         this.setupWindowEvents();
+        try { console.log('[init] initializeUI after setupWindowEvents'); } catch(_) {}
     }
 
     setupCoreEvents() {
@@ -492,13 +497,26 @@ class FlowchartBuilder {
     }
 
     setupSidebarButtons() {
+        try { console.log('[init] setupSidebarButtons start'); } catch(_) {}
         // delegate to centralized navigation module for left sidebar
         try { if (window.Navigation && typeof window.Navigation.setupNavButtons === 'function') window.Navigation.setupNavButtons(this); } catch(_) {}
 
+        // safe attach helper to avoid hard failures when elements are missing
+        const attachClick = (elementId, handler) => {
+            const el = document.getElementById(elementId);
+            if (el) {
+                try { console.log(`[wire] attaching click to #${elementId}`); } catch(_) {}
+                el.addEventListener('click', (e) => {
+                    try { console.log(`[event] ${elementId} clicked`, { target: e.target && e.target.id }); } catch(_) {}
+                    handler(e);
+                });
+            } else {
+                try { console.warn(`[ui] element not found: #${elementId}`); } catch(_) {}
+            }
+        };
+
         // floating toolbar buttons
-        document.getElementById('flow_toggle_btn').addEventListener('click', () => {
-            this.toggleFlowView();
-        });
+        attachClick('flow_toggle_btn', () => { this.toggleFlowView(); });
         // error toggle button
         const errorToggleBtn = document.getElementById('error_toggle_btn');
         if (errorToggleBtn) {
@@ -510,13 +528,9 @@ class FlowchartBuilder {
             console.warn('[error_view] error_toggle_btn not found in dom');
         }
         
-        document.getElementById('group_select_btn').addEventListener('click', () => {
-            this.toggleGroupSelectMode();
-        });
+        attachClick('group_select_btn', () => { this.toggleGroupSelectMode(); });
         
-        document.getElementById('deselect_btn').addEventListener('click', () => {
-            this.deselectAll();
-        });
+        attachClick('deselect_btn', () => { this.deselectAll(); });
 
         // track toggle button
         const trackBtn = document.getElementById('track_toggle_btn');
@@ -545,13 +559,47 @@ class FlowchartBuilder {
         }
         
         // add node buttons
-        document.getElementById('python_node_btn').addEventListener('click', () => {
-            this.addPythonNode();
-        });
-        
-        document.getElementById('if_condition_btn').addEventListener('click', () => {
-            this.addIfNode();
-        });
+        attachClick('python_node_btn', () => { this.addPythonNode(); });
+        attachClick('if_condition_btn', () => { this.addIfNode(); });
+
+        // build toolbar toggle (collapsible add bar)
+        const buildToolbar = document.getElementById('build_toolbar');
+        const buildToolbarToggle = document.getElementById('build_toolbar_toggle');
+        if (buildToolbar) {
+            try { console.log('[wire] build toolbar found'); } catch(_) {}
+            const collapse = () => { buildToolbar.classList.remove('is_expanded'); };
+            const expand = () => { buildToolbar.classList.add('is_expanded'); };
+            // default collapsed (only + button visible)
+            collapse();
+            // robust delegation to handle dynamic states
+            buildToolbar.addEventListener('click', (e) => {
+                const toggle = e.target.closest('[data-action="toggle-build-toolbar"], #build_toolbar_toggle');
+                try { console.log('[event] build_toolbar clicked', { isToggle: !!toggle, targetId: e.target && e.target.id }); } catch(_) {}
+                if (!toggle) return;
+                const isOpen = buildToolbar.classList.contains('is_expanded');
+                try { console.log('[state] build_toolbar is_expanded:', isOpen); } catch(_) {}
+                if (isOpen) { collapse(); } else { expand(); }
+            });
+            // direct toggle click wiring as a fallback
+            const directToggle = document.getElementById('build_toolbar_toggle');
+            if (directToggle && !directToggle._wired) {
+                directToggle.addEventListener('click', (e) => {
+                    try { console.log('[event] build_toolbar_toggle direct click'); } catch(_) {}
+                    e.stopPropagation();
+                    const isOpen = buildToolbar.classList.contains('is_expanded');
+                    if (isOpen) { collapse(); } else { expand(); }
+                });
+                directToggle._wired = true;
+            }
+            // clicking either action should collapse back
+            const pythonBtn = document.getElementById('python_node_btn');
+            const ifBtn = document.getElementById('if_condition_btn');
+            if (pythonBtn) { try { console.log('[wire] python_node_btn found'); } catch(_) {} pythonBtn.addEventListener('click', () => { try { console.log('[event] python_node_btn action -> collapse'); } catch(_) {} collapse(); }); }
+            if (ifBtn) { try { console.log('[wire] if_condition_btn found'); } catch(_) {} ifBtn.addEventListener('click', () => { try { console.log('[event] if_condition_btn action -> collapse'); } catch(_) {} collapse(); }); }
+            // expose for mode switching resets
+            this._collapseBuildToolbar = collapse;
+        }
+        else { try { console.warn('[ui] build_toolbar not found'); } catch(_) {} }
         
         // annotation toolbar buttons
         const addTextBtn = document.getElementById('add_text_btn');
@@ -560,6 +608,7 @@ class FlowchartBuilder {
                 this.addTextAnnotation();
             });
         }
+        try { console.log('[init] setupSidebarButtons end'); } catch(_) {}
         
 		// start/stop button for execution
 		document.getElementById('execute_start_btn').addEventListener('click', () => {
@@ -716,14 +765,24 @@ class FlowchartBuilder {
         // toggle right properties sidebar visibility in run mode via start/clear toolbar
         const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
         const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
-        if (toggleSidebarBtn) {
+        if (toggleSidebarBtn && !toggleSidebarBtn._wired) {
             toggleSidebarBtn.addEventListener('click', () => {
                 const propertiesSidebar = document.getElementById('properties_sidebar');
+                const isCurrentlyCollapsed = propertiesSidebar && propertiesSidebar.classList.contains('collapsed');
+
+                // prefer centralized sidebar api to keep ui in sync
+                try {
+                    if (window.flowchartApp && window.flowchartApp.sidebar && typeof window.flowchartApp.sidebar.setCollapsed === 'function') {
+                        window.flowchartApp.sidebar.setCollapsed(!isCurrentlyCollapsed);
+                        return;
+                    }
+                } catch (_) {}
+
+                // fallback: direct class toggles (legacy behavior)
                 const mainContent = document.querySelector('.main_content');
                 const runFeedBar = document.getElementById('run_feed_bar');
                 const startButtonContainer = document.getElementById('start_button_container');
                 const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
-
                 const isCollapsed = propertiesSidebar.classList.toggle('collapsed');
                 if (isCollapsed) {
                     // expand canvas area
@@ -743,7 +802,9 @@ class FlowchartBuilder {
                     toggleSidebarBtn.title = 'hide properties';
                     toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
                 }
-            });
+            }, { passive: true });
+            toggleSidebarBtn._wired = true;
+            try { console.log('[wire] toggle_sidebar_btn wired (global)'); } catch(_) {}
         }
         
         // history removed
@@ -1731,7 +1792,8 @@ class FlowchartBuilder {
         // ensure settings page is hidden unless in settings mode (use class, not inline style)
         if (settingsPage) settingsPage.classList.add('is_hidden');
         if (canvasContainer) canvasContainer.style.display = 'block';
-        if (propertiesSidebar) propertiesSidebar.style.display = 'flex';
+        // do not force-show sidebar on generic reset; let per-mode branches control visibility to prevent flash
+        if (propertiesSidebar) propertiesSidebar.style.display = propertiesSidebar.style.display;
         if (mainContent) mainContent.classList.remove('full_width');
         // reset width mode classes
         if (mainContent) mainContent.classList.remove('run_mode', 'history_mode');
@@ -1753,6 +1815,8 @@ class FlowchartBuilder {
             if (annotationToolbar) annotationToolbar.style.display = 'flex'; // show annotation toolbar
             // hide auto track button in build mode
             if (trackBtn) trackBtn.style.display = 'none';
+            // ensure build toolbar starts collapsed in build mode
+            try { if (typeof this._collapseBuildToolbar === 'function') this._collapseBuildToolbar(); } catch (_) {}
             
             // enable add node section in build mode
             if (addNodeSection) {
@@ -1771,6 +1835,8 @@ class FlowchartBuilder {
             // restore normal properties sidebar width
             mainContent.classList.remove('run_mode');
             propertiesSidebar.classList.remove('run_mode');
+            // show sidebar in build mode
+            if (propertiesSidebar) propertiesSidebar.style.display = 'flex';
             
             // switch back to default panel
             this.hideExecutionPanel();
@@ -1825,6 +1891,47 @@ class FlowchartBuilder {
             if (toggleSidebarBtn) {
                 toggleSidebarBtn.title = 'show properties';
                 toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
+                try { console.log('[run_ui] configured toggle button initial state', { title: toggleSidebarBtn.title }); } catch(_) {}
+                if (!toggleSidebarBtn._wired) {
+                    toggleSidebarBtn.addEventListener('click', () => {
+                        try { console.log('[event] toggle_sidebar_btn clicked'); } catch(_) {}
+                        const propertiesSidebarEl = document.getElementById('properties_sidebar');
+                        const isCollapsed = propertiesSidebarEl && propertiesSidebarEl.classList.contains('collapsed');
+                        // if sidebar instance method exists, use it
+                        if (this.sidebar && typeof this.sidebar.setCollapsed === 'function') {
+                            try { console.log('[run_ui] calling sidebar.setCollapsed', { newCollapsed: !isCollapsed }); } catch(_) {}
+                            this.sidebar.setCollapsed(!isCollapsed);
+                        } else if (window.Sidebar && window.Sidebar.prototype && typeof window.Sidebar.prototype.setCollapsed === 'function') {
+                            // fallback: call prototype with this.sidebar context
+                            try { console.log('[run_ui] calling Sidebar.prototype.setCollapsed', { newCollapsed: !isCollapsed }); } catch(_) {}
+                            try { window.Sidebar.prototype.setCollapsed.call(this.sidebar, !isCollapsed); } catch (e) { try { console.warn('[run_ui] prototype setCollapsed call failed:', e); } catch(_) {} }
+                        } else {
+                            // final fallback: toggle classes directly
+                            const mainContentEl = document.querySelector('.main_content');
+                            const runFeedBarEl = document.getElementById('run_feed_bar');
+                            const toggleBarEl = document.getElementById('sidebar_toggle_container');
+                            if (!isCollapsed) {
+                                try { console.log('[run_ui] fallback collapse'); } catch(_) {}
+                                propertiesSidebarEl.classList.add('collapsed');
+                                if (mainContentEl) mainContentEl.classList.add('sidebar_collapsed');
+                                if (runFeedBarEl) runFeedBarEl.classList.add('sidebar_collapsed');
+                                if (toggleBarEl) toggleBarEl.classList.add('sidebar_collapsed');
+                                toggleSidebarBtn.title = 'show properties';
+                                toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
+                            } else {
+                                try { console.log('[run_ui] fallback expand'); } catch(_) {}
+                                propertiesSidebarEl.classList.remove('collapsed');
+                                if (mainContentEl) mainContentEl.classList.remove('sidebar_collapsed');
+                                if (runFeedBarEl) runFeedBarEl.classList.remove('sidebar_collapsed');
+                                if (toggleBarEl) toggleBarEl.classList.remove('sidebar_collapsed');
+                                toggleSidebarBtn.title = 'hide properties';
+                                toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
+                            }
+                        }
+                    }, { passive: true });
+                    toggleSidebarBtn._wired = true;
+                    try { console.log('[wire] toggle_sidebar_btn wired'); } catch(_) {}
+                }
             }
             // show live feed bar
             try {
@@ -1841,6 +1948,8 @@ class FlowchartBuilder {
             if (runFeedBar) runFeedBar.classList.add('sidebar_collapsed');
             if (startButtonContainer) startButtonContainer.classList.add('sidebar_collapsed');
             if (sidebarToggleContainer) sidebarToggleContainer.classList.add('sidebar_collapsed');
+            // keep sidebar hidden while collapsed to avoid flash
+            if (propertiesSidebar) propertiesSidebar.style.display = 'none';
             
             // switch to execution panel
             this.showExecutionPanel();
@@ -1882,6 +1991,8 @@ class FlowchartBuilder {
             // remove run_mode expansions
             mainContent.classList.remove('run_mode');
             propertiesSidebar.classList.remove('run_mode');
+            // hide sidebar in settings full-page mode
+            if (propertiesSidebar) propertiesSidebar.style.display = 'none';
 
             // hide canvas and right sidebar, expand main content
             if (canvasContainer) canvasContainer.style.display = 'none';

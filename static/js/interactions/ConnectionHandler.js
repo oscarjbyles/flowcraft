@@ -12,7 +12,16 @@ class ConnectionHandler {
     }
 
     startConnection(event, sourceNode, dotSide = null) {
-        event.stopPropagation();
+        // use underlying dom event for propagation control (d3 drag provides a wrapper event)
+        const srcEvt = (event && event.sourceEvent) ? event.sourceEvent : event;
+        if (srcEvt && typeof srcEvt.stopPropagation === 'function') {
+            srcEvt.stopPropagation();
+        }
+        if (srcEvt && typeof srcEvt.preventDefault === 'function') {
+            srcEvt.preventDefault();
+        }
+        // suppress canvas click to avoid accidental node creation when starting a connection
+        this.state.suppressNextCanvasClick = true;
         
         // prevent connections in run mode
         if (this.state.isRunMode) {

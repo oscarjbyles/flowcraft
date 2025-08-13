@@ -35,6 +35,15 @@ class DragHandler {
             event.sourceEvent.preventDefault();
             return;
         }
+        // suppress any subsequent canvas click triggered by this drag interaction to avoid accidental node creation
+        this.state.suppressNextCanvasClick = true;
+        // stop propagation so the canvas does not interpret this as a click origin
+        if (event.sourceEvent && typeof event.sourceEvent.stopPropagation === 'function') {
+            event.sourceEvent.stopPropagation();
+            if (typeof event.sourceEvent.preventDefault === 'function') {
+                event.sourceEvent.preventDefault();
+            }
+        }
         // clear any existing snap preview at the start of a drag
         this.state.emit('clearSnapPreview');
         

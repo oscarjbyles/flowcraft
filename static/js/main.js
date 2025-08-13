@@ -24,6 +24,11 @@
 
     // initialize application
     function initializeApp() {
+        // guard against double initialization (e.g., script included twice or rapid re-exec)
+        if (window.flowchartApp && window.__flowcraft_initialized) {
+            try { console.warn('flowchart app already initialized; skipping duplicate init'); } catch (_) {}
+            return;
+        }
         // run only on builder page
         try {
             var isBuilderPath = (window.location && window.location.pathname === '/');
@@ -56,8 +61,11 @@
         } catch (_) {}
 
         try {
-            // create global app instance
-            window.flowchartApp = new FlowchartBuilder();
+            // create global app instance (single instance)
+            if (!window.flowchartApp) {
+                window.flowchartApp = new FlowchartBuilder();
+            }
+            window.__flowcraft_initialized = true;
 
             // wire left navigation (flowchart dropdown, nav buttons) for builder view
             try { if (window.Navigation && typeof window.Navigation.init === 'function') { window.Navigation.init(window.flowchartApp); } } catch (_) {}
