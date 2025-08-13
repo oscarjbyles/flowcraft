@@ -1,6 +1,6 @@
 {
-  "execution_id": "74df25e5-dc1e-4230-a913-0f326662a030",
-  "timestamp": "2025-08-12T16:31:24.270890",
+  "execution_id": "2cb01282-9330-47fe-bfd8-f3aa3cc7d6f5",
+  "timestamp": "2025-08-13T11:40:07.950889",
   "flowchart_name": "if_test",
   "execution_data": {
     "status": "success",
@@ -19,9 +19,12 @@
         "success": true,
         "output": "give us input: 12\nyour input was: 12.0",
         "error": null,
-        "runtime": 140,
-        "timestamp": "16:31:24",
-        "return_value": 12,
+        "runtime": 180,
+        "timestamp": "11:40:07",
+        "return_value": {
+          "get_user_input": 12,
+          "random_number": "hello"
+        },
         "function_name": "my_function"
       },
       {
@@ -31,8 +34,8 @@
         "success": true,
         "output": "after divide by 2: 6.0",
         "error": null,
-        "runtime": 129,
-        "timestamp": "16:31:24",
+        "runtime": 155,
+        "timestamp": "11:40:07",
         "return_value": 6,
         "function_name": "my_function"
       },
@@ -44,7 +47,7 @@
         "output": "",
         "error": null,
         "runtime": 0,
-        "timestamp": "16:31:24",
+        "timestamp": "11:40:07",
         "return_value": {
           "get_user_input": 12
         },
@@ -70,34 +73,52 @@
       {
         "node_id": 1755000326181.6133,
         "node_name": "variable creator",
-        "started_at": "2025-08-12T15:31:23.995Z",
-        "finished_at": "2025-08-12T15:31:24.114Z",
+        "started_at": "2025-08-13T10:40:07.618Z",
+        "finished_at": "2025-08-13T10:40:07.757Z",
         "success": true,
         "lines": [
           {
             "text": "give us input: 12",
-            "ts": "2025-08-12T15:31:24.105Z"
+            "ts": "2025-08-13T10:40:07.750Z"
           },
           {
             "text": "your input was: 12.0",
-            "ts": "2025-08-12T15:31:24.106Z"
+            "ts": "2025-08-13T10:40:07.750Z"
           }
         ],
-        "elapsed_ms": 119
+        "elapsed_ms": 139
+      },
+      {
+        "node_id": 1755000326181.6133,
+        "node_name": "variable creator",
+        "started_at": "2025-08-13T10:40:07.587Z",
+        "lines": [],
+        "finished_at": "2025-08-13T10:40:07.766Z",
+        "success": true,
+        "elapsed_ms": 179
       },
       {
         "node_id": 1755004919631.1492,
         "node_name": "divide by 2",
-        "started_at": "2025-08-12T15:31:24.128Z",
-        "finished_at": "2025-08-12T15:31:24.243Z",
+        "started_at": "2025-08-13T10:40:07.783Z",
+        "finished_at": "2025-08-13T10:40:07.910Z",
         "success": true,
         "lines": [
           {
             "text": "after divide by 2: 6.0",
-            "ts": "2025-08-12T15:31:24.231Z"
+            "ts": "2025-08-13T10:40:07.902Z"
           }
         ],
-        "elapsed_ms": 115
+        "elapsed_ms": 127
+      },
+      {
+        "node_id": 1755004919631.1492,
+        "node_name": "divide by 2",
+        "started_at": "2025-08-13T10:40:07.769Z",
+        "lines": [],
+        "finished_at": "2025-08-13T10:40:07.923Z",
+        "success": true,
+        "elapsed_ms": 154
       }
     ],
     "total_nodes": 5,
@@ -194,7 +215,8 @@
           "runtime_condition": "false",
           "runtime_details": {
             "variables": {
-              "get_user_input": 12
+              "get_user_input": 12,
+              "random_number": "hello"
             },
             "conditions": [
               {
@@ -215,7 +237,8 @@
           "runtime_condition": "false",
           "runtime_details": {
             "variables": {
-              "get_user_input": 12
+              "get_user_input": 12,
+              "random_number": "hello"
             },
             "conditions": [],
             "final": false

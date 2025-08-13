@@ -1,9 +1,9 @@
 {
-  "execution_id": "1c85aea2-e51f-4b85-8b76-9de696473995",
-  "timestamp": "2025-08-12T21:03:13.272430",
+  "execution_id": "04fd6342-f58d-4708-9345-a80f9bca8c13",
+  "timestamp": "2025-08-13T11:39:58.269958",
   "flowchart_name": "if_test",
   "execution_data": {
-    "status": "failed",
+    "status": "success",
     "execution_order": [
       1755000326181.6133,
       1755004919631.1492,
@@ -19,21 +19,25 @@
         "success": true,
         "output": "give us input: 12\nyour input was: 12.0",
         "error": null,
-        "runtime": 191,
-        "timestamp": "21:03:13",
-        "return_value": 12,
+        "runtime": 358,
+        "timestamp": "11:39:57",
+        "return_value": {
+          "get_user_input": 12,
+          "random_number": "hello"
+        },
         "function_name": "my_function"
       },
       {
         "node_id": 1755004919631.1492,
         "node_name": "divide by 2",
         "python_file": "nodes/if_test/divide by 2.py",
-        "success": false,
-        "output": "",
-        "error": "missing required function arguments: random_number",
-        "runtime": 39,
-        "timestamp": "21:03:13",
-        "return_value": null
+        "success": true,
+        "output": "after divide by 2: 6.0",
+        "error": null,
+        "runtime": 272,
+        "timestamp": "11:39:58",
+        "return_value": 6,
+        "function_name": "my_function"
       },
       {
         "node_id": 1755007729034.7812,
@@ -43,7 +47,7 @@
         "output": "",
         "error": null,
         "runtime": 0,
-        "timestamp": "21:03:13",
+        "timestamp": "11:39:57",
         "return_value": {
           "get_user_input": 12
         },
@@ -69,34 +73,39 @@
       {
         "node_id": 1755000326181.6133,
         "node_name": "variable creator",
-        "started_at": "2025-08-12T20:03:13.058Z",
-        "finished_at": "2025-08-12T20:03:13.225Z",
+        "started_at": "2025-08-13T10:39:57.649Z",
+        "finished_at": "2025-08-13T10:39:57.986Z",
         "success": true,
         "lines": [
           {
             "text": "give us input: 12",
-            "ts": "2025-08-12T20:03:13.213Z"
+            "ts": "2025-08-13T10:39:57.979Z"
           },
           {
             "text": "your input was: 12.0",
-            "ts": "2025-08-12T20:03:13.214Z"
+            "ts": "2025-08-13T10:39:57.980Z"
           }
         ],
-        "elapsed_ms": 167
+        "elapsed_ms": 337
       },
       {
         "node_id": 1755004919631.1492,
         "node_name": "divide by 2",
-        "started_at": "2025-08-12T20:03:13.242Z",
-        "finished_at": "2025-08-12T20:03:13.266Z",
-        "success": false,
-        "lines": [],
-        "elapsed_ms": 38
+        "started_at": "2025-08-13T10:39:58.002Z",
+        "finished_at": "2025-08-13T10:39:58.255Z",
+        "success": true,
+        "lines": [
+          {
+            "text": "after divide by 2: 6.0",
+            "ts": "2025-08-13T10:39:58.254Z"
+          }
+        ],
+        "elapsed_ms": 253
       }
     ],
     "total_nodes": 5,
-    "successful_nodes": 1,
-    "error_message": "execution stopped at node: divide by 2",
+    "successful_nodes": 2,
+    "error_message": null,
     "flowchart_state": {
       "nodes": [
         {
@@ -185,15 +194,37 @@
               "variable": "get_user_input"
             }
           ],
-          "runtime_condition": null,
-          "runtime_details": null,
+          "runtime_condition": "false",
+          "runtime_details": {
+            "variables": {
+              "get_user_input": 12,
+              "random_number": "hello"
+            },
+            "conditions": [
+              {
+                "variable": "get_user_input",
+                "operator": "<",
+                "value": "10",
+                "left": 12,
+                "result": false
+              }
+            ],
+            "final": false
+          },
           "source": 1755000340873.953,
           "target": 1755000362953.123
         },
         {
           "conditions": [],
-          "runtime_condition": null,
-          "runtime_details": null,
+          "runtime_condition": "false",
+          "runtime_details": {
+            "variables": {
+              "get_user_input": 12,
+              "random_number": "hello"
+            },
+            "conditions": [],
+            "final": false
+          },
           "source": 1755000340873.953,
           "target": 1755000364019.7163
         },

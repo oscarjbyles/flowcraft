@@ -1,6 +1,6 @@
 {
-  "execution_id": "4cbdca33-79f0-4819-856e-4c6a221ce3bb",
-  "timestamp": "2025-08-12T17:58:24.696984",
+  "execution_id": "d69be485-b03f-4c14-bc12-d356a5472292",
+  "timestamp": "2025-08-13T11:40:07.930884",
   "flowchart_name": "if_test",
   "execution_data": {
     "status": "success",
@@ -19,9 +19,12 @@
         "success": true,
         "output": "give us input: 12\nyour input was: 12.0",
         "error": null,
-        "runtime": 193,
-        "timestamp": "17:58:24",
-        "return_value": 12,
+        "runtime": 158,
+        "timestamp": "11:40:07",
+        "return_value": {
+          "get_user_input": 12,
+          "random_number": "hello"
+        },
         "function_name": "my_function"
       },
       {
@@ -31,8 +34,8 @@
         "success": true,
         "output": "after divide by 2: 6.0",
         "error": null,
-        "runtime": 119,
-        "timestamp": "17:58:24",
+        "runtime": 146,
+        "timestamp": "11:40:07",
         "return_value": 6,
         "function_name": "my_function"
       },
@@ -44,7 +47,7 @@
         "output": "",
         "error": null,
         "runtime": 0,
-        "timestamp": "17:58:24",
+        "timestamp": "11:40:07",
         "return_value": {
           "get_user_input": 12
         },
@@ -70,34 +73,34 @@
       {
         "node_id": 1755000326181.6133,
         "node_name": "variable creator",
-        "started_at": "2025-08-12T16:58:24.376Z",
-        "finished_at": "2025-08-12T16:58:24.557Z",
+        "started_at": "2025-08-13T10:40:07.620Z",
+        "finished_at": "2025-08-13T10:40:07.763Z",
         "success": true,
         "lines": [
           {
             "text": "give us input: 12",
-            "ts": "2025-08-12T16:58:24.556Z"
+            "ts": "2025-08-13T10:40:07.749Z"
           },
           {
             "text": "your input was: 12.0",
-            "ts": "2025-08-12T16:58:24.556Z"
+            "ts": "2025-08-13T10:40:07.750Z"
           }
         ],
-        "elapsed_ms": 181
+        "elapsed_ms": 143
       },
       {
         "node_id": 1755004919631.1492,
         "node_name": "divide by 2",
-        "started_at": "2025-08-12T16:58:24.567Z",
-        "finished_at": "2025-08-12T16:58:24.677Z",
+        "started_at": "2025-08-13T10:40:07.782Z",
+        "finished_at": "2025-08-13T10:40:07.910Z",
         "success": true,
         "lines": [
           {
             "text": "after divide by 2: 6.0",
-            "ts": "2025-08-12T16:58:24.671Z"
+            "ts": "2025-08-13T10:40:07.903Z"
           }
         ],
-        "elapsed_ms": 110
+        "elapsed_ms": 128
       }
     ],
     "total_nodes": 5,
@@ -194,7 +197,8 @@
           "runtime_condition": "false",
           "runtime_details": {
             "variables": {
-              "get_user_input": 12
+              "get_user_input": 12,
+              "random_number": "hello"
             },
             "conditions": [
               {
@@ -215,7 +219,8 @@
           "runtime_condition": "false",
           "runtime_details": {
             "variables": {
-              "get_user_input": 12
+              "get_user_input": 12,
+              "random_number": "hello"
             },
             "conditions": [],
             "final": false

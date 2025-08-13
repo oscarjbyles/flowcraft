@@ -18,10 +18,37 @@
         // initialize nav and dashboard
         document.addEventListener('DOMContentLoaded', () => {
             try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
+            // create a single url manager instance for this page and a helper to preserve context across links
+            let urlMgr = null;
+            try { urlMgr = new URLManager(); } catch(_) {}
+
+            function with_flowchart(path){
+                try {
+                    if (urlMgr && typeof urlMgr.buildUrlPreserveContext === 'function') {
+                        return urlMgr.buildUrlPreserveContext(path);
+                    }
+                } catch(_) {}
+                const u = new URL(path, window.location.origin);
+                const params = new URLSearchParams(window.location.search);
+                // preserve mode if present; default to build
+                const mode = params.get('mode') || 'build';
+                if (!u.searchParams.get('mode')) u.searchParams.set('mode', mode);
+                // preserve display flowchart param for dashboard/scripts/builder
+                const display = params.get('flowchart');
+                if (display && (u.pathname === '/' || u.pathname === '/dashboard' || u.pathname === '/scripts')) {
+                    u.searchParams.set('flowchart', display);
+                }
+                // preserve filename for data matrix
+                const filename = params.get('flowchart_name');
+                if (filename && u.pathname === '/data') {
+                    u.searchParams.set('flowchart_name', filename);
+                }
+                return u.pathname + (u.search ? u.search : '');
+            }
             async function init_dashboard(){
                 // compute flow context compatible with other pages
-                const flow_display = urlMgr.getFlowchartDisplayNamePreferred();
-                const flow_filename = urlMgr.getFlowchartFilenameFromURL();
+                const flow_display = urlMgr ? urlMgr.getFlowchartDisplayNamePreferred() : (new URLSearchParams(window.location.search)).get('flowchart') || 'default';
+                const flow_filename = urlMgr ? urlMgr.getFlowchartFilenameFromURL() : ((new URLSearchParams(window.location.search)).get('flowchart_name') || (flow_display + '.json'));
 
                 // dom refs
                 const el_total_exec = document.getElementById('kpi_total_exec');

@@ -177,6 +177,9 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     flex-direction: column;
     background-color: var(--background-color);
     margin-right: 320px;
+    /* allow inner flex children to scroll (scripts/dashboard pages) */
+    min-height: 0;
+    overflow: hidden;
 }
 
 .main_content.full_width {

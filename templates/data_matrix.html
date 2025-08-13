@@ -16,7 +16,8 @@
 {% endblock %}
 {% block scripts %}
     <script src="/static/js/pages/DataMatrix.js"></script>
-{% endblock %}
+    <script>
+    (async () => {
         try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
         // small helpers (keep comments in lower case to match project convention)
         const $ = (sel) => document.querySelector(sel);

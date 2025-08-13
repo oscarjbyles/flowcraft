@@ -1,99 +1,147 @@
-# flowchart builder
+# FlowCraft
 
-a web-based tool for building flowcharts with nodes representing python files. features a dark mode material ui interface with interactive node creation and linking.
+web app to build, run, and analyze python workflows as visual flowcharts. nodes reference python files under `nodes/`, links define execution order and data flow, and runs are tracked with summaries you can review on a dashboard.
 
 ## features
 
-- **interactive flowchart creation**: click to add nodes, drag to move them around
-- **node connections**: shift+click to connect nodes with links
-- **python file nodes**: each node represents a python file
-- **json storage**: flowchart structure is stored in json format
-- **dark mode material ui**: modern dark theme interface
-- **modular sidebar**: extensible sidebar with build and run actions
-- **drag and drop**: intuitive node manipulation
-- **context menus**: right-click nodes for edit/delete options
+- **visual builder**: create python nodes, arrange them on an svg canvas, and link them.
+- **run mode**: execute flows or single nodes with live output and error capture.
+- **function awareness**: analyze a python file to infer a primary function, parameters, and returns; mock `input()` via provided values.
+- **history & dashboard**: save runs, view success rates, timings, recent failures, and coverage per flowchart.
+- **file tools**: browse `nodes/`, create/move/delete folders/files, open in your editor (cursor, vscode, etc.).
+- **variable analysis**: inspect shared variables between connected scripts to help author conditions.
 
-## installation
+## quick start
 
-1. create and activate virtual environment:
+1) create a virtual environment and activate it
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+on mac/linux:
+
 ```bash
 python -m venv .venv
-
-# windows
-.venv\Scripts\activate
-
-# mac/linux
 source .venv/bin/activate
 ```
 
-2. install dependencies:
+2) install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## usage
+3) run the app
 
-1. start the application:
 ```bash
 python app.py
 ```
 
-2. open your browser and navigate to `http://localhost:5000`
+open `http://localhost:5000`. on macos, if port 5000 is in use, the app auto-selects the next available port.
 
-3. **creating nodes**:
-   - click anywhere on the canvas to add a new node
-   - use the "add node" button in the sidebar
-   - nodes represent python files
+## usage
 
-4. **connecting nodes**:
-   - hold shift and click a source node
-   - then click the target node to create a connection
-   - press escape to cancel connection mode
+### build a flow
+- open `/` (builder).
+- click the toolbar buttons to add nodes (e.g., python node, if condition).
+- select a node and choose a python file under `nodes/` (use the picker or create a new script).
+- drag to move; shift+drag to connect nodes; right-click for context actions.
 
-5. **editing nodes**:
-   - right-click on a node to open context menu
-   - select "edit node" to rename the python file
-   - select "delete node" to remove it
+### run a flow
+- switch to run mode from the builder, or open `/dashboard` to navigate with preserved context.
+- start a run; watch live logs and per-node outputs/returns.
+- save a run to make it appear in the dashboard and data views.
 
-6. **saving/loading**:
-   - use the "save" button to persist your flowchart
-   - use the "load" button to restore a saved flowchart
-   - data is stored in `flowchart_data.json`
+### scripts and editors
+- manage files under `nodes/` from the ui (browse, mkdir, touch, move, delete).
+- set a default editor; opening a file uses your editor if detected.
 
-## keyboard shortcuts
+## how python nodes are executed
 
-- **delete**: delete selected node
-- **escape**: cancel connection mode
-- **shift+click**: start connection from node
+there are two execution paths used by the backend:
 
-## api endpoints
+- flow runs (`POST /api/run`): each node's file is executed as a script via `python path/to/file.py` in sequence; stdout/stderr and return codes are captured.
+- single-node runs (`POST /api/execute-node` or `/execute-node-stream`): the backend parses the first function defined in the file, mocks `input()`, and invokes it with provided arguments. the result, stdout, and any error are returned/streamed.
 
-- `GET /api/flowchart` - retrieve current flowchart data
-- `POST /api/flowchart` - save flowchart data
-- `POST /api/build` - trigger build action (placeholder)
-- `POST /api/run` - trigger run action (placeholder)
+recommendation: structure node scripts with a single, top-level function that accepts named parameters and returns values you want to expose.
 
-## file structure
+## data & storage
+
+- flowcharts: `flowcharts/<name>.json` containing nodes, links, groups, and a compact `executions` array (recent summaries for dashboard).
+- history: per-run details saved to `history/<name_without_json>/<uuid>.json`.
+- nodes: python scripts under `nodes/` (can be nested in folders).
+
+## project structure
 
 ```
-propri/
-├── app.py                 # flask backend server
-├── requirements.txt       # python dependencies
-├── flowchart_data.json   # flowchart storage (created automatically)
-├── templates/
-│   └── index.html        # main html template
-└── static/
-    └── flowchart.js      # frontend javascript logic
+flowcraft/
+├─ app.py
+├─ backend/
+│  ├─ routes/            # ui, flowcharts, files, execution, analysis, editors
+│  └─ services/          # storage, analysis, execution processes
+├─ templates/            # jinja templates (builder, dashboard, data matrix, etc.)
+├─ static/               # js (core, components), css, assets
+├─ flowcharts/           # flowchart json files
+├─ history/              # saved executions per flowchart
+└─ nodes/                # your python scripts
 ```
 
-## customization
+## api
 
-the sidebar is modular and can be easily extended with additional tools and actions. the build and run functions are currently placeholders that can be implemented for specific workflows.
+base prefix for most endpoints is `/api`.
 
-## technologies used
+### flowcharts
+- `GET /api/flowchart?name=<name>`: load a flowchart (defaults to `default.json`).
+- `POST /api/flowchart` body: `{ flowchart_name, ...data }`: save flowchart; preserves existing `executions` if omitted.
+- `GET /api/flowcharts`: list available flowcharts.
+- `POST /api/flowcharts` body: `{ name }`: create a new flowchart.
+- `DELETE /api/flowcharts/<name>`: delete a flowchart and its history folder.
+- `POST /api/build`: placeholder endpoint.
 
-- **backend**: flask, flask-cors
-- **frontend**: html5, css3, javascript (es6+)
-- **visualization**: d3.js
-- **ui**: material design principles
-- **storage**: json file format
+### files (nodes/)
+- `GET /api/python-files`: enumerate python files under `nodes/`.
+- `GET /api/nodes/browse?path=<rel>`: list entries for a folder beneath `nodes/`.
+- `POST /api/nodes/mkdir` body: `{ path, name }`: create folder.
+- `POST /api/nodes/touch` body: `{ path, name }`: create empty file or a python template.
+- `POST /api/nodes/move` body: `{ src, dst_dir }`: move a file/folder within `nodes/`.
+- `POST /api/nodes/delete` body: `{ path }`: delete file/folder.
+
+### execution
+- `POST /api/run` body: `{ flowchart_name, execution_order: [nodeIds] }`: run files in order as scripts.
+- `POST /api/execute-node` body: `{ node_id, python_file, function_args, input_values }`: run first function, return result.
+- `POST /api/execute-node-stream`: same as above but streams stdout and final result via sse.
+- `POST /api/stop-execution`: terminate tracked processes and clean temp files.
+- `POST /api/save-execution` body: `{ flowchart_name, execution_data }`: persist a run; also appends a compact summary to the flowchart json (capped).
+- `GET /api/history?flowchart_name=<name>`: list saved runs (summarized).
+- `GET /api/history/<execution_id>?flowchart_name=<name>`: get full run details.
+- `DELETE /api/history/<execution_id>?flowchart_name=<name>`: delete a run and remove its summary from the flowchart json.
+- `POST /api/history/clear` body: `{ flowchart_name }`: clear on-disk history for a flowchart.
+- `POST /api/history/clear-all` body: `{ flowchart_name }`: clear on-disk history and reset `executions` in the flowchart json.
+
+### analysis
+- `POST /api/analyze-python-function` body: `{ python_file }`: infer function name, parameters, returns, and input calls from a file.
+- `POST /api/analyze-connection` body: `{ source_node_id, target_node_id, flowchart_name }`: analyze shared variables between linked files.
+
+### editors
+- `GET /api/editors`: detect installed editors (platform-aware).
+- `POST /api/open-file` body: `{ python_file, preferred_editor_path? }`: open a script in an editor.
+
+## ui pages
+
+- `/` builder (main canvas + properties sidebar)
+- `/dashboard` overview and kpis
+- `/scripts` scripts explorer
+- `/data` data matrix
+
+## troubleshooting
+
+- node has no file: assign a `python_file` to the node in the sidebar.
+- script timed out: single-node executions time out after 30s; optimize or split work.
+- permission errors on temp files (windows): the app retries cleanup; if a file remains, you can delete it manually.
+- editors not detected: set a preferred path in the ui when opening a file.
+
+## requirements
+
+see `requirements.txt` (flask, flask-cors, psutil, requests, numpy). python 3.9+ recommended.
