@@ -1,0 +1,18 @@
+/* shared modal styles */
+@layer components {
+  .modal_overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: var(--z_modal); }
+  .modal_overlay_is_open { display: flex; }
+  .modal_content { background: var(--surface-color); border-radius: 12px; padding: 24px; min-width: 400px; max-width: 550px; box-shadow: var(--shadow_1); }
+  .modal_header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal_title { font-size: 1.25rem; font-weight: 600; color: var(--on-surface); }
+  .modal_close { background: none; border: none; color: var(--on-surface); cursor: pointer; padding: 4px; border-radius: 4px; transition: background-color 0.2s ease; }
+  .modal_close:hover { background-color: var(--hover-color); }
+  .modal_actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+  .btn_modal { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s ease; text-transform: uppercase; }
+  .btn_modal_primary { background-color: var(--primary-color); color: var(--on-primary); }
+  .btn_modal_primary:hover { background-color: var(--primary-dark); }
+  .btn_modal_secondary { background-color: var(--surface-variant); color: var(--on-surface); }
+  .btn_modal_secondary:hover { background-color: var(--hover-color); }
+}
+
+

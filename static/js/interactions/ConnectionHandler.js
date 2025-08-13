@@ -1,4 +1,8 @@
 // connection creation interaction handler
+(function(){
+    'use strict';
+    if (window.ConnectionHandler) { return; }
+
 class ConnectionHandler {
     constructor(stateManager, eventManager) {
         this.state = stateManager;
@@ -273,3 +277,4 @@ class ConnectionHandler {
 }
 
 window.ConnectionHandler = ConnectionHandler;
+})();

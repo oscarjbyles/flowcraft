@@ -1,4 +1,8 @@
 // link rendering and visual management
+(function(){
+    'use strict';
+    if (window.LinkRenderer) { return; }
+
 class LinkRenderer {
     constructor(stateManager, container) {
         this.state = stateManager;
@@ -1254,3 +1258,4 @@ class LinkRenderer {
 }
 
 window.LinkRenderer = LinkRenderer;
+})();

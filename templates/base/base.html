@@ -1,0 +1,24 @@
+<!-- base layout for flowcraft pages (lowercase comments, underscore naming) -->
+{% set _ = None %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include 'base/head.html' %}
+  <title>{% block title %}FlowCraft{% endblock %}</title>
+  {% block styles %}{% endblock %}
+</head>
+<body>
+  <div class="app_container">
+    {% include 'partials/sidebar.html' %}
+    <div class="main_content {% block main_content_class %}full_width{% endblock %}">
+      {% block content %}{% endblock %}
+      {% include 'partials/status_bar.html' %}
+    </div>
+  </div>
+  {% block modals %}{% endblock %}
+  {% include 'base/foot.html' %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+
+

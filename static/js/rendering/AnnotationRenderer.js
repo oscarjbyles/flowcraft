@@ -1,4 +1,8 @@
 // annotation rendering and interactions (text labels)
+(function(){
+    'use strict';
+    if (window.AnnotationRenderer) { return; }
+
 class AnnotationRenderer {
     constructor(stateManager, container) {
         this.state = stateManager;
@@ -151,6 +155,7 @@ class AnnotationRenderer {
 }
 
 window.AnnotationRenderer = AnnotationRenderer;
+})();
 
 
 

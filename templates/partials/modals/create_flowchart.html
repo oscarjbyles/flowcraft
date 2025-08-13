@@ -1,0 +1,22 @@
+<!-- shared create flowchart modal (keep ids and structure unchanged) -->
+<div class="modal_overlay" id="create_flowchart_modal">
+  <div class="modal_content">
+    <div class="modal_header">
+      <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
+      <button class="modal_close" id="close_create_modal">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="form_group">
+      <label class="form_label" for="new_flowchart_name">flowchart name</label>
+      <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
+      <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">use letters, numbers, hyphens, and underscores only (no spaces)</div>
+    </div>
+    <div class="modal_actions">
+      <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
+      <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
+    </div>
+  </div>
+  </div>
+
+

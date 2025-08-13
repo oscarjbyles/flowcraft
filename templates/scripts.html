@@ -1,411 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowCraft - Scripts</title>
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/sidebar.css">
-    <link rel="stylesheet" href="/static/css/index.css">
-    <style>
-        /* page-specific scripts styles only; shared layout/variables/sidebar come from linked css files */
-        /* explorer layout */
-        .scripts_container { flex:1; display:flex; flex-direction:column; padding:16px; gap:12px; }
-        .explorer_toolbar { display:flex; gap:8px; align-items:center; }
-        .explorer_btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border-color); background: var(--surface-variant); color: var(--on-surface); border-radius:6px; cursor:pointer; font-size:0.875rem; font-weight:500; text-transform:none; }
-        .explorer_btn:hover { background: var(--hover-color); }
-        .explorer_btn .material-icons { font-size:18px; }
-        .breadcrumb { display:flex; gap:6px; align-items:center; font-size:.9rem; color: var(--on-surface); opacity:.9; flex-wrap:wrap; }
-        .breadcrumb_item { cursor:pointer; color:#90caf9; }
-        .breadcrumb_sep { opacity:.6; }
-        .explorer_table_wrap { border:1px solid var(--border-color); border-radius:8px; overflow:hidden; background: var(--surface-variant); }
-        .explorer_table { width:100%; border-collapse:collapse; }
-        .explorer_table thead { background: #242424; }
-        .explorer_th, .explorer_td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border-color); font-size:.9rem; }
-        .explorer_row { cursor:pointer; }
-        .explorer_row:hover { background: var(--hover-color); }
-        /* directory rows background color */
-        .explorer_row.is_dir { background: #2a190e; }
-        .explorer_row.is_dir:hover { background: #2f1d12; }
-        .name_cell { display:flex; align-items:center; gap:8px; }
-        .folder_icon, .file_icon { font-size:18px; opacity:.9; }
-        .empty_state { padding:18px; text-align:center; color: var(--on-surface); opacity:.7; }
-        .actions_cell { display:flex; gap:10px; justify-content:flex-end; }
-        .row_btn { padding:6px 10px; border:1px solid var(--border-color); background: var(--surface-color); color: var(--on-surface); border-radius:6px; cursor:pointer; }
-        .row_btn:hover { background: var(--hover-color); }
-        .row_btn_delete { background: rgba(244, 67, 54, 0.12); color: #f44336; border: none; margin-left: 10px; }
-        .row_btn_delete:hover { background: rgba(244, 67, 54, 0.2); }
-        .unselectable_text { user-select:none; -webkit-user-select:none; -ms-user-select:none; }
-
-        /* dark mode styling for row selection checkboxes */
-        .explorer_select_cb {
-            width:16px; height:16px;
-            -webkit-appearance: none; -moz-appearance: none; appearance: none;
-            display: inline-grid; place-content: center;
-            border: 1px solid var(--border-color);
-            border-radius: 3px;
-            background: var(--surface-color);
-            outline: none;
-            cursor: pointer;
-            transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
-        }
-        .explorer_select_cb:hover { box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15); }
-        .explorer_select_cb:checked {
-            background-color: #4caf50; border-color: #4caf50;
-        }
-        .explorer_select_cb:checked::after {
-            content: '\2713';
-            color: #ffffff; font-size: 12px; line-height: 1; transform: translateY(-1px);
-        }
-
-        /* align the checkbox column to the left */
-        .explorer_table thead th:nth-child(2),
-        .explorer_table tbody td:nth-child(2) { text-align: left; }
-
-        /* form + dropdown styles (match index) */
-        .form_group { margin-bottom: 16px; }
-        .form_input { width: 100%; padding: 12px; background-color: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; color: var(--on-surface); font-size: 0.875rem; }
-        .form_input:focus { outline: none; border-color: var(--primary-color); }
-
-        .dropdown_container { position: relative; }
-        .dropdown_input { cursor: pointer; padding-right: 40px; }
-        .dropdown_arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--on-surface); pointer-events: none; font-size: 20px; }
-        .dropdown_menu { position: absolute; top: 100%; left: 0; right: 0; background-color: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; }
-        .dropdown_menu.show { display: block; }
-        .dropdown_item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .dropdown_item:last-child { border-bottom: none; }
-        .dropdown_item:hover { background-color: var(--hover-color); }
-        .dropdown_item.selected { background-color: var(--primary-color); color: var(--on-primary); }
-        .dropdown_loading, .dropdown_no_results { padding: 12px; text-align: center; color: var(--on-surface); opacity: 0.7; font-size: 0.875rem; }
-
-        /* delete button inside dropdown items */
-        .dropdown_delete_btn { background: none; border: none; color: #f44336; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
-        .dropdown_delete_btn:hover { background: rgba(244, 67, 54, 0.1); }
-        .dropdown_delete_btn .material-icons { font-size: 16px; }
-
-        .create_flowchart_link_container { margin-top: -10px; text-align: right; }
-        .create_flowchart_link { display: inline-flex; align-items: center; gap: 6px; color: #4caf50; text-decoration: none; font-size: 0.8rem; font-weight: 500; padding: 6px 12px; border-radius: 4px; transition: all 0.2s ease; text-transform: lowercase; }
-        .create_flowchart_link:hover { background: rgba(76, 175, 80, 0.1); color: #66bb6a; }
-        .create_flowchart_link .material-icons { font-size: 16px; }
-
-        /* modal styles (replicated minimal set) */
-        .modal_overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 10000; }
-        .modal_overlay.show { display: flex; }
-        .modal_content { background: var(--surface-color); border-radius: 12px; padding: 24px; min-width: 400px; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
-        .modal_header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .modal_title { font-size: 1.25rem; font-weight: 600; color: var(--on-surface); }
-        .modal_close { background: none; border: none; color: var(--on-surface); cursor: pointer; padding: 4px; border-radius: 4px; transition: background-color 0.2s ease; }
-        .modal_close:hover { background-color: var(--hover-color); }
-        .modal_actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
-        .btn_modal { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s ease; text-transform: uppercase; }
-        .btn_modal_primary { background-color: var(--primary-color); color: var(--on-primary); }
-        .btn_modal_primary:hover { background-color: var(--primary-dark); }
-        .btn_modal_secondary { background-color: var(--surface-variant); color: var(--on-surface); }
-        .btn_modal_secondary:hover { background-color: var(--hover-color); }
-        /* move modal upward */
-        #create_flowchart_modal .modal_content { margin-top: -50px; }
-    </style>
-</head>
-<body>
-    <div class="app_container">
-        <!-- sidebar (shared partial from index) -->
-        {% include 'partials/sidebar.html' %}
-
-        <!-- main content for scripts interface -->
-        <div class="main_content full_width">
-            <div class="scripts_container" style="flex:1;">
-                <div class="explorer_toolbar">
-                    <button id="btn_new_file" class="explorer_btn"><span class="material-icons">note_add</span> Create File</button>
-                    <button id="btn_new_folder" class="explorer_btn"><span class="material-icons">create_new_folder</span> Create Folder</button>
-                    <button id="btn_delete_selected" class="explorer_btn" style="display:none;">
-                        <span class="material-icons" style="vertical-align:middle;">delete</span>
-                        Delete Selected
-                    </button>
-                    <button id="btn_deselect_all" class="explorer_btn" style="display:none;">
-                        <span class="material-icons" style="vertical-align:middle;">backspace</span>
-                        Deselect All
-                    </button>
-                    <div style="flex:1"></div>
-                    <button id="btn_up" class="explorer_btn" title="go up one level"><span class="material-icons">arrow_upward</span> Up</button>
-                </div>
-                <div class="breadcrumb" id="breadcrumb"></div>
-                <div class="explorer_table_wrap">
-                    <table class="explorer_table" id="explorer_table">
-                        <thead>
-                            <tr>
-                                <th class="explorer_th">name</th>
-                                <th class="explorer_th" style="width:90px;">select</th>
-                                <th class="explorer_th" style="width:140px;">type</th>
-                                <th class="explorer_th" style="width:120px;">size</th>
-                                <th class="explorer_th" style="width:200px;">modified</th>
-                                <th class="explorer_th" style="width:180px; text-align:right;">actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="explorer_tbody">
-                            <tr><td class="explorer_td" colspan="5"><div class="empty_state">loading...</div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% include 'partials/status_bar.html' %}
-        </div>
-    </div>
-
-    <!-- create flowchart modal (scripts page) -->
-    <div class="modal_overlay" id="create_flowchart_modal">
-        <div class="modal_content">
-            <div class="modal_header">
-                <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
-                <button class="modal_close" id="close_create_modal">
-                    <span class="material-icons">close</span>
+{% extends 'base/base.html' %}
+{% block title %}FlowCraft - Scripts{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/pages/scripts.css">{% endblock %}
+{% block content %}
+        <div class="scripts_container" style="flex:1;">
+            <div class="explorer_toolbar">
+                <button id="btn_new_file" class="explorer_btn"><span class="material-icons">note_add</span> Create File</button>
+                <button id="btn_new_folder" class="explorer_btn"><span class="material-icons">create_new_folder</span> Create Folder</button>
+                <button id="btn_delete_selected" class="explorer_btn">
+                    <span class="material-icons" style="vertical-align:middle;">delete</span>
+                    Delete Selected
                 </button>
+                <button id="btn_deselect_all" class="explorer_btn">
+                    <span class="material-icons" style="vertical-align:middle;">backspace</span>
+                    Deselect All
+                </button>
+                <div class="u_flex_grow_1"></div>
+                <button id="btn_up" class="explorer_btn" title="go up one level"><span class="material-icons u_icon_18">arrow_upward</span> Up</button>
             </div>
-            <div class="form_group">
-                <label class="form_label" for="new_flowchart_name">flowchart name</label>
-                <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">use letters, numbers, hyphens, and underscores only (no spaces)</div>
-            </div>
-            <div class="modal_actions">
-                <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
-                <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
+            {% include 'partials/breadcrumb.html' %}
+            <div class="explorer_table_wrap">
+                <table class="explorer_table" id="explorer_table">
+                    <thead>
+                        <tr>
+                            <th class="explorer_th">name</th>
+                            <th class="explorer_th">select</th>
+                            <th class="explorer_th">type</th>
+                            <th class="explorer_th">size</th>
+                            <th class="explorer_th">modified</th>
+                            <th class="explorer_th">actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="explorer_tbody">
+                        <tr><td class="explorer_td" colspan="5"><div class="empty_state">loading...</div></td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
+{% endblock %}
 
-    <script src="/static/js/utils/URLManager.js"></script>
-    <!-- left navigation (centralized) -->
-    <script src="/static/js/components/navigation/Navigation.base.js"></script>
-    <script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
-    <script>
-        // preserve flowchart param and provide functional dropdown in scripts view
-        (function(){
-            try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
-            // simple file explorer
-            const tbody = document.getElementById('explorer_tbody');
-            const breadcrumbEl = document.getElementById('breadcrumb');
-            const btnNewFile = document.getElementById('btn_new_file');
-            const btnNewFolder = document.getElementById('btn_new_folder');
-            const btnUp = document.getElementById('btn_up');
-            const btnDeleteSelected = document.getElementById('btn_delete_selected');
-            const btnDeselectAll = document.getElementById('btn_deselect_all');
+{% block modals %}
+    {% include 'partials/modals/create_flowchart.html' %}
+{% endblock %}
 
-            let cwd = '';
-            let selectedPaths = new Set();
-
-            async function browse(path = ''){
-                try {
-                    const resp = await fetch(`/api/nodes/browse?path=${encodeURIComponent(path)}`);
-                    const data = await resp.json();
-                    if (data.status === 'success'){
-                        cwd = data.cwd || '';
-                        // hide the up button when at the highest level
-                        if (btnUp) btnUp.style.display = cwd ? 'inline-flex' : 'none';
-                        renderBreadcrumb(data.breadcrumb || []);
-                        renderEntries(data.entries || []);
-                    } else {
-                        renderError(data.message || 'failed to browse');
-                    }
-                } catch (_) {
-                    renderError('error loading directory');
-                }
-            }
-
-            function renderBreadcrumb(parts){
-                breadcrumbEl.innerHTML = '';
-                const root = document.createElement('span');
-                root.className = 'breadcrumb_item';
-                root.textContent = 'nodes';
-                root.onclick = () => browse('');
-                breadcrumbEl.appendChild(root);
-                if (!parts.length) return;
-                parts.forEach((p, idx) => {
-                    const sep = document.createElement('span'); sep.className = 'breadcrumb_sep'; sep.textContent = '/';
-                    breadcrumbEl.appendChild(sep);
-                    const item = document.createElement('span'); item.className = 'breadcrumb_item'; item.textContent = p.name; item.onclick = () => browse(p.path);
-                    breadcrumbEl.appendChild(item);
-                });
-            }
-
-            function renderEntries(entries){
-                // update file and folder count in status bar
-                const fileCountEl = document.getElementById('file_count');
-                if (fileCountEl) {
-                    const fileCount = entries.filter(e => !e.is_dir).length;
-                    const folderCount = entries.filter(e => e.is_dir).length;
-                    fileCountEl.textContent = `files: ${fileCount}  ·  folders: ${folderCount}`;
-                }
-                
-                if (!entries.length){
-                    // update file count for empty directory
-                    const fileCountEl = document.getElementById('file_count');
-                    if (fileCountEl) {
-                        fileCountEl.textContent = 'files: 0  ·  folders: 0';
-                    }
-                    tbody.innerHTML = `<tr><td class=\"explorer_td\" colspan=\"5\"><div class=\"empty_state\">empty folder</div></td></tr>`;
-                    return;
-                }
-                tbody.innerHTML = '';
-                // mix folders and files; sort alphabetically
-                entries.sort((a,b) => a.name.localeCompare(b.name));
-                entries.forEach(e => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'explorer_row' + (e.is_dir ? ' is_dir' : '');
-                    const nameTd = document.createElement('td'); nameTd.className = 'explorer_td';
-                    const nameWrap = document.createElement('div'); nameWrap.className = 'name_cell';
-                    const icon = document.createElement('span'); icon.className = 'material-icons ' + (e.is_dir ? 'folder_icon' : 'file_icon'); icon.textContent = e.is_dir ? 'folder' : 'description';
-                    const nameSpan = document.createElement('span'); nameSpan.textContent = e.name; if (e.is_dir) nameSpan.classList.add('unselectable_text');
-                    nameWrap.appendChild(icon); nameWrap.appendChild(nameSpan); nameTd.appendChild(nameWrap);
-                    // selection checkbox
-                    const selTd = document.createElement('td'); selTd.className = 'explorer_td';
-                    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'explorer_select_cb';
-                    checkbox.checked = selectedPaths.has(e.path);
-                    checkbox.addEventListener('change', () => {
-                        if (checkbox.checked) selectedPaths.add(e.path); else selectedPaths.delete(e.path);
-                        updateSelectionToolbarVisibility();
-                    });
-                    selTd.appendChild(checkbox);
-                    const typeTd = document.createElement('td'); typeTd.className = 'explorer_td'; typeTd.textContent = e.is_dir ? 'folder' : (e.ext || 'file');
-                    const sizeTd = document.createElement('td'); sizeTd.className = 'explorer_td'; sizeTd.textContent = e.is_dir ? '-' : formatSize(e.size);
-                    const modTd = document.createElement('td'); modTd.className = 'explorer_td'; modTd.textContent = e.modified_date || '';
-                    const actionsTd = document.createElement('td'); actionsTd.className = 'explorer_td'; actionsTd.style.textAlign = 'right';
-                    // edit only for files
-                    if (!e.is_dir){
-                        const editBtn = document.createElement('button'); editBtn.className = 'row_btn'; editBtn.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:middle;">edit</span> Edit';
-                        editBtn.onclick = (ev) => { ev.stopPropagation(); openFile(e.path); };
-                        actionsTd.appendChild(editBtn);
-                    }
-                    // delete for both files and folders
-                    const delBtn = document.createElement('button'); delBtn.className = 'row_btn row_btn_delete'; delBtn.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:middle;">delete</span> Delete';
-                    delBtn.onclick = async (ev) => { ev.stopPropagation(); await deleteFile(e.path); };
-                    actionsTd.appendChild(delBtn);
-                    tr.appendChild(nameTd); tr.appendChild(selTd); tr.appendChild(typeTd); tr.appendChild(sizeTd); tr.appendChild(modTd); tr.appendChild(actionsTd);
-
-                    tr.ondblclick = () => {
-                        if (e.is_dir){
-                            browse(e.path);
-                        } else {
-                            openFile(e.path);
-                        }
-                    };
-                    // drag and drop support
-                    tr.draggable = true;
-                    tr.addEventListener('dragstart', (ev) => {
-                        ev.dataTransfer.setData('text/plain', JSON.stringify({ path: e.path, is_dir: e.is_dir }));
-                        ev.dataTransfer.effectAllowed = 'move';
-                    });
-                    if (e.is_dir){
-                        tr.addEventListener('dragover', (ev) => {
-                            ev.preventDefault();
-                            ev.dataTransfer.dropEffect = 'move';
-                        });
-                        tr.addEventListener('drop', async (ev) => {
-                            ev.preventDefault();
-                            try {
-                                const payload = JSON.parse(ev.dataTransfer.getData('text/plain') || '{}');
-                                if (!payload.path || payload.path === e.path) return;
-                                const resp = await fetch('/api/nodes/move', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ src: payload.path, dst_dir: e.path })
-                                });
-                                const data = await resp.json();
-                                if (data.status === 'success') browse(cwd); else alert(data.message || 'failed to move');
-                            } catch(_){ alert('invalid drag data'); }
-                        });
-                    }
-                    tbody.appendChild(tr);
-                });
-                updateSelectionToolbarVisibility();
-            }
-
-            function renderError(msg){
-                // reset file count on error
-                const fileCountEl = document.getElementById('file_count');
-                if (fileCountEl) {
-                    fileCountEl.textContent = 'files: 0  ·  folders: 0';
-                }
-                tbody.innerHTML = `<tr><td class=\"explorer_td\" colspan=\"5\"><div class=\"empty_state\">${msg}</div></td></tr>`;
-            }
-
-            function parentPath(path){
-                if (!path) return '';
-                const parts = path.split('/').filter(Boolean);
-                parts.pop();
-                return parts.join('/');
-            }
-
-            function formatSize(bytes){
-                if (bytes == null) return '-';
-                const units = ['B','KB','MB','GB'];
-                let i = 0; let size = bytes;
-                while (size >= 1024 && i < units.length-1){ size /= 1024; i++; }
-                return `${size.toFixed(1)} ${units[i]}`;
-            }
-
-            function openFile(relPath){
-                fetch('/api/open-file', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ python_file: relPath }) });
-            }
-
-            async function deleteFile(relPath){
-                if (!confirm('delete this file?')) return;
-                try {
-                    const resp = await fetch('/api/nodes/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: relPath })});
-                    const data = await resp.json();
-                    if (data.status === 'success') browse(cwd); else alert(data.message || 'failed to delete file');
-                } catch (_){ alert('error deleting file'); }
-            }
-
-            btnUp.onclick = () => browse(parentPath(cwd));
-            btnDeleteSelected.onclick = async () => {
-                if (selectedPaths.size === 0) return;
-                if (!confirm(`delete ${selectedPaths.size} item(s)?`)) return;
-                // delete sequentially; backend supports both files/folders
-                for (const p of Array.from(selectedPaths)){
-                    try {
-                        const resp = await fetch('/api/nodes/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: p })});
-                        await resp.json();
-                    } catch(_){ /* ignore individual errors for batch */ }
-                }
-                selectedPaths.clear();
-                browse(cwd);
-            };
-            btnDeselectAll.onclick = () => {
-                if (selectedPaths.size === 0) return;
-                selectedPaths.clear();
-                // uncheck all visible checkboxes
-                document.querySelectorAll('.explorer_select_cb').forEach(cb => cb.checked = false);
-                updateSelectionToolbarVisibility();
-            };
-            btnNewFolder.onclick = async () => {
-                const name = prompt('new folder name');
-                if (!name) return;
-                const resp = await fetch('/api/nodes/mkdir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: cwd, name })});
-                const data = await resp.json();
-                if (data.status === 'success') browse(cwd); else alert(data.message || 'failed to create folder');
-            };
-            btnNewFile.onclick = async () => {
-                const name = prompt('new file name (e.g., example.py)');
-                if (!name) return;
-                const resp = await fetch('/api/nodes/touch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: cwd, name })});
-                const data = await resp.json();
-                if (data.status === 'success') browse(cwd); else alert(data.message || 'failed to create file');
-            };
-
-            // initial load
-            browse('');
-
-            function updateSelectionToolbarVisibility(){
-                const count = selectedPaths.size;
-                btnDeleteSelected.style.display = count > 0 ? 'inline-flex' : 'none';
-                btnDeselectAll.style.display = count > 1 ? 'inline-flex' : 'none';
-            }
-        })();
-    </script>
-</body>
-</html>
+{% block scripts %}
+    <script src="/static/js/pages/ScriptsExplorer.js"></script>
+{% endblock %}
 
 

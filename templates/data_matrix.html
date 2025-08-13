@@ -1,64 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowCraft • Data Matrix</title>
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/sidebar.css">
-    <link rel="stylesheet" href="/static/css/index.css">
+{% extends 'base/base.html' %}
+{% block title %}FlowCraft • Data Matrix{% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="/static/css/pages/data_matrix.css">
     <link rel="stylesheet" href="/static/css/data_matrix.css">
-</head>
-<body>
-    <div class="app_container">
-    {% include 'partials/sidebar.html' %}
-        <div class="main_content full_width" style="display:flex; flex-direction:column;">
-            <div class="data_matrix_container" style="flex:1;">
-                <div id="dm_content" class="dm_content">
-                    <!-- one block per execution -->
-                </div>
-            </div>
-        {% include 'partials/status_bar.html' %}
-        <style>
-            /* hide node count on data matrix page */
-            #node_count { display: none; }
-            /* hide coordinates on data matrix page */
-            #node_coordinates { display: none !important; }
-        </style>
+{% endblock %}
+{% block content %}
+    <div class="data_matrix_container" style="flex:1;">
+        <div id="dm_content" class="dm_content">
+            <!-- one block per execution -->
         </div>
     </div>
-
-    <!-- create flowchart modal (data matrix page) -->
-    <div class="modal_overlay" id="create_flowchart_modal">
-        <div class="modal_content">
-            <div class="modal_header">
-                <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
-                <button class="modal_close" id="close_create_modal">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <div class="form_group">
-                <label class="form_label" for="new_flowchart_name">flowchart name</label>
-                <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">use letters, numbers, hyphens, and underscores only (no spaces)</div>
-            </div>
-            <div class="modal_actions">
-                <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
-                <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="/static/js/utils/URLManager.js"></script>
-    <!-- left navigation (centralized) -->
-    <script src="/static/js/components/navigation/Navigation.base.js"></script>
-    <script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
-    <script>
-    (async function(){
+{% endblock %}
+{% block modals %}
+    {% include 'partials/modals/create_flowchart.html' %}
+{% endblock %}
+{% block scripts %}
+    <script src="/static/js/pages/DataMatrix.js"></script>
+{% endblock %}
         try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
         // small helpers (keep comments in lower case to match project convention)
         const $ = (sel) => document.querySelector(sel);
@@ -221,8 +179,8 @@
 
             // row actions (view/delete)
             const actions = el('div','dm_actions_row');
-            const viewBtn = el('button','btn btn_secondary dm_row_btn','<span class="material-icons">visibility</span><span class="btn_label">View</span>');
-            const delBtn = el('button','btn btn_secondary btn_danger_subtle dm_row_btn','<span class="material-icons">delete</span><span class="btn_label">Delete</span>');
+            const viewBtn = el('button','btn btn_secondary dm_row_btn','<span class="material-icons u_icon_18">visibility</span><span class="btn_label">View</span>');
+            const delBtn = el('button','btn btn_secondary btn_danger_subtle dm_row_btn','<span class="material-icons u_icon_18">delete</span><span class="btn_label">Delete</span>');
             actions.appendChild(viewBtn);
             actions.appendChild(delBtn);
             headerRow.appendChild(actions);
@@ -302,7 +260,7 @@
             matchCount.style.display = 'none'; // hide initially
             searchContainer.appendChild(matchCount);
             
-            const exportBtn = el('button','btn btn_primary dm_export_btn','<span class="material-icons">download</span><span>Export</span>');
+            const exportBtn = el('button','btn btn_primary dm_export_btn','<span class="material-icons u_icon_18">download</span><span>Export</span>');
             
             dataBar.appendChild(searchContainer);
             dataBar.appendChild(exportBtn);
@@ -370,7 +328,7 @@
                         const td4 = document.createElement('td'); td4.className='dm_col_actions';
                         const typeText = Array.isArray(r.variable_content) ? String(r.variable_content[0] || '-') : '-';
                         td4.appendChild(typeTag(typeText));
-                        const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons">open_in_new</span>');
+                        const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons u_icon_18">open_in_new</span>');
                         // open detail view for this variable
                         openBtn.addEventListener('click', () => {
                             openVariableDetail({
@@ -403,7 +361,7 @@
                             const td4 = document.createElement('td'); td4.className='dm_col_actions';
                             const typeText = inferType(value);
                             td4.appendChild(typeTag(typeText));
-                            const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons">open_in_new</span>');
+                            const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons u_icon_18">open_in_new</span>');
                             openBtn.addEventListener('click', () => {
                                 openVariableDetail({
                                     dataName: dataName || '-',
@@ -638,6 +596,5 @@
         }
     })().catch(err => { try { console.error('[dm] fatal init error', err); } catch(_) {} });
     </script>
-</body>
-</html>
+{% endblock %}
 

@@ -1,4 +1,8 @@
 // sidebar component management
+(function(){
+    'use strict';
+    if (window.Sidebar) { return; }
+
 class Sidebar {
     constructor(stateManager) {
         this.state = stateManager;
@@ -65,6 +69,7 @@ Sidebar.prototype.destroy = function() {
 };
 
 window.Sidebar = Sidebar;
+})();
 
 // unified collapse/expand management for right sidebar
 Sidebar.prototype.setCollapsed = function(isCollapsed) {

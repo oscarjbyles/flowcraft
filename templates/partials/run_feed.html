@@ -1,0 +1,24 @@
+<!-- run mode live feed bar (structure only; behavior via existing js) -->
+<div class="run_feed_bar" id="run_feed_bar" style="display: none;">
+  <div class="run_feed_resizer" id="run_feed_resizer" title="drag to resize"></div>
+  <div class="run_feed_header">
+    <span class="material-icons">dynamic_feed</span>
+    <span class="run_feed_title">Live Execution Feed</span>
+    <div class="u_flex_grow_1"></div>
+    <button class="btn btn_secondary u_mr_4" id="run_feed_up_btn" title="expand to full screen">
+      <span class="material-icons">expand_less</span>
+      Up
+    </button>
+    <button class="btn btn_secondary u_mr_4" id="run_feed_reset_btn" title="restore normal size">
+      <span class="material-icons">fullscreen_exit</span>
+      Reset
+    </button>
+    <button class="btn btn_secondary" id="run_feed_down_btn" title="hide feed">
+      <span class="material-icons">expand_more</span>
+      Down
+    </button>
+  </div>
+  <div class="run_feed_list" id="run_feed_list"></div>
+</div>
+
+

@@ -1,0 +1,9 @@
+/* data matrix page styles moved from inline style block */
+@layer pages {
+  /* hide node count on data matrix page */
+  #node_count { display: none; }
+  /* hide coordinates on data matrix page */
+  #node_coordinates { display: none !important; }
+}
+
+

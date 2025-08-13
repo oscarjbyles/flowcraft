@@ -1,0 +1,582 @@
+// data matrix page logic moved from template (comments kept in lower case)
+(async function(){
+    try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
+    // small helpers (keep comments in lower case to match project convention)
+    const $ = (sel) => document.querySelector(sel);
+    const container = document.getElementById('dm_content');
+    function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html!==undefined) e.innerHTML = html; return e; }
+    
+    // format timestamp for better readability
+    function formatTimestamp(timestamp) {
+        if (!timestamp || timestamp === '-') return '-';
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return timestamp; // fallback to original if invalid
+            
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            
+            // format date
+            const options = { 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true
+            };
+            const formattedDate = date.toLocaleDateString('en-US', options);
+            
+            // add relative time for recent executions
+            if (diffMinutes < 1) {
+                return `${formattedDate} (just now)`;
+            } else if (diffMinutes < 60) {
+                return `${formattedDate} (${diffMinutes}m ago)`;
+            } else if (diffHours < 24) {
+                return `${formattedDate} (${diffHours}h ago)`;
+            } else if (diffDays < 7) {
+                return `${formattedDate} (${diffDays}d ago)`;
+            } else {
+                return formattedDate;
+            }
+        } catch (e) {
+            return timestamp; // fallback to original
+        }
+    }
+
+    // diagnostics
+    try { console.log('[dm] init data matrix page'); } catch(_) {}
+    if (!container) { try { console.warn('[dm] container #dm_content not found'); } catch(_) {} }
+    try {
+        console.log('[dm] document.readyState', document.readyState);
+        if (container) {
+            const cs = window.getComputedStyle(container);
+            const rect = container.getBoundingClientRect();
+            console.log('[dm] container style', { display: cs.display, visibility: cs.visibility, position: cs.position });
+            console.log('[dm] container rect', { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
+        }
+    } catch(_) {}
+
+    // unify flowchart context from url
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get('mode') || 'build';
+    const flowNameParam = params.get('flowchart'); // display form (no .json)
+    const flowFileParam = params.get('flowchart_name'); // filename form (with .json)
+    const flowDisplay = (flowNameParam || (flowFileParam ? flowFileParam.replace(/\.json$/i, '') : 'default'));
+    const flowFilename = (flowFileParam || `${flowDisplay}.json`);
+    try { console.log('[dm] url params', { modeParam, flowNameParam, flowFileParam, flowDisplay, flowFilename }); } catch(_) {}
+
+    // wire sidebar navigation to preserve flowchart across pages
+    function withFlowchart(href){
+        const u = new URL(href, window.location.origin);
+        // builder pages + dashboard use ?flowchart=display and ?mode=...
+        if (u.pathname === '/' || u.pathname === '/scripts' || u.pathname === '/dashboard') {
+            if (flowDisplay && flowDisplay !== 'default') u.searchParams.set('flowchart', flowDisplay); else u.searchParams.delete('flowchart');
+            if (!u.searchParams.get('mode')) u.searchParams.set('mode', modeParam || 'build');
+        }
+        // data matrix uses ?flowchart_name=filename
+        if (u.pathname === '/data') {
+            u.searchParams.set('flowchart_name', flowFilename || 'default.json');
+        }
+        return u.pathname + (u.search ? u.search : '');
+    }
+
+    // centralized nav handles highlighting
+    
+    // back link should preserve flowchart context to builder
+    // no back link on data matrix
+    
+    // flowchart dropdown: fetch and populate, keep selection reflecting current flow
+    const selector = document.getElementById('flowchart_selector');
+    const dropdown = document.getElementById('flowchart_dropdown');
+    const createBtn = document.getElementById('create_flowchart_btn');
+    const createModal = document.getElementById('create_flowchart_modal');
+    const closeCreateModal = document.getElementById('close_create_modal');
+    const cancelCreate = document.getElementById('cancel_create_flowchart');
+    const confirmCreate = document.getElementById('confirm_create_flowchart');
+    const newFlowchartNameInput = document.getElementById('new_flowchart_name');
+
+    // dropdown wiring is handled in centralized navigation module
+    
+    // create flowchart modal is wired by centralized navigation module
+    
+    // fetch latest history for current flowchart
+    try { console.log('[dm] fetching history for', flowFilename); } catch(_) {}
+    let data;
+    try {
+        const res = await fetch(`/api/history?flowchart_name=${encodeURIComponent(flowFilename)}`);
+        try { console.log('[dm] /api/history status', res.status); } catch(_) {}
+        data = await res.json();
+        try { console.log('[dm] /api/history json', data); } catch(_) {}
+    } catch (err) {
+        try { console.error('[dm] /api/history fetch failed', err); } catch(_) {}
+        container.appendChild(el('div','dm_error','failed to load history (network error)'));
+        return;
+    }
+    if (!data || data.status !== 'success') {
+        try { console.warn('[dm] history api returned non-success', data); } catch(_) {}
+        container.appendChild(el('div','dm_error','failed to load history'));
+        return;
+    }
+
+    const executions = data.history || [];
+    try { console.log('[dm] executions count', executions.length); } catch(_) {}
+    if (executions.length === 0) {
+        try { console.log('[dm] no executions for', flowFilename); } catch(_) {}
+        container.appendChild(el('div','dm_empty','no executions yet'));
+        return;
+    }
+
+    // helper to fetch full execution details for richer data
+    async function fetchDetails(executionId){
+        try { console.log('[dm] fetching details for', executionId); } catch(_) {}
+        try {
+            const resp = await fetch(`/api/history/${executionId}?flowchart_name=${encodeURIComponent(flowFilename)}`);
+            const json = await resp.json();
+            try { console.log('[dm] details status', resp.status, 'id', executionId); } catch(_) {}
+            if (json && json.status === 'success') return json.execution;
+            try { console.warn('[dm] details non-success', json); } catch(_) {}
+        } catch (e) {
+            try { console.error('[dm] details fetch error', e); } catch(_) {}
+        }
+        return null;
+    }
+
+    // render one row block per execution and enrich with detailed data
+    const detailPromises = executions.map(exec => fetchDetails(exec.execution_id));
+    const details = await Promise.all(detailPromises);
+    try { console.log('[dm] fetched details count', details.length); } catch(_) {}
+    executions.forEach((exec, idx) => {
+        try { console.log('[dm] render row', { idx, exec, detail: details[idx] }); } catch(_) {}
+        const row = el('div','dm_row');
+
+        // left: high-level execution info
+        const left = el('div','dm_left');
+        const statusBadge = exec.status === 'success' ? 'success' : (exec.status === 'failed' ? 'failed' : 'info');
+        // header row: status on left, actions on right (within left panel)
+        const headerRow = el('div','dm_left_header');
+        const statusEl = el('div',`dm_status dm_status_${statusBadge}`, exec.status || 'unknown');
+        headerRow.appendChild(statusEl);
+
+        // row actions (view/delete)
+        const actions = el('div','dm_actions_row');
+        const viewBtn = el('button','btn btn_secondary dm_row_btn','<span class="material-icons u_icon_18">visibility</span><span class="btn_label">View</span>');
+        const delBtn = el('button','btn btn_secondary btn_danger_subtle dm_row_btn','<span class="material-icons u_icon_18">delete</span><span class="btn_label">Delete</span>');
+        actions.appendChild(viewBtn);
+        actions.appendChild(delBtn);
+        headerRow.appendChild(actions);
+        left.appendChild(headerRow);
+
+        // wire buttons
+        viewBtn.addEventListener('click', async () => {
+            try {
+                // go back to builder with same flowchart and mode=run, then trigger loading of this execution
+                const url = new URL('/', window.location.origin);
+                if (flowDisplay && flowDisplay !== 'default') url.searchParams.set('flowchart', flowDisplay);
+                url.searchParams.set('mode', 'run');
+                // add special flag so builder loads this execution on arrival
+                url.searchParams.set('executionId', exec.execution_id);
+                window.location.href = url.pathname + '?' + url.searchParams.toString();
+            } catch(e) {
+                console.error('[dm] failed to navigate to view execution', e);
+            }
+        });
+        delBtn.addEventListener('click', async () => {
+            try {
+                if (!confirm('delete this execution from history?')) return;
+                const resp = await fetch(`/api/history/${exec.execution_id}?flowchart_name=${encodeURIComponent(flowFilename)}`, { method: 'DELETE' });
+                const json = await resp.json();
+                if (json && json.status === 'success') {
+                    // simple refresh after delete
+                    window.location.reload();
+                } else {
+                    alert('failed to delete execution');
+                }
+            } catch(e) {
+                alert('error deleting execution');
+            }
+        });
+
+        // stats list with icons to improve readability
+        const stats = el('div','dm_stats');
+        function stat(iconName, label, value){
+            const s = el('div','dm_stat');
+            const ic = el('span','material-icons dm_stat_icon', iconName);
+            const txt = el('div','dm_stat_text');
+            txt.appendChild(el('div','dm_stat_label', label));
+            txt.appendChild(el('div','dm_stat_value', value));
+            s.appendChild(ic);
+            s.appendChild(txt);
+            return s;
+        }
+        const nodesText = `${exec.successful_nodes || 0} / ${exec.total_nodes || 0}`;
+        stats.appendChild(stat('timeline','nodes', nodesText));
+        // use a clearer success icon
+        stats.appendChild(stat('check_circle','success %', String(exec.success_percentage ?? 0) + '%'));
+        stats.appendChild(stat('schedule','elapsed', exec.execution_time || '-'));
+        // format timestamp for better readability
+        const runAtDisplay = formatTimestamp(exec.timestamp);
+        stats.appendChild(stat('event','run at', runAtDisplay));
+        if (exec.status === 'failed' && exec.failed_node) {
+            stats.appendChild(stat('error','failed node', exec.failed_node));
+        }
+        left.appendChild(stats);
+
+        // right: data table of data_save outputs, 1 row per data_save
+        const right = el('div','dm_right');
+        
+        // create the data bar with search and export
+        const dataBar = el('div','dm_data_bar');
+        const searchContainer = el('div','dm_search_container');
+        const searchIcon = el('span','material-icons dm_search_icon','search');
+        const searchInput = el('input','dm_search_input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'search data...';
+        searchContainer.appendChild(searchIcon);
+        searchContainer.appendChild(searchInput);
+        
+        // add matching count display
+        const matchCount = el('div','dm_match_count');
+        matchCount.textContent = '0 matching of 0 total variables';
+        matchCount.style.display = 'none'; // hide initially
+        searchContainer.appendChild(matchCount);
+        
+        const exportBtn = el('button','btn btn_primary dm_export_btn','<span class="material-icons u_icon_18">download</span><span>Export</span>');
+        
+        dataBar.appendChild(searchContainer);
+        dataBar.appendChild(exportBtn);
+        right.appendChild(dataBar);
+        
+        const content = el('div','dm_data_content');
+        const table = el('table','dm_table');
+        // enforce column sizing so value column expands to fill remaining width
+        const colgroup = document.createElement('colgroup');
+        const col1 = document.createElement('col'); col1.style.width = '22%';
+        const col2 = document.createElement('col'); col2.style.width = '24%';
+        // remaining width after first two percentage columns and fixed actions column
+        const col3 = document.createElement('col'); col3.style.width = 'calc(100% - 46% - 160px)';
+        const col4 = document.createElement('col'); col4.style.width = '160px';
+        colgroup.appendChild(col1); colgroup.appendChild(col2); colgroup.appendChild(col3); colgroup.appendChild(col4);
+        table.appendChild(colgroup);
+        const thead = el('thead');
+        thead.innerHTML = `<tr>
+            <th class="dm_col_var_name">data name</th>
+            <th class="dm_col_py_name">python variable</th>
+            <th class="dm_col_value">value</th>
+            <th class="dm_col_actions"></th>
+        </tr>`;
+        table.appendChild(thead);
+        const tbody = el('tbody');
+        const detail = details[idx];
+        // helpers for type column
+        function inferType(value){
+            if (value === null) return 'null';
+            if (typeof value === 'undefined') return 'undefined';
+            if (Array.isArray(value)) return 'array';
+            if (typeof value === 'number') return Number.isInteger(value) ? 'integer' : 'float';
+            if (typeof value === 'string') return 'string';
+            if (typeof value === 'boolean') return 'boolean';
+            if (value && typeof value === 'object') return 'object';
+            return 'unknown';
+        }
+        function normalizeTypeName(raw){
+            const t = String(raw || '-').toLowerCase();
+            if (t.includes('int')) return 'integer';
+            if (t.includes('float') || t.includes('double')) return 'float';
+            if (t.includes('list') || t.includes('array')) return 'array';
+            if (t.includes('dict') || t.includes('obj')) return 'object';
+            if (t.includes('str') || t === 'text' || t === 'char') return 'string';
+            if (t.includes('bool')) return 'boolean';
+            if (t === 'none' || t === 'null') return 'null';
+            return t || 'unknown';
+        }
+        function typeTag(typeText){
+            const normalized = normalizeTypeName(typeText);
+            const s = document.createElement('span');
+            s.className = 'dm_type_tag dm_type_tag_' + normalized;
+            s.textContent = normalized;
+            return s;
+        }
+        if (detail && detail.execution_data) {
+            // prefer normalized array if available
+            const dsNorm = Array.isArray(detail.execution_data.data_saves) ? detail.execution_data.data_saves : null;
+            if (dsNorm && dsNorm.length > 0) {
+                dsNorm.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const td1 = document.createElement('td'); td1.className='dm_col_var_name'; td1.textContent = r.node_name || '-';
+                    const td2 = document.createElement('td'); td2.className='dm_col_py_name'; td2.textContent = r.variable_name || '-';
+                    const td3 = document.createElement('td'); td3.className='dm_col_value'; td3.textContent = Array.isArray(r.variable_content) ? String(r.variable_content[1]) : '';
+                    const td4 = document.createElement('td'); td4.className='dm_col_actions';
+                    const typeText = Array.isArray(r.variable_content) ? String(r.variable_content[0] || '-') : '-';
+                    td4.appendChild(typeTag(typeText));
+                    const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons u_icon_18">open_in_new</span>');
+                    // open detail view for this variable
+                    openBtn.addEventListener('click', () => {
+                        openVariableDetail({
+                            dataName: r.node_name || '-',
+                            pythonVar: r.variable_name || '-',
+                            typeText: typeText,
+                            value: Array.isArray(r.variable_content) ? r.variable_content[1] : ''
+                        });
+                    });
+                    td4.appendChild(openBtn);
+                    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+                    tbody.appendChild(tr);
+                });
+            } else if (Array.isArray(detail.execution_data.results)) {
+                const results = detail.execution_data.results;
+                // fallback: infer from synthesized results
+                const dsRows = results.filter(r => r.function_name === 'data_save' || (r.node_name && r.python_file && r.return_value && typeof r.return_value === 'object' && Object.keys(r.return_value).length === 1 && detail.execution_data.flowchart_state && detail.execution_data.flowchart_state.nodes && detail.execution_data.flowchart_state.nodes.find(n=>n.id===r.node_id && n.type==='data_save')));
+                if (dsRows.length === 0) {
+                    tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7; text-align: center;">no saved data</td>'));
+                } else {
+                    dsRows.forEach(r => {
+                        const keys = (r.return_value && typeof r.return_value === 'object') ? Object.keys(r.return_value) : [];
+                        const dataName = (r.data_save && r.data_save.data_name) || (keys[0] || '-');
+                        const pyVar = (r.data_save && r.data_save.variable_name) || (keys[0] || '-');
+                        const value = keys.length ? r.return_value[keys[0]] : null;
+                        const tr = document.createElement('tr');
+                        const td1 = document.createElement('td'); td1.className='dm_col_var_name'; td1.textContent = dataName || '-';
+                        const td2 = document.createElement('td'); td2.className='dm_col_py_name'; td2.textContent = pyVar || '-';
+                        const td3 = document.createElement('td'); td3.className='dm_col_value'; td3.textContent = (value === null || typeof value === 'undefined') ? 'null' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+                        const td4 = document.createElement('td'); td4.className='dm_col_actions';
+                        const typeText = inferType(value);
+                        td4.appendChild(typeTag(typeText));
+                        const openBtn = el('button','btn btn_secondary dm_open_btn','<span class="material-icons u_icon_18">open_in_new</span>');
+                        openBtn.addEventListener('click', () => {
+                            openVariableDetail({
+                                dataName: dataName || '-',
+                                pythonVar: pyVar || '-',
+                                typeText: typeText,
+                                value
+                            });
+                        });
+                        td4.appendChild(openBtn);
+                        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+                        tbody.appendChild(tr);
+                    });
+                }
+            } else {
+                tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7">no saved data</td>'));
+            }
+        } else {
+            tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7; text-align: center;">no data</td>'));
+        }
+        table.appendChild(tbody);
+        content.appendChild(table);
+        right.appendChild(content);
+
+        // failure info: full width block under left and right when execution failed
+        const failureInfo = el('div','dm_failure_info');
+        failureInfo.style.display = 'none'; // hide by default
+
+        if (exec.status === 'failed') {
+            // try to resolve failure details from detailed execution data
+            let failedResult = null;
+            try {
+                const results = detail && detail.execution_data && Array.isArray(detail.execution_data.results)
+                    ? detail.execution_data.results
+                    : [];
+                failedResult = results.find(r => r && r.success === false) || null;
+            } catch(_) { /* noop */ }
+
+            // build ui only if we have something meaningful to show
+            const nodeName = (failedResult && failedResult.node_name) || (exec.failed_node) || null;
+            const pythonPath = (failedResult && failedResult.python_file) || null;
+            const errorMessage = (failedResult && failedResult.error) || (detail && detail.execution_data && detail.execution_data.error_message) || null;
+
+            if (nodeName || pythonPath || errorMessage) {
+                // title row
+                const title = el('div','dm_failure_title');
+                const icon = el('span','material-icons dm_failure_icon','error');
+                const titleText = el('div','', 'execution failed');
+                title.appendChild(icon);
+                title.appendChild(titleText);
+                failureInfo.appendChild(title);
+
+                // body grid
+                const body = el('div','dm_failure_body');
+                function addRow(label, value){
+                    const l = el('div','dm_failure_label', label);
+                    const v = el('div','dm_failure_value');
+                    v.textContent = value || '-';
+                    body.appendChild(l);
+                    body.appendChild(v);
+                }
+                addRow('node name', nodeName || '-');
+                addRow('python script path', pythonPath || '-');
+                addRow('error message', errorMessage || '-');
+                failureInfo.appendChild(body);
+                // keep failure details hidden by default; toggle via status badge click
+                failureInfo.style.display = 'none';
+            }
+        }
+
+        // filter table rows based on search input (matches data name and python variable)
+        if (statusBadge === 'failed') {
+            try {
+                statusEl.style.cursor = 'pointer';
+                statusEl.title = 'toggle failure details';
+                statusEl.addEventListener('click', () => {
+                    // ensure failure info is appended to the row before toggling
+                    if (!row.contains(failureInfo)) {
+                        row.appendChild(failureInfo);
+                    }
+                    const isHidden = failureInfo.style.display === 'none';
+                    failureInfo.style.display = isHidden ? '' : 'none';
+                });
+            } catch(_) {}
+        }
+
+        // detail view renderer for a single variable
+        function openVariableDetail(info){
+            // hide all execution rows
+            const allRows = Array.from(document.querySelectorAll('.dm_row, .dm_failure_info'));
+            allRows.forEach(r => { r.style.display = 'none'; });
+
+            // build detail container once per page (reuse on subsequent opens)
+            let detailContainer = document.querySelector('.dm_detail_container');
+            if (!detailContainer) {
+                detailContainer = el('div','dm_detail_container');
+                container.appendChild(detailContainer);
+            }
+            detailContainer.innerHTML = '';
+
+            // top block: metadata
+            const top = el('div','dm_detail_block');
+            const meta = el('div','dm_detail_meta');
+            function addMeta(label, node){
+                meta.appendChild(el('div','dm_detail_label', label));
+                const valueWrap = el('div','dm_detail_value');
+                valueWrap.appendChild(node);
+                meta.appendChild(valueWrap);
+            }
+            addMeta('data name', el('div','', info.dataName));
+            addMeta('python variable', el('div','', info.pythonVar));
+            const typeWrap = el('div','');
+            typeWrap.appendChild(typeTag(info.typeText));
+            addMeta('type', typeWrap);
+            // add a back button to return to list view
+            const backBtn = el('button','btn btn_secondary dm_row_btn','<span class="material-icons">arrow_back</span><span class="btn_label">back</span>');
+            backBtn.style.marginTop = '12px';
+            backBtn.addEventListener('click', () => {
+                // remove detail view and show all rows again
+                if (detailContainer) detailContainer.remove();
+                allRows.forEach(r => { r.style.display = ''; });
+            });
+            top.appendChild(meta);
+            top.appendChild(backBtn);
+
+            // bottom block: content
+            const bottom = el('div','dm_detail_block');
+            const pre = document.createElement('pre');
+            try {
+                pre.textContent = typeof info.value === 'object' ? JSON.stringify(info.value, null, 2) : String(info.value);
+            } catch(_) {
+                pre.textContent = String(info.value);
+            }
+            bottom.appendChild(pre);
+
+            detailContainer.appendChild(top);
+            detailContainer.appendChild(bottom);
+        }
+
+        // filter table rows based on search input (matches data name and python variable)
+        searchInput.addEventListener('input', () => {
+            const q = (searchInput.value || '').trim().toLowerCase();
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            let visibleCount = 0;
+            const totalCount = rows.length;
+            
+            // show/hide match count based on whether there's a search query
+            if (q) {
+                matchCount.style.display = '';
+            } else {
+                matchCount.style.display = 'none';
+            }
+            
+            // remove any existing no results row
+            const existingNoResults = tbody.querySelector('.dm_no_results');
+            if (existingNoResults) {
+                existingNoResults.remove();
+            }
+            
+            rows.forEach(tr => {
+                const nameCell = tr.querySelector('.dm_col_var_name');
+                const pyCell = tr.querySelector('.dm_col_py_name');
+                const nameText = nameCell ? String(nameCell.textContent || '').toLowerCase() : '';
+                const pyText = pyCell ? String(pyCell.textContent || '').toLowerCase() : '';
+                const match = !q || nameText.includes(q) || pyText.includes(q);
+                tr.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            
+            // update match count display
+            matchCount.textContent = `${visibleCount} matching of ${totalCount} total variables`;
+            
+            // show no results message if no rows match and search is active
+            if (q && visibleCount === 0) {
+                const noResultsRow = el('tr', 'dm_no_results');
+                noResultsRow.innerHTML = '<td colspan="5" style="text-align: center; opacity: 0.7; padding: 16px;">no results found</td>';
+                tbody.appendChild(noResultsRow);
+            }
+        });
+
+        row.appendChild(left);
+        row.appendChild(right);
+        // append all sections to the row
+        container.appendChild(row);
+        if (failureInfo && failureInfo.style.display !== 'none') {
+            row.appendChild(failureInfo);
+        }
+        try {
+            const cCount = container.childElementCount;
+            const rRect = row.getBoundingClientRect();
+            console.log('[dm] row appended', { childCount: cCount, rowRect: { x: rRect.x, y: rRect.y, w: rRect.width, h: rRect.height } });
+        } catch(_) {}
+    });
+    
+    // update status bar with execution count
+    const executionCount = executions.length;
+    const statusText = document.getElementById('status_text');
+    if (statusText) {
+        statusText.textContent = `${executionCount} execution${executionCount !== 1 ? 's' : ''}`;
+    }
+
+    // show and wire clear history button (reuse same api as settings page)
+    const clearBtn = document.getElementById('clear_history_status_btn');
+    if (clearBtn) {
+        // show only on data matrix page
+        clearBtn.style.display = '';
+        clearBtn.addEventListener('click', async () => {
+            try {
+                // confirm destructive action
+                if (!confirm('clear all executions for this flowchart?')) return;
+                clearBtn.disabled = true;
+                if (statusText) statusText.textContent = 'clearing…';
+                const resp = await fetch('/api/history/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ flowchart_name: flowFilename })
+                });
+                const json = await resp.json();
+                if (json && json.status === 'success') {
+                    // refresh to reflect empty history
+                    window.location.reload();
+                } else {
+                    alert(json && json.message ? json.message : 'failed to clear history');
+                    clearBtn.disabled = false;
+                    if (statusText) statusText.textContent = `${executionCount} execution${executionCount !== 1 ? 's' : ''}`;
+                }
+            } catch (e) {
+                alert('error clearing history');
+                clearBtn.disabled = false;
+                if (statusText) statusText.textContent = `${executionCount} execution${executionCount !== 1 ? 's' : ''}`;
+            }
+        });
+    }
+})().catch(err => { try { console.error('[dm] fatal init error', err); } catch(_) {} });
+
+

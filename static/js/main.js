@@ -24,6 +24,14 @@
 
     // initialize application
     function initializeApp() {
+        // run only on builder page
+        try {
+            var isBuilderPath = (window.location && window.location.pathname === '/');
+            var hasCanvas = !!document.getElementById('flowchart_canvas');
+            if (!isBuilderPath || !hasCanvas) {
+                return;
+            }
+        } catch (_) { return; }
         if (!checkDependencies()) {
             console.error('cannot initialize app: missing dependencies');
             return;

@@ -144,6 +144,34 @@
   "annotations": [],
   "executions": [
     {
+      "execution_id": "c7abe95f-8028-4e9c-b580-2e6edc9bcf74",
+      "timestamp": "2025-08-13T01:07:59.362095",
+      "flowchart_name": "if_test",
+      "status": "success",
+      "total_nodes": 5,
+      "successful_nodes": 2,
+      "completed_nodes": 2,
+      "success_percentage": 40.0,
+      "completed_percentage": 40.0,
+      "failed_node": null,
+      "elapsed_ms": 631,
+      "execution_time": "0.631s"
+    },
+    {
+      "execution_id": "a1447de5-a104-4b8b-a622-67780fa0aa58",
+      "timestamp": "2025-08-13T01:07:59.321824",
+      "flowchart_name": "if_test",
+      "status": "success",
+      "total_nodes": 5,
+      "successful_nodes": 2,
+      "completed_nodes": 2,
+      "success_percentage": 40.0,
+      "completed_percentage": 40.0,
+      "failed_node": null,
+      "elapsed_ms": 639,
+      "execution_time": "0.639s"
+    },
+    {
       "execution_id": "df0c2e0f-66ab-4ecc-9336-a0c6a3f969a0",
       "timestamp": "2025-08-12T23:39:10.292762",
       "flowchart_name": "if_test",

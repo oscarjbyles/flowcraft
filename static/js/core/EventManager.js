@@ -1,4 +1,8 @@
 // centralized event management for the flowchart
+(function(){
+    'use strict';
+    if (window.EventManager) { return; }
+
 class EventManager {
     constructor(stateManager) {
         this.state = stateManager;
@@ -358,3 +362,4 @@ class EventManager {
 }
 
 window.EventManager = EventManager;
+})();

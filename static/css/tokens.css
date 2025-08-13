@@ -1,0 +1,64 @@
+/* design tokens for flowcraft (dark theme baseline) */
+@layer tokens {
+  :root {
+    /* colors */
+    --primary-color: #1976d2;
+    --primary-dark: #0d47a1;
+    --secondary-color: #424242;
+    --background-color: #121212;
+    --surface-color: #1e1e1e;
+    --surface-variant: #2d2d2d;
+    --on-background: #ffffff;
+    --on-surface: #ffffff;
+    --on-primary: #ffffff;
+    --border-color: #3d3d3d;
+    --hover-color: #333333;
+
+    /* semantic colors (not yet wired) */
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --warning-color: #ff9800;
+    --info-color: #90caf9;
+
+    /* spacing scale */
+    --space_0: 0px;
+    --space_2: 2px;
+    --space_4: 4px;
+    --space_6: 6px;
+    --space_8: 8px;
+    --space_10: 10px;
+    --space_12: 12px;
+    --space_16: 16px;
+    --space_20: 20px;
+    --space_24: 24px;
+
+    /* radii */
+    --radius_0: 0px;
+    --radius_4: 4px;
+    --radius_6: 6px;
+    --radius_8: 8px;
+    --radius_round: 9999px;
+
+    /* typography */
+    --font_12: .75rem;
+    --font_14: .875rem;
+    --font_16: 1rem;
+
+    /* shadows */
+    --shadow_0: none;
+    --shadow_1: 0 4px 12px rgba(0,0,0,.15);
+
+    /* z-index tokens */
+    --z_sidebar: 1000;
+    --z_toolbar: 1100;
+    --z_modal: 10000;
+
+    /* breakpoints */
+    --bp_sm: 480px;
+    --bp_md: 768px;
+    --bp_lg: 1024px;
+    --bp_xl: 1280px;
+  }
+}
+
+

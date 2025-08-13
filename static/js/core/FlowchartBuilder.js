@@ -1,4 +1,8 @@
 // main flowchart builder orchestrator
+(function(){
+    'use strict';
+    if (window.FlowchartBuilder) { return; }
+
 class FlowchartBuilder {
     constructor() {
         // initialize core systems
@@ -4681,6 +4685,7 @@ class FlowchartBuilder {
 }
 
 window.FlowchartBuilder = FlowchartBuilder;
+})();
 
 // extend prototype with a centralized clear for leaving run mode
 // this mirrors the clear button behavior so navigation away from run fully resets ui

@@ -1,29 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowCraft</title>
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    
-    <!-- material ui css -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/sidebar.css">
-    <link rel="stylesheet" href="/static/css/index.css">
-    
-    <!-- d3.js for flowchart -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-</head>
-<body>
-    <div class="app_container">
-        <!-- sidebar -->
-        {% include 'partials/sidebar.html' %}
-
-        <!-- main content -->
-        <div class="main_content">
+{% extends 'base/base.html' %}
+{% block title %}FlowCraft{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/pages/index.css">{% endblock %}
+{% block main_content_class %}{% endblock %}
+{% block content %}
             <!-- start button in top left -->
             <div class="start_button_container" id="start_button_container" style="display: none;">
                 <div class="run_controls_group">
@@ -108,8 +87,8 @@
 
             <!-- full page settings -->
             <div class="settings_page" id="settings_page">
-                <div style="max-width: 900px; margin: 0 auto;">
-                    <h3 class="sidebar_section_title" style="margin-bottom: 16px;">settings</h3>
+                <div class="u_max_w_900 u_mx_auto">
+                    <h3 class="sidebar_section_title u_mb_16">settings</h3>
 
                     <div class="form_group">
                         <label class="form_label">default editor</label>
@@ -125,11 +104,11 @@
 
                     <div class="form_group">
                         <label class="form_label">clear history</label>
-                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; flex-direction: column; gap:12px;">
-                            <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="data_save_details_card" style="display:flex; flex-direction: column; gap:12px;">
+                            <div class="u_flex u_items_center u_gap_12">
                                 <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">history_toggle_off</span>
                                 <span style="font-size: 0.9rem;">clear execution history for current flowchart</span>
-                                <div style="flex:1;"></div>
+                                <div class="u_flex_grow_1"></div>
                                 <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn">
                                     <span class="material-icons">cleaning_services</span>
                                     Clear Executions
@@ -139,11 +118,11 @@
                                 this removes all files under <code>history/&lt;flowchart&gt;</code>.
                             </div>
                         </div>
-                        <div style="background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; display:flex; flex-direction: column; gap:12px; margin-top: 12px;">
-                            <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="data_save_details_card" style="display:flex; flex-direction: column; gap:12px; margin-top: 12px;">
+                            <div class="u_flex u_items_center u_gap_12">
                                 <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">delete_sweep</span>
                                 <span style="font-size: 0.9rem;">clear executions key and remove history files</span>
-                                <div style="flex:1;"></div>
+                                <div class="u_flex_grow_1"></div>
                                 <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn">
                                     <span class="material-icons">delete</span>
                                     Clear Executions & History
@@ -159,30 +138,57 @@
 
             {% include 'partials/status_bar.html' %}
 
-            <!-- run mode live feed bar -->
-            <div class="run_feed_bar" id="run_feed_bar" style="display: none;">
-                <div class="run_feed_resizer" id="run_feed_resizer" title="drag to resize"></div>
-                <div class="run_feed_header">
-                    <span class="material-icons">dynamic_feed</span>
-                    <span class="run_feed_title">Live Execution Feed</span>
-                    <div style="flex:1"></div>
-                    <button class="btn btn_secondary" id="run_feed_up_btn" title="expand to full screen" style="margin-right: 4px;">
-                        <span class="material-icons">expand_less</span>
-                        Up
-                    </button>
-                    <button class="btn btn_secondary" id="run_feed_reset_btn" title="restore normal size" style="margin-right: 4px;">
-                        <span class="material-icons">fullscreen_exit</span>
-                        Reset
-                    </button>
-                    <button class="btn btn_secondary" id="run_feed_down_btn" title="hide feed">
-                        <span class="material-icons">expand_more</span>
-                        Down
-                    </button>
-                </div>
-                <div class="run_feed_list" id="run_feed_list"></div>
-            </div>
+            {% include 'partials/run_feed.html' %}
         </div>
-    </div>
+{% block scripts %}
+    <!-- d3 for builder canvas -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- core modules -->
+    <script src="/static/js/core/StateManager.js"></script>
+    <script src="/static/js/core/EventManager.js"></script>
+
+    <!-- interaction modules -->
+    <script src="/static/js/interactions/DragHandler.js"></script>
+    <script src="/static/js/interactions/SelectionHandler.js"></script>
+    <script src="/static/js/interactions/ConnectionHandler.js"></script>
+
+    <!-- rendering modules -->
+    <script src="/static/js/rendering/NodeRenderer.js"></script>
+    <script src="/static/js/rendering/LinkRenderer.js"></script>
+    <script src="/static/js/rendering/GroupRenderer.js"></script>
+    <script src="/static/js/rendering/AnnotationRenderer.js"></script>
+
+    <!-- sidebar components -->
+    <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.content.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.constants.js"></script>
+    <script src="/static/js/components/sidebar/ui/Dropdowns.js"></script>
+    <script src="/static/js/components/sidebar/ui/Visibility.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.execution.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.single.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.link.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.multi.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.group.js"></script>
+    <script src="/static/js/components/sidebar/panels/Panel.annotation.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.status.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.settings.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.selection.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.nodes.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.forms.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.files.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.links.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.analysis.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.iflogic.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.flowcharts.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.url.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.events.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.runview.js"></script>
+
+    <!-- main application entrypoint (builder) -->
+    <script src="/static/js/core/FlowchartBuilder.js"></script>
+    <script src="/static/js/main.js"></script>
+{% endblock %}
 
     <!-- context menu -->
     <div class="context_menu" id="context_menu">
@@ -663,28 +669,10 @@
         </div>
     </div>
 
-    <!-- create flowchart modal -->
-    <div class="modal_overlay" id="create_flowchart_modal">
-        <div class="modal_content">
-            <div class="modal_header">
-                <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
-                <button class="modal_close" id="close_create_modal">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <div class="form_group">
-                <label class="form_label" for="new_flowchart_name">flowchart name</label>
-                <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">
-                    use letters, numbers, hyphens, and underscores only (no spaces)
-                </div>
-            </div>
-            <div class="modal_actions">
-                <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
-                <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
-            </div>
-        </div>
-    </div>
+{% endblock %}
+
+{% block modals %}
+    {% include 'partials/modals/create_flowchart.html' %}
 
     <!-- create python script modal -->
     <div class="modal_overlay" id="create_python_modal">
@@ -748,60 +736,4 @@
         </div>
     </div>
 
-    <!-- utility modules -->
-    <script src="/static/js/utils/EventEmitter.js"></script>
-    <script src="/static/js/utils/Geometry.js"></script>
-    <script src="/static/js/utils/Storage.js"></script>
-    <script src="/static/js/utils/Validation.js"></script>
-    <script src="/static/js/utils/URLManager.js"></script>
-
-    <!-- core modules -->
-    <script src="/static/js/core/StateManager.js"></script>
-    <script src="/static/js/core/EventManager.js"></script>
-
-    <!-- interaction modules -->
-    <script src="/static/js/interactions/DragHandler.js"></script>
-    <script src="/static/js/interactions/SelectionHandler.js"></script>
-    <script src="/static/js/interactions/ConnectionHandler.js"></script>
-
-    <!-- rendering modules -->
-    <script src="/static/js/rendering/NodeRenderer.js"></script>
-    <script src="/static/js/rendering/LinkRenderer.js"></script>
-    <script src="/static/js/rendering/GroupRenderer.js"></script>
-    <script src="/static/js/rendering/AnnotationRenderer.js"></script>
-
-    <!-- component modules: refactored sidebar (order matters) -->
-    <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.content.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.constants.js"></script>
-    <script src="/static/js/components/sidebar/ui/Dropdowns.js"></script>
-    <script src="/static/js/components/sidebar/ui/Visibility.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.execution.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.single.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.link.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.multi.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.group.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.annotation.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.status.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.settings.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.selection.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.nodes.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.forms.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.files.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.links.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.analysis.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.iflogic.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.flowcharts.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.url.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.events.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.runview.js"></script>
-
-    <!-- left navigation (centralized) -->
-    <script src="/static/js/components/navigation/Navigation.base.js"></script>
-    <script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
-
-    <!-- main application -->
-    <script src="/static/js/core/FlowchartBuilder.js"></script>
-    <script src="/static/js/main.js"></script>
-</body>
-</html>
+{% endblock %}

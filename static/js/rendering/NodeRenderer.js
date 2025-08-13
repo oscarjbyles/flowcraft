@@ -1,4 +1,8 @@
 // node rendering and visual management
+(function(){
+    'use strict';
+    if (window.NodeRenderer) { return; }
+
 class NodeRenderer {
     constructor(stateManager, container) {
         this.state = stateManager;
@@ -1352,3 +1356,4 @@ class NodeRenderer {
 }
 
 window.NodeRenderer = NodeRenderer;
+})();

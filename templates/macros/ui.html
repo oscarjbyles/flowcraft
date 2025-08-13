@@ -1,0 +1,35 @@
+{# ui macros for icons, buttons, cards, and modals (lowercase comments) #}
+{% macro icon(name, cls='') -%}
+  <span class="material-icons {{ cls }}">{{ name }}</span>
+{%- endmacro %}
+
+{% macro btn(label, icon_name=None, variant='btn_secondary', size='small', extra='') -%}
+  <button class="btn {{ variant }} {{ 'btn_size_small' if size=='small' }} {{ extra }}">
+    {%- if icon_name -%}{{ icon(icon_name, 'u_icon_18 u_mr_4') }}{%- endif -%}
+    <span class="btn_label">{{ label }}</span>
+  </button>
+{%- endmacro %}
+
+{% macro card_start(title=None, cls='dash_card') -%}
+  <div class="{{ cls }}">
+    {%- if title -%}<div class="dash_title">{{ title }}</div>{%- endif -%}
+{%- endmacro %}
+
+{% macro card_end() -%}
+  </div>
+{%- endmacro %}
+
+{% macro modal(id, title) -%}
+  <div class="modal_overlay" id="{{ id }}" role="dialog" aria-modal="true" aria-labelledby="{{ id }}_title">
+    <div class="modal_content">
+      <div class="modal_header">
+        <h2 class="modal_title" id="{{ id }}_title">{{ title }}</h2>
+        <button class="modal_close" data-modal-close="{{ id }}">{{ icon('close') }}</button>
+      </div>
+      <div class="modal_body">{% block modal_body %}{% endblock %}</div>
+      <div class="modal_actions">{% block modal_actions %}{% endblock %}</div>
+    </div>
+  </div>
+{%- endmacro %}
+
+

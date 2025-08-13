@@ -1,0 +1,28 @@
+/* utilities: single-purpose helpers to replace inline styles incrementally */
+@layer utilities {
+  .u_flex { display: flex; }
+  .u_flex_col { display: flex; flex-direction: column; }
+  .u_items_center { align-items: center; }
+  .u_justify_between { justify-content: space-between; }
+  .u_gap_6 { gap: var(--space_6); }
+  .u_gap_8 { gap: var(--space_8); }
+  .u_gap_12 { gap: var(--space_12); }
+  .u_p_8 { padding: var(--space_8); }
+  .u_px_12 { padding-left: var(--space_12); padding-right: var(--space_12); }
+  .u_py_8 { padding-top: var(--space_8); padding-bottom: var(--space_8); }
+  .u_mt_12 { margin-top: var(--space_12); }
+  .u_mb_16 { margin-bottom: 16px; }
+  .u_mr_4 { margin-right: 4px; }
+  .u_mx_auto { margin-left: auto; margin-right: auto; }
+  .u_text_right { text-align: right; }
+  .u_text_center { text-align: center; }
+  .u_icon_16 { font-size: 16px; }
+  .u_icon_18 { font-size: 18px; }
+  .u_opacity_07 { opacity: .7; }
+  .u_w_full { width: 100%; }
+  .u_hidden { display: none !important; }
+  .u_flex_grow_1 { flex: 1; }
+  .u_max_w_900 { max-width: 900px; }
+}
+
+

@@ -1,4 +1,8 @@
 // drag and drop interaction handler
+(function(){
+    'use strict';
+    if (window.DragHandler) { return; }
+
 class DragHandler {
     constructor(stateManager, eventManager) {
         this.state = stateManager;
@@ -384,3 +388,4 @@ class DragHandler {
 }
 
 window.DragHandler = DragHandler;
+})();

@@ -4,60 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlowCraft • Dashboard</title>
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% include 'partials/head.html' %}
+    <link rel="stylesheet" href="/static/css/pages/dashboard.css">
+    <!-- existing styles remain last for full fidelity -->
     <link rel="stylesheet" href="/static/css/sidebar.css">
     <link rel="stylesheet" href="/static/css/index.css">
-    <style>
-        /* dashboard layout */
-        .dashboard_container { flex: 1; display:flex; flex-direction: column; padding: 16px; gap: 16px; }
-        .dash_row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; align-items: start; }
-        .dash_columns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; align-items: start; }
-        .dash_col_left, .dash_col_right { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-        .dash_card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; height: fit-content; min-height: 0; min-width: 0; }
-        .dash_title { font-size: 1rem; font-weight: 600; opacity: 0.9; margin-bottom: 10px; text-transform: capitalize; }
-        .dash_text { opacity: 0.85; }
-        .kpi_grid { display:grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }
-        .kpi_card { background: var(--surface-variant); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; display:flex; flex-direction:column; gap:8px; }
-        .kpi_title { font-size: .85rem; opacity: .8; }
-        .kpi_value { font-size: 1.6rem; font-weight:700; letter-spacing:.3px; }
-        .kpi_sub { font-size:.8rem; opacity:.7; display:flex; align-items:center; gap:6px; }
-        .chart_bar_row { display:flex; gap:8px; align-items:flex-end; height: 120px; background: var(--surface-variant); border:1px solid var(--border-color); border-radius: 10px; padding: 10px 12px 20px; overflow-x: auto; min-width: 0; max-width: 100%; flex-wrap: nowrap; }
-        .bar { width: 16px; background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%); border-radius:6px 6px 0 0; display:flex; align-items:flex-end; justify-content:center; position:relative; flex: 0 0 16px; }
-        .bar_label { position:absolute; bottom:-16px; font-size:.7rem; opacity:.7; }
-        .bar_value { position:absolute; top:-12px; font-size:.5rem; opacity:.8; }
-        .table_wrap { background: var(--surface-variant); border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
-        .table { width:100%; border-collapse: collapse; table-layout: fixed; }
-        .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border-color); text-align:left; font-size:.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .table th:last-child, .table td:last-child { width: 112px; }
-        .table th { background:#242424; }
-        .status_badge { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:.8rem; }
-        .status_success { background: rgba(76,175,80,.15); color:#66bb6a; }
-        .status_failed { background: rgba(244,67,54,.15); color:#f28b82; }
-        .status_info { background: rgba(158,158,158,.15); color:#bdbdbd; }
-        .btn_row { display:flex; gap:8px; }
-        .mini_btn { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--border-color); background: var(--surface-variant); color: var(--on-surface); border-radius:8px; cursor:pointer; font-size:.85rem; }
-        .mini_btn:hover { background: var(--hover-color); }
-        .muted { opacity:.7; font-size:.85rem; }
-        .flex { display:flex; }
-        .flex_col { display:flex; flex-direction:column; }
-        .gap8 { gap:8px; }
-        .gap12 { gap:12px; }
-        .grow { flex:1; }
-        .right { text-align:right; }
-        /* failure spotlight rows - compact single-line items */
-        .failure_rows { display:flex; flex-direction:column; gap:6px; }
-        .failure_row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--border-color); }
-        .failure_row:last-child { border-bottom:none; }
-        .failure_name { font-family: monospace; }
-        .failure_meta { opacity:.7; font-size:.85rem; }
-        .failure_spacer { flex: 0 0 auto; }
-        @media (max-width: 1200px) { .kpi_grid { grid-template-columns: repeat(3, 1fr);} }
-        @media (max-width: 780px) { .dash_columns { grid-template-columns: 1fr; } .kpi_grid{ grid-template-columns: repeat(2, 1fr);} }
-    </style>
+    
     <script src="/static/js/utils/URLManager.js"></script>
     <!-- left navigation (centralized) -->
     <script src="/static/js/components/navigation/Navigation.base.js"></script>
@@ -355,32 +307,32 @@
                         <div class="kpi_card">
                             <div class="kpi_title">executions</div>
                             <div class="kpi_value" id="kpi_total_exec">0</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">history</span> total runs</div>
+                                <div class="kpi_sub"><span class="material-icons u_mr_4 u_icon_16">history</span> total runs</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">progress rate</div>
                             <div class="kpi_value" id="kpi_success_rate">0%</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">check_circle</span> average</div>
+                                <div class="kpi_sub"><span class="material-icons u_mr_4 u_icon_16">check_circle</span> average</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">average run time</div>
                             <div class="kpi_value" id="kpi_avg_time">0.000s</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">schedule</span> per execution</div>
+                                <div class="kpi_sub"><span class="material-icons u_mr_4 u_icon_16">schedule</span> per execution</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">node coverage</div>
                             <div class="kpi_value" id="kpi_nodes_cov">0/0</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">device_hub</span> nodes with files</div>
+                                <div class="kpi_sub"><span class="material-icons u_mr_4 u_icon_16">device_hub</span> nodes with files</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">unassigned python nodes</div>
                             <div class="kpi_value" id="kpi_missing">0</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">warning</span> python nodes without files</div>
+                                <div class="kpi_sub"><span class="material-icons u_mr_4 u_icon_16">warning</span> python nodes without files</div>
                         </div>
                         <div class="kpi_card">
                             <div class="kpi_title">orphaned nodes</div>
                             <div class="kpi_value" id="kpi_orphan">0</div>
-                            <div class="kpi_sub"><span class="material-icons" style="font-size:16px;">device_hub</span> nodes with no links</div>
+                                <div class="kpi_sub"><span class="material-icons u_mr_4 u_icon_16">device_hub</span> nodes with no links</div>
                         </div>
                     </div>
                 </div>
@@ -431,8 +383,8 @@
                                 <button id="link_run" class="mini_btn"><span class="material-icons" style="font-size:16px;">play_arrow</span> Run</button>
                                 <button id="link_scripts" class="mini_btn"><span class="material-icons" style="font-size:16px;">code</span> Scripts</button>
                                 <button id="link_data" class="mini_btn"><span class="material-icons" style="font-size:16px;">table_chart</span> Data Matrix</button>
-                                <div class="grow"></div>
-                                <button id="btn_clear_history" class="mini_btn" style="background: rgba(244, 67, 54, 0.12); color:#f44336; border:none;"><span class="material-icons" style="font-size:16px;">delete</span> Clear History</button>
+                                <div class="u_flex_grow_1"></div>
+                                <button id="btn_clear_history" class="mini_btn mini_btn_danger"><span class="material-icons" style="font-size:16px;">delete</span> Clear History</button>
                             </div>
                         </div>
 
@@ -464,28 +416,7 @@
             {% include 'partials/status_bar.html' %}
         </div>
     </div>
-    <!-- create flowchart modal (dashboard local) -->
-    <div class="modal_overlay" id="create_flowchart_modal">
-        <div class="modal_content">
-            <div class="modal_header">
-                <h2 class="modal_title">CREATE NEW FLOWCHART</h2>
-                <button class="modal_close" id="close_create_modal">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <div class="form_group">
-                <label class="form_label" for="new_flowchart_name">flowchart name</label>
-                <input type="text" id="new_flowchart_name" class="form_input" placeholder="enter flowchart name..." maxlength="50">
-                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 4px;">
-                    use letters, numbers, hyphens, and underscores only (no spaces)
-                </div>
-            </div>
-            <div class="modal_actions">
-                <button class="btn_modal btn_modal_secondary" id="cancel_create_flowchart">CANCEL</button>
-                <button class="btn_modal btn_modal_primary" id="confirm_create_flowchart">CREATE</button>
-            </div>
-        </div>
-    </div>
+    {% include 'partials/modals/create_flowchart.html' %}
 </body>
 </html>
 

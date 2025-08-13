@@ -1,4 +1,8 @@
 // selection interaction handler
+(function(){
+    'use strict';
+    if (window.SelectionHandler) { return; }
+
 class SelectionHandler {
     constructor(stateManager, eventManager) {
         this.state = stateManager;
@@ -346,3 +350,4 @@ class SelectionHandler {
 }
 
 window.SelectionHandler = SelectionHandler;
+})();

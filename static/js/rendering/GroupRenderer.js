@@ -1,4 +1,8 @@
 // group rendering and visual management
+(function(){
+    'use strict';
+    if (window.GroupRenderer) { return; }
+
 class GroupRenderer {
     constructor(stateManager, container) {
         this.state = stateManager;
@@ -446,3 +450,4 @@ class GroupRenderer {
 }
 
 window.GroupRenderer = GroupRenderer;
+})();
