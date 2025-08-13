@@ -1,0 +1,71 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755109324884.7988,
+      "name": "okay",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1.145559310913086,
+      "y": 447.0865478515625
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755109439944.4028,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 388.38897705078125,
+      "y": 609.1992797851562
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755110965789.9705,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 97.54980850219727,
+      "y": 773.7271118164062
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755114362692.6062,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 17.271989092109386,
+      "y": 710.2928698695231
+    },
+    {
+      "id": 1755114418839.995,
+      "x": 406.03399658203125,
+      "y": 397.55535888671875,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "source": 1755109324884.7988,
+      "target": 1755109439944.4028
+    },
+    {
+      "source": 1755109439944.4028,
+      "target": 1755110965789.9705
+    }
+  ],
+  "groups": [],
+  "annotations": []
+}

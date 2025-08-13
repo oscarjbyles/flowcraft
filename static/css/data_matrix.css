@@ -44,8 +44,7 @@
 .dm_match_count { font-size: 0.85rem; opacity: 0.7; white-space: nowrap; }
 .dm_search_input::placeholder { color: rgba(255,255,255,0.5); }
 .dm_search_input:focus { outline: none; border-color: var(--primary-color); }
-.dm_export_btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.9rem; }
-.dm_export_btn .btn_label { font-size: .85rem; padding-top: 6px; padding-bottom: 6px; }
+.dm_export_btn { /* inherits sizing from .dm_row_btn for consistency */ }
 .dm_data_content { width: 100%; }
 .dm_table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .dm_table thead th { text-align: left; font-weight: 500; opacity: 0.8; font-style: italic; padding: 8px 6px; border-bottom: 1px solid var(--border-color); }

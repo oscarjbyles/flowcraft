@@ -43,7 +43,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 .properties_sidebar {
     width: 320px;
-    height: 100vh;
+    height: calc(100vh - 32px);
     background-color: var(--surface-color);
     border-left: 1px solid var(--border-color);
     display: none; /* hidden by default to avoid flash; js shows per-mode */
@@ -56,6 +56,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 .properties_content {
     display: none;
+    height: calc(100vh - 32px);
 }
 
 .properties_content.active {
@@ -664,12 +665,16 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     bottom: 0;
     z-index: 900;
 }
+/* adjust status bar width to respect right sidebar */
+.main_content:not(.full_width):not(.sidebar_collapsed) .status_bar { right: 320px; }
+.main_content.run_mode:not(.sidebar_collapsed) .status_bar { right: 450px; }
+.main_content.sidebar_collapsed .status_bar { right: 0 !important; }
 /* run mode live feed bar at bottom */
 .run_feed_bar {
     position: fixed;
     left: 320px; /* start to the right of the left sidebar */
     right: 0;
-    bottom: 0;
+    bottom: 32px;
     height: 300px;
     background: var(--surface-color);
     border-top: 1px solid var(--border-color);
@@ -698,7 +703,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* full screen state - snap to top */
 .run_feed_bar.full_screen {
     top: 0;
-    bottom: 0;
+    bottom: 32px;
     height: auto;
 }
 
@@ -714,7 +719,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* hidden state - only header visible */
 .run_feed_bar.hidden {
     height: auto;
-    bottom: 0;
+    bottom: 32px;
 }
 
 .run_feed_bar.hidden .run_feed_list {
@@ -1273,7 +1278,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
         
 /* default properties layout when no selection */
 #default_properties .sidebar_content {
-    height: 100vh;
+    height: calc(100vh - 32px);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1538,6 +1543,14 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
   margin-top: 8px;
 }
 
+/* backups details card (separate class to allow independent styling) */
+.backups_details_card {
+  background: transparent;
+  border-radius: 4px;
+  padding: 0px;
+  margin-top: 8px;
+}
+
 .data_save_details_grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -1764,4 +1777,47 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     background-color: #d32f2f;
 }
 
+
+/* backups table - compact layout */
+.backups_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+.backups_table th, .backups_table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    white-space: nowrap;
+}
+.backups_table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-variant);
+    z-index: 1;
+}
+/* rounded corners on header row */
+.backups_table thead th:first-child { border-top-left-radius: 4px; }
+.backups_table thead th:last-child { border-top-right-radius: 4px; }
+.backups_table tr:hover td { background: var(--hover-color); }
+.backups_active_row td { background: #1E1E1E !important; }
+.backups_table .cell_actions { display: flex; gap: 6px; }
+.backups_table .btn_inline { padding: 4px 8px; font-size: 0.75rem; height: 24px; }
+.backups_table th.col_delete, .backups_table th.col_restore,
+.backups_table td.col_delete, .backups_table td.col_restore {
+    width: 60px;
+}
+/* make nodes and connections the same width */
+.backups_table th.col_nodes, .backups_table td.col_nodes,
+.backups_table th.col_connections, .backups_table td.col_connections {
+    width: 120px;
+}
+.backups_show_more {
+    text-align: center;
+    padding: 8px 0;
+    cursor: pointer;
+    color: #90caf9;
+    user-select: none;
+}
+.backups_show_more:hover { text-decoration: underline; }
 

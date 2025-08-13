@@ -194,9 +194,11 @@
                 if (el_dist) {
                     const recent = history.slice(0, 40);
                     if (!recent.length) {
-                        el_dist.innerHTML = '<div class="muted" style="padding:8px;">no executions yet</div>';
+                        el_dist.innerHTML = '<div class="muted">no executions yet</div>';
+                        try { el_dist.classList.add('empty'); } catch(_) {}
                     } else {
                         el_dist.innerHTML = '';
+                        try { el_dist.classList.remove('empty'); } catch(_) {}
                         recent.forEach((h, idx) => {
                             const pct = Math.max(0, Math.min(100, Number(h.success_percentage || 0)));
                             const bar = document.createElement('div');

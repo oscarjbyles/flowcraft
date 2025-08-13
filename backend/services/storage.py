@@ -22,6 +22,106 @@ DEFAULT_FLOWCHART = 'default.json'
 
 # keep only a limited number of execution summaries in the flowchart file to avoid bloat
 MAX_EXECUTION_SUMMARIES = 200
+def _backups_root_dir() -> str:
+    try:
+        # keep backups under root/flowcharts/backups/
+        base = current_app.config.get('FLOWCRAFT_FLOWCHARTS_DIR', 'flowcharts')
+    except Exception:
+        base = 'flowcharts'
+    backups = os.path.join(base, 'backups')
+    if not os.path.exists(backups):
+        os.makedirs(backups)
+    return backups
+
+
+def _backup_dir_for(flowchart_name: str) -> str:
+    if flowchart_name.endswith('.json'):
+        flowchart_name = flowchart_name[:-5]
+    root = _backups_root_dir()
+    path = os.path.join(root, flowchart_name)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+def write_backup_snapshot(flowchart_name: str, data: Dict[str, Any]) -> str:
+    """write a timestamped backup snapshot for the given flowchart and return path"""
+    backup_dir = _backup_dir_for(flowchart_name)
+    ts = datetime.now().strftime('%Y%m%dT%H%M%S')
+    filename = f"{ts}.json"
+    path = os.path.join(backup_dir, filename)
+    try:
+        with open(path, 'w') as f:
+            json.dump(data, f, indent=2)
+        # prune old backups; keep only the most recent 50 per flowchart
+        try:
+            prune_backups(flowchart_name, keep=50)
+        except Exception:
+            pass
+        return path
+    except Exception:
+        return ''
+
+
+def get_latest_backup_path(flowchart_name: str) -> str:
+    """return the latest backup file path for a flowchart, or empty string if none"""
+    backup_dir = _backup_dir_for(flowchart_name)
+    try:
+        entries = [fn for fn in os.listdir(backup_dir) if fn.endswith('.json')]
+        if not entries:
+            return ''
+        # filenames are timestamped sortable
+        entries.sort(reverse=True)
+        return os.path.join(backup_dir, entries[0])
+    except Exception:
+        return ''
+
+
+def restore_latest_backup(flowchart_name: str) -> Dict[str, Any]:
+    """restore the latest backup into the active flowchart file; return restored data or {}"""
+    latest = get_latest_backup_path(flowchart_name)
+    if not latest or not os.path.exists(latest):
+        return {}
+    try:
+        # copy bytes to ensure exact restore
+        import shutil
+        target_path = get_flowchart_path(flowchart_name)
+        shutil.copyfile(latest, target_path)
+        # load and return restored json
+        with open(target_path, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def prune_backups(flowchart_name: str, keep: int = 50) -> int:
+    """delete older backup files, keeping only the newest `keep` entries; returns the number deleted"""
+    backup_dir = _backup_dir_for(flowchart_name)
+    try:
+        files = [fn for fn in os.listdir(backup_dir) if fn.endswith('.json')]
+        if len(files) <= keep:
+            return 0
+        files.sort(reverse=True)  # newest first (timestamped filenames)
+        to_delete = files[keep:]
+        deleted = 0
+        for fn in to_delete:
+            try:
+                os.remove(os.path.join(backup_dir, fn))
+                deleted += 1
+            except Exception:
+                # continue on errors to avoid interrupting the main flow
+                pass
+        return deleted
+    except Exception:
+        return 0
+    try:
+        with open(latest, 'r') as f:
+            data = json.load(f)
+        # write to active flowchart
+        save_flowchart(data, flowchart_name)
+        return data
+    except Exception:
+        return {}
 
 
 def ensure_flowcharts_dir() -> None:
@@ -214,3 +314,72 @@ def _append_execution_summary_to_flowchart(flowchart_name: str, execution_id: st
         # never raise
         return
 
+
+def list_backups(flowchart_name: str) -> List[Dict[str, Any]]:
+    """list backups for a flowchart sorted newest first, including node/link counts"""
+    backup_dir = _backup_dir_for(flowchart_name)
+    results: List[Dict[str, Any]] = []
+    try:
+        files = [fn for fn in os.listdir(backup_dir) if fn.endswith('.json')]
+        files.sort(reverse=True)
+        for fn in files:
+            path = os.path.join(backup_dir, fn)
+            timestamp = fn[:-5]
+            # parse readable datetime from filename
+            readable = timestamp
+            try:
+                readable = datetime.strptime(timestamp, '%Y%m%dT%H%M%S').strftime('%Y-%m-%d %H:%M:%S')
+            except Exception:
+                pass
+            nodes = 0
+            links = 0
+            try:
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                nodes = len((data or {}).get('nodes') or [])
+                links = len((data or {}).get('links') or [])
+            except Exception:
+                pass
+            results.append({
+                'filename': fn,
+                'timestamp': timestamp,
+                'date_readable': readable,
+                'nodes': nodes,
+                'links': links,
+            })
+        return results
+    except Exception:
+        return []
+
+
+def delete_backup_file(flowchart_name: str, timestamp: str) -> bool:
+    """delete a specific backup by timestamp (filename without .json)"""
+    backup_dir = _backup_dir_for(flowchart_name)
+    filename = f"{timestamp}.json"
+    path = os.path.join(backup_dir, filename)
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+            return True
+        return False
+    except Exception:
+        return False
+
+
+def restore_backup_file(flowchart_name: str, timestamp: str) -> Dict[str, Any]:
+    """restore a specific backup file (by timestamp) into the active flowchart"""
+    backup_dir = _backup_dir_for(flowchart_name)
+    filename = f"{timestamp}.json"
+    path = os.path.join(backup_dir, filename)
+    try:
+        if not os.path.exists(path):
+            return {}
+        # exact file copy
+        import shutil
+        target_path = get_flowchart_path(flowchart_name)
+        shutil.copyfile(path, target_path)
+        # load and return restored json
+        with open(target_path, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {}

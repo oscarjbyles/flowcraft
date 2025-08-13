@@ -727,14 +727,23 @@ class StateManager extends BaseEmitter {
         }, this.autosaveDelay);
     }
 
-    async save(isAutosave = false) {
+    async save(isAutosave = false, force = false) {
         const data = this.getSerializableData();
 
-        const result = await this.storage.save(data, isAutosave);
+        const result = await this.storage.save(data, isAutosave, force);
         
         if (result.success) {
             this.emit('dataSaved', { isAutosave, message: result.message });
         } else {
+            if (result.code === 'destructive_change') {
+                // notify ui to prompt the user
+                this.emit('destructiveChangeDetected', { 
+                    existingNodes: result.payload && result.payload.existing_nodes, 
+                    incomingNodes: result.payload && result.payload.incoming_nodes,
+                    threshold: result.payload && result.payload.threshold
+                });
+                return result;
+            }
             this.emit('saveError', { message: result.message });
         }
         

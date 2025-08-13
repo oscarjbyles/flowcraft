@@ -1,0 +1,61 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755109324884.7988,
+      "name": "okay",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1.145559310913086,
+      "y": 447.0865478515625
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755109439944.4028,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 320.4276123046875,
+      "y": 633.388916015625
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755110965789.9705,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 97.54980850219727,
+      "y": 773.7271118164062
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755114362692.6062,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 17.271989092109386,
+      "y": 710.2928698695231
+    }
+  ],
+  "links": [
+    {
+      "source": 1755109324884.7988,
+      "target": 1755109439944.4028
+    },
+    {
+      "source": 1755109439944.4028,
+      "target": 1755110965789.9705
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "force": false
+}

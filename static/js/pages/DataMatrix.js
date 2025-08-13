@@ -243,7 +243,8 @@
         matchCount.style.display = 'none'; // hide initially
         searchContainer.appendChild(matchCount);
         
-        const exportBtn = el('button','btn btn_primary dm_export_btn','<span class="material-icons u_icon_18">download</span><span>Export</span>');
+        const exportBtn = el('button','btn btn_primary dm_row_btn dm_export_btn','<span class="material-icons u_icon_18">download</span><span class="btn_label">Export</span>');
+        exportBtn.style.marginTop = '1px';
         
         dataBar.appendChild(searchContainer);
         dataBar.appendChild(exportBtn);
@@ -330,7 +331,7 @@
                 // fallback: infer from synthesized results
                 const dsRows = results.filter(r => r.function_name === 'data_save' || (r.node_name && r.python_file && r.return_value && typeof r.return_value === 'object' && Object.keys(r.return_value).length === 1 && detail.execution_data.flowchart_state && detail.execution_data.flowchart_state.nodes && detail.execution_data.flowchart_state.nodes.find(n=>n.id===r.node_id && n.type==='data_save')));
                 if (dsRows.length === 0) {
-                    tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7; text-align: center;">no saved data</td>'));
+                    tbody.appendChild(el('tr','', '<td colspan="3" style="opacity:.7; text-align: center;">no saved data</td>'));
                 } else {
                     dsRows.forEach(r => {
                         const keys = (r.return_value && typeof r.return_value === 'object') ? Object.keys(r.return_value) : [];
@@ -359,10 +360,10 @@
                     });
                 }
             } else {
-                tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7">no saved data</td>'));
+                tbody.appendChild(el('tr','', '<td colspan="3" style="opacity:.7">no saved data</td>'));
             }
         } else {
-            tbody.appendChild(el('tr','', '<td colspan="4" style="opacity:.7; text-align: center;">no data</td>'));
+            tbody.appendChild(el('tr','', '<td colspan="3" style="opacity:.7; text-align: center;">no data</td>'));
         }
         table.appendChild(tbody);
         content.appendChild(table);

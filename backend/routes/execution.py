@@ -280,19 +280,13 @@ def get_history():
 
 @execution_bp.route('/history/<execution_id>', methods=['GET'])
 def get_execution_details(execution_id):
-    from ..services.storage import HISTORY_DIR
     flowchart_name = request.args.get('flowchart_name', DEFAULT_FLOWCHART)
     try:
-        if flowchart_name.endswith('.json'):
-            flowchart_name = flowchart_name[:-5]
-        history_path = os.path.join(HISTORY_DIR, flowchart_name)
-        filepath = os.path.join(history_path, f"{execution_id}.json")
-        if not os.path.exists(filepath):
-            return jsonify({'status': 'error', 'message': 'execution not found'}), 404
-        import json
-        with open(filepath, 'r') as f:
-            entry = json.load(f)
-        return jsonify({'status': 'success', 'execution': entry})
+        entries = get_execution_history(flowchart_name)
+        for entry in entries:
+            if entry.get('execution_id') == execution_id:
+                return jsonify({'status': 'success', 'execution': entry})
+        return jsonify({'status': 'error', 'message': 'execution not found'}), 404
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'failed to get execution details: {str(e)}'}), 500
 
@@ -321,32 +315,24 @@ def delete_history_entry(execution_id):
 
 @execution_bp.route('/history/clear', methods=['POST'])
 def clear_history_for_flowchart():
-    from ..services.storage import HISTORY_DIR
     try:
         data = request.json or {}
         flowchart_name = data.get('flowchart_name') or DEFAULT_FLOWCHART
-        if flowchart_name.endswith('.json'):
-            flowchart_folder = flowchart_name[:-5]
-        else:
-            flowchart_folder = flowchart_name
-        history_path = os.path.join(HISTORY_DIR, flowchart_folder)
-        if not os.path.exists(history_path):
-            return jsonify({'status': 'success', 'message': 'no history found to clear'})
+        entries = []
+        try:
+            entries = get_execution_history(flowchart_name)
+        except Exception:
+            entries = []
         removed = 0
-        for entry in os.listdir(history_path):
-            full_path = os.path.join(history_path, entry)
+        for entry in entries:
             try:
-                if os.path.isfile(full_path):
-                    os.remove(full_path)
+                exec_id = entry.get('execution_id')
+                if exec_id and delete_execution_history(flowchart_name, exec_id):
                     removed += 1
-                elif os.path.isdir(full_path):
-                    import shutil
-                    shutil.rmtree(full_path)
-                    removed += 1
-            except Exception as e:
-                # comments: keep going even if a file fails to delete
-                print(f"warning: failed to remove {full_path}: {e}")
-        # do not modify the embedded `executions` array in the flowchart json here; executions are permanent
+            except Exception:
+                # comments: ignore and continue
+                pass
+        flowchart_folder = flowchart_name[:-5] if flowchart_name.endswith('.json') else flowchart_name
         return jsonify({'status': 'success', 'message': f'cleared {removed} items from history for {flowchart_folder}'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'failed to clear history: {str(e)}'}), 500

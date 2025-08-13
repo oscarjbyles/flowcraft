@@ -14,6 +14,7 @@
 .kpi_value { font-size: 1.6rem; font-weight:700; letter-spacing:.3px; }
 .kpi_sub { font-size:.8rem; opacity:.7; display:flex; align-items:center; gap:6px; }
 .chart_bar_row { display:flex; gap:8px; align-items:flex-end; height: 120px; background: var(--surface-variant); border:1px solid var(--border-color); border-radius: 10px; padding: 10px 12px 20px; overflow-x: auto; min-width: 0; max-width: 100%; flex-wrap: nowrap; }
+.chart_bar_row.empty { align-items: center; justify-content: center; padding: 0; }
 .bar { width: 16px; background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%); border-radius:6px 6px 0 0; display:flex; align-items:flex-end; justify-content:center; position:relative; flex: 0 0 16px; }
 .bar_label { position:absolute; bottom:-16px; font-size:.7rem; opacity:.7; }
 .bar_value { position:absolute; top:-12px; font-size:.5rem; opacity:.8; }

@@ -34,7 +34,7 @@ class Storage {
     /**
      * save flowchart data to server
      */
-    async save(data, isAutosave = false) {
+    async save(data, isAutosave = false, force = false) {
         try {
             // do not attempt to save if we don't yet know which flowchart is active
             if (!this.currentFlowchart) {
@@ -42,7 +42,8 @@ class Storage {
             }
             const saveData = {
                 ...data,
-                flowchart_name: this.currentFlowchart
+                flowchart_name: this.currentFlowchart,
+                force: !!force
             };
 
             // console.log(`[Storage] Saving to flowchart: ${this.currentFlowchart}`, {
@@ -64,12 +65,40 @@ class Storage {
                 // console.log(`[Storage] Successfully saved to ${this.currentFlowchart}`);
                 return { success: true, message: isAutosave ? null : 'flowchart saved successfully' };
             } else {
+                // try to parse structured error for destructive change
+                let payload = null;
+                try { payload = await response.json(); } catch(_) {}
+                if (response.status === 409 && payload && payload.code === 'destructive_change') {
+                    return { success: false, code: 'destructive_change', payload };
+                }
                 console.error(`[Storage] Failed to save to ${this.currentFlowchart}:`, response.status);
                 return { success: false, message: 'error saving flowchart' };
             }
         } catch (error) {
             console.error('error saving flowchart:', error);
             return { success: false, message: 'error saving flowchart' };
+        }
+    }
+
+    /**
+     * request server to restore the latest backup for current flowchart
+     */
+    async restoreLatestBackup() {
+        try {
+            if (!this.currentFlowchart) return { success: false, message: 'no flowchart selected' };
+            const response = await fetch('/api/flowchart/restore-latest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ flowchart_name: this.currentFlowchart })
+            });
+            const data = await response.json();
+            if (response.ok && data && data.status === 'success') {
+                return { success: true, data: data.data };
+            }
+            return { success: false, message: (data && data.message) || 'failed to restore backup' };
+        } catch (error) {
+            console.error('error restoring backup:', error);
+            return { success: false, message: 'error restoring backup' };
         }
     }
 

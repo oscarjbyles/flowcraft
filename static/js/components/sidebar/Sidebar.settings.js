@@ -84,6 +84,17 @@
             })();
         }
 
+        // render backups table
+        this.initializeBackupsTable();
+
+        // refresh backups when settings button is clicked
+        const settingsBtnEl = document.getElementById('settings_btn');
+        if (settingsBtnEl) {
+            settingsBtnEl.addEventListener('click', () => {
+                try { this.loadAndRenderBackups && this.loadAndRenderBackups(); } catch (_) {}
+            });
+        }
+
         if (!this.defaultEditorInput || !this.defaultEditorDropdown) return;
 
         // load saved preference from localstorage
@@ -165,6 +176,201 @@
 
     Sidebar.prototype.closeEditorDropdown = function() {
         this.defaultEditorDropdown.classList.remove('show');
+    };
+
+    Sidebar.prototype.initializeBackupsTable = function() {
+        const tableBody = document.getElementById('backups_table_body');
+        if (!tableBody) return;
+        const storage = this.state?.storage || null;
+        const current = storage && storage.getCurrentFlowchart ? storage.getCurrentFlowchart() : 'default.json';
+
+            const formatTimeAgo = (isoOrReadable) => {
+                try {
+                    // parse 'YYYY-MM-DD HH:MM:SS' as local time (not utc) for accurate diff
+                    let d;
+                    if (typeof isoOrReadable === 'string' && isoOrReadable.includes(' ')) {
+                        const [ds, ts] = isoOrReadable.split(' ');
+                        const [y, m, da] = ds.split('-').map(n => parseInt(n, 10));
+                        const [hh, mm, ss] = ts.split(':').map(n => parseInt(n, 10));
+                        d = new Date(y, (m || 1) - 1, da || 1, hh || 0, mm || 0, ss || 0, 0);
+                    } else if (typeof isoOrReadable === 'string') {
+                        d = new Date(isoOrReadable);
+                    } else {
+                        return '';
+                    }
+                    const now = new Date();
+                    let diff = Math.max(0, Math.floor((now.getTime() - d.getTime()) / 1000));
+                    const days = Math.floor(diff / 86400); diff -= days * 86400;
+                    const hours = Math.floor(diff / 3600); diff -= hours * 3600;
+                    const minutes = Math.floor(diff / 60); diff -= minutes * 60;
+                    const seconds = diff;
+                    const parts = [];
+                    if (days > 0) parts.push(days + ' day');
+                    if (hours > 0) parts.push(hours + ' hou');
+                    if (minutes > 0) parts.push(minutes + ' min');
+                    if (seconds > 0 || parts.length === 0) parts.push(seconds + ' sec');
+                    return parts.join(', ');
+                } catch (_) { return ''; }
+            };
+
+            const renderRows = (activeData, backups, showAll = false) => {
+            const max = 10;
+            const slice = showAll ? backups : backups.slice(0, max);
+            const rows = [];
+
+            // active row under headers
+            const activeNodes = (activeData?.nodes || []).length;
+            const activeLinks = (activeData?.links || []).length;
+                rows.push(`
+                <tr class="backups_active_row">
+                    <td colspan="3">${this.escapeHTML('active flowchart')}</td>
+                    <td>${activeNodes}</td>
+                    <td>${activeLinks}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                `);
+
+            // backup rows
+            for (const b of slice) {
+                const dt = (b.date_readable || b.timestamp || '').split(' ');
+                const dateStr = dt.length >= 2 ? dt[0] : '';
+                const timeStr = dt.length >= 2 ? dt[1] : (dt[0] || '');
+                const agoStr = formatTimeAgo(b.date_readable || b.timestamp || '');
+                rows.push(`
+                    <tr data-timestamp="${this.escapeHTML(b.timestamp)}">
+                        <td>${this.escapeHTML(timeStr)}</td>
+                        <td>${this.escapeHTML(agoStr)}</td>
+                        <td>${this.escapeHTML(dateStr)}</td>
+                        <td class="col_nodes">${b.nodes}</td>
+                        <td class="col_connections">${b.links}</td>
+                        <td class="col_delete">
+                            <div class="cell_actions">
+                                <button class="btn btn_secondary btn_inline js_delete_backup" title="delete">Delete</button>
+                            </div>
+                        </td>
+                        <td class="col_restore">
+                            <div class="cell_actions">
+                                <button class="btn btn_primary btn_inline js_restore_backup" title="restore">Restore</button>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            // show more row if needed
+                if (!showAll && backups.length > max) {
+                rows.push(`
+                    <tr>
+                        <td colspan="7" class="backups_show_more" style="text-align:center;">Show More</td>
+                    </tr>
+                `);
+            }
+
+            tableBody.innerHTML = rows.join('');
+
+            // wire actions
+            tableBody.querySelectorAll('.js_delete_backup').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const tr = e.currentTarget.closest('tr');
+                    const ts = tr?.dataset?.timestamp;
+                    if (!ts) return;
+                    try {
+                        const url = `/api/flowchart/backups/${encodeURIComponent(ts)}?name=${encodeURIComponent(current)}`;
+                        const resp = await fetch(url, { method: 'DELETE' });
+                        const data = await resp.json();
+                        if (data.status === 'success') {
+                            this.showSuccess('deleted backup');
+                            this.loadAndRenderBackups();
+                        } else {
+                            this.showError(data.message || 'failed to delete');
+                        }
+                    } catch (_) {
+                        this.showError('error deleting');
+                    }
+                });
+            });
+            tableBody.querySelectorAll('.js_restore_backup').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const tr = e.currentTarget.closest('tr');
+                    const ts = tr?.dataset?.timestamp;
+                    if (!ts) return;
+                    try {
+                        const url = `/api/flowchart/backups/${encodeURIComponent(ts)}/restore?name=${encodeURIComponent(current)}`;
+                        console.log('[backups] restore click', { ts, url, current });
+                        const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                        const data = await resp.json().catch(() => ({ status: 'error', message: 'invalid json' }));
+                        console.log('[backups] restore response', { status: resp.status, ok: resp.ok, data });
+                        if (resp.ok && data && data.status === 'success') {
+                            this.showSuccess('restored backup');
+                            // refresh in-place: reload flowchart data and re-render without page reload
+                            try {
+                                console.log('[backups] reloading state after restore');
+                                await this.state.load();
+                                console.log('[backups] reloaded state');
+                            } catch (err) {
+                                console.error('[backups] error reloading state', err);
+                            }
+                            // refresh the backups table to reflect any changes
+                            try {
+                                await this.loadAndRenderBackups();
+                            } catch (_) {}
+                        } else {
+                            const msg = (data && data.message) || `failed to restore (status ${resp.status})`;
+                            console.error('[backups] restore failed', { msg });
+                            this.showError(msg);
+                        }
+                    } catch (err) {
+                        console.error('[backups] restore error', err);
+                        this.showError('error restoring');
+                    }
+                });
+            });
+
+            const showMore = tableBody.querySelector('.backups_show_more');
+            if (showMore) {
+                showMore.addEventListener('click', () => {
+                    renderRows(activeData, backups, true);
+                });
+            }
+        };
+
+        this.loadAndRenderBackups = async () => {
+            console.log('[backups] loading backups table...');
+            try {
+                const name = encodeURIComponent(current);
+                const resp = await fetch(`/api/flowchart/backups?name=${name}`);
+                const payload = await resp.json();
+                const backups = resp.ok && payload && payload.status === 'success' ? (payload.backups || []) : [];
+                console.log('[backups] loaded list', { count: backups.length });
+
+                // load active data counts
+                let activeData = null;
+                try {
+                    const activeResp = await fetch(`/api/flowchart?name=${name}`);
+                    activeData = activeResp.ok ? await activeResp.json() : null;
+                } catch (_) {}
+
+                renderRows(activeData || { nodes: [], links: [] }, backups, false);
+                console.log('[backups] table rendered');
+            } catch (err) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="opacity:.7">failed to load backups</td></tr>';
+                console.error('[backups] failed to load backups', err);
+            }
+        };
+
+        this.loadAndRenderBackups();
+    };
+
+    Sidebar.prototype.escapeHTML = function(str) {
+        try {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        } catch (_) { return ''; }
     };
 })();
 

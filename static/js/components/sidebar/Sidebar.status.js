@@ -14,18 +14,14 @@
             this._defaultStatusTextCaptured = true;
         }
 
-        // set message
-        statusElement.textContent = message;
+        // set message with interpunct prefix
+        statusElement.textContent = '· ' + message;
 
-        // subtle background by type
+        // subtle background: only errors should color the bar
         const originalBg = statusBar.style.backgroundColor;
         let bgColor = 'var(--surface-color)';
         const lower = String(type || '').toLowerCase();
-        if (lower === 'success') {
-            bgColor = '#0e2a16';
-        } else if (lower === 'error') {
-            bgColor = '#2A0E0E';
-        } else if (lower === 'warning' || /warning:/i.test(String(message))) {
+        if (lower === 'error' || /^(error|failed)/i.test(String(message))) {
             bgColor = '#2A0E0E';
         }
         statusBar.style.backgroundColor = bgColor;

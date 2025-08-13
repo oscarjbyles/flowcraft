@@ -15,7 +15,7 @@
 
 /* content */
 .sidebar_content { flex: 1; padding: 16px; display: flex; flex-direction: column; }
-.sidebar_footer { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border-color); }
+.sidebar_footer { margin-top: auto; padding-top: 8px; }
 
 /* sections */
 .sidebar_section { margin-bottom: 24px; }

@@ -1,0 +1,118 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755109324884.7988,
+      "name": "okay",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1.145559310913086,
+      "y": 447.0865478515625
+    },
+    {
+      "id": 1755116094395.3545,
+      "x": 219.64556884765625,
+      "y": 446.0865478515625,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116097434.4033,
+      "x": 454.2777404785156,
+      "y": 442.6697082519531,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116098223.0166,
+      "x": 848.5989074707031,
+      "y": 438.8487243652344,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116098890.2212,
+      "x": 649.1457214355469,
+      "y": 444.1980895996094,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116103945.5273,
+      "x": -14.065006256103516,
+      "y": 586.0653686523438,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116104530.8738,
+      "x": 221.84442138671875,
+      "y": 579.0233154296875,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116105251.8623,
+      "x": 458.63409423828125,
+      "y": 578.14306640625,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116105895.5474,
+      "x": 669.0160522460938,
+      "y": 579.0233154296875,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755116106548.0818,
+      "x": 861.792724609375,
+      "y": 570.220703125,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "annotations": [],
+  "force": false
+}

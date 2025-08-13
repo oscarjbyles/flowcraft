@@ -144,6 +144,15 @@ class FlowchartBuilder {
         // setup window events
         this.setupWindowEvents();
         try { console.log('[init] initializeUI after setupWindowEvents'); } catch(_) {}
+
+        // wire modal close for massive change modal if present
+        try {
+            const overlay = document.getElementById('massive_change_modal');
+            const closeBtn = document.getElementById('massive_change_close');
+            if (overlay && closeBtn) {
+                closeBtn.addEventListener('click', () => overlay.classList.remove('modal_overlay_is_open'));
+            }
+        } catch (_) {}
     }
 
     setupCoreEvents() {
@@ -179,6 +188,10 @@ class FlowchartBuilder {
         // error events
         this.state.on('saveError', (data) => {
             this.updateStatusBar(data.message);
+        });
+        // destructive change guard -> show modal for user decision
+        this.state.on('destructiveChangeDetected', (info) => {
+            try { this.showMassiveChangeModal(info); } catch (_) {}
         });
         
         this.state.on('loadError', (data) => {
@@ -289,6 +302,42 @@ class FlowchartBuilder {
         this.state.on('hideSelectionRect', () => {
             this.hideSelectionRect();
         });
+    }
+    // modal for massive change detection
+    showMassiveChangeModal(info) {
+        const overlay = document.getElementById('massive_change_modal');
+        const yesBtn = document.getElementById('massive_change_yes');
+        const noBtn = document.getElementById('massive_change_no');
+        if (!overlay || !yesBtn || !noBtn) return;
+        overlay.classList.add('modal_overlay_is_open');
+        const close = () => overlay.classList.remove('modal_overlay_is_open');
+        const onYes = async () => {
+            try {
+                const res = await this.state.storage.restoreLatestBackup();
+                if (res && res.success) {
+                    await this.state.load();
+                    this.updateStatusBar('restored latest backup');
+                } else {
+                    this.updateStatusBar((res && res.message) || 'failed to restore backup');
+                }
+            } catch (_) {}
+            cleanup();
+        };
+        const onNo = async () => {
+            try {
+                // force the save to accept the destructive change
+                await this.state.save(false, true);
+                this.updateStatusBar('changes saved');
+            } catch (_) {}
+            cleanup();
+        };
+        const cleanup = () => {
+            yesBtn.removeEventListener('click', onYes);
+            noBtn.removeEventListener('click', onNo);
+            close();
+        };
+        yesBtn.addEventListener('click', onYes);
+        noBtn.addEventListener('click', onNo);
     }
 
     setupZoomPan() {
@@ -1210,20 +1259,13 @@ class FlowchartBuilder {
         // set message
         this.statusText.textContent = message;
 
-        // choose subtle background based on message content
+        // choose subtle background: only errors should color the bar
         const originalBg = this._statusOriginalBg || this.statusBar.style.backgroundColor;
         this._statusOriginalBg = originalBg;
         const lower = String(message || '').toLowerCase();
         let bgColor = 'var(--surface-color)';
-        if (!message || lower.trim() === '') {
-            // no message: keep neutral background
-            bgColor = 'var(--surface-color)';
-        } else if (lower.startsWith('error') || lower.includes('failed')) {
+        if (lower.startsWith('error') || lower.includes('failed')) {
             bgColor = '#2A0E0E';
-        } else if (lower.startsWith('warning') || lower.includes('cannot')) {
-            bgColor = '#2a1f0e';
-        } else if (lower.includes('success')) {
-            bgColor = '#0e2a16';
         }
         this.statusBar.style.backgroundColor = bgColor;
 
