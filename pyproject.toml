@@ -41,4 +41,32 @@
  where = ["."]
  include = ["flowcraft", "backend*"]
 
+# install top-level static and templates into the flowcraft package at install time
+[tool.setuptools.data-files]
+"flowcraft/templates" = [
+  "templates/*.html",
+  "templates/base/*.html",
+  "templates/partials/*.html",
+  "templates/partials/modals/*.html",
+  "templates/macros/*.html"
+]
+"flowcraft/static" = [
+  "static/favicon.svg",
+  "static/flowchart.js.backup",
+  "static/css/*.css",
+  "static/css/components/*.css",
+  "static/css/pages/*.css",
+  "static/js/main.js",
+  "static/js/core/*.js",
+  "static/js/interactions/*.js",
+  "static/js/rendering/*.js",
+  "static/js/utils/*.js",
+  "static/js/pages/*.js",
+  "static/js/components/navigation/*.js",
+  "static/js/components/sidebar/*.js",
+  "static/js/components/sidebar/panels/*.js",
+  "static/js/components/sidebar/ui/*.js"
+]
+
+
 

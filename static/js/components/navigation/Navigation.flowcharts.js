@@ -56,6 +56,7 @@
     const NavigationFlow = {
         setupFlowchartUI(app){
             onDomReady(async () => {
+                try { console.log('[nav-flow] setup start', { path: window.location.pathname, hasApp: !!app }); } catch(_) {}
                 const urlMgr = getUrlManager();
                 const selector = document.getElementById('flowchart_selector');
                 const dropdown = document.getElementById('flowchart_dropdown');
@@ -65,6 +66,7 @@
                 const cancelCreate = document.getElementById('cancel_create_flowchart');
                 const confirmCreate = document.getElementById('confirm_create_flowchart');
                 const nameInput = document.getElementById('new_flowchart_name');
+                try { console.log('[nav-flow] dom refs', { hasSelector: !!selector, hasDropdown: !!dropdown, hasCreateBtn: !!createBtn }); } catch(_) {}
 
                 // initialize selector value from url/localstorage
                 try {
@@ -75,6 +77,7 @@
                 // dropdown open/close
                 if (selector) {
                     selector.addEventListener('click', (e) => { e.stopPropagation(); if (dropdown) dropdown.classList.toggle('show'); });
+                    try { console.log('[nav-flow] selector click handler attached'); } catch(_) {}
                     document.addEventListener('click', (e) => {
                         const container = selector.closest('.dropdown_container');
                         if (container && !container.contains(e.target)) closeDropdown(dropdown);
@@ -84,6 +87,7 @@
                 // populate dropdown
                 try {
                     const data = await fetchFlowcharts();
+                    try { console.log('[nav-flow] fetched flowcharts', { status: data && data.status, count: (data && data.flowcharts && data.flowcharts.length) || 0 }); } catch(_) {}
                     const flows = Array.isArray(data.flowcharts) ? data.flowcharts : [];
                     renderDropdown(dropdown, flows);
                     // wire selection
@@ -93,6 +97,7 @@
                                 if (e.target && e.target.closest && e.target.closest('.dropdown_delete_btn')) return;
                                 const filename = item.getAttribute('data-filename');
                                 const display = item.getAttribute('data-name');
+                                try { console.log('[nav-flow] select item', { filename, display }); } catch(_) {}
                                 try { urlMgr && urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
                                 if (selector) selector.value = display || '';
                                 closeDropdown(dropdown);
@@ -120,12 +125,14 @@
                                     // builder: update url and reload state via app if present, else navigate
                                     if (app && app.state && app.state.storage && typeof app.state.storage.setCurrentFlowchart === 'function') {
                                         try {
+                                            console.log('[nav-flow] builder select: updating app state');
                                             app.state.storage.setCurrentFlowchart(filename);
                                             app.state.save(true).then(() => app.state.load()).then(() => {
                                                 try { urlMgr && urlMgr.updateFlowchartInURL(filename); } catch(_) {}
                                             }).catch(() => {});
                                         } catch(_) {}
                                     } else {
+                                        try { console.log('[nav-flow] builder select: no app; navigating'); } catch(_) {}
                                         const u = new URL('/', window.location.origin);
                                         u.searchParams.set('flowchart', display);
                                         const mode = (new URLSearchParams(window.location.search)).get('mode') || 'build';
@@ -141,6 +148,7 @@
                                 e.stopPropagation();
                                 const filename = btn.getAttribute('data-filename');
                                 const name = btn.getAttribute('data-name');
+                                try { console.log('[nav-flow] delete click', { filename, name }); } catch(_) {}
                                 if (!confirm(`are you sure you want to delete the flowchart "${name}"? this action cannot be undone.`)) return;
                                 try {
                                     const resp = await fetch(`/api/flowcharts/${encodeURIComponent(filename)}`, { method: 'DELETE' });
@@ -168,6 +176,7 @@
                         try {
                             const resp = await fetch('/api/flowcharts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: raw }) });
                             const data = await resp.json();
+                            try { console.log('[nav-flow] create response', { ok: resp.ok, status: data && data.status }); } catch(_) {}
                             if (data && data.status === 'success' && data.flowchart) {
                                 if (createModal) createModal.classList.remove('show');
                                 // refresh dropdown and update selection
@@ -207,6 +216,7 @@
                         preventSpaces(nameInput);
                     }
                 }
+                try { console.log('[nav-flow] setup complete'); } catch(_) {}
             });
         }
     };

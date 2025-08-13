@@ -14,15 +14,42 @@ def _resolve_dir(default_rel: str, env_key: str, app_root: str) -> str:
 def create_app(config: dict | None = None) -> Flask:
      """create and configure a flask app with all flowcraft blueprints.
  
-     config keys/env vars:
-       - FLOWCRAFT_DATA_DIR (optional root where nodes/ flowcharts/ history/ live)
-     """
-     # app root is the repo root if running from source; else installed package location
-     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-     templates_dir = os.path.join(project_root, "templates")
-     static_dir = os.path.join(project_root, "static")
+      config keys/env vars:
+        - FLOWCRAFT_DATA_DIR (optional root where nodes/ flowcharts/ history/ live)
+      """
+      # resolve static and templates folders for both dev (repo) and installed (pip) cases
+      # comments: prefer package-local copies; fallback to repo root; lastly, scan sys.path for data-files install
+      pkg_dir = os.path.dirname(os.path.abspath(__file__))
+      repo_root = os.path.dirname(pkg_dir)
 
-     app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
+      def _first_existing(paths: list[str]) -> str:
+          for p in paths:
+              if os.path.isdir(p):
+                  return p
+          return paths[-1]
+
+      template_candidates = [
+          os.path.join(pkg_dir, "templates"),
+          os.path.join(repo_root, "templates"),
+      ]
+      static_candidates = [
+          os.path.join(pkg_dir, "static"),
+          os.path.join(repo_root, "static"),
+      ]
+
+      # final fallback: check common site-packages locations where data-files may land
+      try:
+          import sys
+          for base in list(sys.path):
+              template_candidates.append(os.path.join(base, "flowcraft", "templates"))
+              static_candidates.append(os.path.join(base, "flowcraft", "static"))
+      except Exception:
+          pass
+
+      templates_dir = _first_existing(template_candidates)
+      static_dir = _first_existing(static_candidates)
+
+      app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
      CORS(app)
 
      # compute data dirs, allowing an override via FLOWCRAFT_DATA_DIR

@@ -3,6 +3,7 @@
     if (!window.Sidebar) return;
 
     Sidebar.prototype.setupFlowchartManagement = function() {
+        try { console.log('[sidebar-flow] setupFlowchartManagement start'); } catch(_) {}
         document.getElementById('create_flowchart_btn').addEventListener('click', (e) => {
             // prevent default anchor navigation so it never changes page
             e.preventDefault();
@@ -82,9 +83,11 @@
                 window.history.replaceState(null, '', newUrl);
             }
         } catch (_) {}
+        try { console.log('[sidebar-flow] setupFlowchartManagement done'); } catch(_) {}
     };
 
     Sidebar.prototype.initializeFlowchartDropdown = async function() {
+        try { console.log('[sidebar-flow] initializeFlowchartDropdown start'); } catch(_) {}
         await this.loadFlowcharts();
         this.setupFlowchartDropdownEvents();
         const flowchartFromURL = this.urlManager.getFlowchartFromURL();
@@ -129,11 +132,13 @@
             // no flowcharts exist yet
             console.warn('[Sidebar] no flowcharts available');
         }
+        try { console.log('[sidebar-flow] initializeFlowchartDropdown done', { initialFilename, initialDisplay }); } catch(_) {}
     };
 
     Sidebar.prototype.loadFlowcharts = async function() {
         try {
             const result = await this.state.storage.listFlowcharts();
+            try { console.log('[sidebar-flow] loadFlowcharts', { success: result.success, count: (result.flowcharts && result.flowcharts.length) || 0 }); } catch(_) {}
             if (result.success) {
                 this.flowcharts = result.flowcharts;
                 this.filteredFlowcharts = [...this.flowcharts];
@@ -151,6 +156,7 @@
     Sidebar.prototype.setupFlowchartDropdownEvents = function() {
         const container = this.flowchartSelector.closest('.dropdown_container');
         this.flowchartSelector.addEventListener('click', (e) => {
+            try { console.log('[sidebar-flow] selector click'); } catch(_) {}
             e.stopPropagation();
             this.toggleFlowchartDropdown();
         });
@@ -159,10 +165,13 @@
                 this.closeFlowchartDropdown();
             }
         });
+        try { console.log('[sidebar-flow] setupFlowchartDropdownEvents done'); } catch(_) {}
     };
 
     Sidebar.prototype.toggleFlowchartDropdown = function() {
-        if (this.flowchartDropdown.classList.contains('show')) {
+        const willClose = this.flowchartDropdown.classList.contains('show');
+        try { console.log('[sidebar-flow] toggleFlowchartDropdown', { willClose }); } catch(_) {}
+        if (willClose) {
             this.closeFlowchartDropdown();
         } else {
             this.openFlowchartDropdown();
@@ -170,15 +179,20 @@
     };
 
     Sidebar.prototype.openFlowchartDropdown = function() {
+        try { console.log('[sidebar-flow] openFlowchartDropdown'); } catch(_) {}
         this.flowchartDropdown.classList.add('show');
         this.updateFlowchartDropdownMenu();
     };
 
     Sidebar.prototype.closeFlowchartDropdown = function() {
+        if (this.flowchartDropdown.classList.contains('show')) {
+            try { console.log('[sidebar-flow] closeFlowchartDropdown'); } catch(_) {}
+        }
         this.flowchartDropdown.classList.remove('show');
     };
 
     Sidebar.prototype.updateFlowchartDropdownMenu = function() {
+        try { console.log('[sidebar-flow] updateFlowchartDropdownMenu', { items: this.filteredFlowcharts && this.filteredFlowcharts.length }); } catch(_) {}
         if (this.filteredFlowcharts.length === 0) {
             this.flowchartDropdown.innerHTML = '<div class="dropdown_no_results">no flowcharts found</div>';
             return;
@@ -197,6 +211,7 @@
         this.flowchartDropdown.querySelectorAll('.dropdown_item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (!e.target.closest('.dropdown_delete_btn')) {
+                    try { console.log('[sidebar-flow] item click', { filename: item.dataset.filename, name: item.dataset.name }); } catch(_) {}
                     this.selectFlowchart(item.dataset.filename, item.dataset.name);
                 }
             });
@@ -204,6 +219,7 @@
         this.flowchartDropdown.querySelectorAll('.dropdown_delete_btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                try { console.log('[sidebar-flow] delete click', { filename: btn.dataset.filename, name: btn.dataset.name }); } catch(_) {}
                 this.deleteFlowchart(btn.dataset.filename, btn.dataset.name);
             });
         });
@@ -212,6 +228,7 @@
     Sidebar.prototype.selectFlowchart = async function(filename, name) {
         this.closeFlowchartDropdown();
         try {
+            console.log('[sidebar-flow] selectFlowchart start', { filename, name });
             await this.state.save(true);
             this.state.storage.setCurrentFlowchart(filename);
             const result = await this.state.load();
@@ -219,6 +236,7 @@
                 this.setCurrentFlowchart(name);
                 this.urlManager.updateFlowchartInURL(filename);
                 this.showSuccess(`switched to flowchart: ${name}`);
+                try { console.log('[sidebar-flow] selectFlowchart success'); } catch(_) {}
             } else {
                 this.showError(`failed to load flowchart: ${result.message}`);
             }
@@ -252,12 +270,14 @@
             return;
         }
         try {
+            console.log('[sidebar-flow] createNewFlowchart submit', { name });
             const result = await this.state.storage.createFlowchart(name);
             if (result.success) {
                 this.hideCreateFlowchartModal();
                 await this.loadFlowcharts();
                 await this.selectFlowchart(result.flowchart.filename, result.flowchart.name);
                 this.showSuccess(result.message);
+                try { console.log('[sidebar-flow] createNewFlowchart success'); } catch(_) {}
             } else {
                 this.showError(result.message);
             }
@@ -271,6 +291,7 @@
             return;
         }
         try {
+            console.log('[sidebar-flow] delete flowchart confirm', { filename, name });
             const result = await this.state.storage.deleteFlowchart(filename);
             if (result.success) {
                 await this.loadFlowcharts();
@@ -292,6 +313,7 @@
                     }
                 }
                 this.showSuccess(result.message);
+                try { console.log('[sidebar-flow] delete flowchart success'); } catch(_) {}
             } else {
                 this.showError(result.message);
             }

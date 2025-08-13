@@ -58,7 +58,10 @@
         try {
             // create global app instance
             window.flowchartApp = new FlowchartBuilder();
-            
+
+            // wire left navigation (flowchart dropdown, nav buttons) for builder view
+            try { if (window.Navigation && typeof window.Navigation.init === 'function') { window.Navigation.init(window.flowchartApp); } } catch (_) {}
+
             // add global debug helpers
             window.debugFlowchart = {
                 logState: () => window.flowchartApp.logState(),

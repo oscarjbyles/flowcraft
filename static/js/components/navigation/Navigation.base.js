@@ -45,6 +45,7 @@
         // wire left sidebar buttons; if app is provided, use rich behavior (mode switches, clears), otherwise navigate only
         setupNavButtons(app){
             onDomReady(() => {
+                try { console.log('[nav] setupNavButtons start', { hasApp: !!app, path: window.location.pathname }); } catch(_) {}
                 // dashboard
                 const db = document.getElementById('dashboard_btn');
                 if (db) db.onclick = () => { clearRunVisualsIfNeeded(app); window.location.href = buildHref('/dashboard'); };
@@ -102,15 +103,23 @@
 
                 // highlight active nav (non-builder pages only)
                 setActiveNav();
+                try { console.log('[nav] setupNavButtons done'); } catch(_) {}
             });
         },
 
         init(app){
+            try { console.log('[nav] init called', { hasApp: !!app }); } catch(_) {}
             this.setupNavButtons(app || (window.flowchartApp || null));
             // flowchart ui setup is in Navigation.flowcharts.js
-            if (window.Navigation && typeof window.Navigation.setupFlowchartUI === 'function') {
-                window.Navigation.setupFlowchartUI(app || (window.flowchartApp || null));
+            if (!app && window.Navigation && typeof window.Navigation.setupFlowchartUI === 'function') {
+                try { console.log('[nav] calling setupFlowchartUI'); } catch(_) {}
+                window.Navigation.setupFlowchartUI(null);
+            } else if (app) {
+                try { console.log('[nav] skipping setupFlowchartUI on builder (handled by Sidebar)'); } catch(_) {}
+            } else {
+                try { console.warn('[nav] setupFlowchartUI not available on window.Navigation'); } catch(_) {}
             }
+            try { console.log('[nav] init complete'); } catch(_) {}
         }
     };
 

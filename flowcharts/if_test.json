@@ -8,8 +8,8 @@
       "pythonFile": "nodes/3.py",
       "type": "python_file",
       "width": 120,
-      "x": 223.2897491455078,
-      "y": 336.42333984375
+      "x": 178.51256561279297,
+      "y": 448.3663330078125
     },
     {
       "description": "",
@@ -32,6 +32,39 @@
       "width": 120,
       "x": 431.59136962890625,
       "y": 156.49139404296875
+    },
+    {
+      "id": 1755083923336.8875,
+      "x": 664.4467163085938,
+      "y": 311.9994201660156,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755083926282.5974,
+      "x": 591.1749877929688,
+      "y": 522.6557006835938,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755083928667.9995,
+      "x": 417.1545715332031,
+      "y": 529.7793579101562,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
     }
   ],
   "links": [
@@ -45,91 +78,5 @@
     }
   ],
   "groups": [],
-  "annotations": [],
-  "executions": [
-    {
-      "execution_id": "47ec8071-adcd-45b5-be49-78e33b37f20e",
-      "timestamp": "2025-08-13T12:00:18.296224",
-      "flowchart_name": "if_test",
-      "status": "success",
-      "total_nodes": 3,
-      "successful_nodes": 3,
-      "completed_nodes": 3,
-      "success_percentage": 100.0,
-      "completed_percentage": 100.0,
-      "failed_node": null,
-      "elapsed_ms": 367,
-      "execution_time": "0.367s"
-    },
-    {
-      "execution_id": "5cc61307-58c6-4446-a034-120ecae21a44",
-      "timestamp": "2025-08-13T12:00:18.295223",
-      "flowchart_name": "if_test",
-      "status": "success",
-      "total_nodes": 3,
-      "successful_nodes": 3,
-      "completed_nodes": 3,
-      "success_percentage": 100.0,
-      "completed_percentage": 100.0,
-      "failed_node": null,
-      "elapsed_ms": 362,
-      "execution_time": "0.362s"
-    },
-    {
-      "execution_id": "c1e9d134-7ab5-4327-a60d-ab491a994367",
-      "timestamp": "2025-08-13T12:00:16.812079",
-      "flowchart_name": "if_test",
-      "status": "success",
-      "total_nodes": 3,
-      "successful_nodes": 3,
-      "completed_nodes": 3,
-      "success_percentage": 100.0,
-      "completed_percentage": 100.0,
-      "failed_node": null,
-      "elapsed_ms": 509,
-      "execution_time": "0.509s"
-    },
-    {
-      "execution_id": "7e2aedf8-4836-430b-8d08-ade66f2de19b",
-      "timestamp": "2025-08-13T12:00:16.804081",
-      "flowchart_name": "if_test",
-      "status": "success",
-      "total_nodes": 3,
-      "successful_nodes": 3,
-      "completed_nodes": 3,
-      "success_percentage": 100.0,
-      "completed_percentage": 100.0,
-      "failed_node": null,
-      "elapsed_ms": 504,
-      "execution_time": "0.504s"
-    },
-    {
-      "execution_id": "117f837e-0403-458f-9b75-63fdd7f9de47",
-      "timestamp": "2025-08-13T12:00:09.642313",
-      "flowchart_name": "if_test",
-      "status": "success",
-      "total_nodes": 3,
-      "successful_nodes": 3,
-      "completed_nodes": 3,
-      "success_percentage": 100.0,
-      "completed_percentage": 100.0,
-      "failed_node": null,
-      "elapsed_ms": 329,
-      "execution_time": "0.329s"
-    },
-    {
-      "execution_id": "9817daea-6fc8-48b2-9e01-39de95201562",
-      "timestamp": "2025-08-13T12:00:04.920976",
-      "flowchart_name": "if_test",
-      "status": "success",
-      "total_nodes": 3,
-      "successful_nodes": 3,
-      "completed_nodes": 3,
-      "success_percentage": 100.0,
-      "completed_percentage": 100.0,
-      "failed_node": null,
-      "elapsed_ms": 396,
-      "execution_time": "0.396s"
-    }
-  ]
+  "annotations": []
 }
