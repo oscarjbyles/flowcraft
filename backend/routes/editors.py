@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 import os
 import glob
 import sys
@@ -16,10 +16,8 @@ def open_file_in_editor():
         if not python_file:
             return jsonify({'success': False, 'error': 'python_file is required'}), 400
         normalized = python_file.replace('\\', '/')
-        if normalized.startswith('nodes/'):
-            file_path = os.path.normpath(python_file)
-        else:
-            file_path = os.path.join('nodes', python_file)
+        project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+        file_path = os.path.normpath(os.path.join(project_root, python_file))
         file_path = os.path.abspath(file_path)
         if not os.path.exists(file_path):
             return jsonify({'success': False, 'error': f'python file not found: {python_file}'}), 404

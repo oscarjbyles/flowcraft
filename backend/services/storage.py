@@ -1,12 +1,23 @@
 import json
 import os
+from flask import current_app
 from datetime import datetime
 from typing import Any, Dict, List
 
 # note: this module centralizes filesystem access for flowcharts and history.
 
-FLOWCHARTS_DIR = 'flowcharts'
-HISTORY_DIR = 'history'
+def _flowcharts_dir() -> str:
+    try:
+        return current_app.config.get('FLOWCRAFT_FLOWCHARTS_DIR', 'flowcharts')
+    except Exception:
+        return 'flowcharts'
+
+
+def _history_dir() -> str:
+    try:
+        return current_app.config.get('FLOWCRAFT_HISTORY_DIR', 'history')
+    except Exception:
+        return 'history'
 DEFAULT_FLOWCHART = 'default.json'
 
 # keep only a limited number of execution summaries in the flowchart file to avoid bloat
@@ -15,8 +26,9 @@ MAX_EXECUTION_SUMMARIES = 200
 
 def ensure_flowcharts_dir() -> None:
     """ensure flowcharts directory exists"""
-    if not os.path.exists(FLOWCHARTS_DIR):
-        os.makedirs(FLOWCHARTS_DIR)
+    path = _flowcharts_dir()
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def get_flowchart_path(flowchart_name: str) -> str:
@@ -24,7 +36,7 @@ def get_flowchart_path(flowchart_name: str) -> str:
     ensure_flowcharts_dir()
     if not flowchart_name.endswith('.json'):
         flowchart_name += '.json'
-    return os.path.join(FLOWCHARTS_DIR, flowchart_name)
+    return os.path.join(_flowcharts_dir(), flowchart_name)
 
 
 def load_flowchart(flowchart_name: str = DEFAULT_FLOWCHART) -> Dict[str, Any]:
@@ -48,7 +60,7 @@ def ensure_history_dir(flowchart_name: str) -> str:
     """ensure history directory exists for a flowchart"""
     if flowchart_name.endswith('.json'):
         flowchart_name = flowchart_name[:-5]
-    history_path = os.path.join(HISTORY_DIR, flowchart_name)
+    history_path = os.path.join(_history_dir(), flowchart_name)
     if not os.path.exists(history_path):
         os.makedirs(history_path)
     return history_path
@@ -84,7 +96,7 @@ def get_execution_history(flowchart_name: str) -> List[Dict[str, Any]]:
     """get execution history for a flowchart"""
     if flowchart_name.endswith('.json'):
         flowchart_name = flowchart_name[:-5]
-    history_path = os.path.join(HISTORY_DIR, flowchart_name)
+    history_path = os.path.join(_history_dir(), flowchart_name)
     if not os.path.exists(history_path):
         return []
     history_entries: List[Dict[str, Any]] = []
@@ -108,7 +120,7 @@ def delete_execution_history(flowchart_name: str, execution_id: str) -> bool:
     """delete a specific execution history entry"""
     if flowchart_name.endswith('.json'):
         flowchart_name = flowchart_name[:-5]
-    history_path = os.path.join(HISTORY_DIR, flowchart_name)
+    history_path = os.path.join(_history_dir(), flowchart_name)
     filepath = os.path.join(history_path, f"{execution_id}.json")
     if os.path.exists(filepath):
         os.remove(filepath)

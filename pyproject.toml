@@ -45,7 +45,8 @@ include = ["flowcraft", "backend*"]
 [tool.setuptools.data-files]
 # templates (preserve directory structure)
 "flowcraft/templates" = [
-  "templates/*.html"
+  "templates/*.html",
+  "templates/template.py"
 ]
 "flowcraft/templates/base" = [
   "templates/base/*.html"

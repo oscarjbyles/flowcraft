@@ -1,19 +1,33 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 import os
 import shutil
 from datetime import datetime
 
 files_bp = Blueprint('files', __name__, url_prefix='/api')
 
+HIDDEN_DIRS = {'.cursor', '.git', '.venv', 'flowcharts', 'history', '__pycache__'}
+
+
+@files_bp.route('/project-root', methods=['GET'])
+def get_project_root():
+    try:
+        root_path = os.path.abspath(current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd())
+        return jsonify({'status': 'success', 'root': root_path})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'failed to get project root: {str(e)}'}), 500
+
 
 @files_bp.route('/python-files', methods=['GET'])
 def get_python_files():
-    nodes_dir = 'nodes'
+    # project root is used as root for scripts view
+    project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+    nodes_dir = os.path.join(project_root)
     python_files = []
     try:
         if os.path.exists(nodes_dir):
             for root, dirs, files in os.walk(nodes_dir):
-                dirs[:] = [d for d in dirs if d != '__pycache__']
+                # hide specific directories while walking
+                dirs[:] = [d for d in dirs if d not in HIDDEN_DIRS]
                 for filename in files:
                     if filename.endswith('.py'):
                         file_path = os.path.join(root, filename)
@@ -22,7 +36,7 @@ def get_python_files():
                         python_files.append({
                             'filename': filename,
                             'name': filename[:-3],
-                            'path': f"nodes/{rel_path}",
+                            'path': rel_path,
                             'size': stat_info.st_size,
                             'modified': stat_info.st_mtime
                         })
@@ -35,7 +49,7 @@ def get_python_files():
 @files_bp.route('/nodes/browse', methods=['GET'])
 def browse_nodes():
     rel_path = (request.args.get('path') or '').strip().replace('\\', '/')
-    root_dir = os.path.abspath('nodes')
+    root_dir = os.path.abspath(current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd())
     abs_path = os.path.abspath(os.path.join(root_dir, rel_path))
     if not abs_path.startswith(root_dir):
         return jsonify({'status': 'error', 'message': 'invalid path'}), 400
@@ -50,8 +64,13 @@ def browse_nodes():
             try:
                 stat = os.stat(entry_abs)
                 is_dir = os.path.isdir(entry_abs)
-                if is_dir and name == '__pycache__':
+                # hide configured directories and non-python files
+                if is_dir and name in HIDDEN_DIRS:
                     continue
+                if not is_dir:
+                    ext = os.path.splitext(name)[1].lower()
+                    if ext != '.py':
+                        continue
                 rel_entry = os.path.relpath(entry_abs, root_dir).replace('\\', '/')
                 entries.append({
                     'name': name,
@@ -83,7 +102,7 @@ def nodes_mkdir():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'status': 'error', 'message': 'folder name is required'}), 400
-    root_dir = os.path.abspath('nodes')
+    root_dir = os.path.abspath(current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd())
     target_dir = os.path.abspath(os.path.join(root_dir, rel_path))
     if not target_dir.startswith(root_dir):
         return jsonify({'status': 'error', 'message': 'invalid path'}), 400
@@ -103,7 +122,7 @@ def nodes_touch():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'status': 'error', 'message': 'file name is required'}), 400
-    root_dir = os.path.abspath('nodes')
+    root_dir = os.path.abspath(current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd())
     target_dir = os.path.abspath(os.path.join(root_dir, rel_path))
     if not target_dir.startswith(root_dir):
         return jsonify({'status': 'error', 'message': 'invalid path'}), 400
@@ -119,7 +138,16 @@ def nodes_touch():
         with open(file_path, 'w', encoding='utf-8') as f:
             if name.lower().endswith('.py'):
                 try:
-                    template_path = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'templates', 'template.py'))
+                    # prefer installed template next to app static/templates
+                    from flask import current_app as _ca
+                    tpl_root = _ca.static_folder if _ca else None
+                    pkg_root = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '..'))
+                    candidates = [
+                        os.path.abspath(os.path.join(os.path.dirname(pkg_root), 'templates', 'template.py')),
+                        os.path.abspath(os.path.join(pkg_root, 'templates', 'template.py')),
+                        os.path.abspath(os.path.join(os.path.dirname(pkg_root), 'flowcraft', 'templates', 'template.py')),
+                    ]
+                    template_path = next((p for p in candidates if os.path.exists(p)), None)
                     if os.path.exists(template_path):
                         with open(template_path, 'r', encoding='utf-8') as tf:
                             f.write(tf.read())
@@ -143,7 +171,7 @@ def nodes_move():
         return jsonify({'status': 'error', 'message': 'source path is required'}), 400
     if dst_dir_rel is None:
         dst_dir_rel = ''
-    root_dir = os.path.abspath('nodes')
+    root_dir = os.path.abspath(current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd())
     src_abs = os.path.abspath(os.path.join(root_dir, src_rel))
     dst_dir_abs = os.path.abspath(os.path.join(root_dir, dst_dir_rel))
     if not src_abs.startswith(root_dir) or not dst_dir_abs.startswith(root_dir):
@@ -171,7 +199,7 @@ def nodes_delete():
     rel_path = (data.get('path') or '').strip().replace('\\', '/')
     if not rel_path:
         return jsonify({'status': 'error', 'message': 'file path is required'}), 400
-    root_dir = os.path.abspath('nodes')
+    root_dir = os.path.abspath(current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd())
     abs_path = os.path.abspath(os.path.join(root_dir, rel_path))
     if not abs_path.startswith(root_dir):
         return jsonify({'status': 'error', 'message': 'invalid path'}), 400

@@ -1,0 +1,47 @@
+# Python Package Rules
+
+This project is a **Python package** and must be treated as such. Follow these guidelines:
+
+## Package Structure
+- This is a proper Python package with `__init__.py` files
+- Respect the package hierarchy and import paths
+- Use relative imports within the package when appropriate
+- Maintain proper package structure and organization
+
+## Import Handling
+- Always use proper Python import statements
+- Respect the package's module structure
+- Use absolute imports for external dependencies
+- Use relative imports for internal package modules when appropriate
+- Never break the package's import system
+
+## Development Practices
+- Follow Python packaging standards
+- Maintain `pyproject.toml` and `requirements.txt` properly
+- Use proper Python naming conventions (snake_case for functions/variables, PascalCase for classes)
+- Respect the existing package architecture
+- Don't create standalone scripts that bypass the package structure
+
+## File Organization
+- Keep files in their appropriate package directories
+- Maintain the existing directory structure
+- Don't move files outside their designated package locations
+- Respect the separation between different package components
+
+## Dependencies
+- Check existing dependencies before adding new ones
+- Use the project's dependency management system
+- Don't introduce conflicting dependencies
+- Follow the project's version constraints
+
+## Testing and Execution
+- Run tests within the package context
+- Use proper Python package execution methods
+- Don't create standalone execution scripts that bypass the package
+- Respect the package's entry points and CLI structure
+
+Remember: This is a **Python package**, not a collection of standalone scripts. Always work within the package structure and respect Python packaging conventions.
+description:
+globs:
+alwaysApply: false
+---

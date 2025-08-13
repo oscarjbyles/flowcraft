@@ -67,15 +67,22 @@ def create_app(config: dict | None = None) -> Flask:
           nodes_dir = os.path.join(data_root, "nodes")
           flowcharts_dir = os.path.join(data_root, "flowcharts")
           history_dir = os.path.join(data_root, "history")
+          project_root_conf = os.path.abspath(data_root)
      else:
           nodes_dir = _resolve_dir("nodes", "FLOWCRAFT_NODES_DIR", project_root)
           flowcharts_dir = _resolve_dir("flowcharts", "FLOWCRAFT_FLOWCHARTS_DIR", project_root)
           history_dir = _resolve_dir("history", "FLOWCRAFT_HISTORY_DIR", project_root)
+          # default project root to current working directory when no explicit data root
+          try:
+               project_root_conf = os.getcwd()
+          except Exception:
+               project_root_conf = project_root
 
      app.config.update(
           FLOWCRAFT_NODES_DIR=nodes_dir,
           FLOWCRAFT_FLOWCHARTS_DIR=flowcharts_dir,
           FLOWCRAFT_HISTORY_DIR=history_dir,
+          FLOWCRAFT_PROJECT_ROOT=project_root_conf,
      )
 
      # register existing blueprints from current codebase

@@ -55,6 +55,35 @@
             });
         }
 
+        // fetch and display project root path
+        const projectRootEl = document.getElementById('project_root_path');
+        const copyBtn = document.getElementById('copy_project_root_btn');
+        if (projectRootEl) {
+            (async () => {
+                try {
+                    const resp = await fetch('/api/project-root');
+                    const data = await resp.json();
+                    if (data.status === 'success') {
+                        projectRootEl.textContent = data.root || '-';
+                        if (copyBtn) {
+                            copyBtn.addEventListener('click', async () => {
+                                try {
+                                    await navigator.clipboard.writeText(projectRootEl.textContent);
+                                    this.showSuccess('copied');
+                                } catch (_) {
+                                    this.showError('failed to copy');
+                                }
+                            });
+                        }
+                    } else {
+                        projectRootEl.textContent = data.message || 'failed to load';
+                    }
+                } catch (err) {
+                    projectRootEl.textContent = 'error loading path';
+                }
+            })();
+        }
+
         if (!this.defaultEditorInput || !this.defaultEditorDropdown) return;
 
         // load saved preference from localstorage

@@ -32,39 +32,6 @@
       "width": 120,
       "x": 431.59136962890625,
       "y": 156.49139404296875
-    },
-    {
-      "id": 1755083923336.8875,
-      "x": 664.4467163085938,
-      "y": 311.9994201660156,
-      "name": "python node",
-      "type": "python_file",
-      "pythonFile": "",
-      "description": "",
-      "groupId": null,
-      "width": 120
-    },
-    {
-      "id": 1755083926282.5974,
-      "x": 591.1749877929688,
-      "y": 522.6557006835938,
-      "name": "python node",
-      "type": "python_file",
-      "pythonFile": "",
-      "description": "",
-      "groupId": null,
-      "width": 120
-    },
-    {
-      "id": 1755083928667.9995,
-      "x": 417.1545715332031,
-      "y": 529.7793579101562,
-      "name": "python node",
-      "type": "python_file",
-      "pythonFile": "",
-      "description": "",
-      "groupId": null,
-      "width": 120
     }
   ],
   "links": [

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from datetime import datetime
 import os
 from ..services.storage import (
@@ -39,9 +39,10 @@ def list_flowcharts():
     ensure_flowcharts_dir()
     try:
         flowcharts = []
-        for filename in os.listdir('flowcharts'):
+        flowcharts_dir = current_app.config.get('FLOWCRAFT_FLOWCHARTS_DIR', 'flowcharts')
+        for filename in os.listdir(flowcharts_dir):
             if filename.endswith('.json'):
-                filepath = os.path.join('flowcharts', filename)
+                filepath = os.path.join(flowcharts_dir, filename)
                 stat = os.stat(filepath)
                 flowcharts.append({
                     'name': filename[:-5],
