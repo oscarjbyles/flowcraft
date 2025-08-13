@@ -17,56 +17,57 @@ def create_app(config: dict | None = None) -> Flask:
       config keys/env vars:
         - FLOWCRAFT_DATA_DIR (optional root where nodes/ flowcharts/ history/ live)
       """
-      # resolve static and templates folders for both dev (repo) and installed (pip) cases
-      # comments: prefer package-local copies; fallback to repo root; lastly, scan sys.path for data-files install
-      pkg_dir = os.path.dirname(os.path.abspath(__file__))
-      repo_root = os.path.dirname(pkg_dir)
+     # resolve static and templates folders for both dev (repo) and installed (pip) cases
+     # comments: prefer package-local copies; fallback to repo root; lastly, scan sys.path for data-files install
+     pkg_dir = os.path.dirname(os.path.abspath(__file__))
+     repo_root = os.path.dirname(pkg_dir)
+     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-      def _first_existing(paths: list[str]) -> str:
+     def _first_existing(paths: list[str]) -> str:
           for p in paths:
-              if os.path.isdir(p):
-                  return p
+               if os.path.isdir(p):
+                    return p
           return paths[-1]
 
-      template_candidates = [
+     template_candidates = [
           os.path.join(pkg_dir, "templates"),
           os.path.join(repo_root, "templates"),
-      ]
-      static_candidates = [
+     ]
+     static_candidates = [
           os.path.join(pkg_dir, "static"),
           os.path.join(repo_root, "static"),
-      ]
+     ]
 
-      # final fallback: check common site-packages locations where data-files may land
-      try:
+     # final fallback: check common site-packages locations where data-files may land
+     try:
           import sys
           for base in list(sys.path):
-              template_candidates.append(os.path.join(base, "flowcraft", "templates"))
-              static_candidates.append(os.path.join(base, "flowcraft", "static"))
-      except Exception:
+               template_candidates.append(os.path.join(base, "flowcraft", "templates"))
+               static_candidates.append(os.path.join(base, "flowcraft", "static"))
+     except Exception:
           pass
 
-      templates_dir = _first_existing(template_candidates)
-      static_dir = _first_existing(static_candidates)
+     templates_dir = _first_existing(template_candidates)
+     static_dir = _first_existing(static_candidates)
 
-      app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
+     app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
      CORS(app)
 
      # compute data dirs, allowing an override via FLOWCRAFT_DATA_DIR
      data_root = os.environ.get("FLOWCRAFT_DATA_DIR")
      if data_root:
-         nodes_dir = os.path.join(data_root, "nodes")
-         flowcharts_dir = os.path.join(data_root, "flowcharts")
-         history_dir = os.path.join(data_root, "history")
+          nodes_dir = os.path.join(data_root, "nodes")
+          flowcharts_dir = os.path.join(data_root, "flowcharts")
+          history_dir = os.path.join(data_root, "history")
      else:
-         nodes_dir = _resolve_dir("nodes", "FLOWCRAFT_NODES_DIR", project_root)
-         flowcharts_dir = _resolve_dir("flowcharts", "FLOWCRAFT_FLOWCHARTS_DIR", project_root)
-         history_dir = _resolve_dir("history", "FLOWCRAFT_HISTORY_DIR", project_root)
+          nodes_dir = _resolve_dir("nodes", "FLOWCRAFT_NODES_DIR", project_root)
+          flowcharts_dir = _resolve_dir("flowcharts", "FLOWCRAFT_FLOWCHARTS_DIR", project_root)
+          history_dir = _resolve_dir("history", "FLOWCRAFT_HISTORY_DIR", project_root)
 
      app.config.update(
-         FLOWCRAFT_NODES_DIR=nodes_dir,
-         FLOWCRAFT_FLOWCHARTS_DIR=flowcharts_dir,
-         FLOWCRAFT_HISTORY_DIR=history_dir,
+          FLOWCRAFT_NODES_DIR=nodes_dir,
+          FLOWCRAFT_FLOWCHARTS_DIR=flowcharts_dir,
+          FLOWCRAFT_HISTORY_DIR=history_dir,
      )
 
      # register existing blueprints from current codebase
@@ -85,7 +86,7 @@ def create_app(config: dict | None = None) -> Flask:
      app.register_blueprint(editors_bp)
 
      if config:
-         app.config.update(config)
+          app.config.update(config)
 
      return app
 
