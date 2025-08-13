@@ -532,6 +532,14 @@ class FlowchartBuilder {
         
         attachClick('deselect_btn', () => { this.deselectAll(); });
 
+        // reset view to default zoom and center on first node in flow order
+        attachClick('reset_view_btn', () => {
+            if (!this.state || !this.svg || !this.zoom) { return; }
+            try {
+                this.resetViewToFirstNode();
+            } catch (_) {}
+        });
+
         // track toggle button
         const trackBtn = document.getElementById('track_toggle_btn');
         if (trackBtn) {
@@ -1083,6 +1091,91 @@ class FlowchartBuilder {
         this.svg.transition()
             .duration(500)
             .call(this.zoom.transform, d3.zoomIdentity);
+    }
+
+    // reset zoom to 1 and center the first node in flow order (works in build and run modes)
+    resetViewToFirstNode() {
+        // temporarily pause auto-tracking while we reposition the viewport
+        const prevAutoTrack = this.isAutoTrackEnabled;
+        const prevUserDisabled = this.userDisabledTracking;
+        // mark as user-disabled to prevent immediate re-centering during programmatic transforms
+        this.userDisabledTracking = true;
+
+        // choose target node: first in flow order, fallback to id 1
+        let targetNode = null;
+        try {
+            const order = this.calculateNodeOrder();
+            targetNode = (order && order.length > 0) ? order[0] : null;
+        } catch (_) {}
+        if (!targetNode && this.state && typeof this.state.getNode === 'function') {
+            targetNode = this.state.getNode(1) || null;
+        }
+
+        // animate center to the chosen node at zoom 1
+        if (targetNode && typeof targetNode.id !== 'undefined') {
+            this.centerOnNodeWithTopOffset(targetNode.id, 300, 400, 1);
+        }
+
+        // restore previous auto-tracking state but remain user-disabled until next explicit toggle
+        // this preserves run-mode preference and avoids snapping away immediately
+        this.isAutoTrackEnabled = prevAutoTrack;
+        this.userDisabledTracking = true;
+        if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
+    }
+
+    // smoothly center a node in both axes at a specific zoom level
+    centerOnNodeCentered(nodeId, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
+        const node = this.state.getNode(nodeId);
+        if (!node) return;
+        const currentScale = this.state.transform && typeof this.state.transform.k === 'number' ? this.state.transform.k : 1;
+        const scale = (typeof scaleOverride === 'number') ? scaleOverride : currentScale;
+
+        const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
+        const containerEl = document.querySelector('.canvas_container');
+        if (!svgEl || !containerEl) return;
+
+        const svgRect = svgEl.getBoundingClientRect();
+        const containerRect = containerEl.getBoundingClientRect();
+
+        const desiredSvgX = (containerRect.left - svgRect.left) + (containerRect.width / 2);
+        const desiredSvgY = (containerRect.top - svgRect.top) + (containerRect.height / 2);
+
+        const targetTranslateX = desiredSvgX - (scale * node.x);
+        const targetTranslateY = desiredSvgY - (scale * node.y);
+
+        this.svg
+            .transition()
+            .duration(Math.max(0, duration | 0))
+            .ease(typeof easeFn === 'function' ? easeFn : d3.easeCubicOut)
+            .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
+    }
+
+    // smoothly center horizontally and position a node offset from top at a specific zoom level
+    centerOnNodeWithTopOffset(nodeId, offsetTopPx = 400, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
+        const node = this.state.getNode(nodeId);
+        if (!node) return;
+        const currentScale = this.state.transform && typeof this.state.transform.k === 'number' ? this.state.transform.k : 1;
+        const scale = (typeof scaleOverride === 'number') ? scaleOverride : currentScale;
+
+        const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
+        const containerEl = document.querySelector('.canvas_container');
+        if (!svgEl || !containerEl) return;
+
+        const svgRect = svgEl.getBoundingClientRect();
+        const containerRect = containerEl.getBoundingClientRect();
+
+        // center horizontally, offset vertically from the top by offsetTopPx
+        const desiredSvgX = (containerRect.left - svgRect.left) + (containerRect.width / 2);
+        const desiredSvgY = (containerRect.top - svgRect.top) + offsetTopPx;
+
+        const targetTranslateX = desiredSvgX - (scale * node.x);
+        const targetTranslateY = desiredSvgY - (scale * node.y);
+
+        this.svg
+            .transition()
+            .duration(Math.max(0, duration | 0))
+            .ease(typeof easeFn === 'function' ? easeFn : d3.easeCubicOut)
+            .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
     }
 
     // ui updates
@@ -1987,6 +2080,7 @@ class FlowchartBuilder {
             if (addNodeSection) addNodeSection.classList.add('disabled');
             // hide start button if visible
             startButtonContainer.style.display = 'none';
+            if (sidebarToggleContainer) sidebarToggleContainer.style.display = 'none';
 
             // remove run_mode expansions
             mainContent.classList.remove('run_mode');

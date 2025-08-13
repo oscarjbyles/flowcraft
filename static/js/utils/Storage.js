@@ -36,6 +36,10 @@ class Storage {
      */
     async save(data, isAutosave = false) {
         try {
+            // do not attempt to save if we don't yet know which flowchart is active
+            if (!this.currentFlowchart) {
+                return { success: false, message: null };
+            }
             const saveData = {
                 ...data,
                 flowchart_name: this.currentFlowchart

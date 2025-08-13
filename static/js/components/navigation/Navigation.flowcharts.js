@@ -126,8 +126,11 @@
                                     if (app && app.state && app.state.storage && typeof app.state.storage.setCurrentFlowchart === 'function') {
                                         try {
                                             console.log('[nav-flow] builder select: updating app state');
-                                            app.state.storage.setCurrentFlowchart(filename);
-                                            app.state.save(true).then(() => app.state.load()).then(() => {
+                                            // save current flowchart first, then switch and load new one to avoid wiping it with empty state
+                                            app.state.save(true).then(() => {
+                                                app.state.storage.setCurrentFlowchart(filename);
+                                                return app.state.load();
+                                            }).then(() => {
                                                 try { urlMgr && urlMgr.updateFlowchartInURL(filename); } catch(_) {}
                                             }).catch(() => {});
                                         } catch(_) {}

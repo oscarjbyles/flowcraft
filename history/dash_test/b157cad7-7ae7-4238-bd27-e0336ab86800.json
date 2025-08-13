@@ -1,0 +1,87 @@
+{
+  "execution_id": "b157cad7-7ae7-4238-bd27-e0336ab86800",
+  "timestamp": "2025-08-13T19:20:59.865727",
+  "flowchart_name": "dash_test",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1755106616011.8032,
+      1755106626769.4167
+    ],
+    "results": [
+      {
+        "node_id": 1755106616011.8032,
+        "node_name": "python node",
+        "python_file": "",
+        "success": false,
+        "output": "",
+        "error": "node_id and python_file are required",
+        "runtime": 37,
+        "timestamp": "19:20:59",
+        "return_value": null
+      }
+    ],
+    "data_saves": [],
+    "feed": [
+      {
+        "node_id": 1755106616011.8032,
+        "node_name": "python node",
+        "started_at": "2025-08-13T18:20:59.839Z",
+        "finished_at": "2025-08-13T18:20:59.859Z",
+        "success": false,
+        "lines": [],
+        "elapsed_ms": 36
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 0,
+    "error_message": "execution stopped at node: python node",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755106616011.8032,
+          "name": "python node",
+          "x": -2513.690673828125,
+          "y": -1305.7471923828125,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755106626769.4167,
+          "name": "python node",
+          "x": -2516.838623046875,
+          "y": -1050.5853271484375,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755108741398.8066,
+          "name": "if condition",
+          "x": -2548.690673828125,
+          "y": -1044.2471923828125,
+          "pythonFile": "",
+          "description": "",
+          "type": "if_node"
+        },
+        {
+          "id": 1755109033674.8064,
+          "name": "error here",
+          "x": -2794.190673828125,
+          "y": -1250.2471923828125,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755106616011.8032,
+          "target": 1755106626769.4167
+        }
+      ],
+      "groups": []
+    }
+  }
+}
