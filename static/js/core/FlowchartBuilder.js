@@ -1728,8 +1728,8 @@ class FlowchartBuilder {
         // no history button to reset
         if (settingsBtn) settingsBtn.classList.remove('run_mode_active');
         
-        // ensure settings page is hidden unless in settings mode
-        if (settingsPage) settingsPage.style.display = 'none';
+        // ensure settings page is hidden unless in settings mode (use class, not inline style)
+        if (settingsPage) settingsPage.classList.add('is_hidden');
         if (canvasContainer) canvasContainer.style.display = 'block';
         if (propertiesSidebar) propertiesSidebar.style.display = 'flex';
         if (mainContent) mainContent.classList.remove('full_width');
@@ -2043,12 +2043,12 @@ class FlowchartBuilder {
 
     showSettingsPage() {
         const settingsPage = document.getElementById('settings_page');
-        if (settingsPage) settingsPage.style.display = 'block';
+        if (settingsPage) settingsPage.classList.remove('is_hidden');
     }
 
     hideSettingsPage() {
         const settingsPage = document.getElementById('settings_page');
-        if (settingsPage) settingsPage.style.display = 'none';
+        if (settingsPage) settingsPage.classList.add('is_hidden');
     }
 
     // history panel removed

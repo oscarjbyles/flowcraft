@@ -280,12 +280,29 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 /* full page settings container */
 .settings_page {
-    display: none;
-    flex: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
     overflow-y: auto;
     padding: 16px;
     background-color: var(--background-color);
 }
+
+/* visibility toggle class to avoid inline styles */
+.settings_page.is_hidden { display: none !important; }
+
+/* settings page layout: align content with left edge of main content */
+.settings_page .u_max_w_900.u_mx_auto { margin-left: 0; margin-right: 0; }
+
+/* ensure long paths wrap neatly inside the project root block */
+#project_root_path {
+    word-break: break-all;
+}
+
+/* small helpers for settings page moved from inline styles */
+.form_help_text { font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; }
+.form_text_md { font-size: 0.9rem; }
+.u_opacity_09 { opacity: 0.9; }
 
 #flowchart_canvas {
     width: 100%;

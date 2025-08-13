@@ -71,6 +71,10 @@
         entries.forEach(e => {
             const tr = document.createElement('tr');
             tr.className = 'explorer_row' + (e.is_dir ? ' is_dir' : '');
+            // highlight flowcharts and history directories
+            if (e.is_dir && (e.name === 'flowcharts' || e.name === 'history')) {
+                tr.style.backgroundColor = '#091516';
+            }
             const nameTd = document.createElement('td'); nameTd.className = 'explorer_td';
             const nameWrap = document.createElement('div'); nameWrap.className = 'name_cell';
             const icon = document.createElement('span'); icon.className = 'material-icons ' + (e.is_dir ? 'folder_icon' : 'file_icon'); icon.textContent = e.is_dir ? 'folder' : 'description';

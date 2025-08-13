@@ -5,7 +5,7 @@ from datetime import datetime
 
 files_bp = Blueprint('files', __name__, url_prefix='/api')
 
-HIDDEN_DIRS = {'.cursor', '.git', '.venv', 'flowcharts', 'history', '__pycache__'}
+HIDDEN_DIRS = {'.cursor', '.git', '.venv', '__pycache__'}
 
 
 @files_bp.route('/project-root', methods=['GET'])

@@ -64,7 +64,7 @@
                 </div>
 
                 <!-- build mode horizontal toolbar -->
-                <div class="build_toolbar" id="build_toolbar" style="display:none;">
+            <div class="build_toolbar" id="build_toolbar" style="display:none;">
                     <button class="btn btn_secondary" id="python_node_btn" title="add python node">
                         <span class="material-icons">code</span>
                         Python Node
@@ -86,23 +86,24 @@
             </div>
 
             <!-- full page settings -->
-            <div class="settings_page" id="settings_page">
+            <div class="settings_page is_hidden" id="settings_page">
                 <div class="u_max_w_900 u_mx_auto">
                     <h3 class="sidebar_section_title u_mb_16">settings</h3>
 
                     <div class="form_group">
                         <label class="form_label">project root</label>
-                        <div class="data_save_details_card" style="display:flex; flex-direction: column; gap:8px;">
+                        <div class="data_save_details_card">
+                            <!-- styles moved to css; keep semantic structure clean -->
                             <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">folder</span>
-                                <code id="project_root_path" style="font-size: 0.85rem; opacity:0.9;">loading...</code>
+                                <span class="material-icons u_icon_18 u_opacity_07">folder</span>
+                                <code id="project_root_path" class="u_opacity_09">loading...</code>
                                 <div class="u_flex_grow_1"></div>
                                 <button class="btn btn_secondary" id="copy_project_root_btn" title="copy path">
                                     <span class="material-icons">content_copy</span>
                                     copy
                                 </button>
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7;">absolute path to the python project root detected by the app</div>
+                            <div class="form_help_text">absolute path to the python project root detected by the app</div>
                         </div>
                     </div>
 
@@ -120,33 +121,29 @@
 
                     <div class="form_group">
                         <label class="form_label">clear history</label>
-                        <div class="data_save_details_card" style="display:flex; flex-direction: column; gap:12px;">
+                        <div class="data_save_details_card">
                             <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">history_toggle_off</span>
-                                <span style="font-size: 0.9rem;">clear execution history for current flowchart</span>
+                                <span class="material-icons u_icon_18 u_opacity_07">history_toggle_off</span>
+                                <span class="form_text_md">clear execution history for current flowchart</span>
                                 <div class="u_flex_grow_1"></div>
                                 <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn">
                                     <span class="material-icons">cleaning_services</span>
                                     Clear Executions
                                 </button>
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7;">
-                                this removes all files under <code>history/&lt;flowchart&gt;</code>.
-                            </div>
+                            <div class="form_help_text">this removes all files under <code>history/&lt;flowchart&gt;</code>.</div>
                         </div>
-                        <div class="data_save_details_card" style="display:flex; flex-direction: column; gap:12px; margin-top: 12px;">
+                        <div class="data_save_details_card u_mt_12">
                             <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons" style="font-size: 18px; color: var(--on-surface); opacity: 0.8;">delete_sweep</span>
-                                <span style="font-size: 0.9rem;">clear executions key and remove history files</span>
+                                <span class="material-icons u_icon_18 u_opacity_07">delete_sweep</span>
+                                <span class="form_text_md">clear executions key and remove history files</span>
                                 <div class="u_flex_grow_1"></div>
                                 <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn">
                                     <span class="material-icons">delete</span>
                                     Clear Executions & History
                                 </button>
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7;">
-                                this resets `executions` in the flowchart json and deletes all related history entries.
-                            </div>
+                            <div class="form_help_text">this resets `executions` in the flowchart json and deletes all related history entries.</div>
                         </div>
                     </div>
                 </div>
