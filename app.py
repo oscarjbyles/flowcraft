@@ -66,7 +66,12 @@ def _find_next_available_port(start_port: int, max_port: int):
 
 
 if __name__ == '__main__':
-    default_port = int(os.environ.get('PORT', '5000'))
+    # prefer env var; on macos default to 5001, otherwise 5000
+    port_env = os.environ.get('PORT')
+    if port_env is not None:
+        default_port = int(port_env)
+    else:
+        default_port = 5001 if platform.system() == 'Darwin' else 5000
     host = '0.0.0.0'
 
     chosen_port = default_port

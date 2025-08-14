@@ -2509,7 +2509,7 @@ class FlowchartBuilder {
                     results.push({
                         node_id: node.id,
                         node_name: node.name,
-                        python_file: node.pythonFile,
+                        python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
                         success: result.success,
                         output: result.output,
                         error: result.error,
@@ -2531,7 +2531,7 @@ class FlowchartBuilder {
                     results.push({
                         node_id: ds.id,
                         node_name: ds.name,
-                        python_file: dsResult.python_file || '',
+                        python_file: (dsResult.python_file || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
                         success: dsResult.success,
                         output: dsResult.output,
                         error: dsResult.error,
@@ -3027,7 +3027,7 @@ class FlowchartBuilder {
                 },
                 body: JSON.stringify({
                     node_id: node.id,
-                    python_file: node.pythonFile,
+                    python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
                     node_name: node.name,
                     function_args: finalFunctionArgs,
                     input_values: finalInputValues
@@ -3421,7 +3421,7 @@ class FlowchartBuilder {
                         if (src && src.type === 'python_file' && src.pythonFile) {
                             const resp = await fetch('/api/analyze-python-function', {
                                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ python_file: src.pythonFile })
+                                body: JSON.stringify({ python_file: (src.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,'') })
                             });
                             const data = await resp.json();
                             const returns = Array.isArray(data && data.returns) ? data.returns : [];
@@ -3572,7 +3572,7 @@ class FlowchartBuilder {
                 },
                 body: JSON.stringify({
                     node_id: node.id,
-                    python_file: node.pythonFile,
+                    python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
                     node_name: node.name,
                     function_args: inputVariables.functionArgs || {},
                     input_values: inputVariables.inputValues || {}
@@ -3587,7 +3587,7 @@ class FlowchartBuilder {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         node_id: node.id,
-                        python_file: node.pythonFile,
+                        python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
                         node_name: node.name,
                         function_args: inputVariables.functionArgs || {},
                         input_values: inputVariables.inputValues || {}
@@ -3968,7 +3968,7 @@ class FlowchartBuilder {
                     const resp = await fetch('/api/analyze-python-function', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ python_file: pythonNode.pythonFile })
+                        body: JSON.stringify({ python_file: (pythonNode.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,'') })
                     });
                     const data = await resp.json();
                     if (!data || data.success === false) return null;
@@ -4071,7 +4071,7 @@ class FlowchartBuilder {
                     const synthetic = {
                         node_id: ds.id,
                         node_name: ds.name || 'data save',
-                        python_file: pythonNode.pythonFile,
+                        python_file: (pythonNode.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
                         success: true,
                         output: '',
                         error: null,

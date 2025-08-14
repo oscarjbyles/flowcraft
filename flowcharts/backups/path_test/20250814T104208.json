@@ -30,5 +30,22 @@
     }
   ],
   "groups": [],
-  "annotations": []
+  "annotations": [],
+  "executions": [
+    {
+      "execution_id": "44d7d576-9d19-4387-8882-3ec5eaecd8cc",
+      "timestamp": "2025-08-14T10:40:41.855724",
+      "flowchart_name": "path_test",
+      "status": "failed",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "python node",
+      "elapsed_ms": 16,
+      "execution_time": "0.016s",
+      "error_snippet": "missing required function arguments: argument1"
+    }
+  ]
 }

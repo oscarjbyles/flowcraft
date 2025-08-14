@@ -1,0 +1,69 @@
+{
+  "execution_id": "d9bea4cb-c7f8-4dbc-8d79-a58d2da2b7a7",
+  "timestamp": "2025-08-14T10:43:37.479837",
+  "flowchart_name": "path_test",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1755164230912.794,
+      1755164231966.6426
+    ],
+    "results": [
+      {
+        "node_id": 1755164230912.794,
+        "node_name": "python node",
+        "python_file": "root.py",
+        "success": false,
+        "output": "",
+        "error": "missing required function arguments: argument1",
+        "runtime": 17,
+        "timestamp": "10:43:37",
+        "return_value": null
+      }
+    ],
+    "data_saves": [],
+    "feed": [
+      {
+        "node_id": 1755164230912.794,
+        "node_name": "python node",
+        "started_at": "2025-08-14T09:43:37.464Z",
+        "finished_at": "2025-08-14T09:43:37.474Z",
+        "success": false,
+        "lines": [],
+        "elapsed_ms": 15
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 0,
+    "error_message": "execution stopped at node: python node",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755164230912.794,
+          "name": "python node",
+          "x": 358.5389099121094,
+          "y": 115.64175415039062,
+          "pythonFile": "root.py",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755164231966.6426,
+          "name": "python node",
+          "x": 418.1119689941406,
+          "y": 307.4871520996094,
+          "pythonFile": "PYTHON_FILES/1.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755164230912.794,
+          "target": 1755164231966.6426
+        }
+      ],
+      "groups": []
+    }
+  }
+}
