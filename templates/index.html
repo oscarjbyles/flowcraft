@@ -351,10 +351,15 @@
                 </div>
                 <div class="form_group">
                     <label class="form_label" for="python_file">python file</label>
-                    <div class="dropdown_container">
-                        <input type="text" id="python_file" class="form_input dropdown_input" placeholder="click to browse..." readonly>
+                    <div class="dropdown_container" style="position: relative;">
+                        <input type="text" id="python_file" class="form_input dropdown_input" placeholder="" readonly>
                         <span class="dropdown_arrow material-icons">folder_open</span>
+                        <div id="python_file_status_block" style="position: absolute; left: 10px; right: 28px; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; pointer-events: none;">
+                            <span id="python_file_status_icon" class="material-icons" style="font-size: 16px;">close</span>
+                            <span id="python_file_status_text" style="font-size: 0.85rem; opacity: 0.9;">select python file</span>
+                        </div>
                     </div>
+                    <div id="python_file_path_block" class="data_save_value data_save_value_monospace" style="margin-top: 6px;"></div>
                 </div>
 
                 <!-- quick action to add an if node magnetised to this python node -->

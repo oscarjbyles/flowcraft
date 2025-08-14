@@ -127,9 +127,15 @@ def analyze_python_function():
                                     else:
                                         input_calls.append(variable_name.lower())
                 all_parameters = input_variable_names if input_variable_names else input_calls
-                returns = []
+                # only consider return statements that are direct children of the function body
+                # and prefer the variables from the last such return statement
+                direct_return_groups = []
                 for child in node.body:
-                    extract_returns_from_statement(child, returns)
+                    if isinstance(child, ast.Return):
+                        items = []
+                        extract_returns_from_statement(child, items)
+                        direct_return_groups.append(items)
+                returns = direct_return_groups[-1] if direct_return_groups else []
                 functions.append({'name': node.name, 'parameters': all_parameters, 'formal_parameters': formal_params, 'input_calls': input_calls, 'input_variable_names': input_variable_names, 'input_variable_details': input_variable_details, 'returns': returns, 'line': node.lineno})
 
         if not functions and top_level_input_vars:

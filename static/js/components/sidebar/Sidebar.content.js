@@ -41,6 +41,22 @@
                                     this.toggleFormGroupVisibility('delete_node_from_sidebar', false);
                                 }
                             },
+                            text_node: {
+                                header: 'TEXT NODE',
+                                show: ['node_name'],
+                                hide: [
+                                    'python_file',
+                                    'arguments_section',
+                                    'returns_section',
+                                    'if_node_variables_section',
+                                    'data_save_variable_section',
+                                    'data_save_name_section',
+                                    'input_node_inputs_section'
+                                ],
+                                after: (node) => {
+                                    this.toggleFormGroupVisibility('python_quick_actions', false);
+                                }
+                            },
                             if_node: {
                                 header: 'IF SPLITTER',
                                 show: ['if_node_variables_section'],
@@ -87,39 +103,50 @@
 									 this.setSectionVisible('returns_section', hasFile);
 									 if (hasFile) this.sidebar.analyzeNodeFunction(node);
 
-									 // visibility rule for "+ if condition" button:
-									 // show if there is an upstream if splitter, but hide if there is any downstream if splitter
-									 const state = this.sidebar.state;
-									 let hasUpstreamIf = false;
-									 let hasDownstreamIf = false;
+								 // update python file status indicator and formatted path
+								 try {
+								 	const iconEl = document.getElementById('python_file_status_icon');
+								 	const textEl = document.getElementById('python_file_status_text');
+								 	const pathEl = document.getElementById('python_file_path_block');
+								 	const path = (node.pythonFile || '').replace(/^(?:nodes\/)*/i, '');
+								 	if (hasFile) {
+								 		if (iconEl) { iconEl.textContent = 'check_circle'; iconEl.style.color = '#66bb6a'; }
+								 		if (textEl) { textEl.textContent = 'python file selected'; textEl.style.opacity = '1'; }
+								 		if (pathEl) {
+								 			const formatted = this.sidebar.formatPathForDisplay ? this.sidebar.formatPathForDisplay(path) : (function(v){
+								 				try {
+								 					const normalized = String(v).replace(/\\\\/g, '/');
+								 					const escaped = normalized
+								 						.replace(/&/g, '&amp;')
+								 						.replace(/</g, '&lt;')
+								 						.replace(/>/g, '&gt;')
+								 						.replace(/\"/g, '&quot;')
+								 						.replace(/'/g, '&#39;');
+								 					return escaped.replace(/\//g, '/<br>&nbsp;&nbsp;');
+								 				} catch(_) { return String(v); }
+								 			})(path);
+								 			pathEl.innerHTML = formatted;
+								 			pathEl.style.display = '';
+								 		}
+								 	} else {
+								 		if (iconEl) { iconEl.textContent = 'close'; iconEl.style.color = '#f44336'; }
+								 		if (textEl) { textEl.textContent = 'select python file'; textEl.style.opacity = '0.9'; }
+								 		if (pathEl) { pathEl.innerHTML = ''; pathEl.style.display = 'none'; }
+								 	}
+								 } catch (_) {}
 
-									 try {
-									 	// upstream detection using existing dependency traversal
-									 	const upstreamNodes = state.getDependencies(node) || [];
-									 	hasUpstreamIf = upstreamNodes.some(n => n && n.type === 'if_node');
-									 } catch (_) {}
+                                         // visibility rule for "+ if condition" button:
+                                         // show whenever the selected python node does not already have an associated if splitter
+                                         const state = this.sidebar.state;
+                                         let alreadyHasIf = false;
+                                         try {
+                                             if (state && typeof state.getAssociatedIfForPython === 'function') {
+                                                 alreadyHasIf = !!state.getAssociatedIfForPython(node.id);
+                                             }
+                                         } catch (_) { alreadyHasIf = false; }
 
-									 try {
-									 	// downstream detection via bfs over outgoing links
-									 	const visited = new Set();
-									 	const stack = [node];
-									 	visited.add(node.id);
-									 	while (stack.length && !hasDownstreamIf) {
-									 		const current = stack.pop();
-									 		const outgoing = state.links.filter(l => l.source === current.id);
-									 		for (const link of outgoing) {
-									 			const target = state.getNode(link.target);
-									 			if (target && !visited.has(target.id)) {
-									 				if (target.type === 'if_node') { hasDownstreamIf = true; break; }
-									 				visited.add(target.id);
-									 				stack.push(target);
-									 			}
-									 		}
-									 	}
-									 } catch (_) {}
-
-									 const showQuick = !state.isRunMode && hasUpstreamIf && !hasDownstreamIf;
-									 this.toggleFormGroupVisibility('python_quick_actions', showQuick);
+                                         const showQuick = !state.isRunMode && !alreadyHasIf;
+                                         this.toggleFormGroupVisibility('python_quick_actions', showQuick);
                                 }
                             }
                         },
@@ -195,7 +222,9 @@
                     if (pyInput) {
                         const stored = node.pythonFile || '';
                         const noPrefix = stored.replace(/^(?:nodes\/)*/i, '');
-                        pyInput.value = noPrefix;
+                        // keep input visually empty; store path in dataset for saving
+                        pyInput.value = '';
+                        pyInput.placeholder = '';
                         pyInput.dataset.fullPath = noPrefix;
                     }
                     if (typeof typeConf.after === 'function') typeConf.after(node);

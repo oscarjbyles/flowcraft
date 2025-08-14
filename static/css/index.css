@@ -402,6 +402,14 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     pointer-events: none;
 }
 
+.node_text.selected {
+    fill: var(--on-primary);
+}
+
+.node_text.multi_selected {
+    fill: var(--on-secondary);
+}
+
 .link {
     fill: none;
     stroke: var(--border-color);
@@ -768,7 +776,6 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-radius: 0;
     padding: 8px 0;
 }
-.run_feed_item.success { border-left: 3px solid #2e7d32; }
 /* only error lines should show the dark red background */
 .run_feed_item.error { border-left: 3px solid #c62828; }
 .run_feed_item.error .run_feed_line { background: #2A0E0E; }
@@ -1600,6 +1607,21 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
   background: rgba(25, 118, 210, 0.1);
   border-color: rgba(25, 118, 210, 0.3);
   color: #90caf9;
+}
+
+#python_file_status_block {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* hide any text inside the actual input; status overlay provides the text */
+#python_file {
+  color: transparent;
+  caret-color: transparent;
+}
+#python_file::placeholder {
+  color: transparent;
 }
 
 .data_save_value_pre {

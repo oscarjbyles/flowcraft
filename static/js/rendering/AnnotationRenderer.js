@@ -16,6 +16,7 @@ class AnnotationRenderer {
         this.state.on('annotationAdded', () => this.render());
         this.state.on('annotationUpdated', () => this.render());
         this.state.on('annotationRemoved', () => this.render());
+        this.state.on('selectionChanged', () => this.updateAnnotationStyles());
     }
 
     render() {
@@ -60,6 +61,11 @@ class AnnotationRenderer {
             .on('start', function(event, d) {
                 d._dragStartX = d.x;
                 d._dragStartY = d.y;
+                // store initial pointer position for click detection
+                d._pointerStartX = event.x;
+                d._pointerStartY = event.y;
+                // store whether this annotation was already selected
+                d._wasSelected = self.state.selectedAnnotation && self.state.selectedAnnotation.id === d.id;
                 self.state.setDragging(true);
                 // disable zoom for smooth drag
                 self.state.emit('disableZoom');
@@ -90,8 +96,37 @@ class AnnotationRenderer {
                 // check if position actually changed
                 const positionChanged = d._dragStartX !== d.x || d._dragStartY !== d.y;
                 
-                // persist new position
-                this.state.updateAnnotation(d.id, { x: d.x, y: d.y });
+                // check if this was a click (minimal movement) or a drag
+                const clickThreshold = 5; // pixels
+                const pointerDistance = Math.sqrt(
+                    Math.pow(event.x - d._pointerStartX, 2) + 
+                    Math.pow(event.y - d._pointerStartY, 2)
+                );
+                const wasClick = pointerDistance < clickThreshold;
+                
+                // handle selection logic
+                if (wasClick && !positionChanged) {
+                    // pure click - toggle selection if it was already selected, otherwise select it
+                    if (d._wasSelected) {
+                        // was already selected, deselect it
+                        this.state.clearSelection();
+                    } else {
+                        // wasn't selected, select it
+                        this.state.selectAnnotation(d.id);
+                    }
+                } else if (positionChanged) {
+                    // this was a drag - ensure the annotation stays selected
+                    if (!d._wasSelected) {
+                        // if it wasn't selected before dragging, select it now
+                        this.state.selectAnnotation(d.id);
+                    }
+                    // if it was already selected, keep it selected (no action needed)
+                }
+                
+                // persist new position if it changed
+                if (positionChanged) {
+                    this.state.updateAnnotation(d.id, { x: d.x, y: d.y });
+                }
                 
                 // only suppress canvas click if we actually dragged
                 if (positionChanged) {
@@ -99,6 +134,8 @@ class AnnotationRenderer {
                 }
                 
                 delete d._dragStartX; delete d._dragStartY;
+                delete d._pointerStartX; delete d._pointerStartY;
+                delete d._wasSelected;
                 this.state.setDragging(false);
                 // re-enable zoom
                 this.state.emit('enableZoom');
@@ -119,13 +156,8 @@ class AnnotationRenderer {
             .text(d => d.text)
             .style('font-size', d => `${d.fontSize || 14}px`);
             
-        // set up click and drag behavior on merged selection
-        merged.on('mousedown', (event, d) => {
-            // stop propagation to prevent canvas from handling this
-            event.stopPropagation();
-            if (event.preventDefault) event.preventDefault();
-            this.state.selectAnnotation(d.id);
-        }).style('cursor', 'move').call(dragBehavior);
+        // set up drag behavior on merged selection (selection handled in drag end)
+        merged.style('cursor', 'move').call(dragBehavior);
 
         // also bind drag to child elements to ensure reliable hit testing across browsers
         merged.select('rect.annotation_box')
@@ -150,11 +182,17 @@ class AnnotationRenderer {
                 .attr('height', bbox.height + 8);
         });
 
-        // selection styling
-        merged.classed('selected', d => this.state.selectedAnnotation && this.state.selectedAnnotation.id === d.id);
-
         // exit
         selection.exit().remove();
+        
+        // update selection styles
+        this.updateAnnotationStyles();
+    }
+
+    updateAnnotationStyles() {
+        const selectedAnnotation = this.state.selectedAnnotation;
+        this.annotationGroup.selectAll('.annotation_item')
+            .classed('selected', d => selectedAnnotation && selectedAnnotation.id === d.id);
     }
 }
 

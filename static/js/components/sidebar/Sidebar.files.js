@@ -119,7 +119,8 @@
                 // after creating, select it and close
                 const relDisplay = (explorerCwd ? `${explorerCwd}/` : '') + fileName;
                 const noPrefix = relDisplay.replace(/^(?:nodes\/)*/i, '');
-                input.value = noPrefix;
+                input.value = '';
+                input.placeholder = '';
                 input.dataset.fullPath = noPrefix;
                 modal.classList.remove('show');
                 try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
@@ -135,7 +136,8 @@
             if (!selectedRelFile) { this.showError('select a python file'); return; }
             // normalize to single nodes/ prefix for persistence; display without prefix
             const noPrefix = selectedRelFile.replace(/^(?:nodes\/)*/i, '');
-            input.value = noPrefix;
+            input.value = '';
+            input.placeholder = '';
             input.dataset.fullPath = noPrefix;
             closeModal();
             try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
@@ -256,10 +258,14 @@
         const input = document.getElementById('python_file');
         // normalize to project-root-relative
         const noPrefix = (displayPath || '').replace(/^(?:nodes\/)*/i, '');
-        input.value = noPrefix;
+        // keep input visually empty and store path for saving
+        input.value = '';
+        input.placeholder = '';
         input.dataset.fullPath = path.replace(/^(?:nodes\/)*/i, '');
         this.closeDropdown();
         try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
+        // refresh sidebar ui to update status indicator and formatted path
+        try { this.updateFromState && this.updateFromState(); } catch (_) {}
         try { await this.state.save(false); } catch (_) {}
     };
 

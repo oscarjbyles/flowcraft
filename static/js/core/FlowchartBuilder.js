@@ -3407,13 +3407,44 @@ class FlowchartBuilder {
             // gather variables from incoming python nodes
             const incomingLinks = this.state.links.filter(l => l.target === ifNode.id);
             const vars = {};
-            for (const link of incomingLinks) {
-                const sourceId = link.source;
-                if (!this.nodeVariables.has(sourceId)) continue;
-                const val = this.nodeVariables.get(sourceId);
-                if (val && typeof val === 'object' && val !== null) {
-                    Object.assign(vars, val);
-                } else if (typeof val !== 'undefined') {
+			for (const link of incomingLinks) {
+				const sourceId = link.source;
+				if (!this.nodeVariables.has(sourceId)) continue;
+				const val = this.nodeVariables.get(sourceId);
+				if (val && typeof val === 'object' && val !== null) {
+					// if the return value is an array, treat it as a single variable (do not spread indices)
+					if (Array.isArray(val)) {
+						const src = this.state.getNode(sourceId);
+						let mapped = false;
+						try {
+							if (src && src.type === 'python_file' && src.pythonFile) {
+								const resp = await fetch('/api/analyze-python-function', {
+									method: 'POST', headers: { 'Content-Type': 'application/json' },
+									body: JSON.stringify({ python_file: (src.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*?/i,'') })
+								});
+								const data = await resp.json();
+								const returns = Array.isArray(data && data.returns) ? data.returns : [];
+								let varName = null;
+								if (returns.length === 1 && returns[0] && returns[0].name) {
+									varName = returns[0].name;
+								} else {
+									const variableItem = returns.find(r => r && (r.type === 'variable' || typeof r.name === 'string') && r.name);
+									if (variableItem && variableItem.name) varName = variableItem.name;
+								}
+								if (varName && typeof varName === 'string') {
+									vars[varName] = val;
+									mapped = true;
+								}
+							}
+						} catch (_) {}
+						if (!mapped) {
+							const key = (src && src.name) ? src.name.toLowerCase().replace(/[^a-z0-9_]/g, '_') : `node_${sourceId}`;
+							vars[key] = val;
+						}
+					} else {
+						Object.assign(vars, val);
+					}
+				} else if (typeof val !== 'undefined') {
                     const src = this.state.getNode(sourceId);
                     let mapped = false;
                     // try to map primitive return value to the real return variable name via analysis
@@ -3463,7 +3494,23 @@ class FlowchartBuilder {
                     if (String(right).toLowerCase() === 'true') right = true;
                     else if (String(right).toLowerCase() === 'false') right = false;
                 }
-                switch (operator) {
+				switch (operator) {
+					// array length comparisons
+					case 'len==': {
+						const leftLen = (left != null && typeof left === 'object' && 'length' in left) ? Number(left.length) : (typeof left === 'string' ? left.length : Number(left));
+						const rightNum = Number(compareRaw);
+						return Number.isNaN(leftLen) || Number.isNaN(rightNum) ? false : leftLen == rightNum; // eslint-disable-line eqeqeq
+					}
+					case 'len<': {
+						const leftLen = (left != null && typeof left === 'object' && 'length' in left) ? Number(left.length) : (typeof left === 'string' ? left.length : Number(left));
+						const rightNum = Number(compareRaw);
+						return Number.isNaN(leftLen) || Number.isNaN(rightNum) ? false : leftLen < rightNum;
+					}
+					case 'len>': {
+						const leftLen = (left != null && typeof left === 'object' && 'length' in left) ? Number(left.length) : (typeof left === 'string' ? left.length : Number(left));
+						const rightNum = Number(compareRaw);
+						return Number.isNaN(leftLen) || Number.isNaN(rightNum) ? false : leftLen > rightNum;
+					}
                     case '===': return left === right;
                     case '==': return left == right; // eslint-disable-line eqeqeq
                     case '>': return Number(left) > Number(right);

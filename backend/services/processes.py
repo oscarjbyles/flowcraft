@@ -20,7 +20,8 @@ def create_temp_execution_script(file_path: str, function_args: Dict[str, Any], 
 
     tree = ast.parse(original_content)
     functions = []
-    for node in ast.walk(tree):
+    # only consider top-level functions defined at module scope (exclude nested/inner defs)
+    for node in tree.body:
         if isinstance(node, ast.FunctionDef):
             functions.append({'name': node.name, 'args': [arg.arg for arg in node.args.args]})
 
@@ -151,7 +152,8 @@ def execute_python_function_with_tracking(
 
             tree = ast.parse(original_content)
             functions = []
-            for node in ast.walk(tree):
+            # only consider top-level functions defined at module scope (exclude nested/inner defs)
+            for node in tree.body:
                 if isinstance(node, ast.FunctionDef):
                     functions.append({'name': node.name, 'args': [arg.arg for arg in node.args.args]})
 

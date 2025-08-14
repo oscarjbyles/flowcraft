@@ -6,7 +6,11 @@
     Sidebar.prototype._closeAllDropdownMenus = function(exceptMenu) {
         const menus = document.querySelectorAll('.dropdown_menu');
         menus.forEach((menu) => {
-            if (menu !== exceptMenu) menu.style.display = 'none';
+            if (menu === exceptMenu) return;
+            // remove class-based open state
+            menu.classList.remove('show');
+            // clear any inline display overrides to prevent conflicts with css rules
+            menu.style.display = '';
         });
     };
 
@@ -77,8 +81,17 @@
         const menu = document.getElementById('if_variables_dropdown_menu');
         if (!input || !menu) return;
         const container = input.closest('.dropdown_container');
-        const openMenu = () => { this._closeAllDropdownMenus(menu); const D = window.SidebarDropdowns; if (D) D.open(menu); else menu.style.display = 'block'; };
-        const closeMenu = () => { const D = window.SidebarDropdowns; if (D) D.close(menu); else menu.style.display = 'none'; };
+        const openMenu = () => {
+            this._closeAllDropdownMenus(menu);
+            // ensure no inline style prevents css class from taking effect
+            menu.style.display = '';
+            const D = window.SidebarDropdowns;
+            if (D) D.open(menu); else menu.classList.add('show');
+        };
+        const closeMenu = () => {
+            const D = window.SidebarDropdowns;
+            if (D) D.close(menu); else menu.classList.remove('show');
+        };
         input.addEventListener('click', (e) => { e.stopPropagation(); openMenu(); });
         document.addEventListener('click', (e) => {
             if (!container.contains(e.target)) closeMenu();
@@ -99,20 +112,33 @@
         const menu = document.getElementById('if_operator_dropdown_menu');
         if (!input || !menu) return;
         const container = input.closest('.dropdown_container');
-        const openMenu = () => { this._closeAllDropdownMenus(menu); const D = window.SidebarDropdowns; if (D) D.open(menu); else menu.style.display = 'block'; };
-        const closeMenu = () => { const D = window.SidebarDropdowns; if (D) D.close(menu); else menu.style.display = 'none'; };
+        const openMenu = () => {
+            this._closeAllDropdownMenus(menu);
+            // ensure no inline style prevents css class from taking effect
+            menu.style.display = '';
+            const D = window.SidebarDropdowns;
+            if (D) D.open(menu); else menu.classList.add('show');
+        };
+        const closeMenu = () => {
+            const D = window.SidebarDropdowns;
+            if (D) D.close(menu); else menu.classList.remove('show');
+        };
         input.addEventListener('click', (e) => { e.stopPropagation(); openMenu(); });
         document.addEventListener('click', (e) => {
             if (!container.contains(e.target)) closeMenu();
         });
-        const operators = [
-            { value: '==', label: 'equals' },
-            { value: '===', label: 'strictly equals' },
-            { value: '>', label: 'greater than' },
-            { value: '<', label: 'less than' },
-            { value: '>=', label: 'greater than or equal' },
-            { value: '<=', label: 'less than or equal' }
-        ];
+		const operators = [
+			{ value: '==', label: 'equals' },
+			{ value: '===', label: 'strictly equals' },
+			{ value: '>', label: 'greater than' },
+			{ value: '<', label: 'less than' },
+			{ value: '>=', label: 'greater than or equal' },
+			{ value: '<=', label: 'less than or equal' },
+			// array length operators
+			{ value: 'len==', label: 'array length ==' },
+			{ value: 'len<', label: 'array length less than' },
+			{ value: 'len>', label: 'array length greater than' }
+		];
         menu.innerHTML = operators.map(op => `
             <div class="dropdown_item" data-value="${op.value}" data-label="${op.label}" style="display:flex; align-items:center; gap:8px; justify-content: space-between;">
                 <span style="font-family: monospace;">${op.value}</span>

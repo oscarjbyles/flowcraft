@@ -537,21 +537,14 @@
 
                                     if (isStale()) return; // abort if a newer render started
 
-                                    // try to find a group whose number of variables matches array length
+                                    // arrays/tuples should be shown as a single variable block, not split per item
                                     if (Array.isArray(ret)) {
-                                        const varGroup = groups.find(g => (g.filter(x => x && x.type === 'variable').length === ret.length));
-                                        if (varGroup) {
-                                            const names = varGroup.filter(x => x && x.type === 'variable').map(x => x.name);
-                                            for (let i = 0; i < ret.length; i++) {
-                                                const label = names[i] || `item_${i}`;
-                                                safeMakeRow(label, ret[i]);
-                                            }
-                                        } else {
-                                            // fallback: use generic item_i labels
-                                            for (let i = 0; i < ret.length; i++) {
-                                                safeMakeRow(`item_${i}`, ret[i]);
-                                            }
-                                        }
+                                        // if exactly one variable is referenced in the return expression, use its name; otherwise use 'return_value'
+                                        const onlyVarsForArray = flat.filter(x => x && x.type === 'variable');
+                                        const arrayLabel = (onlyVarsForArray.length === 1 && onlyVarsForArray[0].name)
+                                            ? onlyVarsForArray[0].name
+                                            : 'return_value';
+                                        safeMakeRow(arrayLabel, ret);
                                         return;
                                     }
 
@@ -683,7 +676,24 @@
     };
 
     Sidebar.prototype.displayNodeFileInfo = function(node, container) {
-        const pythonFile = node.pythonFile || 'not assigned';
+		const pythonFile = node.pythonFile || 'not assigned';
+		// format path with line breaks and small indentation after each directory separator
+		// all comments in lower case
+		const formatPathForDisplay = (pathValue) => {
+			try {
+				const normalized = String(pathValue).replace(/\\/g, '/');
+				const escaped = normalized
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/\"/g, '&quot;')
+					.replace(/'/g, '&#39;');
+				return escaped.replace(/\//g, '/<br>&nbsp;&nbsp;');
+			} catch (_) {
+				return String(pathValue);
+			}
+		};
+		const formattedPath = formatPathForDisplay(pythonFile);
         if (pythonFile === 'not assigned') {
             container.innerHTML = `
                 <div class="info_empty">
@@ -699,7 +709,7 @@
                 <div class="data_save_details_grid">
                     <div class="data_save_field">
                         <div class="data_save_label">file path</div>
-                        <div id="node_file_path_${node.id}" class="data_save_value data_save_value_monospace">${pythonFile}</div>
+						<div id="node_file_path_${node.id}" class="data_save_value data_save_value_monospace">${formattedPath}</div>
                     </div>
                     <div class="data_save_field">
                         <div class="data_save_label">function</div>

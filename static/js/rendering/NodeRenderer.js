@@ -742,7 +742,8 @@ class NodeRenderer {
     }
 
     updateNodeStyles() {
-        this.nodeGroup.selectAll('.node')
+        // update selection styles for all node types including text nodes
+        this.nodeGroup.selectAll('.node, .node_text')
             .classed('selection_preview', false) // clear preview styling
             .classed('selected', d => 
                 this.state.selectedNodes.has(d.id) && this.state.selectedNodes.size === 1)

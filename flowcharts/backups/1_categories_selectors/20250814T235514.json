@@ -1,0 +1,847 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": 1755167598667.6548,
+      "id": 1755167154604.1802,
+      "name": "delete from previous script",
+      "pythonFile": "1_categories_selectors/delete_from_previous_script.py",
+      "type": "python_file",
+      "width": 206.36666870117188,
+      "x": 458,
+      "y": 148
+    },
+    {
+      "description": "",
+      "groupId": 1755167598667.6548,
+      "id": 1755167272079.5703,
+      "name": "get data from brands excel",
+      "pythonFile": "1_categories_selectors/get_data_from_brands_excel.py",
+      "type": "python_file",
+      "width": 206.38333129882812,
+      "x": 809,
+      "y": 149
+    },
+    {
+      "description": "input parameters",
+      "groupId": 1755167598667.6548,
+      "id": 1755167428398.602,
+      "inputValues": {
+        "user_input": "Baracuta"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "user_input"
+      ],
+      "pythonFile": "1_categories_selectors/get_data_from_brands_excel.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1755167272079.5703,
+      "type": "input_node",
+      "width": 300,
+      "x": 798.2925415039062,
+      "y": -24.86109161376953
+    },
+    {
+      "description": "",
+      "groupId": 1755167906527.4514,
+      "id": 1755167550651.0103,
+      "name": "get base url",
+      "pythonFile": "1_categories_selectors/1_1_0_1_get_base_url.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 863.5741577148438,
+      "y": 380.2646484375
+    },
+    {
+      "description": "",
+      "groupId": 1755167906527.4514,
+      "id": 1755167866611.7693,
+      "name": "get web page content",
+      "pythonFile": "1_categories_selectors/1_1_0_2_get_page_content.py",
+      "type": "python_file",
+      "width": 174.1999969482422,
+      "x": 868.9776000976562,
+      "y": 527.2366027832031
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168324002.294,
+      "magnet_partner_id": 1755168329342.0771,
+      "name": "1.1.1.1 - use nav tag",
+      "pythonFile": "1_categories_selectors/1_1_1_1_use_nav_tag.py",
+      "type": "python_file",
+      "width": 164.71666717529297,
+      "x": 1127.621337890625,
+      "y": 527.0776062011719
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168329342.0771,
+      "magnet_partner_id": 1755168324002.294,
+      "name": "empty?",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 1127.621337890625,
+      "y": 607.0776062011719
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168331256.1504,
+      "magnet_partner_id": 1755168365383.739,
+      "name": "1.1.1.2 - use common class names",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 256.78334045410156,
+      "x": 1420.4766845703125,
+      "y": 526.5706176757812
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755168341464.9243,
+      "name": "1.1.3 - filter URLs",
+      "pythonFile": "1_categories_selectors/1_1_3_filter_urls.py",
+      "type": "python_file",
+      "width": 145.63333129882812,
+      "x": 1256.2294921875,
+      "y": 960.7908630371094
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755168356509.9187,
+      "name": "1.1.2 - add base URL if needed",
+      "pythonFile": "1_categories_selectors/1_1_2_add_base_url_if_needed.py",
+      "type": "python_file",
+      "width": 228.48333740234375,
+      "x": 1253.6943359375,
+      "y": 847.5314636230469
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168365383.739,
+      "magnet_partner_id": 1755168331256.1504,
+      "name": "empty?",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 1420.4766845703125,
+      "y": 606.5706176757812
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 20,
+          "name": "base_url",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1755172769693.0837,
+      "name": "base_url",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 1031.3004040210865,
+      "y": 245.24123077360295
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755172944716.4678,
+      "name": "1.1.4 - find 'all products' page",
+      "pythonFile": "1_categories_selectors/1_1_4_find_all_products_page.py",
+      "type": "python_file",
+      "width": 220.51666259765625,
+      "x": 1259.3695068359375,
+      "y": 1082.0195617675781
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755172982615.0999,
+      "name": "1.1.5 - find 'sale products' page",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 231.56666564941406,
+      "x": 1258.2850341796875,
+      "y": 1211.0775451660156
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755173080268.6929,
+      "magnet_partner_id": 1755206518288.434,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2108.378173828125,
+      "y": 457.9999084472656
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755173100337.6272,
+      "name": "print gender breakdowns",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 194.1999969482422,
+      "x": 2117.883544921875,
+      "y": 654.624755859375
+    },
+    {
+      "description": "",
+      "groupId": 1755173237201.828,
+      "id": 1755173143862.484,
+      "name": "1.3.0.1 - get only genedered URLs",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 247.48333740234375,
+      "x": 2626.327392578125,
+      "y": 406.02459716796875
+    },
+    {
+      "description": "",
+      "groupId": 1755173237201.828,
+      "id": 1755173146742.7798,
+      "name": "1.3.0.2 - get page content",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 198.25,
+      "x": 2624.88818359375,
+      "y": 533.9306945800781
+    },
+    {
+      "description": "",
+      "groupId": 1755173237201.828,
+      "id": 1755173149202.599,
+      "name": "1.3.0.3 - create the project reference",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 264.21665954589844,
+      "x": 2625.557373046875,
+      "y": 671.3025512695312
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755173649195.634,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2995.746337890625,
+      "y": 660.5254821777344
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755173670352.4734,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3606.96337890625,
+      "y": 641.1140747070312
+    },
+    {
+      "description": "",
+      "groupId": 1755173977461.5598,
+      "id": 1755173671004.7842,
+      "name": "get link tag",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3901.140625,
+      "y": 641.275390625
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173712690.242,
+      "name": "get all tags with visable text",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 212.38333129882812,
+      "x": 3272.29931640625,
+      "y": 652.933837890625
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173729881.0269,
+      "name": "remove duplicates",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 154.25,
+      "x": 3275.50732421875,
+      "y": 762.2565307617188
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173740726.4312,
+      "name": "filter out tags containing currency",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 248.26666259765625,
+      "x": 3271.70458984375,
+      "y": 876.0325317382812
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173754676.0088,
+      "name": "keyword filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 142.31666564941406,
+      "x": 3280.296142578125,
+      "y": 996.3197021484375
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173767907.2407,
+      "name": "length filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 129.0999984741211,
+      "x": 3267.8857421875,
+      "y": 1122.334716796875
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173779202.0266,
+      "name": "ratio filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3272.6591796875,
+      "y": 1236.8936767578125
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173805460.5344,
+      "name": "string permutation filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 205.35000610351562,
+      "x": 3273.61376953125,
+      "y": 1356.2264404296875
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173820731.6052,
+      "name": "language model",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 139.68333435058594,
+      "x": 3269.795166015625,
+      "y": 1477.46826171875
+    },
+    {
+      "description": "",
+      "groupId": 1755173864749.1145,
+      "id": 1755173833301.116,
+      "name": "get location",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3264.0673828125,
+      "y": 1620.6673583984375
+    },
+    {
+      "description": "",
+      "groupId": 1755173977461.5598,
+      "id": 1755173973653.7566,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3903.200927734375,
+      "y": 756.3596801757812
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755174016499.5188,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 4175.9345703125,
+      "y": 620.98193359375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755174023693.5693,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 4395.66357421875,
+      "y": 624.2037963867188
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755174031208.1548,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 4610.18408203125,
+      "y": 622.724365234375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755206398075.3381,
+      "name": "python node",
+      "pythonFile": "app.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 1693.5546875,
+      "y": 357.2391052246094
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755206408852.1575,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1765.49951171875,
+      "y": 538.3002319335938
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755206409408.649,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1575.394775390625,
+      "y": 176.85800075531006
+    }
+  ],
+  "links": [
+    {
+      "source": 1755167154604.1802,
+      "target": 1755167272079.5703
+    },
+    {
+      "selectable": false,
+      "source": 1755167428398.602,
+      "style": "dashed",
+      "target": 1755167272079.5703,
+      "type": "input_connection"
+    },
+    {
+      "source": 1755167550651.0103,
+      "target": 1755167866611.7693
+    },
+    {
+      "source": 1755167272079.5703,
+      "target": 1755167550651.0103
+    },
+    {
+      "selectable": false,
+      "source": 1755168324002.294,
+      "target": 1755168329342.0771
+    },
+    {
+      "conditions": [
+        {
+          "operator": "len<",
+          "value": "1",
+          "variable": "nav_links"
+        }
+      ],
+      "runtime_condition": null,
+      "runtime_details": null,
+      "source": 1755168329342.0771,
+      "target": 1755168331256.1504
+    },
+    {
+      "selectable": false,
+      "source": 1755168331256.1504,
+      "target": 1755168365383.739
+    },
+    {
+      "conditions": [
+        {
+          "operator": "len>",
+          "value": "1",
+          "variable": "nav_links"
+        }
+      ],
+      "runtime_condition": null,
+      "runtime_details": null,
+      "source": 1755168329342.0771,
+      "target": 1755168356509.9187
+    },
+    {
+      "runtime_condition": null,
+      "runtime_details": null,
+      "source": 1755168365383.739,
+      "target": 1755168356509.9187
+    },
+    {
+      "source": 1755168356509.9187,
+      "target": 1755168341464.9243
+    },
+    {
+      "source": 1755167866611.7693,
+      "target": 1755168324002.294
+    },
+    {
+      "selectable": false,
+      "source": 1755167550651.0103,
+      "style": "dashed",
+      "target": 1755172769693.0837
+    },
+    {
+      "source": 1755168341464.9243,
+      "target": 1755172944716.4678
+    },
+    {
+      "source": 1755172944716.4678,
+      "target": 1755172982615.0999
+    },
+    {
+      "source": 1755173143862.484,
+      "target": 1755173146742.7798
+    },
+    {
+      "source": 1755173146742.7798,
+      "target": 1755173149202.599
+    },
+    {
+      "source": 1755173149202.599,
+      "target": 1755173649195.634
+    },
+    {
+      "source": 1755173712690.242,
+      "target": 1755173729881.0269
+    },
+    {
+      "source": 1755173729881.0269,
+      "target": 1755173740726.4312
+    },
+    {
+      "source": 1755173740726.4312,
+      "target": 1755173754676.0088
+    },
+    {
+      "source": 1755173754676.0088,
+      "target": 1755173767907.2407
+    },
+    {
+      "source": 1755173767907.2407,
+      "target": 1755173779202.0266
+    },
+    {
+      "source": 1755173779202.0266,
+      "target": 1755173805460.5344
+    },
+    {
+      "source": 1755173805460.5344,
+      "target": 1755173820731.6052
+    },
+    {
+      "source": 1755173820731.6052,
+      "target": 1755173833301.116
+    },
+    {
+      "source": 1755172982615.0999,
+      "target": 1755173080268.6929
+    },
+    {
+      "source": 1755173100337.6272,
+      "target": 1755173143862.484
+    },
+    {
+      "source": 1755173649195.634,
+      "target": 1755173712690.242
+    },
+    {
+      "source": 1755173833301.116,
+      "target": 1755173670352.4734
+    },
+    {
+      "source": 1755173670352.4734,
+      "target": 1755173671004.7842
+    },
+    {
+      "source": 1755206398075.3381,
+      "target": 1755206408852.1575
+    },
+    {
+      "source": 1755206409408.649,
+      "target": 1755206398075.3381
+    }
+  ],
+  "groups": [
+    {
+      "description": "",
+      "id": 1755167598667.6548,
+      "name": "start",
+      "nodeIds": [
+        1755167154604.1802,
+        1755167272079.5703,
+        1755167428398.602
+      ]
+    },
+    {
+      "color": "#8bc34a",
+      "description": "",
+      "id": 1755167906527.4514,
+      "name": "1.1.0 - prepare",
+      "nodeIds": [
+        1755167550651.0103,
+        1755167866611.7693
+      ]
+    },
+    {
+      "color": "#8bc34a",
+      "description": "",
+      "id": 1755168473293.803,
+      "name": "1.1.1 - get URLs from page",
+      "nodeIds": [
+        1755168324002.294,
+        1755168331256.1504,
+        1755168365383.739,
+        1755168329342.0771
+      ]
+    },
+    {
+      "color": "#3f51b5",
+      "description": "",
+      "id": 1755173237201.828,
+      "name": "1.3.0 - prepare",
+      "nodeIds": [
+        1755173149202.599,
+        1755173146742.7798,
+        1755173143862.484
+      ]
+    },
+    {
+      "color": "#3f51b5",
+      "description": "",
+      "id": 1755173864749.1145,
+      "name": "1.3.2 get product TITLE",
+      "nodeIds": [
+        1755173712690.242,
+        1755173729881.0269,
+        1755173740726.4312,
+        1755173754676.0088,
+        1755173767907.2407,
+        1755173779202.0266,
+        1755173805460.5344,
+        1755173820731.6052,
+        1755173833301.116
+      ]
+    },
+    {
+      "color": "#3f51b5",
+      "description": "",
+      "id": 1755173977461.5598,
+      "name": "1.3.4 get product URL",
+      "nodeIds": [
+        1755173671004.7842,
+        1755173973653.7566
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "fontSize": 14,
+      "id": 1755170773885.1965,
+      "text": "text",
+      "type": "text",
+      "x": 1354.9128811534865,
+      "y": -278.971045852922
+    },
+    {
+      "fontSize": 14,
+      "id": 1755206353472.5908,
+      "text": "text",
+      "type": "text",
+      "x": 1318.9661522873732,
+      "y": -35.938987818902206
+    },
+    {
+      "fontSize": 30,
+      "id": 1755207384135.138,
+      "text": "1.1",
+      "type": "text",
+      "x": 650.6906994842652,
+      "y": 326.5221091420407
+    }
+  ],
+  "force": false,
+  "executions": [
+    {
+      "execution_id": "7a3a5482-c266-4e0f-8ca4-1b71742afbc9",
+      "timestamp": "2025-08-14T14:41:41.316155",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 6,
+      "completed_nodes": 7,
+      "success_percentage": 20.7,
+      "completed_percentage": 24.1,
+      "failed_node": "1.1.3 - filter URLs",
+      "elapsed_ms": 12915,
+      "execution_time": "12.915s",
+      "error_snippet": "cannot access local variable 'nav_links' where it "
+    },
+    {
+      "execution_id": "16a3cb30-6b5e-44d2-8e5e-df2b9fcbe64a",
+      "timestamp": "2025-08-14T14:36:11.753973",
+      "flowchart_name": "1_categories_selectors",
+      "status": "success",
+      "total_nodes": 29,
+      "successful_nodes": 5,
+      "completed_nodes": 5,
+      "success_percentage": 17.2,
+      "completed_percentage": 17.2,
+      "failed_node": null,
+      "elapsed_ms": 12565,
+      "execution_time": "12.565s"
+    },
+    {
+      "execution_id": "5b802ad2-9832-4bb7-bcd3-6c2d96aac240",
+      "timestamp": "2025-08-14T14:31:00.946729",
+      "flowchart_name": "1_categories_selectors",
+      "status": "success",
+      "total_nodes": 29,
+      "successful_nodes": 5,
+      "completed_nodes": 5,
+      "success_percentage": 17.2,
+      "completed_percentage": 17.2,
+      "failed_node": null,
+      "elapsed_ms": 17743,
+      "execution_time": "17.743s"
+    },
+    {
+      "execution_id": "fcdcdff0-3965-4a5e-9f40-a597567df4e2",
+      "timestamp": "2025-08-14T14:28:54.030470",
+      "flowchart_name": "1_categories_selectors",
+      "status": "success",
+      "total_nodes": 29,
+      "successful_nodes": 5,
+      "completed_nodes": 5,
+      "success_percentage": 17.2,
+      "completed_percentage": 17.2,
+      "failed_node": null,
+      "elapsed_ms": 14880,
+      "execution_time": "14.880s"
+    },
+    {
+      "execution_id": "40c44405-c07d-44fe-9283-209041710793",
+      "timestamp": "2025-08-14T13:45:02.567333",
+      "flowchart_name": "1_categories_selectors",
+      "status": "success",
+      "total_nodes": 29,
+      "successful_nodes": 5,
+      "completed_nodes": 5,
+      "success_percentage": 17.2,
+      "completed_percentage": 17.2,
+      "failed_node": null,
+      "elapsed_ms": 13276,
+      "execution_time": "13.276s"
+    },
+    {
+      "execution_id": "986e3f3d-4ea4-4f51-8bcf-a805804e33c3",
+      "timestamp": "2025-08-14T13:44:25.041106",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 10.3,
+      "completed_percentage": 13.8,
+      "failed_node": "get web page content",
+      "elapsed_ms": 3014,
+      "execution_time": "3.014s",
+      "error_snippet": "No module named 'bs4'"
+    },
+    {
+      "execution_id": "9308aadb-6a81-43cf-a648-2022e1a76deb",
+      "timestamp": "2025-08-14T13:43:35.075375",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 10.3,
+      "completed_percentage": 13.8,
+      "failed_node": "get web page content",
+      "elapsed_ms": 1516,
+      "execution_time": "1.516s",
+      "error_snippet": "No module named 'selenium'"
+    },
+    {
+      "execution_id": "f346681e-658a-4490-bd9f-fdc81231b0e4",
+      "timestamp": "2025-08-14T13:43:04.022421",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 6.9,
+      "completed_percentage": 10.3,
+      "failed_node": "get base url",
+      "elapsed_ms": 2895,
+      "execution_time": "2.895s",
+      "error_snippet": "missing required function arguments: url"
+    },
+    {
+      "execution_id": "fcefab96-52fb-48c5-b5cd-e1221ff688a2",
+      "timestamp": "2025-08-14T13:41:04.217860",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 6.9,
+      "completed_percentage": 10.3,
+      "failed_node": "get base url",
+      "elapsed_ms": 5749,
+      "execution_time": "5.749s",
+      "error_snippet": "missing required function arguments: url"
+    },
+    {
+      "execution_id": "58ccee31-b312-4a3c-a951-fc06a5a8a1f7",
+      "timestamp": "2025-08-14T13:27:38.133430",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 3.4,
+      "completed_percentage": 6.9,
+      "failed_node": "get data from brands excel",
+      "elapsed_ms": 434,
+      "execution_time": "0.434s",
+      "error_snippet": "No module named 'pandas'"
+    }
+  ]
+}
