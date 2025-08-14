@@ -191,8 +191,39 @@ class GroupRenderer {
             const isSelected = this.state.selectedGroup && this.state.selectedGroup.id === d.id;
             
             // update container styles using CSS classes
-            groupElement.select('.group_container')
+            const container = groupElement.select('.group_container')
                 .classed('selected', isSelected);
+            // apply color if set
+            if (d && d.color) {
+                container
+                    .style('stroke', d.color)
+                    .style('fill', (color => {
+                        try {
+                            const rgb = d3.color(color);
+                            if (!rgb) return 'none';
+                            rgb.opacity = 0.04; // half the previous background tint
+                            return rgb + '';
+                        } catch(_) { return 'none'; }
+                    })(d.color));
+                groupElement.select('.group_label').style('fill', d.color);
+            } else {
+                // apply subtle tint using the theme primary colour when no custom colour is set
+                try {
+                    const root = document.documentElement;
+                    const cssColor = getComputedStyle(root).getPropertyValue('--primary-color').trim() || '#1976d2';
+                    const rgb = d3.color(cssColor);
+                    if (rgb) {
+                        rgb.opacity = 0.04; // match half-opacity background tint
+                        container.style('fill', rgb + '');
+                    } else {
+                        container.style('fill', null);
+                    }
+                } catch(_) {
+                    container.style('fill', null);
+                }
+                container.style('stroke', null);
+                groupElement.select('.group_label').style('fill', null);
+            }
             
             // update label styles using CSS classes and cursor by mode
             groupElement.select('.group_label')

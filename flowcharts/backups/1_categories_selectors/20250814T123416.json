@@ -1,0 +1,230 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": 1755167598667.6548,
+      "id": 1755167154604.1802,
+      "name": "delete from previous script",
+      "pythonFile": "1_categories_selectors/delete_from_previous_script.py",
+      "type": "python_file",
+      "width": 206.36666870117188,
+      "x": 458,
+      "y": 148
+    },
+    {
+      "description": "",
+      "groupId": 1755167598667.6548,
+      "id": 1755167272079.5703,
+      "name": "get data from brands excel",
+      "pythonFile": "1_categories_selectors/get_data_from_brands_excel.py",
+      "type": "python_file",
+      "width": 206.38333129882812,
+      "x": 809,
+      "y": 149
+    },
+    {
+      "description": "input parameters",
+      "groupId": 1755167598667.6548,
+      "id": 1755167428398.602,
+      "inputValues": {
+        "user_input": "Baracuta"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "user_input"
+      ],
+      "pythonFile": "1_categories_selectors/get_data_from_brands_excel.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1755167272079.5703,
+      "type": "input_node",
+      "width": 300,
+      "x": 798.2925415039062,
+      "y": -24.86109161376953
+    },
+    {
+      "description": "",
+      "groupId": 1755167906527.4514,
+      "id": 1755167550651.0103,
+      "name": "get base url",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 863.5741577148438,
+      "y": 380.2646484375
+    },
+    {
+      "description": "",
+      "groupId": 1755167906527.4514,
+      "id": 1755167866611.7693,
+      "name": "get web page content",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 174.1999969482422,
+      "x": 868.9776000976562,
+      "y": 527.2366027832031
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168324002.294,
+      "magnet_partner_id": 1755168329342.0771,
+      "name": "1.1.1.1 - use nav tag",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 164.71666717529297,
+      "x": 1309.50146484375,
+      "y": 380.6365966796875
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168329342.0771,
+      "magnet_partner_id": 1755168324002.294,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 1309.50146484375,
+      "y": 460.6365966796875
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168331256.1504,
+      "magnet_partner_id": 1755168365383.739,
+      "name": "1.1.1.2 - use common class names",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 256.78334045410156,
+      "x": 1604.52587890625,
+      "y": 381.7171936035156
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755168341464.9243,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1435.9405517578125,
+      "y": 875.5861206054688
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755168356509.9187,
+      "name": "1.1.2 - add base URL if needed",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 228.48333740234375,
+      "x": 1439.1826171875,
+      "y": 702.6780395507812
+    },
+    {
+      "description": "",
+      "groupId": 1755168473293.803,
+      "id": 1755168365383.739,
+      "magnet_partner_id": 1755168331256.1504,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 1604.52587890625,
+      "y": 461.7171936035156
+    }
+  ],
+  "links": [
+    {
+      "source": 1755167154604.1802,
+      "target": 1755167272079.5703
+    },
+    {
+      "selectable": false,
+      "source": 1755167428398.602,
+      "style": "dashed",
+      "target": 1755167272079.5703,
+      "type": "input_connection"
+    },
+    {
+      "source": 1755167550651.0103,
+      "target": 1755167866611.7693
+    },
+    {
+      "source": 1755167272079.5703,
+      "target": 1755167550651.0103
+    },
+    {
+      "selectable": false,
+      "source": 1755168324002.294,
+      "target": 1755168329342.0771
+    },
+    {
+      "source": 1755168329342.0771,
+      "target": 1755168331256.1504
+    },
+    {
+      "selectable": false,
+      "source": 1755168331256.1504,
+      "target": 1755168365383.739
+    },
+    {
+      "source": 1755168329342.0771,
+      "target": 1755168356509.9187
+    },
+    {
+      "source": 1755168365383.739,
+      "target": 1755168356509.9187
+    },
+    {
+      "source": 1755168356509.9187,
+      "target": 1755168341464.9243
+    },
+    {
+      "source": 1755167866611.7693,
+      "target": 1755168324002.294
+    }
+  ],
+  "groups": [
+    {
+      "description": "",
+      "id": 1755167598667.6548,
+      "name": "start",
+      "nodeIds": [
+        1755167154604.1802,
+        1755167272079.5703,
+        1755167428398.602
+      ]
+    },
+    {
+      "description": "",
+      "id": 1755167906527.4514,
+      "name": "group name",
+      "nodeIds": [
+        1755167550651.0103,
+        1755167866611.7693
+      ]
+    },
+    {
+      "description": "",
+      "id": 1755168473293.803,
+      "name": "1.1.1 get URLs from page",
+      "nodeIds": [
+        1755168324002.294,
+        1755168331256.1504,
+        1755168365383.739,
+        1755168329342.0771
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "fontSize": 14,
+      "id": 1755170773885.1965,
+      "text": "text",
+      "type": "text",
+      "x": 1116.080727833174,
+      "y": 197.3663259732499
+    }
+  ]
+}

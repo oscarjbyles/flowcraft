@@ -663,6 +663,8 @@ class StateManager extends BaseEmitter {
             group: null,
             annotation: this.selectedAnnotation
         });
+        // ensure sidebar refreshes immediately on text selection
+        this.emit('updateSidebar');
     }
 
     getSelectedNodes() {

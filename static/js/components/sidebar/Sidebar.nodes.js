@@ -7,6 +7,19 @@
         try { return (path || '').replace(/\\/g, '/').replace(/^(?:nodes\/)*/i, ''); } catch (_) { return path || ''; }
     }
 
+    // helper to compare css colors (rgb vs hex)
+    Sidebar.prototype.colorsEqual = function(a, b){
+        try {
+            const toRgb = (c) => {
+                const ctx = document.createElement('canvas').getContext('2d');
+                ctx.fillStyle = '#000';
+                ctx.fillStyle = c;
+                return ctx.fillStyle; // normalized rgb(a,b,c)
+            };
+            return toRgb(a) === toRgb(b);
+        } catch(_) { return a === b; }
+    };
+
     Sidebar.prototype.populateNodeForm = function(node) {
         // defer visibility decisions to the centralized content engine
         if (this.contentEngine) {
@@ -165,6 +178,39 @@
     Sidebar.prototype.populateGroupForm = function(group) {
         document.getElementById('group_name').value = group.name || '';
         this.updateGroupMembersList(group);
+        // build/update color palette on every render to avoid stale handlers
+        const palette = document.getElementById('group_color_palette');
+        if (palette) {
+            palette.innerHTML = '';
+            const colors = [
+                '#ff5252', '#ff9800', '#ffeb3b', '#4caf50', '#00bcd4', '#2196f3',
+                '#3f51b5', '#9c27b0', '#e91e63', '#8bc34a', '#00e676', '#ff4081'
+            ];
+            const currentGroupId = (this.state && this.state.selectedGroup ? this.state.selectedGroup.id : group.id);
+            colors.forEach(color => {
+                const swatch = document.createElement('button');
+                swatch.type = 'button';
+                swatch.className = 'color_swatch';
+                swatch.style.backgroundColor = color;
+                swatch.setAttribute('aria-label', `choose ${color}`);
+                swatch.addEventListener('click', () => {
+                    const gid = (this.state && this.state.selectedGroup ? this.state.selectedGroup.id : currentGroupId);
+                    try {
+                        this.state.updateGroup(gid, { color });
+                        this.showSuccess('updated group colour');
+                        const updated = this.state.getGroup(gid);
+                        this.populateGroupForm(updated);
+                    } catch (e) {
+                        this.showError('failed to update group colour');
+                    }
+                });
+                // mark active
+                if (group && group.color && this.colorsEqual(color, group.color)) {
+                    swatch.classList.add('active');
+                }
+                palette.appendChild(swatch);
+            });
+        }
     };
 
     Sidebar.prototype.saveGroupProperties = function() {

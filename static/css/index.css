@@ -382,6 +382,12 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     cursor: move;
 }
 
+/* color palette for group colour selection */
+.color_palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.color_swatch { width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--border-color); cursor: pointer; padding: 0; }
+.color_swatch:hover { transform: scale(1.05); border-color: var(--primary-color); }
+.color_swatch.active { box-shadow: 0 0 0 2px var(--on-background) inset; border-color: var(--on-background); }
+
 .group_label.selected {
     font-weight: bold;
 }
