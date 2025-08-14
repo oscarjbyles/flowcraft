@@ -74,13 +74,13 @@
       "description": "",
       "groupId": 1755169580599.2642,
       "id": 1755166093051.567,
+      "magnet_partner_id": 1755166282652.4014,
       "name": "python node",
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
       "x": 1223.6112670898438,
-      "y": -245.821044921875,
-      "magnet_partner_id": 1755166282652.4014
+      "y": -245.821044921875
     },
     {
       "description": "",
@@ -97,13 +97,13 @@
       "description": "",
       "groupId": 1755169580599.2642,
       "id": 1755166282652.4014,
+      "magnet_partner_id": 1755166093051.567,
       "name": "if condition",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
       "x": 1223.6112670898438,
-      "y": -165.821044921875,
-      "magnet_partner_id": 1755166093051.567
+      "y": -165.821044921875
     },
     {
       "description": "",

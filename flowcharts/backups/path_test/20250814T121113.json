@@ -117,15 +117,15 @@
       "y": -6.331541061401367
     },
     {
+      "id": 1755169805133.8723,
+      "x": 1254.08544921875,
+      "y": 66.48406982421875,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
       "description": "",
       "groupId": null,
-      "id": 1755169805133.8723,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 1254.08544921875,
-      "y": 66.48406982421875
+      "width": 120
     }
   ],
   "links": [

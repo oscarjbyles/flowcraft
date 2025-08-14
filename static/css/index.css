@@ -762,9 +762,9 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-radius: 0;
     padding: 8px 0;
 }
-.run_feed_item.success {}
+.run_feed_item.success { border-left: 3px solid #2e7d32; }
 /* only error lines should show the dark red background */
-.run_feed_item.error {}
+.run_feed_item.error { border-left: 3px solid #c62828; }
 .run_feed_item.error .run_feed_line { background: #2A0E0E; }
 
 .run_feed_item_title { font-size: 1.05rem; font-weight: 600; }
@@ -935,7 +935,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 /* annotation styles */
 .annotation_text { user-select: none; cursor: move; }
-.annotation_box { fill: transparent; stroke: transparent; rx: 4px; ry: 4px; }
+.annotation_box { fill: transparent; stroke: transparent; rx: 4px; ry: 4px; pointer-events: all; }
 .annotation_item.selected .annotation_box { stroke: var(--primary-color); stroke-width: 2px; }
 
 /* run/mode active styles are defined in /static/css/sidebar.css */
@@ -1509,28 +1509,33 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     font-size: 0.9rem;
 }
 
-/* hover state for create python script button - keep consistent and no background change */
-#create_python_script_btn:hover {
-    background: transparent;
-    border-radius: 4px;
-}
+/* removed create python script button and modal styles */
 
-/* underline only the text for the create python script button */
-#create_python_script_btn:hover .create_python_script_btn_span { text-decoration: none; }
-#create_python_script_btn:hover .create_python_script_text { text-decoration: underline; }
-
-/* adjust position of create python modal upward */
-#create_python_modal .modal_content {
-    margin-top: -50px;
-}
-
-/* fixed width for select/create python modals */
-#create_python_modal .modal_content,
+/* fixed size for select python modal */
 #select_python_modal .modal_content {
-    width: 550px;
-    min-width: 550px;
-    max-width: 550px;
+    width: 800px;
+    min-width: 800px;
+    max-width: 800px;
+    height: 570px;
+    min-height: 570px;
+    max-height: 570px;
 }
+
+/* ensure content doesn't push actions off-screen in select modal */
+#select_python_modal .modal_content { display: flex; flex-direction: column; }
+#select_python_modal .form_group { flex: 1 1 auto; display: flex; flex-direction: column; overflow: visible; min-height: 0; }
+#select_python_modal .mini_explorer { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; overflow: visible; }
+#select_python_modal .mini_list { flex: 1 1 auto; min-height: 0; overflow-y: auto; max-height: none; }
+#select_python_modal .mini_list { margin-top: 8px; }
+#select_python_modal .mini_breadcrumb { flex: 0 0 auto; }
+#select_python_modal .mini_explorer_toolbar { flex: 0 0 auto; }
+#select_python_modal .modal_actions { flex: 0 0 auto; margin-top: 12px; }
+
+/* explicitly make the fe_list scrollable */
+#fe_list { overflow-y: auto; min-height: 0; }
+
+/* ensure the inline create file group isn't clipped */
+#fe_new_file_group { position: relative; z-index: 1; flex: 0 0 auto; padding: 6px 0 8px 0; margin-bottom: 8px; }
 
 /* mini folder explorer styles */
 .mini_explorer { border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-variant); padding: 10px; }
@@ -1665,7 +1670,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 }
 .mini_breadcrumb_item { cursor: pointer; color: #90caf9; }
 .mini_breadcrumb_sep { opacity: 0.6; }
-.mini_list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; background: var(--surface-color); }
+.mini_list { max-height: 360px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; background: var(--surface-color); }
 .mini_row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
 .mini_row:last-child { border-bottom: none; }
 .mini_row:hover { background: var(--hover-color); }

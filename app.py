@@ -41,6 +41,7 @@ from backend.routes.files import files_bp  # noqa: E402
 from backend.routes.execution import execution_bp  # noqa: E402
 from backend.routes.analysis import analysis_bp  # noqa: E402
 from backend.routes.editors import editors_bp  # noqa: E402
+from backend.routes.settings import settings_bp  # noqa: E402
 
 app.register_blueprint(ui_bp)
 app.register_blueprint(flowcharts_bp)
@@ -48,6 +49,7 @@ app.register_blueprint(files_bp)
 app.register_blueprint(execution_bp)
 app.register_blueprint(analysis_bp)
 app.register_blueprint(editors_bp)
+app.register_blueprint(settings_bp)
 
 
 def _is_port_open(port: int) -> bool:
@@ -66,12 +68,29 @@ def _find_next_available_port(start_port: int, max_port: int):
 
 
 if __name__ == '__main__':
-    # prefer env var; on macos default to 5001, otherwise 5000
+    # prefer env var; otherwise project setting; on macos default to 5001, others 5000
     port_env = os.environ.get('PORT')
+    settings_port = None
     if port_env is not None:
         default_port = int(port_env)
     else:
-        default_port = 5001 if platform.system() == 'Darwin' else 5000
+        try:
+            # lazy import to avoid circulars
+            import json
+            project_root = app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+            settings_path = os.path.abspath(os.path.join(project_root, '.flowcraft_settings.json'))
+            if os.path.exists(settings_path):
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    conf = json.load(f)
+                    sp = conf.get('default_port')
+                    if isinstance(sp, int) and 1 <= sp <= 65535:
+                        settings_port = sp
+        except Exception:
+            settings_port = None
+        if settings_port:
+            default_port = int(settings_port)
+        else:
+            default_port = 5001 if platform.system() == 'Darwin' else 5000
     host = '0.0.0.0'
 
     chosen_port = default_port

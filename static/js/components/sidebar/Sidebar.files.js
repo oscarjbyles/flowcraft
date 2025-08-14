@@ -8,10 +8,15 @@
         const listEl = document.getElementById('fe_list');
         const breadcrumbEl = document.getElementById('fe_breadcrumb');
         const upBtn = document.getElementById('fe_up_btn');
+        const newFileBtn = document.getElementById('fe_new_file_btn');
+        const newFolderBtn = document.getElementById('fe_new_folder_btn');
+        const newFileGroup = document.getElementById('fe_new_file_group');
+        const newFileInput = document.getElementById('fe_new_file_input');
+        const createFileConfirm = document.getElementById('fe_create_file_confirm');
+        const createFileCancel = document.getElementById('fe_create_file_cancel');
         const cancelBtn = document.getElementById('fe_cancel');
         const confirmBtn = document.getElementById('fe_confirm');
         const closeBtn = document.getElementById('fe_close_btn');
-        const cwdDisplay = document.getElementById('fe_cwd_display');
 
         if (!input || !modal || !listEl || !breadcrumbEl || !upBtn || !cancelBtn || !confirmBtn) return;
 
@@ -22,7 +27,7 @@
             breadcrumbEl.innerHTML = '';
             const root = document.createElement('span');
             root.className = 'mini_breadcrumb_item';
-            root.textContent = 'nodes';
+            root.textContent = 'root';
             root.onclick = () => loadExplorer('');
             breadcrumbEl.appendChild(root);
             const parts = (cwd || '').split('/').filter(Boolean);
@@ -46,7 +51,7 @@
                 const data = await resp.json();
                 if (data.status !== 'success') { listEl.innerHTML = '<div style="padding:10px; opacity:0.7;">failed to load</div>'; return; }
                 explorerCwd = data.cwd || '';
-                if (cwdDisplay) cwdDisplay.textContent = '/' + (explorerCwd || '');
+                if (newFileGroup) newFileGroup.style.display = 'none';
                 selectedRelFile = '';
                 renderBreadcrumb(explorerCwd);
                 const folders = (data.entries || []).filter(e => e.is_dir && e.name !== '__pycache__');
@@ -74,6 +79,55 @@
         };
 
         upBtn.onclick = () => { const parent = (explorerCwd || '').split('/').filter(Boolean); parent.pop(); loadExplorer(parent.join('/')); };
+        if (newFileBtn) newFileBtn.onclick = () => { if (newFileGroup) { newFileGroup.style.display = ''; newFileInput && (newFileInput.value = ''); newFileInput && newFileInput.focus(); } };
+        if (createFileCancel) createFileCancel.onclick = () => { if (newFileGroup) newFileGroup.style.display = 'none'; };
+        if (newFolderBtn) newFolderBtn.onclick = async () => {
+            const name = prompt('new folder name');
+            if (!name) return;
+            try {
+                const resp = await fetch('/api/nodes/mkdir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: explorerCwd || '', name })});
+                const data = await resp.json();
+                if (data.status === 'success') { loadExplorer(explorerCwd); }
+                else { alert(data.message || 'failed to create folder'); }
+            } catch (_) { alert('error creating folder'); }
+        };
+        if (newFileInput) {
+            // replace spaces with underscores while typing
+            newFileInput.addEventListener('keydown', (e) => {
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    const start = newFileInput.selectionStart;
+                    const end = newFileInput.selectionEnd;
+                    const val = newFileInput.value;
+                    newFileInput.value = val.slice(0, start) + '_' + val.slice(end);
+                    newFileInput.setSelectionRange(start + 1, start + 1);
+                }
+            });
+            newFileInput.addEventListener('input', () => {
+                const replaced = newFileInput.value.replace(/\s+/g, '_');
+                if (replaced !== newFileInput.value) newFileInput.value = replaced;
+            });
+        }
+        if (createFileConfirm) createFileConfirm.onclick = async () => {
+            const rawName = ((newFileInput && newFileInput.value) || '').trim();
+            if (!rawName) { this.showError && this.showError('script name is required'); return; }
+            const fileName = rawName.toLowerCase().endsWith('.py') ? rawName : `${rawName}.py`;
+            try {
+                const resp = await fetch('/api/nodes/touch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: explorerCwd || '', name: fileName })});
+                const data = await resp.json();
+                if (data.status !== 'success') { this.showError && this.showError(data.message || 'failed to create file'); return; }
+                // after creating, select it and close
+                const relDisplay = (explorerCwd ? `${explorerCwd}/` : '') + fileName;
+                const noPrefix = relDisplay.replace(/^(?:nodes\/)*/i, '');
+                input.value = noPrefix;
+                input.dataset.fullPath = noPrefix;
+                modal.classList.remove('show');
+                try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
+                try { await this.state.save(false); } catch (_) {}
+            } catch (_) {
+                this.showError && this.showError('error creating file');
+            }
+        };
         const closeModal = () => { modal.classList.remove('show'); };
         cancelBtn.onclick = closeModal;
         if (closeBtn) closeBtn.onclick = closeModal;

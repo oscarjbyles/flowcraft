@@ -121,6 +121,26 @@
                     </div>
 
                     <div class="form_group">
+                        <label class="form_label">default port</label>
+                        <div class="data_save_details_card">
+                            <div class="u_flex u_items_center u_gap_12">
+                                <span class="material-icons u_icon_18 u_opacity_07">router</span>
+                                <input type="number" min="1" max="65535" id="default_port_input" class="form_input" placeholder="e.g. 5001" style="max-width: 140px;">
+                                <div class="u_flex_grow_1"></div>
+                                <button class="btn btn_secondary" id="save_default_port_btn" title="save">
+                                    <span class="material-icons">save</span>
+                                    save
+                                </button>
+                                <button class="btn btn_secondary" id="clear_default_port_btn" title="clear" style="margin-left:8px;">
+                                    <span class="material-icons">backspace</span>
+                                    clear
+                                </button>
+                            </div>
+                            <div class="form_help_text">choose default port used when launching locally; can be overridden by the PORT environment variable.</div>
+                        </div>
+                    </div>
+
+                    <div class="form_group">
                         <label class="form_label">default editor</label>
                         <div class="dropdown_container">
                             <input type="text" id="default_editor_input" class="form_input dropdown_input" placeholder="detecting installed editors..." readonly>
@@ -334,12 +354,6 @@
                     <div class="dropdown_container">
                         <input type="text" id="python_file" class="form_input dropdown_input" placeholder="click to browse..." readonly>
                         <span class="dropdown_arrow material-icons">folder_open</span>
-                    </div>
-                    <div class="create_flowchart_link_container" style="margin-top: 8px; text-align: left;">
-                        <button type="button" id="create_python_script_btn" class="create_flowchart_link" style="background: none; border: none; cursor: pointer; margin-top: -6px; padding-left: 0px;">
-                            <span class="material-icons create_python_script_btn_span" style="margin-top:1px">add</span>
-                            <span class="create_python_script_text">create python script</span>
-                        </button>
                     </div>
                 </div>
 
@@ -760,41 +774,6 @@
 {% block modals %}
     {% include 'partials/modals/create_flowchart.html' %}
 
-    <!-- create python script modal -->
-    <div class="modal_overlay" id="create_python_modal">
-        <div class="modal_content">
-            <div class="modal_header">
-                <h2 class="modal_title">CREATE PYTHON SCRIPT</h2>
-                <button class="modal_close" id="close_create_python_modal">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <div class="form_group">
-                <label class="form_label" for="new_python_name">script name</label>
-                <div class="input_with_suffix">
-                    <input type="text" id="new_python_name" class="form_input" placeholder="enter script name" maxlength="100">
-                    <span class="input_suffix">.py</span>
-                </div>
-            </div>
-            <div class="form_group">
-                <label class="form_label">choose folder (under nodes/)</label>
-                <div class="mini_explorer" id="mini_explorer">
-                    <div class="mini_explorer_toolbar">
-                        <button type="button" class="mini_btn" id="mini_up_btn"><span class="material-icons" style="font-size:16px">arrow_upward</span> Up</button>
-                        <button type="button" class="mini_btn" id="mini_new_folder_btn"><span class="material-icons" style="font-size:16px">create_new_folder</span> New Folder</button>
-                    </div>
-                    <div class="mini_breadcrumb" id="mini_breadcrumb"></div>
-                    <div class="mini_list" id="mini_list"><div style="padding:10px; opacity:0.7;">loading...</div></div>
-                    <input type="hidden" id="mini_selected_path" value="">
-                </div>
-               </div>
-            <div class="modal_actions">
-                <button class="btn_modal btn_modal_secondary" id="cancel_create_python">CANCEL</button>
-                <button class="btn_modal btn_modal_primary" id="confirm_create_python">CREATE</button>
-            </div>
-        </div>
-    </div>
-
     <!-- select python file modal (popup explorer) -->
     <div class="modal_overlay" id="select_python_modal">
         <div class="modal_content">
@@ -808,11 +787,23 @@
                 <label class="form_label">browse under nodes/</label>
                 <div class="mini_explorer">
                     <div class="mini_explorer_toolbar">
-                        <button type="button" class="mini_btn" id="fe_up_btn"><span class="material-icons" style="font-size:16px">arrow_upward</span> up</button>
-                        <div id="fe_cwd_display" style="margin-left:auto; opacity:.8; font-family: monospace; font-size:.85rem;">/</div>
+                        <button type="button" class="mini_btn" id="fe_up_btn"><span class="material-icons" style="font-size:16px">arrow_upward</span> Up</button>
+                        <button type="button" class="mini_btn" id="fe_new_file_btn"><span class="material-icons" style="font-size:16px">note_add</span> Create Python File</button>
+                        <button type="button" class="mini_btn" id="fe_new_folder_btn"><span class="material-icons" style="font-size:16px">create_new_folder</span> Create Folder</button>
                     </div>
                     <div class="mini_breadcrumb" id="fe_breadcrumb"></div>
-                    <div class="mini_list" id="fe_list"><div style="padding:10px; opacity:0.7;">loading...</div></div>
+                    <div class="form_group" id="fe_new_file_group" style="display:none; margin: 8px 0 8px 0; min-height: max-content;">
+                        <label class="form_label" for="fe_new_file_input">script name</label>
+                        <div class="input_with_suffix">
+                            <input type="text" id="fe_new_file_input" class="form_input" placeholder="enter script name" maxlength="100">
+                            <span class="input_suffix">.py</span>
+                        </div>
+                        <div style="margin-top:8px; display:flex; gap:8px;">
+                            <button type="button" class="mini_btn" id="fe_create_file_confirm"><span class="material-icons" style="font-size:16px">check</span> create</button>
+                            <button type="button" class="mini_btn" id="fe_create_file_cancel"><span class="material-icons" style="font-size:16px">close</span> cancel</button>
+                        </div>
+                    </div>
+                    <div class="mini_list" id="fe_list" style="overflow-y: auto; margin-top:8px;"><div style="padding:10px; opacity:0.7;">loading...</div></div>
                 </div>
             </div>
             <div class="modal_actions">

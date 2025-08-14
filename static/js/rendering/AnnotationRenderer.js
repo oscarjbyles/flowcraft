@@ -52,26 +52,19 @@ class AnnotationRenderer {
         // drag behavior for annotations
         const self = this;
         const dragBehavior = d3.drag()
-            // only allow dragging in build mode
-            .filter(() => self.state.isBuildMode)
+            // allow dragging whenever not in run mode (build/settings ok)
+            .filter(() => !self.state.isRunMode)
             .container(() => self.container.node())
-            .on('start', (event, d) => {
-                // compute pointer in content coords using inverse zoom
-                const svgNode = self.container.node() && self.container.node().ownerSVGElement;
-                const [px, py] = d3.pointer(event, svgNode || self.container.node());
-                const t = self.state.transform || d3.zoomIdentity;
-                const cx = (px - t.x) / t.k;
-                const cy = (py - t.y) / t.k;
-                // store original and offset to prevent jump on drag start
+            // explicitly set the subject so event.x/y track the datum position with correct offset
+            .subject((event, d) => ({ x: d.x, y: d.y }))
+            .on('start', function(event, d) {
                 d._dragStartX = d.x;
                 d._dragStartY = d.y;
-                d._offsetX = d.x - cx;
-                d._offsetY = d.y - cy;
-                this.state.setDragging(true);
+                self.state.setDragging(true);
                 // disable zoom for smooth drag
-                this.state.emit('disableZoom');
+                self.state.emit('disableZoom');
                 // suppress any subsequent canvas click (even if drag is minimal)
-                this.state.suppressNextCanvasClick = true;
+                self.state.suppressNextCanvasClick = true;
                 // prevent the canvas from seeing this as a click origin
                 if (event.sourceEvent && typeof event.sourceEvent.stopPropagation === 'function') {
                     event.sourceEvent.stopPropagation();
@@ -79,18 +72,19 @@ class AnnotationRenderer {
                         event.sourceEvent.preventDefault();
                     }
                 }
+                // ensure the dragged annotation group is above others
+                try {
+                    const groupEl = this.tagName === 'g' ? this : this.parentNode;
+                    d3.select(groupEl).raise();
+                } catch (_) {}
             })
             // use function() so `this` is the dragged element
             .on('drag', function(event, d) {
-                // compute pointer in content coords using inverse zoom
-                const svgNode = self.container.node() && self.container.node().ownerSVGElement;
-                const [px, py] = d3.pointer(event, svgNode || self.container.node());
-                const t = self.state.transform || d3.zoomIdentity;
-                const cx = (px - t.x) / t.k;
-                const cy = (py - t.y) / t.k;
-                d.x = cx + (d._offsetX || 0);
-                d.y = cy + (d._offsetY || 0);
-                d3.select(this).attr('transform', `translate(${d.x},${d.y})`);
+                // event.x/event.y are the subject coords including pointer offset, in container space
+                d.x = event.x;
+                d.y = event.y;
+                const groupEl = this.tagName === 'g' ? this : this.parentNode;
+                d3.select(groupEl).attr('transform', `translate(${d.x},${d.y})`);
             })
             .on('end', (event, d) => {
                 // check if position actually changed
@@ -104,7 +98,7 @@ class AnnotationRenderer {
                     this.state.suppressNextCanvasClick = true;
                 }
                 
-                delete d._dragStartX; delete d._dragStartY; delete d._offsetX; delete d._offsetY;
+                delete d._dragStartX; delete d._dragStartY;
                 this.state.setDragging(false);
                 // re-enable zoom
                 this.state.emit('enableZoom');
@@ -131,7 +125,17 @@ class AnnotationRenderer {
             event.stopPropagation();
             if (event.preventDefault) event.preventDefault();
             this.state.selectAnnotation(d.id);
-        }).call(dragBehavior);
+        }).style('cursor', 'move').call(dragBehavior);
+
+        // also bind drag to child elements to ensure reliable hit testing across browsers
+        merged.select('rect.annotation_box')
+            .style('pointer-events', 'all')
+            .style('cursor', 'move')
+            .call(dragBehavior);
+        merged.select('text.annotation_text')
+            .style('pointer-events', 'all')
+            .style('cursor', 'move')
+            .call(dragBehavior);
 
         // size selection box to text bbox
         merged.each(function(d) {

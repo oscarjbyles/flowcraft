@@ -82,13 +82,44 @@
                                     'data_save_name_section'
                                 ],
                                 after: (node) => {
-                                    const hasFile = !!node.pythonFile;
-                                    this.setSectionVisible('arguments_section', hasFile);
-                                    this.setSectionVisible('returns_section', hasFile);
-                                    if (hasFile) this.sidebar.analyzeNodeFunction(node);
-                                    const hasIf = !!this.sidebar.state.getAssociatedIfForPython(node.id);
-                                    const showQuick = !this.sidebar.state.isRunMode && !hasIf;
-                                    this.toggleFormGroupVisibility('python_quick_actions', showQuick);
+									 const hasFile = !!node.pythonFile;
+									 this.setSectionVisible('arguments_section', hasFile);
+									 this.setSectionVisible('returns_section', hasFile);
+									 if (hasFile) this.sidebar.analyzeNodeFunction(node);
+
+									 // visibility rule for "+ if condition" button:
+									 // show if there is an upstream if splitter, but hide if there is any downstream if splitter
+									 const state = this.sidebar.state;
+									 let hasUpstreamIf = false;
+									 let hasDownstreamIf = false;
+
+									 try {
+									 	// upstream detection using existing dependency traversal
+									 	const upstreamNodes = state.getDependencies(node) || [];
+									 	hasUpstreamIf = upstreamNodes.some(n => n && n.type === 'if_node');
+									 } catch (_) {}
+
+									 try {
+									 	// downstream detection via bfs over outgoing links
+									 	const visited = new Set();
+									 	const stack = [node];
+									 	visited.add(node.id);
+									 	while (stack.length && !hasDownstreamIf) {
+									 		const current = stack.pop();
+									 		const outgoing = state.links.filter(l => l.source === current.id);
+									 		for (const link of outgoing) {
+									 			const target = state.getNode(link.target);
+									 			if (target && !visited.has(target.id)) {
+									 				if (target.type === 'if_node') { hasDownstreamIf = true; break; }
+									 				visited.add(target.id);
+									 				stack.push(target);
+									 			}
+									 		}
+									 	}
+									 } catch (_) {}
+
+									 const showQuick = !state.isRunMode && hasUpstreamIf && !hasDownstreamIf;
+									 this.toggleFormGroupVisibility('python_quick_actions', showQuick);
                                 }
                             }
                         },

@@ -319,7 +319,35 @@ class DragHandler {
             ifNode = this.state.getAssociatedIfForPython(node.id);
         }
 
-        if (!pythonNode || !ifNode) return;
+		// fallback: if dragging a disconnected if node, find nearest python candidate within snap zone
+		if (!pythonNode && node.type === 'if_node') {
+			let bestCandidate = null;
+			let bestScore = Infinity;
+			const pyHeight = 60;
+			const ifHeight = 60;
+			(this.state.nodes || []).forEach(n => {
+				if (!n || n.type !== 'python_file') return;
+				const desiredXLocal = n.x;
+				const desiredYLocal = n.y + pyHeight / 2 + GAP + ifHeight / 2;
+				const dxLocal = node.x - desiredXLocal;
+				const dyLocal = node.y - desiredYLocal;
+				const nearHorizLocal = Math.abs(dxLocal) <= SNAP_X_TOL;
+				const nearVertLocal = Math.abs(dyLocal) <= SNAP_Y_TOL;
+				if (nearHorizLocal && nearVertLocal) {
+					const score = Math.abs(dxLocal) + Math.abs(dyLocal);
+					if (score < bestScore) {
+						bestScore = score;
+						bestCandidate = n;
+					}
+				}
+			});
+			if (bestCandidate) {
+				pythonNode = bestCandidate;
+				ifNode = node;
+			}
+		}
+
+		if (!pythonNode || !ifNode) return;
 
         // compute desired position: if under python, centered, with spacing between node borders
         const pyHeight = 60;
@@ -333,14 +361,17 @@ class DragHandler {
         const nearHoriz = Math.abs(dx) <= SNAP_X_TOL;
         const nearVert = Math.abs(dy) <= SNAP_Y_TOL;
 
-        if (nearHoriz && nearVert) {
-            // snap if node to desired position and set magnet pair both ways
-            ifNode.x = desiredX;
-            ifNode.y = desiredY;
-            this.state.updateNode(ifNode.id, { x: ifNode.x, y: ifNode.y });
-            this.updateDraggedNodePosition(ifNode);
-            this.state.setMagnetPair(ifNode.id, pythonNode.id);
-        }
+		if (nearHoriz && nearVert) {
+			// snap if node to desired position and set magnet pair both ways
+			ifNode.x = desiredX;
+			ifNode.y = desiredY;
+			this.state.updateNode(ifNode.id, { x: ifNode.x, y: ifNode.y });
+			this.updateDraggedNodePosition(ifNode);
+			// clear any previous magnets to prevent stale pairings
+			this.state.clearMagnetForNode(pythonNode.id);
+			this.state.clearMagnetForNode(ifNode.id);
+			this.state.setMagnetPair(ifNode.id, pythonNode.id);
+		}
     }
 
     // helper to test if an if node is within snap zone of a given python node
@@ -359,41 +390,66 @@ class DragHandler {
         return nearHoriz && nearVert;
     }
 
-    updateSnapPreviewDuringDrag(node) {
-        // only preview when dragging an if node and it has a linked python node
-        if (node.type !== 'if_node') {
-            this.state.emit('clearSnapPreview');
-            return;
-        }
-        const pythonNode = this.state.getAssociatedPythonForIf(node.id);
-        if (!pythonNode) {
-            this.state.emit('clearSnapPreview');
-            return;
-        }
-        const GAP = 20;
-        const pyHeight = 60;
-        const ifHeight = 60;
-        const desiredX = pythonNode.x;
-        const desiredY = pythonNode.y + pyHeight / 2 + GAP + ifHeight / 2;
+	updateSnapPreviewDuringDrag(node) {
+		// only preview when dragging an if node
+		if (node.type !== 'if_node') {
+			this.state.emit('clearSnapPreview');
+			return;
+		}
+		let pythonNode = this.state.getAssociatedPythonForIf(node.id);
+		const GAP = 20;
+		const pyHeight = 60;
+		const ifHeight = 60;
+		const SNAP_X_TOL = 80;
+		const SNAP_Y_TOL = 100;
 
-        const SNAP_X_TOL = 80;
-        const SNAP_Y_TOL = 100;
-        const nearHoriz = Math.abs(node.x - desiredX) <= SNAP_X_TOL;
-        const nearVert = Math.abs(node.y - desiredY) <= SNAP_Y_TOL;
-        if (nearHoriz && nearVert) {
-            // preview should match the python node width and regular node height
-            const previewWidth = pythonNode.width || 120;
-            const previewHeight = 60;
-            this.state.emit('updateSnapPreview', {
-                x: desiredX,
-                y: desiredY,
-                width: previewWidth,
-                height: previewHeight
-            });
-        } else {
-            this.state.emit('clearSnapPreview');
-        }
-    }
+		// fallback: if no linked python, search nearest python within snap tolerances
+		let desiredX, desiredY;
+		if (!pythonNode) {
+			let bestCandidate = null;
+			let bestScore = Infinity;
+			(this.state.nodes || []).forEach(n => {
+				if (!n || n.type !== 'python_file') return;
+				const dxLocal = node.x - n.x;
+				const dyLocal = node.y - (n.y + pyHeight / 2 + GAP + ifHeight / 2);
+				const nearHorizLocal = Math.abs(dxLocal) <= SNAP_X_TOL;
+				const nearVertLocal = Math.abs(dyLocal) <= SNAP_Y_TOL;
+				if (nearHorizLocal && nearVertLocal) {
+					const score = Math.abs(dxLocal) + Math.abs(dyLocal);
+					if (score < bestScore) {
+						bestScore = score;
+						bestCandidate = n;
+					}
+				}
+			});
+			if (bestCandidate) {
+				pythonNode = bestCandidate;
+			}
+		}
+
+		if (!pythonNode) {
+			this.state.emit('clearSnapPreview');
+			return;
+		}
+
+		desiredX = pythonNode.x;
+		desiredY = pythonNode.y + pyHeight / 2 + GAP + ifHeight / 2;
+		const nearHoriz = Math.abs(node.x - desiredX) <= SNAP_X_TOL;
+		const nearVert = Math.abs(node.y - desiredY) <= SNAP_Y_TOL;
+		if (nearHoriz && nearVert) {
+			// preview should match the python node width and regular node height
+			const previewWidth = pythonNode.width || 120;
+			const previewHeight = 60;
+			this.state.emit('updateSnapPreview', {
+				x: desiredX,
+				y: desiredY,
+				width: previewWidth,
+				height: previewHeight
+			});
+		} else {
+			this.state.emit('clearSnapPreview');
+		}
+	}
 }
 
 window.DragHandler = DragHandler;

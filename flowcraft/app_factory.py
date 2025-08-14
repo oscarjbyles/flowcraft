@@ -112,6 +112,7 @@ def create_app(config: dict | None = None) -> Flask:
      from backend.routes.execution import execution_bp
      from backend.routes.analysis import analysis_bp
      from backend.routes.editors import editors_bp
+     from backend.routes.settings import settings_bp
 
      app.register_blueprint(ui_bp)
      app.register_blueprint(flowcharts_bp)
@@ -119,6 +120,7 @@ def create_app(config: dict | None = None) -> Flask:
      app.register_blueprint(execution_bp)
      app.register_blueprint(analysis_bp)
      app.register_blueprint(editors_bp)
+     app.register_blueprint(settings_bp)
 
      if config:
           app.config.update(config)
