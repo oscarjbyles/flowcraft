@@ -30,7 +30,7 @@ class Validation {
             errors.push('description must be a string');
         }
 
-        if (node.type && !['python_file', 'module', 'function', 'class', 'input_node', 'if_node', 'data_save'].includes(node.type)) {
+        if (node.type && !['python_file', 'module', 'function', 'class', 'input_node', 'if_node', 'data_save', 'call_ai'].includes(node.type)) {
             errors.push('invalid node type');
         }
 

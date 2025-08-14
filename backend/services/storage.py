@@ -383,3 +383,76 @@ def restore_backup_file(flowchart_name: str, timestamp: str) -> Dict[str, Any]:
             return json.load(f)
     except Exception:
         return {}
+
+
+# helpers for renaming flowcharts (file + related directories)
+def _sanitize_flowchart_basename(name: str) -> str:
+    """sanitize a flowchart base name (without .json) to safe characters.
+    comments: allow only alphanumeric, hyphen and underscore; convert spaces to underscores; lowercase.
+    """
+    try:
+        base = str(name or '').strip()
+        if base.endswith('.json'):
+            base = base[:-5]
+        # replace spaces then keep only allowed chars
+        base = base.replace(' ', '_').lower()
+        allowed = []
+        for ch in base:
+            if ch.isalnum() or ch in ('-', '_'):
+                allowed.append(ch)
+            else:
+                allowed.append('_')
+        # collapse multiple underscores
+        sanitized = ''.join(allowed)
+        while '__' in sanitized:
+            sanitized = sanitized.replace('__', '_')
+        return sanitized.strip('_') or 'untitled'
+    except Exception:
+        return 'untitled'
+
+
+def rename_flowchart(old_name: str, new_name: str) -> Dict[str, str]:
+    """rename a flowchart json file and its related history/backups folders.
+    returns a dict with old and new filenames.
+    """
+    # normalize filenames
+    if not old_name.endswith('.json'):
+        old_name = f"{old_name}.json"
+    new_base = _sanitize_flowchart_basename(new_name)
+    new_filename = f"{new_base}.json"
+
+    old_path = get_flowchart_path(old_name)
+    new_path = get_flowchart_path(new_filename)
+
+    if not os.path.exists(old_path):
+        raise FileNotFoundError('flowchart not found')
+    if os.path.exists(new_path):
+        raise FileExistsError('a flowchart with that name already exists')
+
+    # perform file rename
+    os.rename(old_path, new_path)
+
+    # rename history directory if present
+    try:
+        old_base = old_name[:-5]
+        history_root = _history_dir()
+        old_hist = os.path.join(history_root, old_base)
+        new_hist = os.path.join(history_root, new_base)
+        if os.path.exists(old_hist):
+            os.rename(old_hist, new_hist)
+    except Exception:
+        # ignore non-critical failures for folders
+        pass
+
+    # rename backups directory if present
+    try:
+        backups_root = _backups_root_dir()
+        old_bak = os.path.join(backups_root, old_base)
+        new_bak = os.path.join(backups_root, new_base)
+        if os.path.exists(old_bak):
+            os.rename(old_bak, new_bak)
+    except Exception:
+        # ignore non-critical failures for folders
+        pass
+
+    return { 'old_filename': old_name, 'new_filename': new_filename }

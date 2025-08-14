@@ -126,7 +126,13 @@ class StateManager extends BaseEmitter {
             y: nodeData.y || 0,
             name: nodeData.name || 'python node',
             type: nodeData.type || 'python_file',
-            pythonFile: nodeData.pythonFile || '',
+            // normalize any incoming pythonFile to remove leading nodes/ for persistence
+            pythonFile: (function(p){
+                const s = (p || '').toString().replace(/\\/g, '/');
+                if (!s) return '';
+                const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
+                return noPrefix;
+            })(nodeData.pythonFile),
             description: nodeData.description || '',
             groupId: nodeData.groupId || null,
             width: (nodeData.type === 'data_save')
@@ -168,6 +174,12 @@ class StateManager extends BaseEmitter {
             updates.width = Geometry.getNodeWidth(updates.name);
         }
 
+        // normalize pythonFile in updates to remove any leading 'nodes/' prefixes
+        if (typeof updates.pythonFile === 'string') {
+            const s = updates.pythonFile.replace(/\\/g, '/');
+            const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
+            updates.pythonFile = noPrefix;
+        }
         // console.log(`[StateManager] Updating node ${nodeId}:`, updates);
         Object.assign(node, updates);
         
@@ -758,6 +770,16 @@ class StateManager extends BaseEmitter {
             this.links = result.data.links || [];
             this.groups = result.data.groups || [];
             this.annotations = result.data.annotations || [];
+            // normalize any pythonFile paths to remove leading 'nodes/' on load
+            try {
+                this.nodes.forEach(n => {
+                    if (n && typeof n.pythonFile === 'string' && n.pythonFile) {
+                        const s = n.pythonFile.replace(/\\/g, '/');
+                        const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
+                        n.pythonFile = noPrefix;
+                    }
+                });
+            } catch(_) {}
             
             // update counters
             this.updateCounters();
@@ -891,6 +913,17 @@ class StateManager extends BaseEmitter {
         this.links = data.links || [];
         this.groups = data.groups || [];
         
+        // normalize pythonFile paths on import as well
+        try {
+            this.nodes.forEach(n => {
+                if (n && typeof n.pythonFile === 'string' && n.pythonFile) {
+                    const s = n.pythonFile.replace(/\\/g, '/');
+                    const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
+                    n.pythonFile = noPrefix ? `nodes/${noPrefix}` : '';
+                }
+            });
+        } catch(_) {}
+
         if (data.metadata) {
             this.nodeCounter = data.metadata.nodeCounter || 0;
             this.groupCounter = data.metadata.groupCounter || 0;

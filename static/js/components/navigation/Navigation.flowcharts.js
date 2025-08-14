@@ -60,6 +60,7 @@
                 const urlMgr = getUrlManager();
                 const selector = document.getElementById('flowchart_selector');
                 const dropdown = document.getElementById('flowchart_dropdown');
+                const arrow = selector ? selector.parentElement && selector.parentElement.querySelector('.dropdown_arrow') : null;
                 const createBtn = document.getElementById('create_flowchart_btn');
                 const createModal = document.getElementById('create_flowchart_modal');
                 const closeCreateModal = document.getElementById('close_create_modal');
@@ -74,10 +75,12 @@
                     if (selector) selector.value = currentDisplay || '';
                 } catch(_) {}
 
-                // dropdown open/close
+                // dropdown open/close (input and arrow)
                 if (selector) {
-                    selector.addEventListener('click', (e) => { e.stopPropagation(); if (dropdown) dropdown.classList.toggle('show'); });
-                    try { console.log('[nav-flow] selector click handler attached'); } catch(_) {}
+                    const toggle = (e) => { e.stopPropagation(); if (dropdown) dropdown.classList.toggle('show'); };
+                    selector.addEventListener('click', toggle);
+                    if (arrow) arrow.addEventListener('click', toggle);
+                    try { console.log('[nav-flow] selector/arrow click handler attached'); } catch(_) {}
                     document.addEventListener('click', (e) => {
                         const container = selector.closest('.dropdown_container');
                         if (container && !container.contains(e.target)) closeDropdown(dropdown);
@@ -91,79 +94,70 @@
                     const flows = Array.isArray(data.flowcharts) ? data.flowcharts : [];
                     renderDropdown(dropdown, flows);
                     // wire selection
-                    if (dropdown) {
-                        dropdown.querySelectorAll('.dropdown_item').forEach(item => {
-                            item.addEventListener('click', (e) => {
-                                if (e.target && e.target.closest && e.target.closest('.dropdown_delete_btn')) return;
-                                const filename = item.getAttribute('data-filename');
-                                const display = item.getAttribute('data-name');
-                                try { console.log('[nav-flow] select item', { filename, display }); } catch(_) {}
-                                try { urlMgr && urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
-                                if (selector) selector.value = display || '';
-                                closeDropdown(dropdown);
-                                // page routing rules: data page uses filename; others use display
-                                const path = window.location.pathname;
-                                if (path === '/data') {
-                                    const u = new URL('/data', window.location.origin);
-                                    const mode = urlMgr ? urlMgr.getMode() : 'build';
-                                    u.searchParams.set('flowchart_name', filename);
-                                    if (!u.searchParams.get('mode')) u.searchParams.set('mode', mode);
-                                    window.location.href = u.pathname + '?' + u.searchParams.toString();
-                                } else if (path === '/scripts') {
+                    if (dropdown && !dropdown._delegated) {
+                        // delegate clicks once for items and delete buttons
+                        dropdown.addEventListener('click', async (e) => {
+                            const deleteBtn = e.target && e.target.closest ? e.target.closest('.dropdown_delete_btn') : null;
+                            const item = e.target && e.target.closest ? e.target.closest('.dropdown_item') : null;
+                            if (!item) return;
+                            const filename = item.getAttribute('data-filename');
+                            const display = item.getAttribute('data-name');
+                            if (deleteBtn) {
+                                e.stopPropagation();
+                                if (!confirm(`are you sure you want to delete the flowchart "${display}"? this action cannot be undone.`)) return;
+                                try {
+                                    const resp = await fetch(`/api/flowcharts/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+                                    const json = await resp.json();
+                                    if (!resp.ok) { alert((json && json.message) || 'error deleting flowchart'); return; }
+                                    const fresh = await fetchFlowcharts();
+                                    renderDropdown(dropdown, Array.isArray(fresh.flowcharts) ? fresh.flowcharts : []);
+                                } catch(_) { alert('error deleting flowchart'); }
+                                return;
+                            }
+                            try { console.log('[nav-flow] select item', { filename, display }); } catch(_) {}
+                            try { urlMgr && urlMgr.setLastAccessedFlowchart(filename); } catch(_) {}
+                            if (selector) selector.value = display || '';
+                            closeDropdown(dropdown);
+                            const path = window.location.pathname;
+                            if (path === '/data') {
+                                const u = new URL('/data', window.location.origin);
+                                const mode = urlMgr ? urlMgr.getMode() : 'build';
+                                u.searchParams.set('flowchart_name', filename);
+                                u.searchParams.set('mode', mode);
+                                window.location.href = u.pathname + '?' + u.searchParams.toString();
+                            } else if (path === '/scripts') {
+                                const u = new URL('/scripts', window.location.origin);
+                                u.searchParams.set('flowchart', display);
+                                const mode = (new URLSearchParams(window.location.search)).get('mode') || 'build';
+                                u.searchParams.set('mode', mode);
+                                window.location.href = u.pathname + '?' + u.searchParams.toString();
+                            } else if (path === '/dashboard') {
+                                const u = new URL('/dashboard', window.location.origin);
+                                const mode = urlMgr ? urlMgr.getMode() : 'build';
+                                u.searchParams.set('flowchart', display);
+                                u.searchParams.set('mode', mode);
+                                window.location.href = u.pathname + '?' + u.searchParams.toString();
+                            } else {
+                                if (app && app.state && app.state.storage && typeof app.state.storage.setCurrentFlowchart === 'function') {
+                                    try {
+                                        console.log('[nav-flow] builder select: updating app state');
+                                        app.state.save(true).then(() => {
+                                            app.state.storage.setCurrentFlowchart(filename);
+                                            return app.state.load();
+                                        }).then(() => {
+                                            try { urlMgr && urlMgr.updateFlowchartInURL(filename); } catch(_) {}
+                                        }).catch(() => {});
+                                    } catch(_) {}
+                                } else {
                                     const u = new URL('/', window.location.origin);
                                     u.searchParams.set('flowchart', display);
                                     const mode = (new URLSearchParams(window.location.search)).get('mode') || 'build';
                                     u.searchParams.set('mode', mode);
                                     window.location.href = u.pathname + '?' + u.searchParams.toString();
-                                } else if (path === '/dashboard') {
-                                    const u = new URL('/dashboard', window.location.origin);
-                                    const mode = urlMgr ? urlMgr.getMode() : 'build';
-                                    u.searchParams.set('flowchart', display);
-                                    if (!u.searchParams.get('mode')) u.searchParams.set('mode', mode);
-                                    window.location.href = u.pathname + '?' + u.searchParams.toString();
-                                } else {
-                                    // builder: update url and reload state via app if present, else navigate
-                                    if (app && app.state && app.state.storage && typeof app.state.storage.setCurrentFlowchart === 'function') {
-                                        try {
-                                            console.log('[nav-flow] builder select: updating app state');
-                                            // save current flowchart first, then switch and load new one to avoid wiping it with empty state
-                                            app.state.save(true).then(() => {
-                                                app.state.storage.setCurrentFlowchart(filename);
-                                                return app.state.load();
-                                            }).then(() => {
-                                                try { urlMgr && urlMgr.updateFlowchartInURL(filename); } catch(_) {}
-                                            }).catch(() => {});
-                                        } catch(_) {}
-                                    } else {
-                                        try { console.log('[nav-flow] builder select: no app; navigating'); } catch(_) {}
-                                        const u = new URL('/', window.location.origin);
-                                        u.searchParams.set('flowchart', display);
-                                        const mode = (new URLSearchParams(window.location.search)).get('mode') || 'build';
-                                        u.searchParams.set('mode', mode);
-                                        window.location.href = u.pathname + '?' + u.searchParams.toString();
-                                    }
                                 }
-                            });
+                            }
                         });
-                        // delete behavior: for non-builder pages do in-page; for dashboard send to builder as before
-                        dropdown.querySelectorAll('.dropdown_delete_btn').forEach(btn => {
-                            btn.addEventListener('click', async (e) => {
-                                e.stopPropagation();
-                                const filename = btn.getAttribute('data-filename');
-                                const name = btn.getAttribute('data-name');
-                                try { console.log('[nav-flow] delete click', { filename, name }); } catch(_) {}
-                                if (!confirm(`are you sure you want to delete the flowchart "${name}"? this action cannot be undone.`)) return;
-                                try {
-                                    const resp = await fetch(`/api/flowcharts/${encodeURIComponent(filename)}`, { method: 'DELETE' });
-                                    const json = await resp.json();
-                                    if (!resp.ok) { alert(json && json.message || 'error deleting flowchart'); return; }
-                                    // refresh list
-                                    const fresh = await fetchFlowcharts();
-                                    const flows2 = Array.isArray(fresh.flowcharts) ? fresh.flowcharts : [];
-                                    renderDropdown(dropdown, flows2);
-                                } catch(_) { alert('error deleting flowchart'); }
-                            });
-                        });
+                        dropdown._delegated = true;
                     }
                 } catch(_) {}
 

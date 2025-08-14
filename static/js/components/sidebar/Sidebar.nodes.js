@@ -2,6 +2,11 @@
 (function(){
     if (!window.Sidebar) return;
 
+    // normalize a python path for api calls: strip any leading 'nodes/' segments
+    function normalizePythonPathForApi(path) {
+        try { return (path || '').replace(/\\/g, '/').replace(/^(?:nodes\/)*/i, ''); } catch (_) { return path || ''; }
+    }
+
     Sidebar.prototype.populateNodeForm = function(node) {
         // defer visibility decisions to the centralized content engine
         if (this.contentEngine) {
@@ -88,7 +93,14 @@
         const pythonFileInput = document.getElementById('python_file');
         const updates = {
             name: document.getElementById('node_name').value.trim(),
-            pythonFile: pythonFileInput.dataset.fullPath || pythonFileInput.value.trim()
+            // persist without the leading nodes/ prefix; backend will resolve under project root
+            pythonFile: (function(inp){
+                const raw = (inp && (inp.dataset.fullPath || inp.value) || '').trim();
+                const normalized = raw.replace(/\\/g, '/');
+                if (!normalized) return '';
+                const noPrefix = normalized.replace(/^(?:nodes\/)*/i, '');
+                return noPrefix;
+            })(pythonFileInput)
         };
         if (!updates.name) { this.showError('node name is required'); return; }
         if (updates.pythonFile && !Validation.validatePythonFilePath(updates.pythonFile)) { this.showError('invalid python file path'); return; }
@@ -191,7 +203,7 @@
         try {
             const response = await fetch('/api/analyze-python-function', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ python_file: node.pythonFile })
+                body: JSON.stringify({ python_file: normalizePythonPathForApi(node.pythonFile) })
             });
             const result = await response.json();
             if (result.success) {
@@ -369,7 +381,7 @@
         try {
             const response = await fetch('/api/analyze-python-function', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ python_file: node.pythonFile })
+                body: JSON.stringify({ python_file: normalizePythonPathForApi(node.pythonFile) })
             });
             const result = await response.json();
             if (reqId !== this._inputNodeInputsReqId) return;
@@ -464,7 +476,7 @@
             }
             const resp = await fetch('/api/analyze-python-function', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ python_file: pythonNode.pythonFile })
+                body: JSON.stringify({ python_file: normalizePythonPathForApi(pythonNode.pythonFile) })
             });
             const data = await resp.json();
             if (reqId !== this._dataSaveVarReqId) return;
@@ -512,6 +524,7 @@
     // data save: name data removed from ui; no initialization needed
 
     Sidebar.prototype.showArgumentsError = function(message) {
+        const V = window.SidebarVisibility;
         if (V) V.hide('arguments_loading'); else document.getElementById('arguments_loading').style.display = 'none';
         document.getElementById('arguments_content').innerHTML = `
             <div style="text-align: center; padding: 20px; color: #f44336;">
@@ -523,6 +536,7 @@
     };
 
     Sidebar.prototype.showReturnsError = function(message) {
+        const V = window.SidebarVisibility;
         if (V) V.hide('returns_loading'); else document.getElementById('returns_loading').style.display = 'none';
         document.getElementById('returns_content').innerHTML = `
             <div style="text-align: center; padding: 20px; color: #f44336;">

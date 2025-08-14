@@ -1,0 +1,338 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754924938625.3826,
+      "name": "node 1",
+      "pythonFile": "nodes/linear_test/node1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -137.19602966308594,
+      "y": -818.501708984375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754924939141.8098,
+      "name": "python node",
+      "pythonFile": "nodes/linear_test/node2.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -146.77146911621094,
+      "y": -613.5399169921875
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754924939591.0085,
+      "name": "python node",
+      "pythonFile": "nodes/linear_test/node3.py",
+      "type": "python_file",
+      "width": 120,
+      "x": -155.64644622802734,
+      "y": -422.5850524902344
+    },
+    {
+      "description": "input parameters",
+      "groupId": null,
+      "id": 1754925101933.1995,
+      "inputValues": {
+        "input_value": "12"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "input_value"
+      ],
+      "pythonFile": "nodes/linear_test/node1.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1754924938625.3826,
+      "type": "input_node",
+      "width": 300,
+      "x": -460.2354278564453,
+      "y": -825.454345703125
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 25,
+          "name": "argument1",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754928697641.7373,
+      "name": "big_array",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 120,
+      "x": 78.34003962044513,
+      "y": -649.1178086173426
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 10,
+          "name": "input_value",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754928835424.4587,
+      "name": "input value",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 120,
+      "x": 80.36413794573635,
+      "y": -819.1422168902419
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 28,
+          "name": "aSTING",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754928916757.5627,
+      "name": "aSTING",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 112.74974292252182,
+      "y": -566.1296483148723
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 5,
+          "name": "argument1",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754929012115.194,
+      "name": "argument1",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 85.66666412353516,
+      "x": 50.00262463201066,
+      "y": -456.8282068448941
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 12,
+          "name": "var1",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754930304311.069,
+      "name": "var1",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 5.472414637541194,
+      "y": -361.69547795030553
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 12,
+          "name": "var2",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754930305709.6292,
+      "name": "var2",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": -56.26265411320244,
+      "y": -304.00861042911885
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 12,
+          "name": "var3",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754930307192.5747,
+      "name": "var3",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": -185.80509345902513,
+      "y": -231.1409882970936
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 12,
+          "name": "var4",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754930309267.0178,
+      "name": "var4",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": -340.64879048957886,
+      "y": -248.34584352271068
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 12,
+          "name": "value2",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754930440224.9797,
+      "name": "value2",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 82.38823799912342,
+      "y": -736.1540916843243
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754938399534.4658,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": -326.4024963378906,
+      "y": -524.2473754882812
+    },
+    {
+      "id": 1755161542544.5525,
+      "x": -604.4058837890625,
+      "y": -402.9154357910156,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "nodes/nodes/1.py",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755161580187.932,
+      "x": -538.4389038085938,
+      "y": -551.3409423828125,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "source": 1754924938625.3826,
+      "target": 1754924939141.8098
+    },
+    {
+      "selectable": false,
+      "source": 1754925101933.1995,
+      "style": "dashed",
+      "target": 1754924938625.3826,
+      "type": "input_connection"
+    },
+    {
+      "selectable": false,
+      "source": 1754924939141.8098,
+      "style": "dashed",
+      "target": 1754928697641.7373
+    },
+    {
+      "selectable": false,
+      "source": 1754924938625.3826,
+      "style": "dashed",
+      "target": 1754928835424.4587
+    },
+    {
+      "selectable": false,
+      "source": 1754924939141.8098,
+      "style": "dashed",
+      "target": 1754928916757.5627
+    },
+    {
+      "selectable": false,
+      "source": 1754924939591.0085,
+      "style": "dashed",
+      "target": 1754929012115.194
+    },
+    {
+      "selectable": false,
+      "source": 1754924939591.0085,
+      "style": "dashed",
+      "target": 1754930304311.069
+    },
+    {
+      "selectable": false,
+      "source": 1754924939591.0085,
+      "style": "dashed",
+      "target": 1754930305709.6292
+    },
+    {
+      "selectable": false,
+      "source": 1754924939591.0085,
+      "style": "dashed",
+      "target": 1754930307192.5747
+    },
+    {
+      "selectable": false,
+      "source": 1754924939591.0085,
+      "style": "dashed",
+      "target": 1754930309267.0178
+    },
+    {
+      "selectable": false,
+      "source": 1754924938625.3826,
+      "style": "dashed",
+      "target": 1754930440224.9797
+    },
+    {
+      "source": 1754924939141.8098,
+      "target": 1754938399534.4658
+    },
+    {
+      "source": 1754938399534.4658,
+      "target": 1754924939591.0085
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "force": false
+}

@@ -84,6 +84,37 @@
             })();
         }
 
+        // flowchart file path display
+        const flowPathEl = document.getElementById('flowchart_file_path');
+        const flowCopyBtn = document.getElementById('copy_flowchart_file_btn');
+        const refreshFlowPath = async () => {
+            if (!flowPathEl) return;
+            try {
+                const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
+                if (!current) { flowPathEl.textContent = '-'; return; }
+                const list = await this.state.storage.listFlowcharts();
+                if (list && list.success && Array.isArray(list.flowcharts)) {
+                    const match = list.flowcharts.find(f => f.filename === current);
+                    flowPathEl.textContent = (match && match.path) ? match.path : '-';
+                } else {
+                    flowPathEl.textContent = 'failed to load';
+                }
+            } catch (_) {
+                flowPathEl.textContent = 'error loading path';
+            }
+        };
+        refreshFlowPath();
+        if (flowCopyBtn && flowPathEl) {
+            flowCopyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(flowPathEl.textContent || '');
+                    this.showSuccess('copied');
+                } catch (_) {
+                    this.showError('failed to copy');
+                }
+            });
+        }
+
         // render backups table
         this.initializeBackupsTable();
 
@@ -92,6 +123,7 @@
         if (settingsBtnEl) {
             settingsBtnEl.addEventListener('click', () => {
                 try { this.loadAndRenderBackups && this.loadAndRenderBackups(); } catch (_) {}
+                try { refreshFlowPath && refreshFlowPath(); } catch (_) {}
             });
         }
 
@@ -121,6 +153,37 @@
                 this.closeEditorDropdown();
             }
         });
+
+        // wire flowchart rename controls
+        const renameInput = document.getElementById('rename_flowchart_input');
+        const renameBtn = document.getElementById('rename_flowchart_btn');
+        if (renameBtn && renameInput) {
+            renameBtn.addEventListener('click', async () => {
+                const raw = (renameInput.value || '').trim();
+                if (!raw) { this.showError('enter a new name'); return; }
+                const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
+                if (!current) { this.showError('no flowchart selected'); return; }
+                try {
+                    const result = await this.state.storage.renameFlowchart(current, raw);
+                    if (result.success) {
+                        const newFilename = result.newFilename;
+                        const display = newFilename.replace('.json','');
+                        this.state.storage.setCurrentFlowchart(newFilename);
+                        // reload flowchart state and refresh lists
+                        try { await this.state.load(newFilename); } catch (_) {}
+                        try { await this.loadFlowcharts && this.loadFlowcharts(); } catch (_) {}
+                        this.setCurrentFlowchart(display);
+                        try { this.urlManager.updateFlowchartInURL(newFilename); } catch (_) {}
+                        this.showSuccess('flowchart renamed');
+                        try { refreshFlowPath && refreshFlowPath(); } catch (_) {}
+                    } else {
+                        this.showError(result.message || 'failed to rename');
+                    }
+                } catch (err) {
+                    this.showError('error renaming flowchart');
+                }
+            });
+        }
     };
 
     Sidebar.prototype.fetchInstalledEditors = async function() {

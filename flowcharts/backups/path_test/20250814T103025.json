@@ -1,0 +1,34 @@
+{
+  "nodes": [
+    {
+      "id": 1755163693183.1848,
+      "x": 343.87696838378906,
+      "y": 81.30310821533203,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "PYTHON_FILES/1.py",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755163768624.292,
+      "x": 336.94085693359375,
+      "y": 310.1952209472656,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "PYTHON_FILES/2.py",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "source": 1755163693183.1848,
+      "target": 1755163768624.292
+    }
+  ],
+  "groups": [],
+  "annotations": []
+}

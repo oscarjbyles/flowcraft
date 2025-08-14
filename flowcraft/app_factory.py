@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask
 from flask_cors import CORS
 
@@ -84,6 +85,25 @@ def create_app(config: dict | None = None) -> Flask:
           FLOWCRAFT_HISTORY_DIR=history_dir,
           FLOWCRAFT_PROJECT_ROOT=project_root_conf,
      )
+
+     # ensure at least one flowchart exists on app load
+     try:
+          # comments: create flowcharts dir and a default json if none exist yet
+          os.makedirs(flowcharts_dir, exist_ok=True)
+          has_json = any(fn.lower().endswith('.json') for fn in os.listdir(flowcharts_dir))
+          if not has_json:
+               default_path = os.path.join(flowcharts_dir, 'default.json')
+               if not os.path.exists(default_path):
+                    with open(default_path, 'w', encoding='utf-8') as f:
+                         json.dump({
+                              'nodes': [],
+                              'links': [],
+                              'groups': [],
+                              'executions': []
+                         }, f, indent=2)
+     except Exception:
+          # comments: never block app startup on init; downstream routes can handle absence
+          pass
 
      # register existing blueprints from current codebase
      from backend.routes.ui import ui_bp

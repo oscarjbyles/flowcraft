@@ -68,15 +68,20 @@
                     if (selectedNodes.length === 1) {
                         const nodeId = selectedNodes[0];
                         const relDir = (miniSelectedPath?.value || '').trim();
+                        // store relative to project root (strip leading nodes/ in display, keep nodes/ in full path)
                         const relDisplay = (relDir ? `${relDir}/` : '') + fileName;
-                        const fullPath = `nodes/${relDisplay}`;
+                        const noPrefix = relDisplay.replace(/^(?:nodes\/)*/i, '');
+                        const fullPath = noPrefix;
                         this.state.updateNode(nodeId, { pythonFile: fullPath });
                         const input = document.getElementById('python_file');
                         if (input) {
-                            input.value = relDisplay;
+                            input.value = noPrefix;
                             input.dataset.fullPath = fullPath;
                         }
                         this.showSuccess(`created script: ${fileName}`);
+                        // save immediately after assignment
+                        try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
+                        try { await this.state.save(false); } catch (_) {}
                     }
                     createPyModal.classList.remove('show');
                 } catch (err) {

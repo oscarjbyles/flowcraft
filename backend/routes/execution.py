@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 import os
 import subprocess
 import sys
@@ -40,10 +40,12 @@ def run_flowchart():
             return jsonify({"status": "error", "message": f"node {node.get('name', node_id)} has no python file assigned", "results": results, "failed_at_index": i}), 400
         try:
             normalized_python_file = python_file.replace('\\', '/')
-            if normalized_python_file.startswith('nodes/'):
-                file_path = os.path.normpath(python_file)
-            else:
-                file_path = os.path.join('nodes', python_file)
+            import re as _re
+            normalized_python_file = _re.sub(r'^(?:nodes/)+', 'nodes/', normalized_python_file)
+            project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+            # resolve relative to project root regardless of prefix
+            rel = _re.sub(r'^(?:nodes/)+', '', normalized_python_file)
+            file_path = os.path.normpath(os.path.join(project_root, rel))
             if not os.path.exists(file_path):
                 return jsonify({"status": "error", "message": f"python file not found: {python_file}", "results": results, "failed_at_index": i}), 404
             result = subprocess.run([sys.executable, file_path], capture_output=True, text=True, timeout=30, cwd=os.getcwd())
@@ -77,10 +79,11 @@ def execute_node():
     if not node_id or not python_file:
         return jsonify({'success': False, 'error': 'node_id and python_file are required'}), 400
     normalized_python_file = python_file.replace('\\', '/')
-    if normalized_python_file.startswith('nodes/'):
-        file_path = os.path.normpath(python_file)
-    else:
-        file_path = os.path.join('nodes', python_file)
+    import re as _re
+    normalized_python_file = _re.sub(r'^(?:nodes/)+', 'nodes/', normalized_python_file)
+    project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+    rel = _re.sub(r'^(?:nodes/)+', '', normalized_python_file)
+    file_path = os.path.normpath(os.path.join(project_root, rel))
     if not os.path.exists(file_path):
         return jsonify({'success': False, 'error': f'python file not found: {python_file}'}), 404
     try:
@@ -101,10 +104,11 @@ def execute_node_stream():
     if not node_id or not python_file:
         return jsonify({'success': False, 'error': 'node_id and python_file are required'}), 400
     normalized_python_file = python_file.replace('\\', '/')
-    if normalized_python_file.startswith('nodes/'):
-        file_path = os.path.normpath(python_file)
-    else:
-        file_path = os.path.join('nodes', python_file)
+    import re as _re
+    normalized_python_file = _re.sub(r'^(?:nodes/)+', 'nodes/', normalized_python_file)
+    project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+    rel = _re.sub(r'^(?:nodes/)+', '', normalized_python_file)
+    file_path = os.path.normpath(os.path.join(project_root, rel))
     if not os.path.exists(file_path):
         return jsonify({'success': False, 'error': f'python file not found: {python_file}'}), 404
 

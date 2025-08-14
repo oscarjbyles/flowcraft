@@ -77,12 +77,15 @@
         const closeModal = () => { modal.classList.remove('show'); };
         cancelBtn.onclick = closeModal;
         if (closeBtn) closeBtn.onclick = closeModal;
-        confirmBtn.onclick = () => {
+        confirmBtn.onclick = async () => {
             if (!selectedRelFile) { this.showError('select a python file'); return; }
-            input.value = selectedRelFile;
-            input.dataset.fullPath = `nodes/${selectedRelFile}`;
+            // normalize to single nodes/ prefix for persistence; display without prefix
+            const noPrefix = selectedRelFile.replace(/^(?:nodes\/)*/i, '');
+            input.value = noPrefix;
+            input.dataset.fullPath = noPrefix;
             closeModal();
-            this.debounceNodeSave();
+            try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
+            try { await this.state.save(false); } catch (_) {}
         };
         modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
         input.addEventListener('click', (e) => {
@@ -195,12 +198,15 @@
         });
     };
 
-    Sidebar.prototype.selectFile = function(path, displayPath) {
+    Sidebar.prototype.selectFile = async function(path, displayPath) {
         const input = document.getElementById('python_file');
-        input.value = displayPath;
-        input.dataset.fullPath = path;
+        // normalize to project-root-relative
+        const noPrefix = (displayPath || '').replace(/^(?:nodes\/)*/i, '');
+        input.value = noPrefix;
+        input.dataset.fullPath = path.replace(/^(?:nodes\/)*/i, '');
         this.closeDropdown();
-        this.debounceNodeSave();
+        try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
+        try { await this.state.save(false); } catch (_) {}
     };
 
     Sidebar.prototype.showDropdownError = function(message) {

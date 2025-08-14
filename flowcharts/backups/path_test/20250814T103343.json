@@ -1,0 +1,56 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755163693183.1848,
+      "name": "python node",
+      "pythonFile": "nodes/PYTHON_FILES/1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 343.87696838378906,
+      "y": 81.30310821533203
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755163768624.292,
+      "name": "python node",
+      "pythonFile": "nodes/PYTHON_FILES/2.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 336.94085693359375,
+      "y": 310.1952209472656
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755163892831.5063,
+      "name": "call_ai",
+      "pythonFile": "",
+      "type": "call_ai",
+      "width": 120,
+      "x": 490.7591742930538,
+      "y": 167.71593730978293
+    },
+    {
+      "id": 1755164013902.6855,
+      "x": 88.94561767578125,
+      "y": 183.29251098632812,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "PYTHON_FILES/2.py",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "source": 1755163693183.1848,
+      "target": 1755163768624.292
+    }
+  ],
+  "groups": [],
+  "annotations": []
+}

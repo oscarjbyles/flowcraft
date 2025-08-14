@@ -1,0 +1,178 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": 1754694400800.869,
+      "id": 1754653519066.0964,
+      "name": "square input",
+      "pythonFile": "nodes/test2/node1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 347.2919006347656,
+      "y": -741.5102958679199
+    },
+    {
+      "description": "",
+      "groupId": 1754694400800.869,
+      "id": 1754654709071.8608,
+      "magnet_partner_id": 1754904147880.503,
+      "name": "input + sleep",
+      "pythonFile": "nodes/test2/node4.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 172.51415252685547,
+      "y": -847.2426147460938
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754693832673.4893,
+      "name": "nothing1",
+      "pythonFile": "nodes/test2/nothing1.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 155.96807861328125,
+      "y": -490.8939514160156
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754732651225.0054,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 183.34535217285156,
+      "y": -326.4619140625
+    },
+    {
+      "dataName": "valuea",
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 9,
+          "name": "valueA",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "groupId": null,
+      "id": 1754867312491.0635,
+      "name": "valueA",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 364.41533549901936,
+      "y": -843.4198437359335
+    },
+    {
+      "description": "input parameters",
+      "groupId": 1754694400800.869,
+      "id": 1754903834540.247,
+      "inputValues": {
+        "valueA": "10"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "valueA"
+      ],
+      "pythonFile": "nodes/test2/node4.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1754654709071.8608,
+      "type": "input_node",
+      "width": 300,
+      "x": -94.47918701171875,
+      "y": -847.2426147460938
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754904147880.503,
+      "magnet_partner_id": 1754654709071.8608,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 172.51415252685547,
+      "y": -767.2426147460938
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1754908819721.7458,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": -120.53990173339844,
+      "y": -584.7970581054688
+    }
+  ],
+  "links": [
+    {
+      "source": 1754654709071.8608,
+      "target": 1754653519066.0964
+    },
+    {
+      "source": 1754653519066.0964,
+      "target": 1754693832673.4893
+    },
+    {
+      "source": 1754693832673.4893,
+      "target": 1754732651225.0054
+    },
+    {
+      "selectable": false,
+      "source": 1754654709071.8608,
+      "style": "dashed",
+      "target": 1754867312491.0635
+    },
+    {
+      "selectable": false,
+      "source": 1754903834540.247,
+      "style": "dashed",
+      "target": 1754654709071.8608,
+      "type": "input_connection"
+    },
+    {
+      "selectable": false,
+      "source": 1754654709071.8608,
+      "target": 1754904147880.503
+    },
+    {
+      "runtime_condition": null,
+      "runtime_details": null,
+      "source": 1754904147880.503,
+      "target": 1754908819721.7458
+    }
+  ],
+  "groups": [
+    {
+      "description": "",
+      "id": 1754694400800.869,
+      "name": "group name",
+      "nodeIds": [
+        1754653519066.0964,
+        1754654709071.8608
+      ]
+    }
+  ],
+  "annotations": []
+}  "executions": [
+    {
+      "execution_id": "d63372b3-eb5b-4701-9659-7fd96a2bdf68",
+      "timestamp": "2025-08-14T10:04:15.690061",
+      "flowchart_name": "simple",
+      "status": "failed",
+      "total_nodes": 6,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 33.3,
+      "completed_percentage": 50.0,
+      "failed_node": "nothing1",
+      "elapsed_ms": 1155,
+      "execution_time": "1.155s",
+      "error_snippet": "missing required function arguments: valueA"
+    }
+  ]
+}

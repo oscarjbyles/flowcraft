@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 import os
+import re
 
 from ..services.analysis import PythonVariableAnalyzer, extract_returns_from_statement
 
@@ -27,15 +28,13 @@ def analyze_connection():
     if not source_file or not target_file:
         return jsonify({'status': 'error', 'message': 'both nodes must have python files assigned'}), 400
     normalized_source = source_file.replace('\\', '/')
-    if normalized_source.startswith('nodes/'):
-        source_path = os.path.normpath(source_file)
-    else:
-        source_path = os.path.join('nodes', source_file)
     normalized_target = target_file.replace('\\', '/')
-    if normalized_target.startswith('nodes/'):
-        target_path = os.path.normpath(target_file)
-    else:
-        target_path = os.path.join('nodes', target_file)
+    project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+    # resolve both source and target relative to project root, stripping any leading 'nodes/'
+    src_rel = re.sub(r'^(?:nodes/)+', '', normalized_source)
+    tgt_rel = re.sub(r'^(?:nodes/)+', '', normalized_target)
+    source_path = os.path.normpath(os.path.join(project_root, src_rel))
+    target_path = os.path.normpath(os.path.join(project_root, tgt_rel))
     if not os.path.exists(source_path) or not os.path.exists(target_path):
         return jsonify({'status': 'error', 'message': 'one or both python files not found'}), 404
     try:
@@ -54,10 +53,12 @@ def analyze_python_function():
     if not python_file:
         return jsonify({'success': False, 'error': 'python_file is required'}), 400
     normalized_python_file = python_file.replace('\\', '/')
-    if normalized_python_file.startswith('nodes/'):
-        file_path = os.path.normpath(python_file)
-    else:
-        file_path = os.path.join('nodes', python_file)
+    # collapse any repeated leading 'nodes/' segments for robustness
+    normalized_python_file = re.sub(r'^(?:nodes/)+', 'nodes/', normalized_python_file)
+    project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+    # resolve relative to project root regardless of prefix
+    rel = re.sub(r'^(?:nodes/)+', '', normalized_python_file)
+    file_path = os.path.normpath(os.path.join(project_root, rel))
     if not os.path.exists(file_path):
         return jsonify({'success': False, 'error': f'python file not found: {python_file}'}), 404
     try:

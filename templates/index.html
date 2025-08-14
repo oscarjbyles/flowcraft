@@ -15,8 +15,6 @@
                         <span class="material-icons">brush</span>
                         Clear
                     </button>
-                    <!-- spacing block at bottom of settings -->
-                    <div id="settings_bottom_spacer" style="width: 100px; height: 75px;"></div>
                 </div>
             </div>
 
@@ -74,11 +72,15 @@
                         <div style="width: 0px; height: 8px;"></div>
                         <button class="btn btn_secondary" id="python_node_btn" title="add python node">
                             <span class="material-icons">code</span>
-                            Python Node
+                            Python
                         </button>
                         <button class="btn btn_secondary" id="if_condition_btn" title="add if condition">
                             <span class="material-icons">alt_route</span>
                             IF Condition
+                        </button>
+                        <button class="btn btn_secondary" id="ai_btn" title="ai">
+                            <span class="material-icons">smart_toy</span>
+                            AI
                         </button>
                     </div>
                     <button class="btn btn_primary build_toolbar_toggle" id="build_toolbar_toggle" title="add" data-action="toggle-build-toolbar">
@@ -128,6 +130,40 @@
                             </div>
                         </div>
                         <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">used when opening files from the app</div>
+                    </div>
+
+                    <h2 class="settings_section_title">flowchart settings</h2>
+
+                    <div class="form_group">
+                        <label class="form_label">flowchart file path</label>
+                        <div class="data_save_details_card">
+                            <div class="u_flex u_items_center u_gap_12">
+                                <span class="material-icons u_icon_18 u_opacity_07">description</span>
+                                <code id="flowchart_file_path" class="u_opacity_09">loading...</code>
+                                <div class="u_flex_grow_1"></div>
+                                <button class="btn btn_secondary" id="copy_flowchart_file_btn" title="copy path">
+                                    <span class="material-icons">content_copy</span>
+                                    copy
+                                </button>
+                            </div>
+                            <div class="form_help_text">absolute path to the current flowchart json file</div>
+                        </div>
+                    </div>
+
+                    <div class="form_group">
+                        <label class="form_label">rename flowchart</label>
+                        <div class="data_save_details_card">
+                            <div class="u_flex u_items_center u_gap_12">
+                                <span class="material-icons u_icon_18 u_opacity_07">drive_file_rename_outline</span>
+                                <input type="text" id="rename_flowchart_input" class="form_input" placeholder="enter new name" style="max-width: 260px;">
+                                <div class="u_flex_grow_1"></div>
+                                <button class="btn btn_secondary" id="rename_flowchart_btn" title="rename">
+                                    <span class="material-icons">edit</span>
+                                    rename
+                                </button>
+                            </div>
+                            <div class="form_help_text">renames the current flowchart file and its history/backups folders.</div>
+                        </div>
                     </div>
 
                     <h2 class="settings_section_title">manage</h2>
@@ -183,6 +219,8 @@
                             </div>
                         </div>
                     </div>
+                    <!-- spacing block at bottom of settings -->
+                    <div id="settings_bottom_spacer" style="width: 100px; height: 35px;"></div>
                 </div>
             </div>
 

@@ -12,6 +12,7 @@ from ..services.storage import (
     list_backups,
     delete_backup_file,
     restore_backup_file,
+    rename_flowchart as storage_rename_flowchart,
 )
 
 flowcharts_bp = Blueprint('flowcharts', __name__, url_prefix='/api')
@@ -193,3 +194,21 @@ def restore_backup(timestamp):
     except Exception as e:
         return jsonify({"status": "error", "message": f"failed to restore backup: {str(e)}"}), 500
 
+
+
+@flowcharts_bp.route('/flowcharts/rename', methods=['POST'])
+def rename_flowchart():
+    try:
+        data = request.get_json(silent=True) or {}
+        old_name = (data.get('old_name') or data.get('current') or data.get('current_name') or '').strip()
+        new_name = (data.get('new_name') or data.get('name') or '').strip()
+        if not old_name or not new_name:
+            return jsonify({"status": "error", "message": "old_name and new_name are required"}), 400
+        result = storage_rename_flowchart(old_name, new_name)
+        return jsonify({"status": "success", **result})
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "flowchart not found"}), 404
+    except FileExistsError:
+        return jsonify({"status": "error", "message": "a flowchart with that name already exists"}), 409
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"failed to rename flowchart: {str(e)}"}), 500

@@ -217,6 +217,27 @@ class NodeRenderer {
                     .style('fill', '#091516')
                     .style('stroke-dasharray', '5,5')
                     .style('stroke-width', '2');
+            } else if (d.type === 'call_ai') {
+                // custom styling for call_ai: same radius, double 1px border, background #031c40
+                const rect = d3.select(this);
+                rect.style('fill', '#031c40');
+                rect.style('stroke', '#031c40');
+                rect.style('stroke-width', '1');
+                // add inner stroke inset by 3px (gap visible), matching radius reduced by 3
+                const width = d.width || Geometry.getNodeWidth(d.name || 'ai node');
+                const height = Geometry.getNodeHeight(d);
+                const inset = 3;
+                nodeEnter.append('rect')
+                    .attr('class', 'node call_ai_inner')
+                    .attr('x', -width/2 + inset)
+                    .attr('y', -height/2 + inset)
+                    .attr('width', width - inset * 2)
+                    .attr('height', height - inset * 2)
+                    .attr('rx', Math.max(0, 8 - inset))
+                    .style('fill', 'none')
+                    .style('pointer-events', 'none')
+                    .style('stroke', '#123a70')
+                    .style('stroke-width', '1');
             } else if (d.type === 'data_save') {
                 // keep orange fill and solid stroke for data_save
                 d3.select(this)
@@ -434,6 +455,24 @@ class NodeRenderer {
                         .attr('x', -d.width/2)
                         .attr('height', nodeHeight)
                         .attr('y', -nodeHeight/2);
+                    // refresh inner border for call_ai
+                    if (d.type === 'call_ai') {
+                        const width = d.width || Geometry.getNodeWidth(d.name || 'ai node');
+                        // remove any previous inner rects to avoid duplicates
+                        nodeSelection.selectAll('rect.call_ai_inner').remove();
+                        const inset = 3;
+                        nodeSelection.append('rect')
+                            .attr('class', 'node call_ai_inner')
+                            .attr('x', -width/2 + inset)
+                            .attr('y', -nodeHeight/2 + inset)
+                            .attr('width', width - inset * 2)
+                            .attr('height', nodeHeight - inset * 2)
+                            .attr('rx', Math.max(0, 8 - inset))
+                            .style('fill', 'none')
+                            .style('pointer-events', 'none')
+                            .style('stroke', '#123a70')
+                            .style('stroke-width', '1');
+                    }
                 }
 
                 // maintain special styling for if nodes
@@ -443,6 +482,12 @@ class NodeRenderer {
                         .style('fill', '#091516')
                         .style('stroke-dasharray', '5,5')
                         .style('stroke-width', '2');
+                } else if (d.type === 'call_ai') {
+                    nodeSelection.select('.node')
+                        .style('fill', '#031c40')
+                        .style('stroke', '#031c40')
+                        .style('stroke-width', '1')
+                        .style('stroke-dasharray', null);
                 }
             }
         });

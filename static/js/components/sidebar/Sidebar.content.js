@@ -162,10 +162,10 @@
                     if (nameInput) nameInput.value = node.name || '';
                     const pyInput = document.getElementById('python_file');
                     if (pyInput) {
-                        const pythonFile = node.pythonFile || '';
-                        const displayPath = pythonFile.startsWith('nodes/') ? pythonFile.substring(6) : pythonFile;
-                        pyInput.value = displayPath;
-                        pyInput.dataset.fullPath = pythonFile;
+                        const stored = node.pythonFile || '';
+                        const noPrefix = stored.replace(/^(?:nodes\/)*/i, '');
+                        pyInput.value = noPrefix;
+                        pyInput.dataset.fullPath = noPrefix;
                     }
                     if (typeof typeConf.after === 'function') typeConf.after(node);
                 }

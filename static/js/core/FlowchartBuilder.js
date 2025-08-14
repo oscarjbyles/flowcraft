@@ -618,6 +618,7 @@ class FlowchartBuilder {
         // add node buttons
         attachClick('python_node_btn', () => { this.addPythonNode(); });
         attachClick('if_condition_btn', () => { this.addIfNode(); });
+        attachClick('ai_btn', () => { this.addCallAiNode && this.addCallAiNode(); });
 
         // build toolbar toggle (collapsible add bar)
         const buildToolbar = document.getElementById('build_toolbar');
@@ -1244,7 +1245,8 @@ class FlowchartBuilder {
             'group select mode disabled',
             'ready - click to add nodes, drag to connect',
             'run mode - interface locked for execution',
-            's: 1 run mode - interface locked for execution'
+            's: 1 run mode - interface locked for execution',
+            'settings'
             ];
             if (suppressPhrases.some(p => lower.includes(p))) {
                 return;
@@ -1511,6 +1513,33 @@ class FlowchartBuilder {
         const data = this.state.exportData();
         this.state.storage.exportAsJson(data);
         this.updateStatusBar('flowchart exported');
+    }
+
+    addCallAiNode() {
+        try {
+            let position = { x: 200, y: 200 };
+            try {
+                // center-ish default if helper not present
+                const canvas = document.getElementById('flowchart_canvas');
+                if (canvas && this.state && this.state.transform) {
+                    const rect = canvas.getBoundingClientRect();
+                    const cx = rect.left + rect.width * 0.5;
+                    const cy = rect.top + rect.height * 0.35;
+                    const world = this.state.transform.invert([cx, cy]);
+                    position = { x: world[0], y: world[1] };
+                }
+            } catch (_) {}
+            const node = this.state.addNode({
+                x: position.x,
+                y: position.y,
+                name: 'ai node',
+                type: 'call_ai'
+            });
+            this.state.selectNode(node.id, false);
+            this.updateStatusBar('added ai');
+        } catch (error) {
+            this.updateStatusBar('error adding ai');
+        }
     }
 
     async importData(file) {
@@ -2142,7 +2171,6 @@ class FlowchartBuilder {
 
             // show full page settings
             this.showSettingsPage();
-            this.updateStatusBar('settings');
             // if we came from run/history, also clear runtime condition indicators
             if (previousMode === 'run' || previousMode === 'history') {
                 try { this.clearIfRuntimeIndicators(); } catch (_) {}
@@ -4123,7 +4151,7 @@ class FlowchartBuilder {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    python_file: pythonFile
+                    python_file: (pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,'')
                 })
             });
             

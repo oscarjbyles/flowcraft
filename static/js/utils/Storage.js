@@ -252,6 +252,27 @@ class Storage {
     }
 
     /**
+     * rename a flowchart (file + related directories)
+     */
+    async renameFlowchart(oldFilename, newName) {
+        try {
+            const response = await fetch('/api/flowcharts/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_name: oldFilename, new_name: newName })
+            });
+            const data = await response.json();
+            if (response.ok && data && data.status === 'success') {
+                return { success: true, newFilename: data.new_filename };
+            }
+            return { success: false, message: (data && data.message) || 'failed to rename flowchart' };
+        } catch (error) {
+            console.error('error renaming flowchart:', error);
+            return { success: false, message: 'error renaming flowchart' };
+        }
+    }
+
+    /**
      * export flowchart data as json
      */
     exportAsJson(data) {
