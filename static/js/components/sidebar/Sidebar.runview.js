@@ -586,7 +586,13 @@
                     } else {
                         if (nodeInputContent) nodeInputContent.textContent = 'execution failed';
                         if (nodeOutputContent) nodeOutputContent.textContent = 'execution failed';
-                        if (consoleLogEl) consoleLogEl.textContent = executionResult.error || 'unknown error';
+                        if (consoleLogEl) {
+                            let errorDisplay = executionResult.error || 'unknown error';
+                            if (executionResult.error_line && executionResult.error_line > 0) {
+                                errorDisplay = `Line ${executionResult.error_line}: ${errorDisplay}`;
+                            }
+                            consoleLogEl.textContent = errorDisplay;
+                        }
                     }
                 } else {
                     if (nodeInputContent) nodeInputContent.textContent = 'no inputs - node not executed';
@@ -660,7 +666,14 @@
                 const { id, name, pythonFile, error } = window.flowchartApp.lastFailedNode;
                 if (failedTitle) failedTitle.textContent = `node: ${name}`;
                 if (failedPath) failedPath.textContent = `path: ${pythonFile || '-'}`;
-                if (failedError) failedError.textContent = error || '';
+                let errorDisplay = error || '';
+                if (window.flowchartApp && window.flowchartApp.nodeExecutionResults) {
+                    const result = window.flowchartApp.nodeExecutionResults.get(id);
+                    if (result && result.error_line && result.error_line > 0) {
+                        errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
+                    }
+                }
+                if (failedError) failedError.textContent = errorDisplay;
                 failureInfo.style.display = '';
                 if (gotoBtn) {
                     gotoBtn.onclick = () => {

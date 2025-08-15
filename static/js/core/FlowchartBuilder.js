@@ -1403,7 +1403,7 @@ class FlowchartBuilder {
         });
     }
 
-    handleCoordinateChange(property, value) {
+    async handleCoordinateChange(property, value) {
         const selectedNodes = Array.from(this.state.selectedNodes);
         if (selectedNodes.length !== 1) return;
         
@@ -1430,7 +1430,7 @@ class FlowchartBuilder {
         }
         
         // update the node
-        this.state.updateNode(nodeId, updates);
+        await this.state.updateNode(nodeId, updates);
         
         // trigger immediate save
         this.state.scheduleAutosave();
@@ -1676,14 +1676,16 @@ class FlowchartBuilder {
         this.state.setMode('build');
     }
 
-    switchToRunMode() {
+    switchToRunMode(clearRuntimeIndicators = true) {
         this.state.setMode('run');
         // enable auto tracking by default when entering run mode
         this.isAutoTrackEnabled = true;
         this.userDisabledTracking = false;
         if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
-        // ensure any stale runtime indicators are cleared when entering run
-        try { this.clearIfRuntimeIndicators(); } catch (_) {}
+        // ensure any stale runtime indicators are cleared when entering run (unless restoring from history)
+        if (clearRuntimeIndicators) {
+            try { this.clearIfRuntimeIndicators(); } catch (_) {}
+        }
     }
 
             // history mode removed
@@ -2577,22 +2579,41 @@ class FlowchartBuilder {
                 }
             } catch (_) {}
             
-            // sanitize feed to ensure no duplicate line texts per node before saving history
-            const sanitizedFeed = Array.isArray(this.executionFeed) ? this.executionFeed.map(entry => {
+            // sanitize feed to ensure no duplicate entries or line texts per node before saving history
+            const sanitizedFeed = Array.isArray(this.executionFeed) ? (() => {
                 try {
-                    const seen = new Set();
-                    const uniqueLines = [];
-                    (entry.lines || []).forEach(l => {
-                        const t = (l && typeof l.text === 'string') ? l.text.trim() : '';
-                        if (!t || seen.has(t)) return;
-                        seen.add(t);
-                        uniqueLines.push({ text: t, ts: l.ts || new Date().toISOString() });
+                    // first, remove duplicate entries for the same node (keep the latest one)
+                    const nodeEntries = new Map();
+                    this.executionFeed.forEach(entry => {
+                        if (entry && entry.node_id) {
+                            const existing = nodeEntries.get(entry.node_id);
+                            if (!existing || (entry.finished_at && !existing.finished_at) || 
+                                (entry.finished_at && existing.finished_at && entry.finished_at > existing.finished_at)) {
+                                nodeEntries.set(entry.node_id, entry);
+                            }
+                        }
                     });
-                    return { ...entry, lines: uniqueLines };
+                    
+                    // then sanitize lines within each entry
+                    return Array.from(nodeEntries.values()).map(entry => {
+                        try {
+                            const seen = new Set();
+                            const uniqueLines = [];
+                            (entry.lines || []).forEach(l => {
+                                const t = (l && typeof l.text === 'string') ? l.text.trim() : '';
+                                if (!t || seen.has(t)) return;
+                                seen.add(t);
+                                uniqueLines.push({ text: t, ts: l.ts || new Date().toISOString() });
+                            });
+                            return { ...entry, lines: uniqueLines };
+                        } catch (_) {
+                            return entry;
+                        }
+                    });
                 } catch (_) {
-                    return entry;
+                    return this.executionFeed;
                 }
-            }) : [];
+            })() : [];
 
             const executionData = {
                 status: status,
@@ -2605,17 +2626,45 @@ class FlowchartBuilder {
                 successful_nodes: results.filter(r => r.success && executionOrder.some(node => node.id === r.node_id)).length,
                 error_message: errorMessage,
                 flowchart_state: {
-                    nodes: this.state.nodes.map(node => ({
-                        id: node.id,
-                        name: node.name,
-                        x: node.x,
-                        y: node.y,
-                        pythonFile: node.pythonFile,
-                        description: node.description,
-                        type: node.type,
-                        // include data_save specific fields to support data matrix table
-                        dataSource: node.dataSource
-                    })),
+                    nodes: this.state.nodes.map(node => {
+                        // base properties for all nodes
+                        const baseNode = {
+                            id: node.id,
+                            name: node.name,
+                            x: node.x,
+                            y: node.y,
+                            pythonFile: node.pythonFile,
+                            description: node.description,
+                            type: node.type,
+                            width: node.width,
+                            groupId: node.groupId
+                        };
+                        
+                        // add type-specific properties
+                        if (node.type === 'input_node') {
+                            // include all input node specific properties
+                            return {
+                                ...baseNode,
+                                parameters: node.parameters,
+                                targetNodeId: node.targetNodeId,
+                                inputValues: node.inputValues,
+                                skipInputCheck: node.skipInputCheck
+                            };
+                        } else if (node.type === 'data_save') {
+                            // include data_save specific fields to support data matrix table
+                            return {
+                                ...baseNode,
+                                dataSource: node.dataSource
+                            };
+                        } else {
+                            // for other node types, include any additional properties they might have
+                            return {
+                                ...baseNode,
+                                // include any other properties that might be needed
+                                ...(node.magnet_partner_id && { magnet_partner_id: node.magnet_partner_id })
+                            };
+                        }
+                    }),
                     links: this.state.links,
                     groups: this.state.groups
                 }
@@ -2654,11 +2703,11 @@ class FlowchartBuilder {
             if (result.status === 'success') {
                 const executionData = result.execution.execution_data;
                 
+                // switch to run mode first (before restoring state to avoid clearing restored runtime indicators)
+                this.switchToRunMode(false);
+                
                 // restore flowchart state
                 this.restoreFlowchartFromHistory(executionData);
-                
-                // switch to run mode to show the execution results
-                this.switchToRunMode();
                 
                 // show execution results in sidebar
                 this.displayHistoryExecutionResults(executionData);
@@ -2698,9 +2747,68 @@ class FlowchartBuilder {
     }
 
     restoreFlowchartFromHistory(executionData) {
+        // set restoration flag to prevent input node recreation
+        this.state.isRestoringFromHistory = true;
+        
         // clear current node execution results and variables
         this.nodeExecutionResults.clear();
         this.nodeVariables.clear();
+        
+        // restore flowchart state from saved execution data if available
+        if (executionData.flowchart_state) {
+            try {
+                // restore nodes, links, and groups from the saved state
+                if (Array.isArray(executionData.flowchart_state.nodes)) {
+                    this.state.nodes = executionData.flowchart_state.nodes;
+                }
+                if (Array.isArray(executionData.flowchart_state.links)) {
+                    this.state.links = executionData.flowchart_state.links;
+                }
+                if (Array.isArray(executionData.flowchart_state.groups)) {
+                    this.state.groups = executionData.flowchart_state.groups;
+                }
+                
+                // ensure input nodes are properly handled after restoration
+                // mark all existing input nodes to prevent duplicate creation
+                this.state.nodes.forEach(node => {
+                    if (node.type === 'input_node') {
+                        // ensure all required properties are present
+                        node.skipInputCheck = true; // prevent this input node from being recreated
+                        node.inputValues = node.inputValues || {}; // ensure inputValues exists
+                        node.parameters = node.parameters || []; // ensure parameters exists
+                        
+                        // validate that the target node exists
+                        if (node.targetNodeId) {
+                            const targetNode = this.state.nodes.find(n => n.id === node.targetNodeId);
+                            if (!targetNode) {
+                                console.warn(`input node ${node.id} has invalid targetNodeId: ${node.targetNodeId}`);
+                            }
+                        }
+                    }
+                });
+                
+                // trigger state change to update the ui
+                this.state.emit('stateChanged');
+                
+                // explicitly update link renderer to show restored if condition states
+                // add a small delay to ensure link paths are fully rendered before positioning circles
+                setTimeout(() => {
+                    // ensure link renderer is fully updated first
+                    if (this.linkRenderer && typeof this.linkRenderer.render === 'function') {
+                        this.linkRenderer.render();
+                    }
+                    // then render if condition circles
+                    if (this.linkRenderer && typeof this.linkRenderer.renderIfToPythonNodes === 'function') {
+                        this.linkRenderer.renderIfToPythonNodes();
+                    }
+                }, 50);
+                
+                // update sidebar content to reflect restored state
+                this.state.emit('updateSidebar');
+            } catch (error) {
+                console.warn('error restoring flowchart state from history:', error);
+            }
+        }
         
         // restore node states from execution results
         executionData.results.forEach(result => {
@@ -2732,6 +2840,29 @@ class FlowchartBuilder {
                 }
             }
         });
+        
+        // restore visual state for input nodes based on their target node's execution state
+        this.state.nodes.forEach(node => {
+            if (node.type === 'input_node' && node.targetNodeId) {
+                const targetNode = this.state.getNode(node.targetNodeId);
+                if (targetNode) {
+                    const targetResult = this.nodeExecutionResults.get(node.targetNodeId);
+                    if (targetResult) {
+                        // set input node visual state to match its target node
+                        if (targetResult.success) {
+                            this.setNodeState(node.id, 'completed');
+                        } else {
+                            this.setNodeState(node.id, 'error');
+                        }
+                    }
+                }
+            }
+        });
+        
+        // clear restoration flag after a short delay to allow UI updates to complete
+        setTimeout(() => {
+            this.state.isRestoringFromHistory = false;
+        }, 100);
     }
 
     displayHistoryExecutionResults(executionData) {
@@ -3217,7 +3348,11 @@ class FlowchartBuilder {
                         const outCol = document.createElement('div');
                         outCol.className = 'run_feed_output';
                         // strip embedded result blocks from non-streamed output
-                        const sanitized = ((result.output || '') + (result.error ? `\n${result.error}` : ''))
+                        let errorDisplay = result.error || '';
+                        if (result.error_line && result.error_line > 0) {
+                            errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
+                        }
+                        const sanitized = ((result.output || '') + (errorDisplay ? `\n${errorDisplay}` : ''))
                             .replace(/__RESULT_START__[\s\S]*?__RESULT_END__/g, '')
                             .trim();
                         const lines = sanitized.split(/\r?\n/);
@@ -3236,13 +3371,11 @@ class FlowchartBuilder {
                         // also persist these values into the corresponding feed entry for restoration
                         try {
                             let entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
-                            if (!entry) {
-                                entry = { node_id: node.id, node_name: node.name, started_at: new Date(startTime).toISOString(), lines: [] };
-                                this.executionFeed.push(entry);
+                            if (entry) {
+                                entry.finished_at = finishedAt.toISOString();
+                                entry.success = !!result.success;
+                                entry.elapsed_ms = elapsedMs;
                             }
-                            entry.finished_at = finishedAt.toISOString();
-                            entry.success = !!result.success;
-                            entry.elapsed_ms = elapsedMs;
                         } catch (_) {}
                         item.appendChild(title);
                         item.appendChild(outCol);
@@ -3277,7 +3410,11 @@ class FlowchartBuilder {
                             : (typeof result.runtime === 'number' ? result.runtime : undefined);
                         if (typeof elapsedMs === 'number') entry.elapsed_ms = elapsedMs;
                     } catch (_) {}
-                    const combined = ((result.output || '') + (result.error ? `\n${result.error}` : '')).trim();
+                    let errorDisplay = result.error || '';
+                    if (result.error_line && result.error_line > 0) {
+                        errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
+                    }
+                    const combined = ((result.output || '') + (errorDisplay ? `\n${errorDisplay}` : '')).trim();
                     if (combined && entry.lines.length === 0) {
                         combined.split(/\r?\n/).filter(Boolean).forEach(l => {
                             entry.lines.push({ text: l, ts: new Date().toISOString() });
@@ -3376,7 +3513,12 @@ class FlowchartBuilder {
                     node.runtimeStatus = 'error';
                     if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
                 }
-                this.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${result.error || 'unknown error'}\n`);
+                // format error message with line number if available
+                let errorDisplay = result.error || 'unknown error';
+                if (result.error_line && result.error_line > 0) {
+                    errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
+                }
+                this.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${errorDisplay}\n`);
                 return false; // failure - will stop execution
             }
             

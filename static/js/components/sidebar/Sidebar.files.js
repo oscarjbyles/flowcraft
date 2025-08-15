@@ -125,6 +125,8 @@
                 modal.classList.remove('show');
                 try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
                 try { await this.state.save(false); } catch (_) {}
+                // refresh the sidebar to show updated file details
+                try { this.state.emit('updateSidebar'); } catch (_) {}
             } catch (_) {
                 this.showError && this.showError('error creating file');
             }
@@ -142,6 +144,8 @@
             closeModal();
             try { this.saveNodeProperties && this.saveNodeProperties(); } catch (_) {}
             try { await this.state.save(false); } catch (_) {}
+            // refresh the sidebar to show updated file details
+            try { this.state.emit('updateSidebar'); } catch (_) {}
         };
         modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
         input.addEventListener('click', (e) => {

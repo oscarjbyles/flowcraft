@@ -58,17 +58,30 @@
                     this.createNewFlowchart();
                 }
             });
-            // prevent spaces from being entered
+            // replace spaces with underscores when typing
             nameInput.addEventListener('keypress', (e) => {
                 if (e.key === ' ') {
                     e.preventDefault();
+                    // insert underscore at cursor position
+                    const start = nameInput.selectionStart;
+                    const end = nameInput.selectionEnd;
+                    const value = nameInput.value;
+                    nameInput.value = value.substring(0, start) + '_' + value.substring(end);
+                    nameInput.selectionStart = nameInput.selectionEnd = start + 1;
                 }
             });
-            // also prevent paste of content with spaces
+            // replace spaces with underscores when pasting
             nameInput.addEventListener('paste', (e) => {
                 const pastedText = (e.clipboardData || window.clipboardData).getData('text');
                 if (pastedText.includes(' ')) {
                     e.preventDefault();
+                    // replace spaces with underscores in pasted text
+                    const cleanText = pastedText.replace(/ /g, '_');
+                    const start = nameInput.selectionStart;
+                    const end = nameInput.selectionEnd;
+                    const value = nameInput.value;
+                    nameInput.value = value.substring(0, start) + cleanText + value.substring(end);
+                    nameInput.selectionStart = nameInput.selectionEnd = start + cleanText.length;
                 }
             });
         }
@@ -229,6 +242,21 @@
         this.closeFlowchartDropdown();
         try {
             console.log('[sidebar-flow] selectFlowchart start', { filename, name });
+            
+            // check if we're in run, build, or settings mode and clear execution output if needed
+            const currentMode = this.state.currentMode || 'build';
+            if (currentMode === 'run' || currentMode === 'build' || currentMode === 'settings') {
+                try {
+                    if (window.flowchartApp && typeof window.flowchartApp.clearRunModeState === 'function') {
+                        window.flowchartApp.clearRunModeState();
+                    } else if (window.flowchartApp && typeof window.flowchartApp.clearExecutionFeed === 'function') {
+                        window.flowchartApp.clearExecutionFeed();
+                    }
+                } catch (clearError) {
+                    console.warn('[sidebar-flow] failed to clear execution state:', clearError);
+                }
+            }
+            
             await this.state.save(true);
             this.state.storage.setCurrentFlowchart(filename);
             const result = await this.state.load();
@@ -269,6 +297,18 @@
             this.showError('flowchart name is required');
             return;
         }
+        
+        // if in run mode, clear execution output before creating new flowchart
+        try {
+            if (window.flowchartApp && window.flowchartApp.state && window.flowchartApp.state.isRunMode) {
+                if (typeof window.flowchartApp.clearRunModeState === 'function') {
+                    window.flowchartApp.clearRunModeState();
+                } else if (typeof window.flowchartApp.clearAllNodeColorState === 'function') {
+                    window.flowchartApp.clearAllNodeColorState();
+                }
+            }
+        } catch (_) {}
+        
         try {
             console.log('[sidebar-flow] createNewFlowchart submit', { name });
             const result = await this.state.storage.createFlowchart(name);

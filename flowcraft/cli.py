@@ -9,22 +9,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="flowcraft", description="run flowcraft locally")
     parser.add_argument("serve", nargs="?", default="serve", help=argparse.SUPPRESS)
     parser.add_argument("--host", default="0.0.0.0")
-    # default port: prefer env var; next read project setting; fallback 5000
-    try:
-        # try reading project setting from cwd
-        import json
-        settings_path = os.path.abspath(os.path.join(os.getcwd(), '.flowcraft_settings.json'))
-        default_cli_port = int(os.environ.get("PORT")) if os.environ.get("PORT") else None
-        if default_cli_port is None and os.path.exists(settings_path):
-            with open(settings_path, 'r', encoding='utf-8') as f:
-                conf = json.load(f)
-                sp = conf.get('default_port')
-                if isinstance(sp, int) and 1 <= sp <= 65535:
-                    default_cli_port = sp
-        if default_cli_port is None:
-            default_cli_port = 5000
-    except Exception:
-        default_cli_port = int(os.environ.get("PORT", "5000"))
+    # default port: prefer env var; fallback 5000
+    default_cli_port = int(os.environ.get("PORT", "5000"))
 
     parser.add_argument("--port", type=int, default=default_cli_port)
     parser.add_argument("--debug", action="store_true", default=True)

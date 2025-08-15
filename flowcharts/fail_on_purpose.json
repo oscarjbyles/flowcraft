@@ -1,0 +1,82 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755250753340.1665,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 568,
+      "y": 406
+    },
+    {
+      "id": 1755252004178.6648,
+      "x": 540.5,
+      "y": 206,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "python_test_files/error4.py",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "source": 1755252004178.6648,
+      "target": 1755250753340.1665
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "force": false,
+  "executions": [
+    {
+      "execution_id": "97e37553-0e40-42c4-ae9c-1f940ea4b1f9",
+      "timestamp": "2025-08-15T11:00:30.937998",
+      "flowchart_name": "fail_on_purpose",
+      "status": "failed",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "python node",
+      "elapsed_ms": 170,
+      "execution_time": "0.170s",
+      "error_snippet": "this script is yet to be editted."
+    },
+    {
+      "execution_id": "4e846dc1-db8a-4002-9f37-f7d9c71a1082",
+      "timestamp": "2025-08-15T11:00:23.358742",
+      "flowchart_name": "fail_on_purpose",
+      "status": "failed",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "python node",
+      "elapsed_ms": 27,
+      "execution_time": "0.027s",
+      "error_snippet": "missing required function arguments: argument1"
+    },
+    {
+      "execution_id": "0d692308-e19f-4f33-b1b9-97ac2a5c7074",
+      "timestamp": "2025-08-15T10:58:10.376569",
+      "flowchart_name": "fail_on_purpose",
+      "status": "failed",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "python node",
+      "elapsed_ms": 36,
+      "execution_time": "0.036s",
+      "error_snippet": "missing required function arguments: argument1"
+    }
+  ]
+}

@@ -1308,16 +1308,14 @@ class NodeRenderer {
             const result = await response.json();
             
             if (result.success && result.parameters) {
-                // if there are no parameters, delete the associated input node
-                // note: deletion uses force=true because input nodes are protected by default
+                // preserve the input node even if no parameters are found
+                // this prevents losing user input when parameters are temporarily empty
                 if (Array.isArray(result.parameters) && result.parameters.length === 0) {
-                    try {
-                        this.state.removeNode(node.id, true);
-                    } catch (e) {
-                        console.error('error deleting input node after empty analysis:', e);
-                    }
+                    // keep the existing input node with current values instead of deleting it
+                    console.log('no parameters found, preserving existing input node');
                     return;
                 }
+                
                 // update the node with new parameters
                 const updatedInputValues = {};
                 
@@ -1327,7 +1325,7 @@ class NodeRenderer {
                 });
                 
                 // update the node
-                this.state.updateNode(node.id, {
+                await this.state.updateNode(node.id, {
                     parameters: result.parameters,
                     inputValues: updatedInputValues
                 });
@@ -1370,7 +1368,7 @@ class NodeRenderer {
         input.select();
         
         // handle input completion
-        const completeEdit = () => {
+        const completeEdit = async () => {
             const newValue = input.value;
             node.inputValues[paramName] = newValue;
             
@@ -1378,14 +1376,14 @@ class NodeRenderer {
             rowGroup.select('.input_field_text').text(newValue);
             
             // update the node in state
-            this.state.updateNode(node.id, { inputValues: node.inputValues });
+            await this.state.updateNode(node.id, { inputValues: node.inputValues });
             
             // remove the input element
             document.body.removeChild(input);
         };
         
         // handle enter key and blur
-        input.addEventListener('blur', completeEdit);
+        input.addEventListener('blur', () => completeEdit());
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 completeEdit();

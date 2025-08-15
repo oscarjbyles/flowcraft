@@ -7,6 +7,20 @@
             console.log(`[Sidebar] URL changed to flowchart: ${flowchartName} (${displayName})`);
             const flowchartExists = this.flowcharts.some(f => f.filename === flowchartName);
             if (flowchartExists) {
+                // check if we're in run, build, or settings mode and clear execution output if needed
+                const currentMode = this.state.currentMode || 'build';
+                if (currentMode === 'run' || currentMode === 'build' || currentMode === 'settings') {
+                    try {
+                        if (window.flowchartApp && typeof window.flowchartApp.clearRunModeState === 'function') {
+                            window.flowchartApp.clearRunModeState();
+                        } else if (window.flowchartApp && typeof window.flowchartApp.clearExecutionFeed === 'function') {
+                            window.flowchartApp.clearExecutionFeed();
+                        }
+                    } catch (clearError) {
+                        console.warn('[sidebar-url] failed to clear execution state:', clearError);
+                    }
+                }
+                
                 await this.state.save(true);
                 this.state.storage.setCurrentFlowchart(flowchartName);
                 this.urlManager.setLastAccessedFlowchart(flowchartName);

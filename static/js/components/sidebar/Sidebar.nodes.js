@@ -99,7 +99,7 @@
         return icons[type] || 'description';
     };
 
-    Sidebar.prototype.saveNodeProperties = function() {
+    Sidebar.prototype.saveNodeProperties = async function() {
         const selectedNodes = Array.from(this.state.selectedNodes);
         if (selectedNodes.length !== 1) return;
         const nodeId = selectedNodes[0];
@@ -118,7 +118,7 @@
         if (!updates.name) { this.showError('node name is required'); return; }
         if (updates.pythonFile && !Validation.validatePythonFilePath(updates.pythonFile)) { this.showError('invalid python file path'); return; }
         try {
-            this.state.updateNode(nodeId, updates);
+            await this.state.updateNode(nodeId, updates);
             this.showSuccess(`updated node: ${updates.name}`);
         } catch (error) {
             this.showError(error.message);
@@ -550,13 +550,13 @@
             }
 
             // persist selection to the data_save node so downstream logic saves the correct single variable
-            dropdown.onchange = () => {
+            dropdown.onchange = async () => {
                 const selectedName = dropdown.value || '';
                 try {
                     const current = this.state.getNode(node.id);
                     const origin = (current && current.dataSource && current.dataSource.origin) || 'returns';
                     const newDataSource = { origin, variable: selectedName ? { name: selectedName } : null };
-                    this.state.updateNode(node.id, { dataSource: newDataSource });
+                    await this.state.updateNode(node.id, { dataSource: newDataSource });
                 } catch (e) {
                     console.warn('failed to update data_save selection:', e);
                 }

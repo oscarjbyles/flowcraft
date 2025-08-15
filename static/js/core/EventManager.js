@@ -21,7 +21,7 @@ class EventManager {
 
     handleKeyDown(event) {
         // prevent default for our shortcuts
-        const shortcuts = ['Delete', 'Escape', 'g'];
+        const shortcuts = ['Delete', 'Backspace', 'Escape', 'g'];
         if (shortcuts.includes(event.key) || (event.ctrlKey && shortcuts.includes(event.key))) {
             // only prevent default if we're going to handle it
             if (this.shouldHandleShortcut(event)) {
@@ -31,6 +31,7 @@ class EventManager {
 
         switch (event.key) {
             case 'Delete':
+            case 'Backspace':
                 this.handleDelete();
                 break;
                 
@@ -89,6 +90,12 @@ class EventManager {
         if (!this.shouldHandleShortcut({ key: 'Delete' })) return;
 
         if (this.state.selectedNodes.size > 0) {
+            // check if we're in run mode - nodes cannot be deleted in run mode
+            if (this.state.currentMode === 'run') {
+                this.state.emit('statusUpdate', 'cannot delete nodes in run mode');
+                return;
+            }
+            
             const nodeIds = Array.from(this.state.selectedNodes);
             let deletedCount = 0;
             let inputNodeAttempts = 0;
@@ -111,6 +118,12 @@ class EventManager {
             } else if (deletedCount > 0) {
                 this.state.emit('statusUpdate', `deleted ${deletedCount} node(s)`);
             }
+            
+        } else if (this.state.selectedAnnotation) {
+            // delete selected text node (annotation)
+            const annotationText = this.state.selectedAnnotation.text || 'text';
+            this.state.removeAnnotation(this.state.selectedAnnotation.id);
+            this.state.emit('statusUpdate', `deleted text: ${annotationText}`);
             
         } else if (this.state.selectedLink) {
             this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);

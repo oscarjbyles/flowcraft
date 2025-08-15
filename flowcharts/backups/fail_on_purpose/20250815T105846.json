@@ -1,0 +1,63 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755250752516.8564,
+      "name": "python node",
+      "pythonFile": "python_test_files/error_on_purpose.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 559,
+      "y": 216
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755250753340.1665,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 542,
+      "y": 408
+    },
+    {
+      "id": 1755251924908.227,
+      "x": 752.5,
+      "y": 98,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [
+    {
+      "source": 1755250752516.8564,
+      "target": 1755250753340.1665
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "force": false,
+  "executions": [
+    {
+      "execution_id": "0d692308-e19f-4f33-b1b9-97ac2a5c7074",
+      "timestamp": "2025-08-15T10:58:10.376569",
+      "flowchart_name": "fail_on_purpose",
+      "status": "failed",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "python node",
+      "elapsed_ms": 36,
+      "execution_time": "0.036s",
+      "error_snippet": "missing required function arguments: argument1"
+    }
+  ]
+}

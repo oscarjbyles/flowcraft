@@ -1,0 +1,52 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755250752516.8564,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 559,
+      "y": 216
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755250753340.1665,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 542,
+      "y": 408
+    }
+  ],
+  "links": [
+    {
+      "source": 1755250752516.8564,
+      "target": 1755250753340.1665
+    }
+  ],
+  "groups": [],
+  "annotations": [],
+  "force": false,
+  "executions": [
+    {
+      "execution_id": "cc13bc85-0958-41eb-a322-0748309978c2",
+      "timestamp": "2025-08-15T10:42:34.484581",
+      "flowchart_name": "fail_on_purpose",
+      "status": "failed",
+      "total_nodes": 2,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 50.0,
+      "failed_node": "python node",
+      "elapsed_ms": 32,
+      "execution_time": "0.032s",
+      "error_snippet": "node_id and python_file are required"
+    }
+  ]
+}

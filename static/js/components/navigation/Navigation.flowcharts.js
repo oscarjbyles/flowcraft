@@ -14,10 +14,29 @@
 
     function preventSpaces(input){
         if (!input) return;
-        input.addEventListener('keypress', (e) => { if (e.key === ' ') e.preventDefault(); });
+        input.addEventListener('keypress', (e) => { 
+            if (e.key === ' ') {
+                e.preventDefault();
+                // insert underscore at cursor position
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const value = input.value;
+                input.value = value.substring(0, start) + '_' + value.substring(end);
+                input.selectionStart = input.selectionEnd = start + 1;
+            }
+        });
         input.addEventListener('paste', (e) => {
             const txt = (e.clipboardData || window.clipboardData).getData('text');
-            if (txt.includes(' ')) e.preventDefault();
+            if (txt.includes(' ')) {
+                e.preventDefault();
+                // replace spaces with underscores in pasted text
+                const cleanText = txt.replace(/ /g, '_');
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const value = input.value;
+                input.value = value.substring(0, start) + cleanText + value.substring(end);
+                input.selectionStart = input.selectionEnd = start + cleanText.length;
+            }
         });
     }
 
@@ -141,6 +160,21 @@
                                 if (app && app.state && app.state.storage && typeof app.state.storage.setCurrentFlowchart === 'function') {
                                     try {
                                         console.log('[nav-flow] builder select: updating app state');
+                                        
+                                        // check if we're in run, build, or settings mode and clear execution output if needed
+                                        const currentMode = app.state.currentMode || 'build';
+                                        if (currentMode === 'run' || currentMode === 'build' || currentMode === 'settings') {
+                                            try {
+                                                if (typeof app.clearRunModeState === 'function') {
+                                                    app.clearRunModeState();
+                                                } else if (typeof app.clearExecutionFeed === 'function') {
+                                                    app.clearExecutionFeed();
+                                                }
+                                            } catch (clearError) {
+                                                console.warn('[nav-flow] failed to clear execution state:', clearError);
+                                            }
+                                        }
+                                        
                                         app.state.save(true).then(() => {
                                             app.state.storage.setCurrentFlowchart(filename);
                                             return app.state.load();

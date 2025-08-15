@@ -1,0 +1,84 @@
+{
+  "execution_id": "97e37553-0e40-42c4-ae9c-1f940ea4b1f9",
+  "timestamp": "2025-08-15T11:00:30.937998",
+  "flowchart_name": "fail_on_purpose",
+  "execution_data": {
+    "status": "failed",
+    "execution_order": [
+      1755252004178.6648,
+      1755250753340.1665
+    ],
+    "results": [
+      {
+        "node_id": 1755252004178.6648,
+        "node_name": "python node",
+        "python_file": "python_test_files/error4.py",
+        "success": false,
+        "output": "",
+        "error": "this script is yet to be editted.",
+        "runtime": 170,
+        "timestamp": "11:00:30",
+        "return_value": null,
+        "function_name": "f"
+      }
+    ],
+    "data_saves": [],
+    "feed": [
+      {
+        "node_id": 1755252004178.6648,
+        "node_name": "python node",
+        "started_at": "2025-08-15T10:00:30.772Z",
+        "finished_at": "2025-08-15T10:00:30.924Z",
+        "success": false,
+        "lines": [
+          {
+            "text": "this script is yet to be editted.",
+            "ts": "2025-08-15T10:00:30.924Z"
+          }
+        ],
+        "elapsed_ms": 152
+      },
+      {
+        "node_id": 1755252004178.6648,
+        "node_name": "python node",
+        "started_at": "2025-08-15T10:00:30.757Z",
+        "lines": [],
+        "finished_at": "2025-08-15T10:00:30.926Z",
+        "success": false,
+        "elapsed_ms": 169
+      }
+    ],
+    "total_nodes": 2,
+    "successful_nodes": 0,
+    "error_message": "execution stopped at node: python node",
+    "flowchart_state": {
+      "nodes": [
+        {
+          "id": 1755250753340.1665,
+          "name": "python node",
+          "x": 568,
+          "y": 406,
+          "pythonFile": "",
+          "description": "",
+          "type": "python_file"
+        },
+        {
+          "id": 1755252004178.6648,
+          "name": "python node",
+          "x": 540.5,
+          "y": 206,
+          "pythonFile": "python_test_files/error4.py",
+          "description": "",
+          "type": "python_file"
+        }
+      ],
+      "links": [
+        {
+          "source": 1755252004178.6648,
+          "target": 1755250753340.1665
+        }
+      ],
+      "groups": []
+    }
+  }
+}

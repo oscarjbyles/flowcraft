@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 import ast
 import psutil
+import traceback
 
 # process tracking shared map and lock should be owned by the app context.
 # to preserve behavior, these will be injected from the caller.
@@ -188,6 +189,7 @@ def execute_python_function_with_tracking(
 import json
 import sys
 import os
+import traceback
 sys.path.insert(0, os.path.dirname({repr(file_path)}))
 
 input_values_for_mock = {repr(input_values)}
@@ -228,9 +230,29 @@ try:
     print(json.dumps(output_data, default=str))
     print("__RESULT_END__")
 except Exception as e:
+    # capture full traceback for line number extraction
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tb_list = traceback.extract_tb(exc_traceback)
+    
+    # find the line number in the original file (not the temp script)
+    error_line = None
+    error_file = None
+    for tb in reversed(tb_list):  # start from the most recent frame
+        if tb.filename == {repr(file_path)}:
+            error_line = tb.lineno
+            error_file = tb.filename
+            break
+    
+    # format error message with line number if available
+    error_msg = str(e)
+    if error_line is not None:
+        error_msg = f"Line {error_line}: {error_msg}"
+    
     output_data = {{
         'success': False,
-        'error': str(e),
+        'error': error_msg,
+        'error_line': error_line,
+        'error_file': error_file,
         'function_name': '{function_name}',
         'function_args': {repr(call_args)},
         'input_values': {repr(input_values)},

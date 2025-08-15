@@ -1,0 +1,1034 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "id": 1755167154604.1802,
+      "name": "delete from previous script",
+      "pythonFile": "1_categories_selectors/delete_from_previous_script.py",
+      "type": "python_file",
+      "width": 206.36666870117188,
+      "x": 458,
+      "y": 148
+    },
+    {
+      "description": "",
+      "id": 1755167550651.0103,
+      "name": "get base url",
+      "pythonFile": "1_categories_selectors/1_1_0_1_get_base_url.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 863.5741577148438,
+      "y": 380.2646484375
+    },
+    {
+      "description": "",
+      "id": 1755167866611.7693,
+      "name": "get web page content",
+      "pythonFile": "1_categories_selectors/1_1_0_2_get_page_content.py",
+      "type": "python_file",
+      "width": 174.1999969482422,
+      "x": 868.9776000976562,
+      "y": 527.2366027832031
+    },
+    {
+      "description": "",
+      "groupId": 1755256312361.3877,
+      "id": 1755168324002.294,
+      "magnet_partner_id": 1755168329342.0771,
+      "name": "1.1.1.1 - use nav tag",
+      "pythonFile": "1_categories_selectors/1_1_1_1_use_nav_tag.py",
+      "type": "python_file",
+      "width": 164.71666717529297,
+      "x": 1127.621337890625,
+      "y": 527.0776062011719
+    },
+    {
+      "description": "",
+      "groupId": 1755256312361.3877,
+      "id": 1755168329342.0771,
+      "magnet_partner_id": 1755168324002.294,
+      "name": "empty?",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 1127.621337890625,
+      "y": 607.0776062011719
+    },
+    {
+      "description": "",
+      "groupId": 1755256312361.3877,
+      "id": 1755168331256.1504,
+      "magnet_partner_id": 1755168365383.739,
+      "name": "1.1.1.2 - use common class names",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 256.78334045410156,
+      "x": 1420.4766845703125,
+      "y": 526.5706176757812
+    },
+    {
+      "description": "",
+      "id": 1755168341464.9243,
+      "name": "1.1.3 - filter URLs",
+      "pythonFile": "1_categories_selectors/1_1_3_filter_urls.py",
+      "type": "python_file",
+      "width": 145.63333129882812,
+      "x": 1256.2294921875,
+      "y": 960.7908630371094
+    },
+    {
+      "description": "",
+      "id": 1755168356509.9187,
+      "name": "1.1.2 - add base URL if needed",
+      "pythonFile": "1_categories_selectors/1_1_2_add_base_url_if_needed.py",
+      "type": "python_file",
+      "width": 228.48333740234375,
+      "x": 1253.6943359375,
+      "y": 847.5314636230469
+    },
+    {
+      "description": "",
+      "groupId": 1755256312361.3877,
+      "id": 1755168365383.739,
+      "magnet_partner_id": 1755168331256.1504,
+      "name": "empty?",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 1420.4766845703125,
+      "y": 606.5706176757812
+    },
+    {
+      "dataSource": {
+        "origin": "returns",
+        "variable": {
+          "line": 20,
+          "name": "base_url",
+          "type": "variable"
+        }
+      },
+      "description": "",
+      "id": 1755172769693.0837,
+      "name": "base_url",
+      "pythonFile": "",
+      "type": "data_save",
+      "width": 80,
+      "x": 1031.3004040210865,
+      "y": 245.24123077360295
+    },
+    {
+      "description": "",
+      "id": 1755172944716.4678,
+      "name": "1.1.4 - find 'all products' page",
+      "pythonFile": "1_categories_selectors/1_1_4_find_all_products_page.py",
+      "type": "python_file",
+      "width": 220.51666259765625,
+      "x": 1141.6688232421875,
+      "y": 1091.6553039550781
+    },
+    {
+      "description": "",
+      "id": 1755172982615.0999,
+      "name": "1.1.5 - find 'sale products' page",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 231.56666564941406,
+      "x": 1381.690673828125,
+      "y": 1090.5581359863281
+    },
+    {
+      "description": "",
+      "id": 1755173080268.6929,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2108.378173828125,
+      "y": 445.0659484863281
+    },
+    {
+      "description": "",
+      "id": 1755173100337.6272,
+      "name": "print gender breakdowns",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 194.1999969482422,
+      "x": 2117.883544921875,
+      "y": 654.624755859375
+    },
+    {
+      "description": "",
+      "id": 1755173143862.484,
+      "name": "1.3.0.1 - get only genedered URLs",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 247.48333740234375,
+      "x": 2626.327392578125,
+      "y": 406.02459716796875
+    },
+    {
+      "description": "",
+      "id": 1755173146742.7798,
+      "name": "1.3.0.2 - get page content",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 198.25,
+      "x": 2624.88818359375,
+      "y": 533.9306945800781
+    },
+    {
+      "description": "",
+      "id": 1755173149202.599,
+      "name": "1.3.0.3 - create the project reference",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 264.21665954589844,
+      "x": 2625.557373046875,
+      "y": 671.3025512695312
+    },
+    {
+      "description": "",
+      "id": 1755173649195.634,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2995.746337890625,
+      "y": 660.5254821777344
+    },
+    {
+      "description": "",
+      "id": 1755173670352.4734,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3606.96337890625,
+      "y": 641.1140747070312
+    },
+    {
+      "description": "",
+      "id": 1755173671004.7842,
+      "name": "get link tag",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3901.140625,
+      "y": 641.275390625
+    },
+    {
+      "description": "",
+      "id": 1755173712690.242,
+      "name": "get all tags with visable text",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 212.38333129882812,
+      "x": 3272.29931640625,
+      "y": 652.933837890625
+    },
+    {
+      "description": "",
+      "id": 1755173729881.0269,
+      "name": "remove duplicates",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 154.25,
+      "x": 3275.50732421875,
+      "y": 762.2565307617188
+    },
+    {
+      "description": "",
+      "id": 1755173740726.4312,
+      "name": "filter out tags containing currency",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 248.26666259765625,
+      "x": 3271.70458984375,
+      "y": 876.0325317382812
+    },
+    {
+      "description": "",
+      "id": 1755173754676.0088,
+      "name": "keyword filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 142.31666564941406,
+      "x": 3280.296142578125,
+      "y": 996.3197021484375
+    },
+    {
+      "description": "",
+      "id": 1755173767907.2407,
+      "name": "length filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 129.0999984741211,
+      "x": 3267.8857421875,
+      "y": 1122.334716796875
+    },
+    {
+      "description": "",
+      "id": 1755173779202.0266,
+      "name": "ratio filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3272.6591796875,
+      "y": 1236.8936767578125
+    },
+    {
+      "description": "",
+      "id": 1755173805460.5344,
+      "name": "string permutation filtering",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 205.35000610351562,
+      "x": 3273.61376953125,
+      "y": 1356.2264404296875
+    },
+    {
+      "description": "",
+      "id": 1755173820731.6052,
+      "name": "language model",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 139.68333435058594,
+      "x": 3269.795166015625,
+      "y": 1477.46826171875
+    },
+    {
+      "description": "",
+      "id": 1755173833301.116,
+      "name": "get location",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3264.0673828125,
+      "y": 1620.6673583984375
+    },
+    {
+      "description": "",
+      "id": 1755173973653.7566,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 3903.200927734375,
+      "y": 756.3596801757812
+    },
+    {
+      "description": "",
+      "id": 1755174016499.5188,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 4175.9345703125,
+      "y": 620.98193359375
+    },
+    {
+      "description": "",
+      "id": 1755174023693.5693,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 4395.66357421875,
+      "y": 624.2037963867188
+    },
+    {
+      "description": "",
+      "id": 1755174031208.1548,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 4610.18408203125,
+      "y": 622.724365234375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755255733932.8733,
+      "name": "python node",
+      "pythonFile": "1_categories_selectors/get_data_from_brands_excel.py",
+      "type": "python_file",
+      "width": 120,
+      "x": 806.6161499023438,
+      "y": 126.68415832519531
+    },
+    {
+      "description": "input parameters",
+      "groupId": null,
+      "id": 1755255737566.1045,
+      "inputValues": {
+        "user_input": "Baracuta"
+      },
+      "name": "Input Node",
+      "parameters": [
+        "user_input"
+      ],
+      "pythonFile": "1_categories_selectors/get_data_from_brands_excel.py",
+      "skipInputCheck": true,
+      "targetNodeId": 1755255733932.8733,
+      "type": "input_node",
+      "width": 300,
+      "x": 777.8452758789062,
+      "y": -53.30391311645508
+    }
+  ],
+  "links": [
+    {
+      "source": 1755167550651.0103,
+      "target": 1755167866611.7693
+    },
+    {
+      "selectable": false,
+      "source": 1755168324002.294,
+      "target": 1755168329342.0771
+    },
+    {
+      "conditions": [
+        {
+          "operator": "len<",
+          "value": "1",
+          "variable": "nav_links"
+        }
+      ],
+      "runtime_condition": "false",
+      "runtime_details": {
+        "conditions": [
+          {
+            "left": [
+              "javascript:void(0);",
+              "/collections/sale-g9",
+              "/collections/sale-g9-harrington",
+              "/collections/sale-g9-suede",
+              "/collections/sale-g9-seersucker",
+              "/collections/sale-g9-tent-cloth",
+              "/collections/sale-g9-woman",
+              "/collections/sale-g9",
+              "/collections/sale-g9",
+              "/collections/sale-g4",
+              "/collections/sale-g10",
+              "/collections/sale-g12",
+              "/collections/sale-baracuta-icons",
+              "/collections/sale-jackets",
+              "/collections/sale-outerwear-coats",
+              "/collections/sale-vest",
+              "/collections/sale-blazer",
+              "/collections/sale-overshirt",
+              "/collections/sale-outerwear-jackets",
+              "/collections/sale-sweatshirt",
+              "/collections/sale-t-shirts-polo",
+              "/collections/sale-trousers-shorts",
+              "/collections/sale-ready-to-wear",
+              "/collections/sale-g9-woman",
+              "/collections/women-jackets/SaleSS25",
+              "/collections/sale-knitwear-tops-woman",
+              "/collections/sale-trousers-woman",
+              "/collections/sale-woman",
+              "/collections/sale-bags",
+              "/collections/hats/SaleSS25",
+              "/collections/sale-leather-accessories",
+              "/collections/sale-shoes",
+              "/collections/sale-accessories",
+              "/collections/sale",
+              "/collections/last-pieces",
+              "/collections/g9-jacket",
+              "/collections/g9-jacket",
+              "/collections/g4-jacket",
+              "/collections/g12-jacket",
+              "/collections/g10-jacket",
+              "/collections/sale-baracuta-icons",
+              "/collections/baracuta-icons",
+              "/collections/g9-harrington-jacket",
+              "/collections/g9-canvas",
+              "/collections/g9-corduroy",
+              "/collections/g9-ripstop",
+              "/collections/g9-seersucker",
+              "/collections/g9-suede",
+              "/collections/g9-tent-cloth",
+              "/collections/sale-g9",
+              "/collections/g9-jacket",
+              "/collections/outerwear-jackets",
+              "/collections/coat",
+              "/collections/outerwear-trench-coats",
+              "/collections/vests",
+              "/collections/blazer",
+              "/collections/overshirts",
+              "/collections/sale-outerwear-jackets",
+              "/collections/outerwear",
+              "/collections/knitwear",
+              "/collections/t-shirt-polo",
+              "/collections/sweatshirts",
+              "/collections/sale-knitwear",
+              "/collections/knitwear-view-all",
+              "/collections/trousers",
+              "/collections/sale-trousers-shorts",
+              "/collections/g9-85th-book",
+              "/collections/bags",
+              "/collections/hats",
+              "/collections/leather-goods",
+              "/collections/shoes",
+              "/collections/socks",
+              "/collections/stationary",
+              "/collections/umbrellas",
+              "/collections/sale-accessories",
+              "/collections/accessories",
+              "/collections/sale-man",
+              "/collections/men-collection",
+              "/collections/g9-women",
+              "/collections/women-jackets",
+              "/collections/accessories",
+              "/collections/sale-woman",
+              "/collections/women-collection",
+              "/collections/g9-jacket",
+              "/collections/g4-jacket",
+              "/collections/g12-jacket",
+              "/collections/g10-jacket",
+              "/collections/sale-baracuta-icons",
+              "/pages/fit",
+              "/account/login",
+              "/account/register",
+              "/pages/subscribe"
+            ],
+            "operator": "len<",
+            "result": false,
+            "value": "1",
+            "variable": "nav_links"
+          }
+        ],
+        "final": false,
+        "variables": {
+          "nav_links": [
+            "javascript:void(0);",
+            "/collections/sale-g9",
+            "/collections/sale-g9-harrington",
+            "/collections/sale-g9-suede",
+            "/collections/sale-g9-seersucker",
+            "/collections/sale-g9-tent-cloth",
+            "/collections/sale-g9-woman",
+            "/collections/sale-g9",
+            "/collections/sale-g9",
+            "/collections/sale-g4",
+            "/collections/sale-g10",
+            "/collections/sale-g12",
+            "/collections/sale-baracuta-icons",
+            "/collections/sale-jackets",
+            "/collections/sale-outerwear-coats",
+            "/collections/sale-vest",
+            "/collections/sale-blazer",
+            "/collections/sale-overshirt",
+            "/collections/sale-outerwear-jackets",
+            "/collections/sale-sweatshirt",
+            "/collections/sale-t-shirts-polo",
+            "/collections/sale-trousers-shorts",
+            "/collections/sale-ready-to-wear",
+            "/collections/sale-g9-woman",
+            "/collections/women-jackets/SaleSS25",
+            "/collections/sale-knitwear-tops-woman",
+            "/collections/sale-trousers-woman",
+            "/collections/sale-woman",
+            "/collections/sale-bags",
+            "/collections/hats/SaleSS25",
+            "/collections/sale-leather-accessories",
+            "/collections/sale-shoes",
+            "/collections/sale-accessories",
+            "/collections/sale",
+            "/collections/last-pieces",
+            "/collections/g9-jacket",
+            "/collections/g9-jacket",
+            "/collections/g4-jacket",
+            "/collections/g12-jacket",
+            "/collections/g10-jacket",
+            "/collections/sale-baracuta-icons",
+            "/collections/baracuta-icons",
+            "/collections/g9-harrington-jacket",
+            "/collections/g9-canvas",
+            "/collections/g9-corduroy",
+            "/collections/g9-ripstop",
+            "/collections/g9-seersucker",
+            "/collections/g9-suede",
+            "/collections/g9-tent-cloth",
+            "/collections/sale-g9",
+            "/collections/g9-jacket",
+            "/collections/outerwear-jackets",
+            "/collections/coat",
+            "/collections/outerwear-trench-coats",
+            "/collections/vests",
+            "/collections/blazer",
+            "/collections/overshirts",
+            "/collections/sale-outerwear-jackets",
+            "/collections/outerwear",
+            "/collections/knitwear",
+            "/collections/t-shirt-polo",
+            "/collections/sweatshirts",
+            "/collections/sale-knitwear",
+            "/collections/knitwear-view-all",
+            "/collections/trousers",
+            "/collections/sale-trousers-shorts",
+            "/collections/g9-85th-book",
+            "/collections/bags",
+            "/collections/hats",
+            "/collections/leather-goods",
+            "/collections/shoes",
+            "/collections/socks",
+            "/collections/stationary",
+            "/collections/umbrellas",
+            "/collections/sale-accessories",
+            "/collections/accessories",
+            "/collections/sale-man",
+            "/collections/men-collection",
+            "/collections/g9-women",
+            "/collections/women-jackets",
+            "/collections/accessories",
+            "/collections/sale-woman",
+            "/collections/women-collection",
+            "/collections/g9-jacket",
+            "/collections/g4-jacket",
+            "/collections/g12-jacket",
+            "/collections/g10-jacket",
+            "/collections/sale-baracuta-icons",
+            "/pages/fit",
+            "/account/login",
+            "/account/register",
+            "/pages/subscribe"
+          ]
+        }
+      },
+      "source": 1755168329342.0771,
+      "target": 1755168331256.1504
+    },
+    {
+      "selectable": false,
+      "source": 1755168331256.1504,
+      "target": 1755168365383.739
+    },
+    {
+      "conditions": [
+        {
+          "operator": "len>",
+          "value": "1",
+          "variable": "nav_links"
+        }
+      ],
+      "runtime_condition": "true",
+      "runtime_details": {
+        "conditions": [
+          {
+            "left": [
+              "javascript:void(0);",
+              "/collections/sale-g9",
+              "/collections/sale-g9-harrington",
+              "/collections/sale-g9-suede",
+              "/collections/sale-g9-seersucker",
+              "/collections/sale-g9-tent-cloth",
+              "/collections/sale-g9-woman",
+              "/collections/sale-g9",
+              "/collections/sale-g9",
+              "/collections/sale-g4",
+              "/collections/sale-g10",
+              "/collections/sale-g12",
+              "/collections/sale-baracuta-icons",
+              "/collections/sale-jackets",
+              "/collections/sale-outerwear-coats",
+              "/collections/sale-vest",
+              "/collections/sale-blazer",
+              "/collections/sale-overshirt",
+              "/collections/sale-outerwear-jackets",
+              "/collections/sale-sweatshirt",
+              "/collections/sale-t-shirts-polo",
+              "/collections/sale-trousers-shorts",
+              "/collections/sale-ready-to-wear",
+              "/collections/sale-g9-woman",
+              "/collections/women-jackets/SaleSS25",
+              "/collections/sale-knitwear-tops-woman",
+              "/collections/sale-trousers-woman",
+              "/collections/sale-woman",
+              "/collections/sale-bags",
+              "/collections/hats/SaleSS25",
+              "/collections/sale-leather-accessories",
+              "/collections/sale-shoes",
+              "/collections/sale-accessories",
+              "/collections/sale",
+              "/collections/last-pieces",
+              "/collections/g9-jacket",
+              "/collections/g9-jacket",
+              "/collections/g4-jacket",
+              "/collections/g12-jacket",
+              "/collections/g10-jacket",
+              "/collections/sale-baracuta-icons",
+              "/collections/baracuta-icons",
+              "/collections/g9-harrington-jacket",
+              "/collections/g9-canvas",
+              "/collections/g9-corduroy",
+              "/collections/g9-ripstop",
+              "/collections/g9-seersucker",
+              "/collections/g9-suede",
+              "/collections/g9-tent-cloth",
+              "/collections/sale-g9",
+              "/collections/g9-jacket",
+              "/collections/outerwear-jackets",
+              "/collections/coat",
+              "/collections/outerwear-trench-coats",
+              "/collections/vests",
+              "/collections/blazer",
+              "/collections/overshirts",
+              "/collections/sale-outerwear-jackets",
+              "/collections/outerwear",
+              "/collections/knitwear",
+              "/collections/t-shirt-polo",
+              "/collections/sweatshirts",
+              "/collections/sale-knitwear",
+              "/collections/knitwear-view-all",
+              "/collections/trousers",
+              "/collections/sale-trousers-shorts",
+              "/collections/g9-85th-book",
+              "/collections/bags",
+              "/collections/hats",
+              "/collections/leather-goods",
+              "/collections/shoes",
+              "/collections/socks",
+              "/collections/stationary",
+              "/collections/umbrellas",
+              "/collections/sale-accessories",
+              "/collections/accessories",
+              "/collections/sale-man",
+              "/collections/men-collection",
+              "/collections/g9-women",
+              "/collections/women-jackets",
+              "/collections/accessories",
+              "/collections/sale-woman",
+              "/collections/women-collection",
+              "/collections/g9-jacket",
+              "/collections/g4-jacket",
+              "/collections/g12-jacket",
+              "/collections/g10-jacket",
+              "/collections/sale-baracuta-icons",
+              "/pages/fit",
+              "/account/login",
+              "/account/register",
+              "/pages/subscribe"
+            ],
+            "operator": "len>",
+            "result": true,
+            "value": "1",
+            "variable": "nav_links"
+          }
+        ],
+        "final": true,
+        "variables": {
+          "nav_links": [
+            "javascript:void(0);",
+            "/collections/sale-g9",
+            "/collections/sale-g9-harrington",
+            "/collections/sale-g9-suede",
+            "/collections/sale-g9-seersucker",
+            "/collections/sale-g9-tent-cloth",
+            "/collections/sale-g9-woman",
+            "/collections/sale-g9",
+            "/collections/sale-g9",
+            "/collections/sale-g4",
+            "/collections/sale-g10",
+            "/collections/sale-g12",
+            "/collections/sale-baracuta-icons",
+            "/collections/sale-jackets",
+            "/collections/sale-outerwear-coats",
+            "/collections/sale-vest",
+            "/collections/sale-blazer",
+            "/collections/sale-overshirt",
+            "/collections/sale-outerwear-jackets",
+            "/collections/sale-sweatshirt",
+            "/collections/sale-t-shirts-polo",
+            "/collections/sale-trousers-shorts",
+            "/collections/sale-ready-to-wear",
+            "/collections/sale-g9-woman",
+            "/collections/women-jackets/SaleSS25",
+            "/collections/sale-knitwear-tops-woman",
+            "/collections/sale-trousers-woman",
+            "/collections/sale-woman",
+            "/collections/sale-bags",
+            "/collections/hats/SaleSS25",
+            "/collections/sale-leather-accessories",
+            "/collections/sale-shoes",
+            "/collections/sale-accessories",
+            "/collections/sale",
+            "/collections/last-pieces",
+            "/collections/g9-jacket",
+            "/collections/g9-jacket",
+            "/collections/g4-jacket",
+            "/collections/g12-jacket",
+            "/collections/g10-jacket",
+            "/collections/sale-baracuta-icons",
+            "/collections/baracuta-icons",
+            "/collections/g9-harrington-jacket",
+            "/collections/g9-canvas",
+            "/collections/g9-corduroy",
+            "/collections/g9-ripstop",
+            "/collections/g9-seersucker",
+            "/collections/g9-suede",
+            "/collections/g9-tent-cloth",
+            "/collections/sale-g9",
+            "/collections/g9-jacket",
+            "/collections/outerwear-jackets",
+            "/collections/coat",
+            "/collections/outerwear-trench-coats",
+            "/collections/vests",
+            "/collections/blazer",
+            "/collections/overshirts",
+            "/collections/sale-outerwear-jackets",
+            "/collections/outerwear",
+            "/collections/knitwear",
+            "/collections/t-shirt-polo",
+            "/collections/sweatshirts",
+            "/collections/sale-knitwear",
+            "/collections/knitwear-view-all",
+            "/collections/trousers",
+            "/collections/sale-trousers-shorts",
+            "/collections/g9-85th-book",
+            "/collections/bags",
+            "/collections/hats",
+            "/collections/leather-goods",
+            "/collections/shoes",
+            "/collections/socks",
+            "/collections/stationary",
+            "/collections/umbrellas",
+            "/collections/sale-accessories",
+            "/collections/accessories",
+            "/collections/sale-man",
+            "/collections/men-collection",
+            "/collections/g9-women",
+            "/collections/women-jackets",
+            "/collections/accessories",
+            "/collections/sale-woman",
+            "/collections/women-collection",
+            "/collections/g9-jacket",
+            "/collections/g4-jacket",
+            "/collections/g12-jacket",
+            "/collections/g10-jacket",
+            "/collections/sale-baracuta-icons",
+            "/pages/fit",
+            "/account/login",
+            "/account/register",
+            "/pages/subscribe"
+          ]
+        }
+      },
+      "source": 1755168329342.0771,
+      "target": 1755168356509.9187
+    },
+    {
+      "runtime_condition": null,
+      "runtime_details": null,
+      "source": 1755168365383.739,
+      "target": 1755168356509.9187
+    },
+    {
+      "source": 1755168356509.9187,
+      "target": 1755168341464.9243
+    },
+    {
+      "source": 1755167866611.7693,
+      "target": 1755168324002.294
+    },
+    {
+      "selectable": false,
+      "source": 1755167550651.0103,
+      "style": "dashed",
+      "target": 1755172769693.0837
+    },
+    {
+      "source": 1755168341464.9243,
+      "target": 1755172944716.4678
+    },
+    {
+      "source": 1755173143862.484,
+      "target": 1755173146742.7798
+    },
+    {
+      "source": 1755173146742.7798,
+      "target": 1755173149202.599
+    },
+    {
+      "source": 1755173149202.599,
+      "target": 1755173649195.634
+    },
+    {
+      "source": 1755173712690.242,
+      "target": 1755173729881.0269
+    },
+    {
+      "source": 1755173729881.0269,
+      "target": 1755173740726.4312
+    },
+    {
+      "source": 1755173740726.4312,
+      "target": 1755173754676.0088
+    },
+    {
+      "source": 1755173754676.0088,
+      "target": 1755173767907.2407
+    },
+    {
+      "source": 1755173767907.2407,
+      "target": 1755173779202.0266
+    },
+    {
+      "source": 1755173779202.0266,
+      "target": 1755173805460.5344
+    },
+    {
+      "source": 1755173805460.5344,
+      "target": 1755173820731.6052
+    },
+    {
+      "source": 1755173820731.6052,
+      "target": 1755173833301.116
+    },
+    {
+      "source": 1755173100337.6272,
+      "target": 1755173143862.484
+    },
+    {
+      "source": 1755173649195.634,
+      "target": 1755173712690.242
+    },
+    {
+      "source": 1755173833301.116,
+      "target": 1755173670352.4734
+    },
+    {
+      "source": 1755173670352.4734,
+      "target": 1755173671004.7842
+    },
+    {
+      "source": 1755173080268.6929,
+      "target": 1755173100337.6272
+    },
+    {
+      "source": 1755168341464.9243,
+      "target": 1755172982615.0999
+    },
+    {
+      "source": 1755172982615.0999,
+      "target": 1755173080268.6929
+    },
+    {
+      "selectable": false,
+      "source": 1755255737566.1045,
+      "style": "dashed",
+      "target": 1755255733932.8733,
+      "type": "input_connection"
+    },
+    {
+      "source": 1755167154604.1802,
+      "target": 1755255733932.8733
+    },
+    {
+      "source": 1755255733932.8733,
+      "target": 1755167550651.0103
+    }
+  ],
+  "groups": [
+    {
+      "color": "#8bc34a",
+      "description": "",
+      "id": 1755167906527.4514,
+      "name": "1.1.0 - prepare",
+      "nodeIds": [
+        1755167550651.0103,
+        1755167866611.7693
+      ]
+    },
+    {
+      "color": "#8bc34a",
+      "description": "",
+      "id": 1755168473293.803,
+      "name": "1.1.1 - get URLs from page",
+      "nodeIds": [
+        1755168324002.294,
+        1755168331256.1504,
+        1755168365383.739,
+        1755168329342.0771
+      ]
+    },
+    {
+      "color": "#3f51b5",
+      "description": "",
+      "id": 1755173237201.828,
+      "name": "1.3.0 - prepare",
+      "nodeIds": [
+        1755173149202.599,
+        1755173146742.7798,
+        1755173143862.484
+      ]
+    },
+    {
+      "color": "#3f51b5",
+      "description": "",
+      "id": 1755173864749.1145,
+      "name": "1.3.2 get product TITLE",
+      "nodeIds": [
+        1755173712690.242,
+        1755173729881.0269,
+        1755173740726.4312,
+        1755173754676.0088,
+        1755173767907.2407,
+        1755173779202.0266,
+        1755173805460.5344,
+        1755173820731.6052,
+        1755173833301.116
+      ]
+    },
+    {
+      "color": "#3f51b5",
+      "description": "",
+      "id": 1755173977461.5598,
+      "name": "1.3.4 get product URL",
+      "nodeIds": [
+        1755173671004.7842,
+        1755173973653.7566
+      ]
+    },
+    {
+      "color": "#ff9800",
+      "description": "",
+      "id": 1755256312361.3877,
+      "name": "group name",
+      "nodeIds": [
+        1755168324002.294,
+        1755168331256.1504,
+        1755168329342.0771,
+        1755168365383.739
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "fontSize": 30,
+      "id": 1755207384135.138,
+      "text": "1.1 - get category URLs",
+      "type": "text",
+      "x": 481.12212648621835,
+      "y": 307.5475302846188
+    }
+  ],
+  "executions": [
+    {
+      "execution_id": "2212bc88-4dbd-4ba5-94f8-9a957669b0be",
+      "timestamp": "2025-08-15T12:59:31.071750",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 29,
+      "successful_nodes": 6,
+      "completed_nodes": 7,
+      "success_percentage": 20.7,
+      "completed_percentage": 24.1,
+      "failed_node": "1.1.3 - filter URLs",
+      "elapsed_ms": 23822,
+      "execution_time": "23.822s",
+      "error_snippet": "cannot access local variable 'nav_links' where it "
+    }
+  ]
+}

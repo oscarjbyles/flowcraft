@@ -77,7 +77,12 @@
                 zoomToFit: () => window.flowchartApp.zoomToFit(),
                 resetZoom: () => window.flowchartApp.resetZoom(),
                 exportData: () => window.flowchartApp.exportData(),
-                saveData: () => window.flowchartApp.saveData()
+                saveData: () => window.flowchartApp.saveData(),
+                clearOrphanedInputNodes: () => {
+                    const count = window.flowchartApp.state.clearOrphanedInputNodes();
+                    console.log(`cleared ${count} orphaned input nodes`);
+                    return count;
+                }
             };
 
             console.log('flowchart application initialized');

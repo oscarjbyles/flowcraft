@@ -124,7 +124,6 @@
             settingsBtnEl.addEventListener('click', () => {
                 try { this.loadAndRenderBackups && this.loadAndRenderBackups(); } catch (_) {}
                 try { refreshFlowPath && refreshFlowPath(); } catch (_) {}
-                try { this.loadPortSetting && this.loadPortSetting(); } catch (_) {}
             });
         }
 
@@ -213,7 +212,7 @@
         const items = editors.map(ed => `
             <div class="dropdown_item" data-name="${ed.name}" data-path="${ed.path}">
                 <div class="dropdown_item_content">
-                    <div class="dropdown_item_name">${ed.name}</div>
+                    <div class="dropdown_item_name">${ed.name.charAt(0).toUpperCase() + ed.name.slice(1).toLowerCase()}</div>
                     <div class="dropdown_item_meta" style="opacity:.7; font-size:.75rem;">${ed.path}</div>
                 </div>
             </div>
@@ -285,11 +284,13 @@
             // active row under headers
             const activeNodes = (activeData?.nodes || []).length;
             const activeLinks = (activeData?.links || []).length;
+            const activeGroups = (activeData?.groups || []).length;
                 rows.push(`
                 <tr class="backups_active_row">
                     <td colspan="3">${this.escapeHTML('active flowchart')}</td>
                     <td>${activeNodes}</td>
                     <td>${activeLinks}</td>
+                    <td>${activeGroups}</td>
                     <td></td>
                     <td></td>
                 </tr>
@@ -308,6 +309,7 @@
                         <td>${this.escapeHTML(dateStr)}</td>
                         <td class="col_nodes">${b.nodes}</td>
                         <td class="col_connections">${b.links}</td>
+                        <td class="col_groups">${b.groups}</td>
                         <td class="col_delete">
                             <div class="cell_actions">
                                 <button class="btn btn_secondary btn_inline js_delete_backup" title="delete">Delete</button>
@@ -326,7 +328,7 @@
                 if (!showAll && backups.length > max) {
                 rows.push(`
                     <tr>
-                        <td colspan="7" class="backups_show_more" style="text-align:center;">Show More</td>
+                        <td colspan="8" class="backups_show_more" style="text-align:center;">Show More</td>
                     </tr>
                 `);
             }
@@ -437,64 +439,7 @@
         } catch (_) { return ''; }
     };
 
-    // default port settings (project settings)
-    Sidebar.prototype.loadPortSetting = async function() {
-        try {
-            const input = document.getElementById('default_port_input');
-            const saveBtn = document.getElementById('save_default_port_btn');
-            const clearBtn = document.getElementById('clear_default_port_btn');
-            if (!input) return;
-            const resp = await fetch('/api/settings');
-            const data = await resp.json();
-            const port = (data && data.settings && data.settings.default_port) ? data.settings.default_port : '';
-            input.value = port || '';
-            if (saveBtn && input) {
-                saveBtn.addEventListener('click', async () => {
-                    const raw = String(input.value || '').trim();
-                    if (!raw) { this.showError('enter a port or clear'); return; }
-                    const num = Number(raw);
-                    if (!Number.isInteger(num) || num < 1 || num > 65535) { this.showError('port must be 1-65535'); return; }
-                    try {
-                        const resp2 = await fetch('/api/settings', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ default_port: num })
-                        });
-                        const data2 = await resp2.json();
-                        if (resp2.ok && data2 && data2.status === 'success') {
-                            this.showSuccess('default port saved');
-                        } else {
-                            this.showError(data2.message || 'failed to save port');
-                        }
-                    } catch (_) {
-                        this.showError('error saving port');
-                    }
-                });
-            }
-            if (clearBtn) {
-                clearBtn.addEventListener('click', async () => {
-                    try {
-                        const resp2 = await fetch('/api/settings', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ default_port: '' })
-                        });
-                        const data2 = await resp2.json();
-                        if (resp2.ok && data2 && data2.status === 'success') {
-                            input.value = '';
-                            this.showSuccess('default port cleared');
-                        } else {
-                            this.showError(data2.message || 'failed to clear');
-                        }
-                    } catch (_) {
-                        this.showError('error clearing port');
-                    }
-                });
-            }
-        } catch (_) {
-            // ignore
-        }
-    };
+
 })();
 
 

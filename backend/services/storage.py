@@ -253,8 +253,13 @@ def _append_execution_summary_to_flowchart(flowchart_name: str, execution_id: st
                 try:
                     err_text = r.get('error')
                     if isinstance(err_text, str) and err_text:
-                        # include first 50 characters of the error message
-                        error_snippet = err_text[:50]
+                        # include line number if available
+                        error_line = r.get('error_line')
+                        if error_line and error_line > 0:
+                            error_snippet = f"Line {error_line}: {err_text[:50]}"
+                        else:
+                            # include first 50 characters of the error message
+                            error_snippet = err_text[:50]
                 except Exception:
                     pass
                 break
@@ -333,11 +338,13 @@ def list_backups(flowchart_name: str) -> List[Dict[str, Any]]:
                 pass
             nodes = 0
             links = 0
+            groups = 0
             try:
                 with open(path, 'r') as f:
                     data = json.load(f)
                 nodes = len((data or {}).get('nodes') or [])
                 links = len((data or {}).get('links') or [])
+                groups = len((data or {}).get('groups') or [])
             except Exception:
                 pass
             results.append({
@@ -346,6 +353,7 @@ def list_backups(flowchart_name: str) -> List[Dict[str, Any]]:
                 'date_readable': readable,
                 'nodes': nodes,
                 'links': links,
+                'groups': groups,
             })
         return results
     except Exception:

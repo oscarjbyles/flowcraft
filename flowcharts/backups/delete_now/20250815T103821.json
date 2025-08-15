@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "id": 1755250697307.7935,
+      "x": 871.8017578125,
+      "y": 239.17153930664062,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755250697780.3142,
+      "x": 649.6339721679688,
+      "y": 423.6838073730469,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    },
+    {
+      "id": 1755250698117.8584,
+      "x": 1031.837890625,
+      "y": 412.38714599609375,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "annotations": [],
+  "force": false,
+  "executions": []
+}

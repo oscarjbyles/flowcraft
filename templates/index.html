@@ -111,34 +111,16 @@
                                 <span class="material-icons u_icon_18 u_opacity_07">folder</span>
                                 <code id="project_root_path" class="u_opacity_09">loading...</code>
                                 <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="copy_project_root_btn" title="copy path">
+                                <button class="btn btn_secondary" id="copy_project_root_btn" title="copy path" style="background-color: #2D2D2D;">
                                     <span class="material-icons">content_copy</span>
-                                    copy
+                                    COPY
                                 </button>
                             </div>
                             <div class="form_help_text">absolute path to the python project root detected by the app</div>
                         </div>
                     </div>
 
-                    <div class="form_group">
-                        <label class="form_label">default port</label>
-                        <div class="data_save_details_card">
-                            <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons u_icon_18 u_opacity_07">router</span>
-                                <input type="number" min="1" max="65535" id="default_port_input" class="form_input" placeholder="e.g. 5001" style="max-width: 140px;">
-                                <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="save_default_port_btn" title="save">
-                                    <span class="material-icons">save</span>
-                                    save
-                                </button>
-                                <button class="btn btn_secondary" id="clear_default_port_btn" title="clear" style="margin-left:8px;">
-                                    <span class="material-icons">backspace</span>
-                                    clear
-                                </button>
-                            </div>
-                            <div class="form_help_text">choose default port used when launching locally; can be overridden by the PORT environment variable.</div>
-                        </div>
-                    </div>
+
 
                     <div class="form_group">
                         <label class="form_label">default editor</label>
@@ -161,9 +143,9 @@
                                 <span class="material-icons u_icon_18 u_opacity_07">description</span>
                                 <code id="flowchart_file_path" class="u_opacity_09">loading...</code>
                                 <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="copy_flowchart_file_btn" title="copy path">
+                                <button class="btn btn_secondary" id="copy_flowchart_file_btn" title="copy path" style="background-color: #2D2D2D;">
                                     <span class="material-icons">content_copy</span>
-                                    copy
+                                    COPY
                                 </button>
                             </div>
                             <div class="form_help_text">absolute path to the current flowchart json file</div>
@@ -177,9 +159,9 @@
                                 <span class="material-icons u_icon_18 u_opacity_07">drive_file_rename_outline</span>
                                 <input type="text" id="rename_flowchart_input" class="form_input" placeholder="enter new name" style="max-width: 260px;">
                                 <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="rename_flowchart_btn" title="rename">
+                                <button class="btn btn_secondary" id="rename_flowchart_btn" title="rename" style="background-color: #2D2D2D;">
                                     <span class="material-icons">edit</span>
-                                    rename
+                                    RENAME
                                 </button>
                             </div>
                             <div class="form_help_text">renames the current flowchart file and its history/backups folders.</div>
@@ -228,6 +210,7 @@
                                             <th>date</th>
                                             <th class="col_nodes">nodes</th>
                                             <th class="col_connections">connections</th>
+                                            <th class="col_groups">groups</th>
                                             <th class="col_delete">delete</th>
                                             <th class="col_restore">restore</th>
                                         </tr>
@@ -801,7 +784,7 @@
                         <button type="button" class="mini_btn" id="fe_new_folder_btn"><span class="material-icons" style="font-size:16px">create_new_folder</span> Create Folder</button>
                     </div>
                     <div class="mini_breadcrumb" id="fe_breadcrumb"></div>
-                    <div class="form_group" id="fe_new_file_group" style="display:none; margin: 8px 0 8px 0; min-height: max-content;">
+                    <div class="form_group" id="fe_new_file_group" style="display:none; margin: 8px 0 8px 0; min-height: 110px; max-height: 110px;">
                         <label class="form_label" for="fe_new_file_input">script name</label>
                         <div class="input_with_suffix">
                             <input type="text" id="fe_new_file_input" class="form_input" placeholder="enter script name" maxlength="100">

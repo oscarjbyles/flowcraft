@@ -68,29 +68,12 @@ def _find_next_available_port(start_port: int, max_port: int):
 
 
 if __name__ == '__main__':
-    # prefer env var; otherwise project setting; on macos default to 5001, others 5000
+    # prefer env var; otherwise use default based on platform
     port_env = os.environ.get('PORT')
-    settings_port = None
     if port_env is not None:
         default_port = int(port_env)
     else:
-        try:
-            # lazy import to avoid circulars
-            import json
-            project_root = app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
-            settings_path = os.path.abspath(os.path.join(project_root, '.flowcraft_settings.json'))
-            if os.path.exists(settings_path):
-                with open(settings_path, 'r', encoding='utf-8') as f:
-                    conf = json.load(f)
-                    sp = conf.get('default_port')
-                    if isinstance(sp, int) and 1 <= sp <= 65535:
-                        settings_port = sp
-        except Exception:
-            settings_port = None
-        if settings_port:
-            default_port = int(settings_port)
-        else:
-            default_port = 5001 if platform.system() == 'Darwin' else 5000
+        default_port = 5001 if platform.system() == 'Darwin' else 5000
     host = '0.0.0.0'
 
     chosen_port = default_port

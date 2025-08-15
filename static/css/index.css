@@ -646,6 +646,11 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-color: var(--primary-color);
 }
 
+/* settings page specific form input padding */
+.settings_page .form_input {
+    padding: 6px 12px;
+}
+
 .form_textarea {
     width: 100%;
     padding: 12px;
@@ -776,8 +781,13 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-radius: 0;
     padding: 8px 0;
 }
+
 /* only error lines should show the dark red background */
-.run_feed_item.error { border-left: 3px solid #c62828; }
+.run_feed_item.error { 
+    border: 2px solid #c62828; 
+    padding: 8px;
+}
+
 .run_feed_item.error .run_feed_line { background: #2A0E0E; }
 
 .run_feed_item_title { font-size: 1.05rem; font-weight: 600; }
@@ -792,10 +802,10 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-bottom: 1px solid rgba(61, 61, 61, 0.35);
 }
 .run_feed_line {
-    margin-bottom: 4px;
     /* single separator between rows to avoid double borders */
     border-top: 1px solid rgba(61, 61, 61, 0.35);
     padding: 4px 0;
+    padding-bottom: 4px;
 }
 .run_feed_line:first-child { border-top: none; }
 .run_feed_meta {
@@ -1330,10 +1340,10 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     background-color: var(--surface-variant);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
     z-index: 1000;
     display: none;
+    max-height: none;
+    overflow: visible;
 }
 
 .dropdown_menu.show {
@@ -1840,9 +1850,10 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 .backups_table td.col_delete, .backups_table td.col_restore {
     width: 60px;
 }
-/* make nodes and connections the same width */
+/* make nodes, connections, and groups the same width */
 .backups_table th.col_nodes, .backups_table td.col_nodes,
-.backups_table th.col_connections, .backups_table td.col_connections {
+.backups_table th.col_connections, .backups_table td.col_connections,
+.backups_table th.col_groups, .backups_table td.col_groups {
     width: 120px;
 }
 .backups_show_more {

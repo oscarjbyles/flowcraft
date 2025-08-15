@@ -152,9 +152,9 @@ def nodes_touch():
                         with open(template_path, 'r', encoding='utf-8') as tf:
                             f.write(tf.read())
                     else:
-                        f.write('def my_function(argument1):\n\n    # put your script here \n\n    return argument1\n')
+                        f.write('def f(argument1):\n\n    raise Exception("this script is yet to be editted.")\n\n    # put your script here \n\n    return argument1\n')
                 except Exception:
-                    f.write('def my_function(argument1):\n\n    # put your script here \n\n    return argument1\n')
+                    f.write('def f(argument1):\n\n    raise Exception("this script is yet to be editted.")\n\n    # put your script here \n\n    return argument1\n')
             else:
                 f.write('')
         return jsonify({'status': 'success', 'message': 'file created'})

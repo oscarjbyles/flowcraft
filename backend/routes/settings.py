@@ -58,19 +58,7 @@ def update_settings():
             return jsonify({'status': 'error', 'message': 'invalid body'}), 400
         current = _load_settings()
 
-        # validate default_port if present
-        if 'default_port' in incoming and incoming['default_port'] not in (None, ''):
-            try:
-                port_val = int(incoming['default_port'])
-                if port_val < 1 or port_val > 65535:
-                    return jsonify({'status': 'error', 'message': 'port must be 1-65535'}), 400
-                current['default_port'] = port_val
-            except Exception:
-                return jsonify({'status': 'error', 'message': 'default_port must be an integer'}), 400
-        elif 'default_port' in incoming and (incoming['default_port'] in (None, '')):
-            # allow clearing the setting
-            if 'default_port' in current:
-                del current['default_port']
+
 
         if not _save_settings(current):
             return jsonify({'status': 'error', 'message': 'failed to save settings'}), 500

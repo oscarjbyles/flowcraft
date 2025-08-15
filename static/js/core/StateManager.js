@@ -63,6 +63,9 @@ class StateManager extends BaseEmitter {
         // error view state (toggle to show red error circles)
         this.isErrorView = false;
         
+        // restoration state
+        this.isRestoringFromHistory = false; // flag to prevent input node recreation during restoration
+        
         // counters
         this.nodeCounter = 0;
         this.groupCounter = 0;
@@ -162,7 +165,7 @@ class StateManager extends BaseEmitter {
         return node;
     }
 
-    updateNode(nodeId, updates) {
+    async updateNode(nodeId, updates) {
         const node = this.getNode(nodeId);
         if (!node) return false;
 
@@ -191,13 +194,50 @@ class StateManager extends BaseEmitter {
 
         // when a python node's python file changes, ensure only one fresh input node exists
         if (node.type === 'python_file' && typeof updates.pythonFile !== 'undefined' && updates.pythonFile !== previousPythonFile) {
-            // remove existing associated input nodes
+            // preserve existing input node values if possible
             const existingInputs = this.nodes.filter(n => n.type === 'input_node' && n.targetNodeId === node.id);
+            const existingInputValues = existingInputs.length > 0 ? existingInputs[0].inputValues : {};
+            
+            // remove existing associated input nodes
             existingInputs.forEach(inputNode => this.removeNode(inputNode.id, true));
 
             // create a new input node only if the new python file is non-empty
             if (updates.pythonFile && updates.pythonFile.trim() !== '') {
-                this.checkAndCreateInputNode(node);
+                // create the new input node
+                const newInputNode = await this.checkAndCreateInputNode(node);
+                
+                // if a new input node was created and we had existing values, try to restore them
+                if (newInputNode && Object.keys(existingInputValues).length > 0) {
+                    // analyze the new python file to get parameters
+                    try {
+                        const response = await fetch('/api/analyze-python-function', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                python_file: updates.pythonFile
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success && result.parameters) {
+                            // restore values for parameters that still exist
+                            const updatedInputValues = {};
+                            result.parameters.forEach(param => {
+                                updatedInputValues[param] = existingInputValues[param] || '';
+                            });
+                            
+                            // update the new input node with preserved values
+                            this.updateNode(newInputNode.id, {
+                                inputValues: updatedInputValues
+                            });
+                        }
+                    } catch (error) {
+                        console.error('error preserving input values during file change:', error);
+                    }
+                }
             }
         }
 
@@ -942,6 +982,12 @@ class StateManager extends BaseEmitter {
 
     // check loaded nodes for input requirements (called after loading from JSON)
     async checkLoadedNodesForInputs() {
+        // skip input node creation if we're restoring from execution history
+        if (this.isRestoringFromHistory) {
+            console.log('skipping input node creation during history restoration');
+            return;
+        }
+        
         // find all python_file nodes that don't have existing input nodes
         const pythonFileNodes = this.nodes.filter(node => 
             node.type === 'python_file' && 
@@ -951,20 +997,27 @@ class StateManager extends BaseEmitter {
         
         // check each python file node for input requirements
         for (const node of pythonFileNodes) {
-            // check if this node already has an input node
-            const hasInputNode = this.nodes.some(n => 
+            // check if this node already has an input node (more robust check)
+            const existingInputNodes = this.nodes.filter(n => 
                 n.type === 'input_node' && n.targetNodeId === node.id
             );
             
-            if (!hasInputNode) {
+            // if no input nodes exist, create one
+            if (existingInputNodes.length === 0) {
                 await this.checkAndCreateInputNode(node);
+            } else if (existingInputNodes.length > 1) {
+                // if multiple input nodes exist, keep only the first and remove duplicates
+                console.warn(`multiple input nodes found for python node ${node.id}, removing duplicates`);
+                for (let i = 1; i < existingInputNodes.length; i++) {
+                    this.removeNode(existingInputNodes[i].id, true);
+                }
             }
         }
     }
     
     // check if a node needs an input node and create it
     async checkAndCreateInputNode(mainNode) {
-        if (!mainNode.pythonFile) return;
+        if (!mainNode.pythonFile) return null;
         
         try {
             // enforce at most one input node
@@ -974,8 +1027,9 @@ class StateManager extends BaseEmitter {
                 for (let i = 1; i < existingInputs.length; i++) {
                     this.removeNode(existingInputs[i].id, true);
                 }
-                return;
+                return existingInputs[0]; // return the existing input node
             }
+            
             // analyze the python file to check for function parameters
             const response = await fetch('/api/analyze-python-function', {
                 method: 'POST',
@@ -995,9 +1049,14 @@ class StateManager extends BaseEmitter {
                 
                 // create connection from input node to main node
                 this.createInputConnection(inputNode, mainNode);
+                
+                return inputNode;
             }
+            
+            return null;
         } catch (error) {
             console.error('error checking node inputs:', error);
+            return null;
         }
     }
     
@@ -1052,6 +1111,33 @@ class StateManager extends BaseEmitter {
         
         this.links.push(link);
         this.emit('linkAdded', link);
+    }
+
+    // temporary function to clear input nodes without associated python nodes
+    clearOrphanedInputNodes() {
+        const orphanedInputNodes = this.nodes.filter(node => {
+            if (node.type !== 'input_node') return false;
+            
+            // check if the target node exists
+            if (!node.targetNodeId) return true; // no target specified
+            
+            const targetNode = this.nodes.find(n => n.id === node.targetNodeId);
+            if (!targetNode) return true; // target node doesn't exist
+            
+            if (targetNode.type !== 'python_file') return true; // target is not a python node
+            
+            return false; // this input node is valid
+        });
+        
+        if (orphanedInputNodes.length > 0) {
+            console.log(`clearing ${orphanedInputNodes.length} orphaned input nodes:`, orphanedInputNodes.map(n => n.id));
+            orphanedInputNodes.forEach(node => {
+                this.removeNode(node.id, true);
+            });
+            return orphanedInputNodes.length;
+        }
+        
+        return 0;
     }
 }
 

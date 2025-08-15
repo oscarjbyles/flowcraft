@@ -1020,6 +1020,28 @@ class LinkRenderer {
         
         if (!sourceNode || !targetNode) return null;
         
+        // try to get the actual rendered link path element first
+        const linkElement = this.linkGroup
+            .selectAll('.link')
+            .filter(d => d.source === link.source && d.target === link.target)
+            .node();
+        
+        if (linkElement) {
+            try {
+                // use the actual rendered path to get the midpoint
+                const pathLength = linkElement.getTotalLength();
+                const midPoint = linkElement.getPointAtLength(pathLength / 2);
+                
+                return {
+                    x: midPoint.x,
+                    y: midPoint.y
+                };
+            } catch (error) {
+                // fallback to simple calculation if path methods fail
+            }
+        }
+        
+        // fallback: use simple midpoint calculation for all paths
         const sourcePoint = this.getNodeConnectionPoint(sourceNode, targetNode);
         const targetPoint = this.getNodeConnectionPoint(targetNode, sourceNode);
         
