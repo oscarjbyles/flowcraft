@@ -89,7 +89,18 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
         // ensure hidden when collapsed to avoid initial flash
         propertiesSidebar.style.display = 'none';
         if (mainContent) mainContent.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
-        if (runFeedBar) runFeedBar.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (runFeedBar) {
+            runFeedBar.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+            // ensure run feed bar stays visible in run mode even when sidebar is collapsed
+            if (runFeedBar.getAttribute('data-run-mode') === 'true') {
+                // use helper function if available, otherwise set directly
+                if (window.flowchartApp && typeof window.flowchartApp.setRunFeedBarDisplay === 'function') {
+                    window.flowchartApp.setRunFeedBarDisplay('flex');
+                } else {
+                    runFeedBar.style.display = 'flex';
+                }
+            }
+        }
         if (startButtonContainer) startButtonContainer.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (sidebarToggleContainer) sidebarToggleContainer.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (toggleSidebarBtn) {
@@ -101,7 +112,18 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
         // show when expanded
         propertiesSidebar.style.display = 'flex';
         if (mainContent) mainContent.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
-        if (runFeedBar) runFeedBar.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+        if (runFeedBar) {
+            runFeedBar.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
+            // ensure run feed bar stays visible in run mode
+            if (runFeedBar.getAttribute('data-run-mode') === 'true') {
+                // use helper function if available, otherwise set directly
+                if (window.flowchartApp && typeof window.flowchartApp.setRunFeedBarDisplay === 'function') {
+                    window.flowchartApp.setRunFeedBarDisplay('flex');
+                } else {
+                    runFeedBar.style.display = 'flex';
+                }
+            }
+        }
         if (startButtonContainer) startButtonContainer.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (sidebarToggleContainer) sidebarToggleContainer.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
         if (toggleSidebarBtn) {

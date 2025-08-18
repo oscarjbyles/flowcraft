@@ -48,19 +48,22 @@ def run_flowchart():
             file_path = os.path.normpath(os.path.join(project_root, rel))
             if not os.path.exists(file_path):
                 return jsonify({"status": "error", "message": f"python file not found: {python_file}", "results": results, "failed_at_index": i}), 404
-            result = subprocess.run([sys.executable, file_path], capture_output=True, text=True, timeout=30, cwd=os.getcwd())
+            # use the tracking function to get line number information
+            result = execute_python_function_with_tracking(file_path, {}, {}, node_id, running_processes, process_lock)
             node_result = {
                 "node_id": node_id,
                 "node_name": node.get('name', 'unknown'),
                 "python_file": python_file,
-                "success": result.returncode == 0,
-                "output": result.stdout,
-                "error": result.stderr if result.stderr else None,
-                "return_code": result.returncode,
+                "success": result.get('success', False),
+                "output": result.get('output', ''),
+                "error": result.get('error'),
+                "error_line": result.get('error_line'),
+                "error_file": result.get('error_file'),
+                "return_value": result.get('return_value'),
                 "index": i
             }
             results.append(node_result)
-            if result.returncode != 0:
+            if not result.get('success', False):
                 return jsonify({"status": "failed", "message": f"execution stopped at node {node.get('name', node_id)} (index {i})", "results": results, "failed_at_index": i, "total_nodes": len(execution_order), "completed_nodes": i + 1})
         except subprocess.TimeoutExpired:
             return jsonify({"status": "error", "message": f"node {node.get('name', node_id)} timed out after 30 seconds", "results": results, "failed_at_index": i})
@@ -380,6 +383,112 @@ def clear_executions_and_history():
         return jsonify({'status': 'success', 'message': f'cleared {removed_count} history entries and reset executions for {flowchart_name}'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'failed to clear executions and history: {str(e)}'}), 500
+
+
+@execution_bp.route('/resume-execution', methods=['POST'])
+def resume_execution():
+    """resume execution from a specific node with variables from previous execution"""
+    data = request.json
+    flowchart_name = data.get('flowchart_name', DEFAULT_FLOWCHART)
+    start_node_id = data.get('start_node_id')
+    execution_order = data.get('execution_order', [])
+    previous_variables = data.get('previous_variables', {})
+    
+    if not start_node_id or not execution_order:
+        return jsonify({"status": "error", "message": "start_node_id and execution_order are required"}), 400
+    
+    # find the starting index in execution order
+    try:
+        start_index = execution_order.index(start_node_id)
+    except ValueError:
+        return jsonify({"status": "error", "message": f"start node {start_node_id} not found in execution order"}), 404
+    
+    # get nodes to execute from start node onwards
+    nodes_to_execute = execution_order[start_index:]
+    
+    if not nodes_to_execute:
+        return jsonify({"status": "error", "message": "no nodes to execute from this point"}), 400
+    
+    flowchart_data = load_flowchart(flowchart_name)
+    node_lookup = {node['id']: node for node in flowchart_data['nodes']}
+    
+    results = []
+    current_variables = previous_variables.copy()
+    
+    for i, node_id in enumerate(nodes_to_execute):
+        if node_id not in node_lookup:
+            return jsonify({"status": "error", "message": f"node {node_id} not found", "results": results, "failed_at_index": i}), 404
+        
+        node = node_lookup[node_id]
+        python_file = node.get('pythonFile')
+        
+        if not python_file:
+            return jsonify({"status": "error", "message": f"node {node.get('name', node_id)} has no python file assigned", "results": results, "failed_at_index": i}), 400
+        
+        try:
+            normalized_python_file = python_file.replace('\\', '/')
+            import re as _re
+            normalized_python_file = _re.sub(r'^(?:nodes/)+', 'nodes/', normalized_python_file)
+            project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+            rel = _re.sub(r'^(?:nodes/)+', '', normalized_python_file)
+            file_path = os.path.normpath(os.path.join(project_root, rel))
+            
+            if not os.path.exists(file_path):
+                return jsonify({"status": "error", "message": f"python file not found: {python_file}", "results": results, "failed_at_index": i}), 404
+            
+            # execute with current variables as function arguments
+            result = execute_python_function_with_tracking(file_path, current_variables, {}, node_id, running_processes, process_lock)
+            
+            node_result = {
+                "node_id": node_id,
+                "node_name": node.get('name', 'unknown'),
+                "python_file": python_file,
+                "success": result.get('success', False),
+                "output": result.get('output', ''),
+                "error": result.get('error'),
+                "error_line": result.get('error_line'),
+                "error_file": result.get('error_file'),
+                "return_value": result.get('return_value'),
+                "function_args": result.get('function_args', {}),
+                "index": i
+            }
+            
+            results.append(node_result)
+            
+            # update variables for next node if execution succeeded
+            if result.get('success', False) and result.get('return_value'):
+                return_value = result.get('return_value')
+                if isinstance(return_value, dict):
+                    current_variables.update(return_value)
+                else:
+                    # for simple values, use node name as variable name
+                    var_name = node.get('name', node_id).lower().replace(' ', '_').replace('-', '_')
+                    current_variables[var_name] = return_value
+            
+            if not result.get('success', False):
+                return jsonify({
+                    "status": "failed", 
+                    "message": f"execution stopped at node {node.get('name', node_id)} (index {i})", 
+                    "results": results, 
+                    "failed_at_index": i, 
+                    "total_nodes": len(nodes_to_execute), 
+                    "completed_nodes": i + 1,
+                    "final_variables": current_variables
+                })
+                
+        except subprocess.TimeoutExpired:
+            return jsonify({"status": "error", "message": f"node {node.get('name', node_id)} timed out after 30 seconds", "results": results, "failed_at_index": i})
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"failed to execute node {node.get('name', node_id)}: {str(e)}", "results": results, "failed_at_index": i})
+    
+    return jsonify({
+        "status": "success", 
+        "message": f"successfully executed all {len(nodes_to_execute)} nodes", 
+        "results": results, 
+        "total_nodes": len(nodes_to_execute), 
+        "completed_nodes": len(nodes_to_execute),
+        "final_variables": current_variables
+    })
 
 
 from ..services.analysis import PythonVariableAnalyzer, extract_returns_from_statement

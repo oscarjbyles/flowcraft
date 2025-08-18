@@ -1,4 +1,23 @@
+# exclude all files in backups and history directories
+backups/
+history/
+
 # ignore local python virtual environment
 .venv/
+
+# ignore temporary excel files
+~$*.xlsx
+
+# ignore microsoft office files
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.odt
+*.ods
+*.odp
+*.rtf
 
 

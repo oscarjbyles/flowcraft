@@ -26,7 +26,7 @@
     function initializeApp() {
         // guard against double initialization (e.g., script included twice or rapid re-exec)
         if (window.flowchartApp && window.__flowcraft_initialized) {
-            try { console.warn('flowchart app already initialized; skipping duplicate init'); } catch (_) {}
+            console.warn('flowchart app already initialized; skipping duplicate init');
             return;
         }
         // run only on builder page
@@ -36,7 +36,10 @@
             if (!isBuilderPath || !hasCanvas) {
                 return;
             }
-        } catch (_) { return; }
+        } catch (error) { 
+            console.error('error checking builder path:', error);
+            return; 
+        }
         if (!checkDependencies()) {
             console.error('cannot initialize app: missing dependencies');
             return;
@@ -68,7 +71,13 @@
             window.__flowcraft_initialized = true;
 
             // wire left navigation (flowchart dropdown, nav buttons) for builder view
-            try { if (window.Navigation && typeof window.Navigation.init === 'function') { window.Navigation.init(window.flowchartApp); } } catch (_) {}
+            try { 
+                if (window.Navigation && typeof window.Navigation.init === 'function') { 
+                    window.Navigation.init(window.flowchartApp); 
+                } 
+            } catch (error) {
+                console.error('error initializing navigation:', error);
+            }
 
             // add global debug helpers
             window.debugFlowchart = {
@@ -82,7 +91,8 @@
                     const count = window.flowchartApp.state.clearOrphanedInputNodes();
                     console.log(`cleared ${count} orphaned input nodes`);
                     return count;
-                }
+                },
+                setRunFeedBarDisplay: (display) => window.flowchartApp.setRunFeedBarDisplay(display)
             };
 
             console.log('flowchart application initialized');

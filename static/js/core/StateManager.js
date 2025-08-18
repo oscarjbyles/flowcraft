@@ -352,6 +352,64 @@ class StateManager extends BaseEmitter {
         return null;
     }
 
+    hasUpstreamIfSplitter(pythonNodeId) {
+        const pyNode = this.getNode(pythonNodeId);
+        if (!pyNode || pyNode.type !== 'python_file') return false;
+        
+        // check if there's an if splitter upstream in the flow
+        const visited = new Set();
+        const queue = [pythonNodeId];
+        
+        while (queue.length > 0) {
+            const currentNodeId = queue.shift();
+            if (visited.has(currentNodeId)) continue;
+            visited.add(currentNodeId);
+            
+            // check incoming links to this node
+            for (const link of this.links) {
+                if (link.target === currentNodeId) {
+                    const sourceNode = this.getNode(link.source);
+                    if (sourceNode && sourceNode.type === 'if_node') {
+                        return true; // found upstream if splitter
+                    }
+                    // continue traversing upstream
+                    queue.push(link.source);
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    hasDownstreamIfSplitter(pythonNodeId) {
+        const pyNode = this.getNode(pythonNodeId);
+        if (!pyNode || pyNode.type !== 'python_file') return false;
+        
+        // check if there's an if splitter downstream in the flow
+        const visited = new Set();
+        const queue = [pythonNodeId];
+        
+        while (queue.length > 0) {
+            const currentNodeId = queue.shift();
+            if (visited.has(currentNodeId)) continue;
+            visited.add(currentNodeId);
+            
+            // check outgoing links from this node
+            for (const link of this.links) {
+                if (link.source === currentNodeId) {
+                    const targetNode = this.getNode(link.target);
+                    if (targetNode && targetNode.type === 'if_node') {
+                        return true; // found downstream if splitter
+                    }
+                    // continue traversing downstream
+                    queue.push(link.target);
+                }
+            }
+        }
+        
+        return false;
+    }
+
     removeNode(nodeId, force = false) {
         const nodeIndex = this.nodes.findIndex(n => n.id === nodeId);
         if (nodeIndex === -1) return false;
@@ -846,12 +904,22 @@ class StateManager extends BaseEmitter {
             id: Date.now() + Math.random(),
             x: annotationData.x || 0,
             y: annotationData.y || 0,
-            text: Validation.sanitizeString(annotationData.text || 'text', 200),
-            type: 'text',
-            // default font size for text annotations
-            fontSize: Math.max(8, Math.min(72, parseInt(annotationData.fontSize || 14, 10))) || 14,
+            type: annotationData.type || 'text',
             ...annotationData
         };
+
+        // handle different annotation types
+        if (annotation.type === 'text') {
+            annotation.text = Validation.sanitizeString(annotationData.text || 'text', 200);
+            annotation.fontSize = Math.max(8, Math.min(72, parseInt(annotationData.fontSize || 14, 10))) || 14;
+        } else if (annotation.type === 'arrow') {
+            annotation.startX = annotationData.startX || annotation.x - 50;
+            annotation.startY = annotationData.startY || annotation.y;
+            annotation.endX = annotationData.endX || annotation.x + 50;
+            annotation.endY = annotationData.endY || annotation.y;
+            annotation.strokeWidth = Math.max(1, Math.min(10, parseInt(annotationData.strokeWidth || 2, 10))) || 2;
+            annotation.strokeColor = annotationData.strokeColor || 'var(--on-surface)';
+        }
 
         this.annotations.push(annotation);
         this.emit('annotationAdded', annotation);

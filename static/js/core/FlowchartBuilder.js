@@ -27,7 +27,7 @@ class FlowchartBuilder {
         this.viewportSaveTimer = null;
         this.viewportSaveDelay = 250; // ms
 
-        console.log('flowchart builder initialized successfully');
+
     }
 
     initializeCore() {
@@ -66,6 +66,8 @@ class FlowchartBuilder {
         this.nodeVariables = new Map(); // nodeId -> returned variables from function
         // live feed for persistence: array of { node_id, node_name, started_at, finished_at, success, lines: [{text, ts}] }
         this.executionFeed = [];
+        // restored variable state from history (for resume functionality)
+        this.restoredVariableState = null;
 
         // runtime branch control: nodes blocked by false if arms in the current run
         // all comments in lower case
@@ -128,22 +130,17 @@ class FlowchartBuilder {
     }
 
     initializeUI() {
-        try { console.log('[init] initializeUI start'); } catch(_) {}
         // setup sidebar buttons
         this.setupSidebarButtons();
-        try { console.log('[init] initializeUI after setupSidebarButtons'); } catch(_) {}
         
         // setup status bar
         this.setupStatusBar();
-        try { console.log('[init] initializeUI after setupStatusBar'); } catch(_) {}
         
         // setup context menu
         this.setupContextMenu();
-        try { console.log('[init] initializeUI after setupContextMenu'); } catch(_) {}
         
         // setup window events
         this.setupWindowEvents();
-        try { console.log('[init] initializeUI after setupWindowEvents'); } catch(_) {}
 
         // wire modal close for massive change modal if present
         try {
@@ -213,7 +210,6 @@ class FlowchartBuilder {
             this.updateFlowViewUI(data.isFlowView);
         });
         this.state.on('errorViewChanged', (data) => {
-            console.log('[error_view] event errorViewChanged', data);
             this.updateErrorViewUI(data.isErrorView);
         });
         
@@ -223,7 +219,6 @@ class FlowchartBuilder {
                 this.renderNodeOrder();
             }
             if (this.state.isErrorView) {
-                console.log('[error_view] stateChanged -> renderErrorCircles');
                 this.renderErrorCircles();
                 if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
                     this.nodeRenderer.updateCoverageAlerts();
@@ -235,7 +230,6 @@ class FlowchartBuilder {
         ['linkAdded','linkUpdated','linkRemoved'].forEach(evt => {
             this.state.on(evt, () => {
                 if (this.state.isErrorView) {
-                    console.log('[error_view]', evt, '-> re-render link alerts');
                     if (this.linkRenderer && this.linkRenderer.renderCoverageAlerts) {
                         this.linkRenderer.renderCoverageAlerts();
                     }
@@ -546,7 +540,6 @@ class FlowchartBuilder {
     }
 
     setupSidebarButtons() {
-        try { console.log('[init] setupSidebarButtons start'); } catch(_) {}
         // delegate to centralized navigation module for left sidebar
         try { if (window.Navigation && typeof window.Navigation.setupNavButtons === 'function') window.Navigation.setupNavButtons(this); } catch(_) {}
 
@@ -554,9 +547,7 @@ class FlowchartBuilder {
         const attachClick = (elementId, handler) => {
             const el = document.getElementById(elementId);
             if (el) {
-                try { console.log(`[wire] attaching click to #${elementId}`); } catch(_) {}
                 el.addEventListener('click', (e) => {
-                    try { console.log(`[event] ${elementId} clicked`, { target: e.target && e.target.id }); } catch(_) {}
                     handler(e);
                 });
             } else {
@@ -570,7 +561,6 @@ class FlowchartBuilder {
         const errorToggleBtn = document.getElementById('error_toggle_btn');
         if (errorToggleBtn) {
             errorToggleBtn.addEventListener('click', () => {
-                console.log('[error_view] toggle button clicked');
                 this.toggleErrorView();
             });
         } else {
@@ -624,7 +614,6 @@ class FlowchartBuilder {
         const buildToolbar = document.getElementById('build_toolbar');
         const buildToolbarToggle = document.getElementById('build_toolbar_toggle');
         if (buildToolbar) {
-            try { console.log('[wire] build toolbar found'); } catch(_) {}
             const collapse = () => { buildToolbar.classList.remove('is_expanded'); };
             const expand = () => { buildToolbar.classList.add('is_expanded'); };
             // default collapsed (only + button visible)
@@ -632,17 +621,14 @@ class FlowchartBuilder {
             // robust delegation to handle dynamic states
             buildToolbar.addEventListener('click', (e) => {
                 const toggle = e.target.closest('[data-action="toggle-build-toolbar"], #build_toolbar_toggle');
-                try { console.log('[event] build_toolbar clicked', { isToggle: !!toggle, targetId: e.target && e.target.id }); } catch(_) {}
                 if (!toggle) return;
                 const isOpen = buildToolbar.classList.contains('is_expanded');
-                try { console.log('[state] build_toolbar is_expanded:', isOpen); } catch(_) {}
                 if (isOpen) { collapse(); } else { expand(); }
             });
             // direct toggle click wiring as a fallback
             const directToggle = document.getElementById('build_toolbar_toggle');
             if (directToggle && !directToggle._wired) {
                 directToggle.addEventListener('click', (e) => {
-                    try { console.log('[event] build_toolbar_toggle direct click'); } catch(_) {}
                     e.stopPropagation();
                     const isOpen = buildToolbar.classList.contains('is_expanded');
                     if (isOpen) { collapse(); } else { expand(); }
@@ -652,8 +638,8 @@ class FlowchartBuilder {
             // clicking either action should collapse back
             const pythonBtn = document.getElementById('python_node_btn');
             const ifBtn = document.getElementById('if_condition_btn');
-            if (pythonBtn) { try { console.log('[wire] python_node_btn found'); } catch(_) {} pythonBtn.addEventListener('click', () => { try { console.log('[event] python_node_btn action -> collapse'); } catch(_) {} collapse(); }); }
-            if (ifBtn) { try { console.log('[wire] if_condition_btn found'); } catch(_) {} ifBtn.addEventListener('click', () => { try { console.log('[event] if_condition_btn action -> collapse'); } catch(_) {} collapse(); }); }
+            if (pythonBtn) { pythonBtn.addEventListener('click', () => { collapse(); }); }
+            if (ifBtn) { ifBtn.addEventListener('click', () => { collapse(); }); }
             // expose for mode switching resets
             this._collapseBuildToolbar = collapse;
         }
@@ -666,7 +652,14 @@ class FlowchartBuilder {
                 this.addTextAnnotation();
             });
         }
-        try { console.log('[init] setupSidebarButtons end'); } catch(_) {}
+        
+        const addArrowBtn = document.getElementById('add_arrow_btn');
+        if (addArrowBtn) {
+            addArrowBtn.addEventListener('click', () => {
+                this.addArrowAnnotation();
+            });
+        }
+
         
 		// start/stop button for execution
 		document.getElementById('execute_start_btn').addEventListener('click', () => {
@@ -756,16 +749,14 @@ class FlowchartBuilder {
         updateRunFeedButtons();
 
         // ensure a placeholder is visible in the live execution feed when empty
-        try {
-            const list = document.getElementById('run_feed_list');
-            if (list && list.children.length === 0) {
-                const placeholder = document.createElement('div');
-                placeholder.id = 'run_feed_placeholder';
-                placeholder.className = 'run_feed_placeholder';
-                placeholder.textContent = 'waiting for execution';
-                list.appendChild(placeholder);
-            }
-        } catch (_) {}
+        const list = document.getElementById('run_feed_list');
+        if (list && list.children.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.id = 'run_feed_placeholder';
+            placeholder.className = 'run_feed_placeholder';
+            placeholder.textContent = 'waiting for execution';
+            list.appendChild(placeholder);
+        }
 
         // resizable top border for run feed (drag to resize height)
         if (runFeedResizer && runFeedBar) {
@@ -862,7 +853,7 @@ class FlowchartBuilder {
                 }
             }, { passive: true });
             toggleSidebarBtn._wired = true;
-            try { console.log('[wire] toggle_sidebar_btn wired (global)'); } catch(_) {}
+
         }
         
         // history removed
@@ -1015,6 +1006,33 @@ class FlowchartBuilder {
             this.updateStatusBar('added text');
         } catch (e) {
             this.updateStatusBar('error adding text');
+        }
+    }
+
+    addArrowAnnotation() {
+        // only in build mode
+        if (!this.state.isBuildMode) {
+            this.updateStatusBar('arrow annotation only available in build mode');
+            return;
+        }
+        const centerX = this.state.canvasWidth / 2;
+        const centerY = this.state.canvasHeight / 2;
+        const [wx, wy] = this.state.transform.invert([centerX, centerY]);
+        try {
+            const ann = this.state.addAnnotation({ 
+                x: wx, 
+                y: wy, 
+                type: 'arrow',
+                startX: wx - 50,
+                startY: wy,
+                endX: wx + 50,
+                endY: wy,
+                strokeWidth: 2,
+                strokeColor: 'var(--on-surface)'
+            });
+            this.updateStatusBar('added arrow');
+        } catch (e) {
+            this.updateStatusBar('error adding arrow');
         }
     }
 
@@ -1566,6 +1584,7 @@ class FlowchartBuilder {
     calculateNodeOrder() {
         const nodes = this.state.nodes;
         const links = this.state.links;
+        const groups = this.state.groups;
         
         // step 1: identify connected nodes only (nodes that are part of execution flow)
         // first filter out input nodes and data_save nodes and their connections
@@ -1616,7 +1635,22 @@ class FlowchartBuilder {
             }
         });
         
-        // step 3: find execution order using modified topological sort with spatial awareness
+        // step 3: group nodes by their group membership
+        const nodeToGroup = new Map(); // nodeId -> group
+        const groupToNodes = new Map(); // groupId -> Set of nodeIds
+        
+        // initialize group mappings
+        connectedNodes.forEach(node => {
+            if (node.groupId) {
+                nodeToGroup.set(node.id, node.groupId);
+                if (!groupToNodes.has(node.groupId)) {
+                    groupToNodes.set(node.groupId, new Set());
+                }
+                groupToNodes.get(node.groupId).add(node.id);
+            }
+        });
+        
+        // step 4: find execution order using group-aware topological sort
         const result = [];
         const processed = new Set();
         const processing = new Set();
@@ -1636,7 +1670,33 @@ class FlowchartBuilder {
             );
         };
         
-        // step 4: process nodes in execution order
+        // helper function to check if all nodes in a group are ready
+        const isGroupReady = (groupId) => {
+            const groupNodeIds = groupToNodes.get(groupId);
+            if (!groupNodeIds) return false;
+            
+            const groupNodes = connectedNodes.filter(node => groupNodeIds.has(node.id));
+            return groupNodes.every(node => 
+                !processed.has(node.id) && 
+                !processing.has(node.id) && 
+                canExecute(node.id)
+            );
+        };
+        
+        // helper function to get all nodes in a group that are ready
+        const getReadyNodesInGroup = (groupId) => {
+            const groupNodeIds = groupToNodes.get(groupId);
+            if (!groupNodeIds) return [];
+            
+            return connectedNodes.filter(node => 
+                groupNodeIds.has(node.id) &&
+                !processed.has(node.id) && 
+                !processing.has(node.id) && 
+                canExecute(node.id)
+            );
+        };
+        
+        // step 5: process nodes in group-aware execution order
         while (processed.size < connectedNodes.length) {
             const readyNodes = getReadyNodes();
             
@@ -1646,22 +1706,43 @@ class FlowchartBuilder {
                 break;
             }
             
-            // sort ready nodes by y-position (top to bottom) then x-position (left to right)
-            readyNodes.sort((a, b) => {
-                if (Math.abs(a.y - b.y) < 10) { // if roughly same height
-                    return a.x - b.x; // sort left to right
+            // prioritize nodes that belong to groups that are ready to be processed
+            const readyGroups = new Set();
+            readyNodes.forEach(node => {
+                if (node.groupId && isGroupReady(node.groupId)) {
+                    readyGroups.add(node.groupId);
                 }
-                return a.y - b.y; // sort top to bottom
             });
             
-            // process the topmost ready node(s)
-            const currentY = readyNodes[0].y;
-            const currentLevelNodes = readyNodes.filter(node => 
-                Math.abs(node.y - currentY) < 10 // nodes at roughly same level
-            );
+            let nodesToProcess = [];
             
-            // add current level nodes to result in left-to-right order
-            currentLevelNodes.forEach(node => {
+            if (readyGroups.size > 0) {
+                // process entire groups that are ready
+                readyGroups.forEach(groupId => {
+                    const groupReadyNodes = getReadyNodesInGroup(groupId);
+                    nodesToProcess.push(...groupReadyNodes);
+                });
+            } else {
+                // fallback to original logic for ungrouped nodes or when no groups are ready
+                // sort ready nodes by y-position (top to bottom) then x-position (left to right)
+                readyNodes.sort((a, b) => {
+                    if (Math.abs(a.y - b.y) < 10) { // if roughly same height
+                        return a.x - b.x; // sort left to right
+                    }
+                    return a.y - b.y; // sort top to bottom
+                });
+                
+                // process the topmost ready node(s)
+                const currentY = readyNodes[0].y;
+                const currentLevelNodes = readyNodes.filter(node => 
+                    Math.abs(node.y - currentY) < 10 // nodes at roughly same level
+                );
+                nodesToProcess = currentLevelNodes;
+            }
+            
+            // add nodes to result in left-to-right order within their group or level
+            nodesToProcess.sort((a, b) => a.x - b.x);
+            nodesToProcess.forEach(node => {
                 processing.add(node.id);
                 result.push(node);
                 processed.add(node.id);
@@ -1709,32 +1790,25 @@ class FlowchartBuilder {
     toggleErrorView() {
         // allow error view toggle in both build and run modes
         const next = !this.state.isErrorView;
-        console.log('[error_view] toggling to', next);
         this.state.setErrorView(next);
-        console.log('[error_view] state after set', this.state.isErrorView);
         if (this.state.isErrorView) {
-            console.log('[error_view] rendering error circles');
             this.renderErrorCircles();
             // also show coverage alerts if any
             if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
-                console.log('[error_view] updating coverage alerts (enable)');
                 this.nodeRenderer.updateCoverageAlerts();
             } else {
                 console.warn('[error_view] nodeRenderer.updateCoverageAlerts unavailable');
             }
             // recompute link coverage now that error view is enabled
             if (this.linkRenderer && this.linkRenderer.computeLinkCoverageFromAnalysis) {
-                console.log('[error_view] computing link coverage alerts');
                 this.linkRenderer.computeLinkCoverageFromAnalysis();
                 this.linkRenderer.updateLinkCoverageAlerts();
             }
             this.updateStatusBar('error view enabled - showing errors');
         } else {
-            console.log('[error_view] hiding error circles');
             this.hideErrorCircles();
             // ensure legacy coverage alerts are removed while disabled
             if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
-                console.log('[error_view] updating coverage alerts (disable)');
                 this.nodeRenderer.updateCoverageAlerts();
             } else {
                 console.warn('[error_view] nodeRenderer.updateCoverageAlerts unavailable');
@@ -1910,11 +1984,9 @@ class FlowchartBuilder {
                 .attr('y', y)
                 .text('!');
         });
-        console.log('[error_view] renderErrorCircles done');
     }
 
     hideErrorCircles() {
-        console.log('[error_view] hideErrorCircles');
         try {
             this.nodeRenderer.nodeGroup.selectAll('.error_circle, .error_text').remove();
             // also remove link coverage alerts when hiding error view
@@ -1993,10 +2065,13 @@ class FlowchartBuilder {
             startButtonContainer.style.display = 'none';
             if (sidebarToggleContainer) sidebarToggleContainer.style.display = 'none';
             // hide live feed bar
-            try {
-                const runFeedBar = document.getElementById('run_feed_bar');
-                if (runFeedBar) runFeedBar.style.display = 'none';
-            } catch (_) {}
+            const runFeedBar = document.getElementById('run_feed_bar');
+            if (runFeedBar) {
+                console.log('[debug] hiding run feed bar in build mode');
+                this.setRunFeedBarDisplay('none');
+                // clear run mode attribute when leaving run mode
+                runFeedBar.removeAttribute('data-run-mode');
+            }
             
             // restore normal properties sidebar width
             mainContent.classList.remove('run_mode');
@@ -2020,6 +2095,7 @@ class FlowchartBuilder {
             // suppressed: build mode notification
             
         } else if (mode === 'run') {
+            console.log('[debug] entering run mode in updateModeUI');
             // hide multiselect button in run mode
             const groupSelectBtn = document.getElementById('group_select_btn');
             if (groupSelectBtn) {
@@ -2057,19 +2133,15 @@ class FlowchartBuilder {
             if (toggleSidebarBtn) {
                 toggleSidebarBtn.title = 'show properties';
                 toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
-                try { console.log('[run_ui] configured toggle button initial state', { title: toggleSidebarBtn.title }); } catch(_) {}
                 if (!toggleSidebarBtn._wired) {
                     toggleSidebarBtn.addEventListener('click', () => {
-                        try { console.log('[event] toggle_sidebar_btn clicked'); } catch(_) {}
                         const propertiesSidebarEl = document.getElementById('properties_sidebar');
                         const isCollapsed = propertiesSidebarEl && propertiesSidebarEl.classList.contains('collapsed');
                         // if sidebar instance method exists, use it
                         if (this.sidebar && typeof this.sidebar.setCollapsed === 'function') {
-                            try { console.log('[run_ui] calling sidebar.setCollapsed', { newCollapsed: !isCollapsed }); } catch(_) {}
                             this.sidebar.setCollapsed(!isCollapsed);
                         } else if (window.Sidebar && window.Sidebar.prototype && typeof window.Sidebar.prototype.setCollapsed === 'function') {
                             // fallback: call prototype with this.sidebar context
-                            try { console.log('[run_ui] calling Sidebar.prototype.setCollapsed', { newCollapsed: !isCollapsed }); } catch(_) {}
                             try { window.Sidebar.prototype.setCollapsed.call(this.sidebar, !isCollapsed); } catch (e) { try { console.warn('[run_ui] prototype setCollapsed call failed:', e); } catch(_) {} }
                         } else {
                             // final fallback: toggle classes directly
@@ -2077,7 +2149,6 @@ class FlowchartBuilder {
                             const runFeedBarEl = document.getElementById('run_feed_bar');
                             const toggleBarEl = document.getElementById('sidebar_toggle_container');
                             if (!isCollapsed) {
-                                try { console.log('[run_ui] fallback collapse'); } catch(_) {}
                                 propertiesSidebarEl.classList.add('collapsed');
                                 if (mainContentEl) mainContentEl.classList.add('sidebar_collapsed');
                                 if (runFeedBarEl) runFeedBarEl.classList.add('sidebar_collapsed');
@@ -2085,7 +2156,6 @@ class FlowchartBuilder {
                                 toggleSidebarBtn.title = 'show properties';
                                 toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
                             } else {
-                                try { console.log('[run_ui] fallback expand'); } catch(_) {}
                                 propertiesSidebarEl.classList.remove('collapsed');
                                 if (mainContentEl) mainContentEl.classList.remove('sidebar_collapsed');
                                 if (runFeedBarEl) runFeedBarEl.classList.remove('sidebar_collapsed');
@@ -2096,14 +2166,23 @@ class FlowchartBuilder {
                         }
                     }, { passive: true });
                     toggleSidebarBtn._wired = true;
-                    try { console.log('[wire] toggle_sidebar_btn wired'); } catch(_) {}
                 }
             }
             // show live feed bar
-            try {
-                const runFeedBar = document.getElementById('run_feed_bar');
-                if (runFeedBar) runFeedBar.style.display = 'flex';
-            } catch (_) {}
+            const runFeedBar = document.getElementById('run_feed_bar');
+            if (runFeedBar) {
+                this.setRunFeedBarDisplay('flex');
+                // fix the width issue by setting explicit width
+                const leftSidebarWidth = 320;
+                const width = window.innerWidth - leftSidebarWidth;
+                runFeedBar.style.width = `${width}px`;
+                runFeedBar.style.left = `${leftSidebarWidth}px`;
+                runFeedBar.style.right = 'auto';
+                // ensure run feed bar stays visible in run mode regardless of sidebar state
+                runFeedBar.setAttribute('data-run-mode', 'true');
+            } else {
+                console.warn('[debug] run feed bar element not found!');
+            }
             
             // expand properties sidebar to run view width (but start collapsed)
             mainContent.classList.add('run_mode');
@@ -2168,7 +2247,12 @@ class FlowchartBuilder {
 
             // hide other special panels
             // also hide live execution feed when entering settings
-            try { const runFeedBar = document.getElementById('run_feed_bar'); if (runFeedBar) runFeedBar.style.display = 'none'; } catch (_) {}
+            const runFeedBar = document.getElementById('run_feed_bar'); 
+            if (runFeedBar) {
+                this.setRunFeedBarDisplay('none');
+                // clear run mode attribute when entering settings
+                runFeedBar.removeAttribute('data-run-mode');
+            }
             this.hideExecutionPanel();
 
             // show full page settings
@@ -2185,6 +2269,19 @@ class FlowchartBuilder {
             if (groupSelectBtn) {
                 groupSelectBtn.style.display = '';
             }
+        }
+    }
+
+    // helper function to safely set run feed bar display state
+    setRunFeedBarDisplay(display) {
+        const runFeedBar = document.getElementById('run_feed_bar');
+        if (runFeedBar) {
+            // if in run mode, only allow flex display
+            if (runFeedBar.getAttribute('data-run-mode') === 'true' && display === 'none') {
+                console.log('[debug] preventing run feed bar from being hidden in run mode');
+                return;
+            }
+            runFeedBar.style.display = display;
         }
     }
 
@@ -2231,7 +2328,7 @@ class FlowchartBuilder {
             errorToggleBtn.innerHTML = '<span class="material-icons">priority_high</span>';
             errorToggleBtn.title = 'show error circles';
         }
-        console.log('[error_view] updateErrorViewUI ->', isErrorView);
+
     }
 
     deselectAll() {
@@ -2364,6 +2461,8 @@ class FlowchartBuilder {
         this.executionFeed = [];
         // reset blocked branches
         this.blockedNodeIds.clear();
+        // clear restored variable state when starting new execution
+        this.restoredVariableState = null;
         // clear any previous runtime condition indicators on if→python links
         try {
             const links = Array.isArray(this.state.links) ? this.state.links : [];
@@ -2615,6 +2714,24 @@ class FlowchartBuilder {
                 }
             })() : [];
 
+            // build variable state for resume functionality
+            const variableState = {};
+            try {
+                // collect variables from all executed nodes in order
+                for (const node of executionOrder) {
+                    const result = this.nodeExecutionResults.get(node.id);
+                    if (result && result.success && result.return_value) {
+                        if (typeof result.return_value === 'object' && result.return_value !== null) {
+                            Object.assign(variableState, result.return_value);
+                        } else {
+                            // use node name as variable name for simple values
+                            const varName = node.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
+                            variableState[varName] = result.return_value;
+                        }
+                    }
+                }
+            } catch (_) {}
+
             const executionData = {
                 status: status,
                 execution_order: executionOrder.map(node => node.id),
@@ -2625,6 +2742,7 @@ class FlowchartBuilder {
                 total_nodes: executionOrder.length,
                 successful_nodes: results.filter(r => r.success && executionOrder.some(node => node.id === r.node_id)).length,
                 error_message: errorMessage,
+                variable_state: variableState, // add variable state for resume functionality
                 flowchart_state: {
                     nodes: this.state.nodes.map(node => {
                         // base properties for all nodes
@@ -2684,7 +2802,7 @@ class FlowchartBuilder {
             const result = await response.json();
             
             if (result.status === 'success') {
-                console.log('execution history saved:', result.execution_id);
+        
             } else {
                 console.error('failed to save execution history:', result.message);
             }
@@ -2840,6 +2958,14 @@ class FlowchartBuilder {
                 }
             }
         });
+
+        // restore global variable state if available (for resume functionality)
+        if (executionData.variable_state && typeof executionData.variable_state === 'object') {
+            try {
+                // store the global variable state for resume operations
+                this.restoredVariableState = executionData.variable_state;
+            } catch (_) {}
+        }
         
         // restore visual state for input nodes based on their target node's execution state
         this.state.nodes.forEach(node => {
@@ -2997,13 +3123,13 @@ class FlowchartBuilder {
             return;
         }
 
-        // get variables from previous execution (if any)
-        const previousVariables = this.getPreviousExecutionVariables(nodeId, executionOrder);
+        // get variables from previous execution (if any) - enhanced to work with both live and restored executions
+        const previousVariables = this.getVariablesForResume(nodeId, executionOrder);
         
         this.updateStatusBar(`resuming execution from ${node.name} with ${Object.keys(previousVariables).length} variables`);
         
-        // start execution from the selected node
-        await this.startResumeExecution(nodesToExecute, previousVariables);
+        // use the new resume endpoint for better variable handling
+        await this.startResumeExecutionWithAPI(nodesToExecute, previousVariables, nodeId);
     }
 
     getPreviousExecutionVariables(resumeNodeId, executionOrder) {
@@ -3034,6 +3160,182 @@ class FlowchartBuilder {
         }
         
         return variables;
+    }
+
+    // enhanced method to get variables from both live and restored executions
+    getVariablesForResume(resumeNodeId, executionOrder) {
+        // first try to get variables from current execution results (live execution)
+        const liveVariables = this.getPreviousExecutionVariables(resumeNodeId, executionOrder);
+        
+        // if we have variables from live execution, use them
+        if (Object.keys(liveVariables).length > 0) {
+            return liveVariables;
+        }
+        
+        // if no live variables, try to use restored variable state (from history)
+        if (this.restoredVariableState && typeof this.restoredVariableState === 'object') {
+            const resumeIndex = executionOrder.findIndex(n => n.id === resumeNodeId);
+            
+            if (resumeIndex > 0) {
+                // return the full variable state since it represents the state up to the resume point
+                return { ...this.restoredVariableState };
+            }
+        }
+        
+        // if no restored variable state, try to reconstruct from restored execution history
+        const resumeIndex = executionOrder.findIndex(n => n.id === resumeNodeId);
+        
+        if (resumeIndex <= 0) {
+            return {}; // no previous nodes or first node
+        }
+
+        // collect variables from all previous nodes in the restored execution
+        const variables = {};
+        
+        for (let i = 0; i < resumeIndex; i++) {
+            const node = executionOrder[i];
+            const result = this.nodeExecutionResults.get(node.id);
+            
+            if (result && result.success && result.return_value) {
+                // if return value is an object, merge its properties
+                if (typeof result.return_value === 'object' && result.return_value !== null) {
+                    Object.assign(variables, result.return_value);
+                } else {
+                    // use node name as variable name for simple values
+                    const varName = node.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
+                    variables[varName] = result.return_value;
+                }
+            }
+        }
+        
+        return variables;
+    }
+
+    async startResumeExecutionWithAPI(nodesToExecute, initialVariables, startNodeId) {
+        // create abort controller for this execution session
+        this.currentExecutionController = new AbortController();
+
+        // set execution state
+        this.isExecuting = true;
+        this.executionAborted = false;
+        
+        // update ui to show stop button and loading wheel
+        this.updateExecutionUI(true);
+
+        // clear output for new execution
+        this.clearOutput();
+        
+        // update execution status
+        this.updateExecutionStatus('running', `resuming execution: ${nodesToExecute.length} nodes`);
+        
+        try {
+            // reset blocked branches at resume start
+            this.blockedNodeIds.clear();
+            // clear any previous runtime condition indicators on if→python links
+            try {
+                const links = Array.isArray(this.state.links) ? this.state.links : [];
+                links.forEach(l => {
+                    const s = this.state.getNode(l.source);
+                    const t = this.state.getNode(l.target);
+                    if (s && t && s.type === 'if_node' && t.type === 'python_file') {
+                        this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                    }
+                });
+            } catch (_) {}
+
+            // get full execution order for the api call
+            const fullExecutionOrder = this.calculateNodeOrder().map(n => n.id);
+            
+            // call the new resume endpoint
+            const response = await fetch('/api/resume-execution', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    flowchart_name: this.getCurrentFlowchartName(),
+                    start_node_id: startNodeId,
+                    execution_order: fullExecutionOrder,
+                    previous_variables: initialVariables
+                }),
+                signal: this.currentExecutionController.signal
+            });
+
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // process results and update ui
+                this.processResumeResults(result.results, nodesToExecute);
+                this.updateExecutionStatus('completed', 'resumed execution completed successfully');
+                await this.saveExecutionHistory('success', nodesToExecute);
+            } else if (result.status === 'failed') {
+                // process partial results
+                this.processResumeResults(result.results, nodesToExecute);
+                this.updateExecutionStatus('failed', result.message);
+                await this.saveExecutionHistory('failed', nodesToExecute, result.message);
+            } else {
+                throw new Error(result.message || 'resume execution failed');
+            }
+            
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                this.updateExecutionStatus('stopped', 'execution stopped by user');
+                await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
+            } else {
+                this.updateExecutionStatus('error', `execution failed: ${error.message}`);
+                await this.saveExecutionHistory('error', nodesToExecute, error.message);
+            }
+        } finally {
+            // reset execution state
+            this.isExecuting = false;
+            this.updateExecutionUI(false);
+        }
+    }
+
+    processResumeResults(results, nodesToExecute) {
+        // process each result and update the ui
+        results.forEach((result, index) => {
+            const node = nodesToExecute[index];
+            if (!node) return;
+
+            // store execution result
+            this.nodeExecutionResults.set(result.node_id, {
+                node: node,
+                success: result.success,
+                output: result.output || '',
+                error: result.error || null,
+                runtime: result.runtime || 0,
+                timestamp: new Date().toLocaleTimeString(),
+                return_value: result.return_value,
+                function_name: result.function_name,
+                function_args: result.function_args || {},
+                input_values: result.input_values || {},
+                input_used: false
+            });
+
+            // update visual state
+            if (result.success) {
+                this.setNodeState(result.node_id, 'completed');
+                this.updateNodeDetails(node, 'completed', result.runtime || 0, result.output);
+                
+                // store variables for next nodes
+                if (result.return_value !== null && result.return_value !== undefined) {
+                    this.nodeVariables.set(result.node_id, result.return_value);
+                }
+                
+                // append to execution log
+                this.appendToExecutionLog(`[${node.name}] executed successfully`);
+                if (result.output) {
+                    this.appendToExecutionLog(result.output);
+                }
+            } else {
+                this.setNodeState(result.node_id, 'error');
+                this.updateNodeDetails(node, 'error', result.runtime || 0, result.error);
+                
+                // append error to execution log
+                this.appendToExecutionLog(`[${node.name}] failed: ${result.error}`);
+            }
+        });
     }
 
     async startResumeExecution(nodesToExecute, initialVariables) {
@@ -3147,9 +3449,7 @@ class FlowchartBuilder {
             const finalFunctionArgs = { ...gatheredVariables.functionArgs, ...accumulatedVariables };
             const finalInputValues = gatheredVariables.inputValues;
             
-            console.log(`[${node.name}] Resume execution - accumulated variables:`, accumulatedVariables);
-            console.log(`[${node.name}] Resume execution - final function args:`, finalFunctionArgs);
-            console.log(`[${node.name}] Resume execution - final input values:`, finalInputValues);
+
             
             const response = await fetch('/api/execute-node', {
                 method: 'POST',
@@ -3301,8 +3601,7 @@ class FlowchartBuilder {
             // gather input variables from previous nodes
             const inputVariables = await this.gatherInputVariables(node);
             
-            // debug: log input variables for troubleshooting
-            console.log(`[${node.name}] Input variables:`, inputVariables);
+
             
             // create a feed entry upfront so the title appears even if no output lines
             try {
@@ -3349,7 +3648,7 @@ class FlowchartBuilder {
                         outCol.className = 'run_feed_output';
                         // strip embedded result blocks from non-streamed output
                         let errorDisplay = result.error || '';
-                        if (result.error_line && result.error_line > 0) {
+                        if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
                             errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
                         }
                         const sanitized = ((result.output || '') + (errorDisplay ? `\n${errorDisplay}` : ''))
@@ -3411,7 +3710,7 @@ class FlowchartBuilder {
                         if (typeof elapsedMs === 'number') entry.elapsed_ms = elapsedMs;
                     } catch (_) {}
                     let errorDisplay = result.error || '';
-                    if (result.error_line && result.error_line > 0) {
+                    if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
                         errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
                     }
                     const combined = ((result.output || '') + (errorDisplay ? `\n${errorDisplay}` : '')).trim();
@@ -3433,7 +3732,6 @@ class FlowchartBuilder {
                 // store return value from function if any - do this FIRST
                 if (result.return_value !== null && result.return_value !== undefined) {
                     this.nodeVariables.set(node.id, result.return_value);
-                    console.log(`[${node.name}] Stored return value:`, result.return_value);
                 }
                 
                 // store execution result
@@ -3515,7 +3813,7 @@ class FlowchartBuilder {
                 }
                 // format error message with line number if available
                 let errorDisplay = result.error || 'unknown error';
-                if (result.error_line && result.error_line > 0) {
+                if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
                     errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
                 }
                 this.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${errorDisplay}\n`);
@@ -3932,10 +4230,17 @@ class FlowchartBuilder {
                                 // if failed, append error text lines to the live feed ui
                                 // all comments in lower case
                                 try {
-                                    if (!finalResult.success && finalResult && finalResult.error) {
+                                    if (!finalResult.success && finalResult && (finalResult.error || finalResult.error_line)) {
                                         const outCol = item.children[1];
                                         if (outCol) {
-                                            String(finalResult.error)
+                                            let errorDisplay = String(finalResult.error || '').trim();
+                                            if (finalResult.error_line && finalResult.error_line > 0) {
+                                                // prefix line number if not already present
+                                                if (!/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
+                                                    errorDisplay = `Line ${finalResult.error_line}: ${errorDisplay}`.trim();
+                                                }
+                                            }
+                                            errorDisplay
                                                 .split(/\r?\n/)
                                                 .filter(Boolean)
                                                 .forEach(tl => {
@@ -4020,14 +4325,11 @@ class FlowchartBuilder {
         
         // find all links that point to this node
         const incomingLinks = this.state.links.filter(link => link.target === targetNode.id);
-        console.log(`[${targetNode.name}] Found ${incomingLinks.length} incoming links`);
         
         // first, we need to know what parameters the target function expects
         const targetFunctionInfo = await this.analyzePythonFunction(targetNode.pythonFile);
         const expectedParams = targetFunctionInfo.formal_parameters || [];  // formal parameters come from previous nodes
         const inputVariableNames = targetFunctionInfo.input_variable_names || []; // input() calls get values from input nodes
-        console.log(`[${targetNode.name}] Expected formal parameters (from previous nodes):`, expectedParams);
-        console.log(`[${targetNode.name}] Expected input variables (from input nodes):`, inputVariableNames);
         
         // separate input nodes from regular nodes
         const inputNodes = [];
@@ -4039,7 +4341,6 @@ class FlowchartBuilder {
             
             if (sourceNode && sourceNode.type === 'input_node') {
                 inputNodes.push(sourceNode);
-                console.log(`[${targetNode.name}] Found input node: ${sourceNode.name}`);
             } else if (sourceNode && sourceNode.type === 'if_node') {
                 // bridge variables across an if splitter: pull from upstream python nodes
                 const upstreamLinks = this.state.links.filter(l => l.target === sourceNode.id);
@@ -4048,13 +4349,11 @@ class FlowchartBuilder {
                     if (!upNode) return;
                     if (upNode.type === 'input_node') {
                         inputNodes.push(upNode);
-                        console.log(`[${targetNode.name}] Found input node via if: ${upNode.name}`);
                         return;
                     }
                     if (this.nodeVariables.has(upNode.id)) {
                         const returnValue = this.nodeVariables.get(upNode.id);
                         regularNodes.push({ node: upNode, returnValue });
-                        console.log(`[${targetNode.name}] Bridged var from upstream of if: ${upNode.name}`, returnValue);
                     }
                 });
             } else if (sourceNode) {
@@ -4062,9 +4361,6 @@ class FlowchartBuilder {
                 if (this.nodeVariables.has(sourceNodeId)) {
                     const returnValue = this.nodeVariables.get(sourceNodeId);
                     regularNodes.push({ node: sourceNode, returnValue });
-                    console.log(`[${targetNode.name}] Found regular node with variables: ${sourceNode.name}`, returnValue);
-                } else {
-                    console.log(`[${targetNode.name}] Source node ${sourceNode.name} has no variables stored yet`);
                 }
             }
         });
@@ -4081,9 +4377,6 @@ class FlowchartBuilder {
                     // if this key corresponds to an expected parameter and it's not set yet, set it
                     if (!Object.prototype.hasOwnProperty.call(functionArgs, key)) {
                         functionArgs[key] = val;
-                        console.log(`[${targetNode.name}] assigned object key ${key} from ${sourceNode.name}`);
-                    } else {
-                        console.log(`[${targetNode.name}] skipped overwriting existing arg ${key} from ${sourceNode.name}`);
                     }
                 });
                 return;
@@ -4096,7 +4389,6 @@ class FlowchartBuilder {
                     const paramName = remainingParams[i];
                     if (!Object.prototype.hasOwnProperty.call(functionArgs, paramName)) {
                         functionArgs[paramName] = returnValue[i];
-                        console.log(`[${targetNode.name}] mapped tuple/list element to ${paramName} from ${sourceNode.name}`);
                     }
                 }
                 return;
@@ -4106,7 +4398,6 @@ class FlowchartBuilder {
             const variableName = this.matchVariableToParameter(sourceNode, returnValue, expectedParams, functionArgs);
             if (variableName && !Object.prototype.hasOwnProperty.call(functionArgs, variableName)) {
                 functionArgs[variableName] = returnValue;
-                console.log(`[${targetNode.name}] matched function arg ${variableName} = ${returnValue} from ${sourceNode.name}`);
             }
         });
         
@@ -4118,21 +4409,18 @@ class FlowchartBuilder {
                     // use input node values for input() calls
                     if (value !== '' && value !== null && value !== undefined) {
                         inputValues[param] = value;
-                        console.log(`[${targetNode.name}] Added input value ${param} = ${value} from input node`);
                     }
                 });
             }
         });
         
-        console.log(`[${targetNode.name}] Final function args (from previous nodes):`, functionArgs);
-        console.log(`[${targetNode.name}] Final input values (for input() calls):`, inputValues);
+
         return { functionArgs, inputValues };
     }
 
     // persist data from connected data_save nodes when a python node completes successfully
     async persistDataSaveForNode(pythonNode) {
         try {
-            console.log(`[data_save] scanning connections for python node: ${pythonNode.name} (${pythonNode.id})`);
             // find all data_save nodes connected to this python node (either direction)
             const connectedDataSaves = [];
             for (const link of this.state.links) {
@@ -4144,13 +4432,11 @@ class FlowchartBuilder {
                     if (s && s.type === 'data_save') connectedDataSaves.push(s);
                 }
             }
-            console.log(`[data_save] found ${connectedDataSaves.length} connected data_save node(s) for ${pythonNode.name}`);
             if (connectedDataSaves.length === 0) return;
 
             // get latest execution result for this python node
             const result = this.nodeExecutionResults.get(pythonNode.id);
             const returnsVal = result ? result.return_value : undefined;
-            console.log(`[data_save] latest return for ${pythonNode.name}:`, returnsVal);
 
             const analyzeReturnsForNode = async () => {
                 try {
@@ -4211,7 +4497,7 @@ class FlowchartBuilder {
                 // try to use the selected variable name; if none, infer from return value
                 let varName = (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null;
                 const varLine = (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.line) || null;
-                if (!result) { console.log('[data_save] no execution result present; skipping'); return; }
+                if (!result) { return; }
                 let value;
                 const rv = returnsVal;
                 if (rv && typeof rv === 'object') {
@@ -4254,7 +4540,7 @@ class FlowchartBuilder {
                 }
                 // choose a data key for storage
                 const dataKey = (typeof varName === 'string' && varName.length > 0) ? varName : ((ds && ds.name) || 'data');
-                if (typeof value === 'undefined') { console.log(`[data_save] unable to resolve value for ${ds.name}; skipping`); return; }
+                if (typeof value === 'undefined') { return; }
                 try {
                     // store a synthetic result entry so it shows up in history and data matrix
                     const synthetic = {
@@ -4275,7 +4561,7 @@ class FlowchartBuilder {
                     this.nodeExecutionResults.set(ds.id, synthetic);
                     // mark the data_save node as success and refresh style in run mode
                     try { ds.runtimeStatus = 'success'; this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
-                    console.log(`[data_save] persisted for node '${ds.name}' with key '${dataKey}'`);
+
                 } catch (e) {
                     console.warn('failed to synthesize data_save result', e);
                     try { ds.runtimeStatus = 'error'; this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
@@ -4359,7 +4645,6 @@ class FlowchartBuilder {
         if (expectedParams.length === 1) {
             const paramName = expectedParams[0];
             if (!existingVariables.hasOwnProperty(paramName)) {
-                console.log(`[matchVariable] Single parameter match: ${paramName}`);
                 return paramName;
             }
         }
@@ -4369,19 +4654,15 @@ class FlowchartBuilder {
             if (!existingVariables.hasOwnProperty(paramName)) {
                 // direct match with common variable names
                 if (paramName === 'result' && typeof returnValue === 'number') {
-                    console.log(`[matchVariable] Result type match: ${paramName}`);
                     return paramName;
                 }
                 if (paramName === 'text' && typeof returnValue === 'string') {
-                    console.log(`[matchVariable] Text type match: ${paramName}`);
                     return paramName;
                 }
                 if (paramName === 'data' || paramName === 'value') {
-                    console.log(`[matchVariable] Data/value match: ${paramName}`);
                     return paramName;
                 }
                 if (paramName === 'items' && Array.isArray(returnValue)) {
-                    console.log(`[matchVariable] Array match: ${paramName}`);
                     return paramName;
                 }
             }
@@ -4390,14 +4671,12 @@ class FlowchartBuilder {
         // fallback: use the first available expected parameter
         for (const paramName of expectedParams) {
             if (!existingVariables.hasOwnProperty(paramName)) {
-                console.log(`[matchVariable] First available parameter: ${paramName}`);
                 return paramName;
             }
         }
         
         // last resort: use a generic name based on return value type
         const genericName = this.getVariableNameForNode(sourceNode, returnValue);
-        console.log(`[matchVariable] Generic name fallback: ${genericName}`);
         return genericName;
     }
 

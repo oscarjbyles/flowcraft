@@ -3,7 +3,7 @@
   .dropdown_container { position: relative; }
   .dropdown_input { cursor: pointer; padding-right: 40px; }
   .dropdown_arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--on-surface); pointer-events: none; font-size: 20px; }
-  .dropdown_menu { position: absolute; top: 100%; left: 0; right: 0; background-color: var(--surface-variant); border: 1px solid var(--border-color); border-radius: var(--radius_4); z-index: var(--z_sidebar); display: none; }
+  .dropdown_menu { position: absolute; top: 100%; left: 0; right: 0; background-color: var(--surface-variant); border: 1px solid var(--border-color); border-radius: var(--radius_4); z-index: var(--z_sidebar); display: none; max-height: 200px; overflow-y: auto; }
   .dropdown_menu_is_open { display: block; }
   .dropdown_item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: var(--space_8); }
   .dropdown_item:last-child { border-bottom: none; }

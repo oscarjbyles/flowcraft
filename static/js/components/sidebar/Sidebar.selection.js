@@ -92,27 +92,80 @@
         const panel = this.contentPanels.annotation;
         if (!panel) return;
         panel.classList.add('active');
-        const input = document.getElementById('annotation_text_input');
-        if (input) {
-            input.value = annotation.text || '';
-            input.oninput = () => {
-                this.state.updateAnnotation(annotation.id, { text: input.value });
-            };
-        }
-        const fontSizeInput = document.getElementById('annotation_font_size_input');
-        if (fontSizeInput) {
-            const currentSize = parseInt(annotation.fontSize || 14, 10);
-            fontSizeInput.value = !Number.isNaN(currentSize) ? currentSize : 14;
-            fontSizeInput.oninput = () => {
-                const size = parseInt(fontSizeInput.value, 10);
-                if (!Number.isNaN(size)) {
-                    this.state.updateAnnotation(annotation.id, { fontSize: size });
+        
+        if (annotation.type === 'text') {
+            // show text properties, hide arrow properties
+            const textProps = document.getElementById('text_annotation_properties');
+            const arrowProps = document.getElementById('arrow_annotation_properties');
+            if (textProps) textProps.style.display = 'block';
+            if (arrowProps) arrowProps.style.display = 'none';
+            
+            const input = document.getElementById('annotation_text_input');
+            if (input) {
+                input.value = annotation.text || '';
+                input.oninput = () => {
+                    this.state.updateAnnotation(annotation.id, { text: input.value });
+                };
+            }
+            const fontSizeInput = document.getElementById('annotation_font_size_input');
+            if (fontSizeInput) {
+                const currentSize = parseInt(annotation.fontSize || 14, 10);
+                fontSizeInput.value = !Number.isNaN(currentSize) ? currentSize : 14;
+                fontSizeInput.oninput = () => {
+                    const size = parseInt(fontSizeInput.value, 10);
+                    if (!Number.isNaN(size)) {
+                        this.state.updateAnnotation(annotation.id, { fontSize: size });
+                    }
+                };
+            }
+            if (this.footerDeleteBtn) {
+                this.footerDeleteBtn.style.display = 'block';
+                this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete text</span>';
+            }
+        } else if (annotation.type === 'arrow') {
+            // show arrow properties, hide text properties
+            const textProps = document.getElementById('text_annotation_properties');
+            const arrowProps = document.getElementById('arrow_annotation_properties');
+            if (textProps) textProps.style.display = 'none';
+            if (arrowProps) arrowProps.style.display = 'block';
+            
+            const strokeWidthInput = document.getElementById('annotation_stroke_width_input');
+            if (strokeWidthInput) {
+                const currentWidth = parseInt(annotation.strokeWidth || 2, 10);
+                strokeWidthInput.value = !Number.isNaN(currentWidth) ? currentWidth : 2;
+                strokeWidthInput.oninput = () => {
+                    const width = parseInt(strokeWidthInput.value, 10);
+                    if (!Number.isNaN(width)) {
+                        this.state.updateAnnotation(annotation.id, { strokeWidth: width });
+                    }
+                };
+            }
+            
+            const strokeColorInput = document.getElementById('annotation_stroke_color_input');
+            if (strokeColorInput) {
+                // convert css variable to hex color for color input
+                const color = annotation.strokeColor || 'var(--on-surface)';
+                if (color.startsWith('var(--')) {
+                    // use a default color for css variables
+                    strokeColorInput.value = '#ffffff';
+                } else {
+                    strokeColorInput.value = color;
                 }
-            };
-        }
-        if (this.footerDeleteBtn) {
-            this.footerDeleteBtn.style.display = 'block';
-            this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete text</span>';
+                strokeColorInput.oninput = () => {
+                    this.state.updateAnnotation(annotation.id, { strokeColor: strokeColorInput.value });
+                };
+            }
+            
+            if (this.footerDeleteBtn) {
+                this.footerDeleteBtn.style.display = 'block';
+                this.footerDeleteBtn.innerHTML = '<span class="material-icons delete_button_icon_1">delete</span> <span class="delete_button_text_inner">delete arrow</span>';
+            }
+        } else {
+            // show text inputs for other annotation types
+            const textProps = document.getElementById('text_annotation_properties');
+            const arrowProps = document.getElementById('arrow_annotation_properties');
+            if (textProps) textProps.style.display = 'block';
+            if (arrowProps) arrowProps.style.display = 'none';
         }
     };
 

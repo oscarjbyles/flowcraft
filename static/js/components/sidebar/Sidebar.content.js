@@ -136,16 +136,30 @@
 								 } catch (_) {}
 
                                          // visibility rule for "+ if condition" button:
-                                         // show whenever the selected python node does not already have an associated if splitter
+                                         // show when python node has upstream if splitter but no downstream if splitter
+                                         // and doesn't already have a directly associated if splitter
                                          const state = this.sidebar.state;
                                          let alreadyHasIf = false;
+                                         let hasUpstreamIf = false;
+                                         let hasDownstreamIf = false;
+                                         
                                          try {
                                              if (state && typeof state.getAssociatedIfForPython === 'function') {
                                                  alreadyHasIf = !!state.getAssociatedIfForPython(node.id);
                                              }
-                                         } catch (_) { alreadyHasIf = false; }
+                                             if (state && typeof state.hasUpstreamIfSplitter === 'function') {
+                                                 hasUpstreamIf = state.hasUpstreamIfSplitter(node.id);
+                                             }
+                                             if (state && typeof state.hasDownstreamIfSplitter === 'function') {
+                                                 hasDownstreamIf = state.hasDownstreamIfSplitter(node.id);
+                                             }
+                                         } catch (_) { 
+                                             alreadyHasIf = false; 
+                                             hasUpstreamIf = false;
+                                             hasDownstreamIf = false;
+                                         }
 
-                                         const showQuick = !state.isRunMode && !alreadyHasIf;
+                                         const showQuick = !state.isRunMode && !alreadyHasIf && hasUpstreamIf && !hasDownstreamIf;
                                          this.toggleFormGroupVisibility('python_quick_actions', showQuick);
                                 }
                             }

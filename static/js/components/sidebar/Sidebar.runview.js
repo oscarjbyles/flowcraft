@@ -588,7 +588,7 @@
                         if (nodeOutputContent) nodeOutputContent.textContent = 'execution failed';
                         if (consoleLogEl) {
                             let errorDisplay = executionResult.error || 'unknown error';
-                            if (executionResult.error_line && executionResult.error_line > 0) {
+                            if (executionResult.error_line && executionResult.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
                                 errorDisplay = `Line ${executionResult.error_line}: ${errorDisplay}`;
                             }
                             consoleLogEl.textContent = errorDisplay;
@@ -669,7 +669,7 @@
                 let errorDisplay = error || '';
                 if (window.flowchartApp && window.flowchartApp.nodeExecutionResults) {
                     const result = window.flowchartApp.nodeExecutionResults.get(id);
-                    if (result && result.error_line && result.error_line > 0) {
+                    if (result && result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
                         errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
                     }
                 }

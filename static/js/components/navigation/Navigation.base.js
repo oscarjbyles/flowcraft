@@ -45,7 +45,7 @@
         // wire left sidebar buttons; if app is provided, use rich behavior (mode switches, clears), otherwise navigate only
         setupNavButtons(app){
             onDomReady(() => {
-                try { console.log('[nav] setupNavButtons start', { hasApp: !!app, path: window.location.pathname }); } catch(_) {}
+                console.log('[nav] setupNavButtons start', { hasApp: !!app, path: window.location.pathname });
                 // dashboard
                 const db = document.getElementById('dashboard_btn');
                 if (db) db.onclick = () => { clearRunVisualsIfNeeded(app); window.location.href = buildHref('/dashboard'); };
@@ -69,10 +69,13 @@
                 // run
                 const run = document.getElementById('run_btn');
                 if (run) run.onclick = () => {
+                    console.log('[debug] run button clicked');
                     if (app && typeof app.switchToRunMode === 'function') {
+                        console.log('[debug] calling app.switchToRunMode()');
                         app.switchToRunMode();
                         try { const u = new URL(window.location.href); u.searchParams.set('mode','run'); window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); } catch(_) {}
                     } else {
+                        console.log('[debug] no app or switchToRunMode function, navigating to:', buildHref('/?mode=run'));
                         window.location.href = buildHref('/?mode=run');
                     }
                 };
@@ -103,23 +106,23 @@
 
                 // highlight active nav (non-builder pages only)
                 setActiveNav();
-                try { console.log('[nav] setupNavButtons done'); } catch(_) {}
+                console.log('[nav] setupNavButtons done');
             });
         },
 
         init(app){
-            try { console.log('[nav] init called', { hasApp: !!app }); } catch(_) {}
+            console.log('[nav] init called', { hasApp: !!app });
             this.setupNavButtons(app || (window.flowchartApp || null));
             // flowchart ui setup is in Navigation.flowcharts.js
             if (!app && window.Navigation && typeof window.Navigation.setupFlowchartUI === 'function') {
-                try { console.log('[nav] calling setupFlowchartUI'); } catch(_) {}
+                console.log('[nav] calling setupFlowchartUI');
                 window.Navigation.setupFlowchartUI(null);
             } else if (app) {
-                try { console.log('[nav] skipping setupFlowchartUI on builder (handled by Sidebar)'); } catch(_) {}
+                console.log('[nav] skipping setupFlowchartUI on builder (handled by Sidebar)');
             } else {
-                try { console.warn('[nav] setupFlowchartUI not available on window.Navigation'); } catch(_) {}
+                console.warn('[nav] setupFlowchartUI not available on window.Navigation');
             }
-            try { console.log('[nav] init complete'); } catch(_) {}
+            console.log('[nav] init complete');
         }
     };
 

@@ -410,7 +410,7 @@
                 addRow('python script path', pythonPath || '-');
                 // check if we have line number information from the detailed execution data
                 let errorDisplay = errorMessage || '-';
-                if (failedResult && failedResult.error_line && failedResult.error_line > 0) {
+                if (failedResult && failedResult.error_line && failedResult.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(String(errorDisplay))) {
                     errorDisplay = `Line ${failedResult.error_line}: ${errorDisplay}`;
                 }
                 addRow('error message', errorDisplay);

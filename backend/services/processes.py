@@ -52,6 +52,7 @@ def create_temp_execution_script(file_path: str, function_args: Dict[str, Any], 
 import json
 import sys
 import os
+import traceback
 sys.path.insert(0, os.path.dirname({repr(file_path)}))
 
 input_values_for_mock = {repr(input_values)}
@@ -72,7 +73,10 @@ def mock_input(prompt=""):
 import builtins
 builtins.input = mock_input
 
-{original_content}
+# compile the original code with the original filename to preserve line numbers
+original_code = {repr(original_content)}
+compiled_code = compile(original_code, {repr(file_path)}, 'exec')
+exec(compiled_code)
 
 try:
     if {len(formal_function_args) > 0}:
@@ -92,9 +96,27 @@ try:
     print(json.dumps(output_data, default=str))
     print("__RESULT_END__")
 except Exception as e:
+    # capture traceback and extract original file line number
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tb_list = traceback.extract_tb(exc_traceback)
+    error_line = None
+    error_file = None
+    original_file_path = {repr(file_path)}
+    for tb in reversed(tb_list):
+        if tb.filename == original_file_path:
+            error_line = tb.lineno
+            error_file = tb.filename
+            break
+
+    error_msg = str(e)
+    if error_line is not None:
+        error_msg = f"Line {{error_line}}: {{error_msg}}"
+
     output_data = {{
         'success': False,
-        'error': str(e),
+        'error': error_msg,
+        'error_line': error_line,
+        'error_file': error_file,
         'function_name': '{function_name}',
         'function_args': {repr(call_args)},
         'input_values': {repr(input_values)},
@@ -210,7 +232,10 @@ def mock_input(prompt=""):
 import builtins
 builtins.input = mock_input
 
-{original_content}
+# compile the original code with the original filename to preserve line numbers
+original_code = {repr(original_content)}
+compiled_code = compile(original_code, {repr(file_path)}, 'exec')
+exec(compiled_code)
 
 try:
     if {len(formal_function_args) > 0}:
@@ -234,11 +259,14 @@ except Exception as e:
     exc_type, exc_value, exc_traceback = sys.exc_info()
     tb_list = traceback.extract_tb(exc_traceback)
     
-    # find the line number in the original file (not the temp script)
+    # find the line number in the original file
     error_line = None
     error_file = None
+    original_file_path = {repr(file_path)}
+    
+    # look for the error in the original file
     for tb in reversed(tb_list):  # start from the most recent frame
-        if tb.filename == {repr(file_path)}:
+        if tb.filename == original_file_path:
             error_line = tb.lineno
             error_file = tb.filename
             break
@@ -246,7 +274,7 @@ except Exception as e:
     # format error message with line number if available
     error_msg = str(e)
     if error_line is not None:
-        error_msg = f"Line {error_line}: {error_msg}"
+        error_msg = f"Line {{error_line}}: {{error_msg}}"
     
     output_data = {{
         'success': False,

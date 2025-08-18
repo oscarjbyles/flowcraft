@@ -58,11 +58,8 @@
                     <button class="btn btn_secondary toolbar_icon_btn" id="add_text_btn" title="add text">
                         <span class="material-icons">title</span>
                     </button>
-                    <button class="btn btn_secondary toolbar_icon_btn" id="add_brace_horizontal_btn" title="add horizontal brace">
-                        <span class="material-icons">data_object</span>
-                    </button>
-                    <button class="btn btn_secondary toolbar_icon_btn" id="add_brace_vertical_btn" title="add vertical brace">
-                        <span class="material-icons" style="transform: rotate(90deg);">data_object</span>
+                    <button class="btn btn_secondary toolbar_icon_btn" id="add_arrow_btn" title="add arrow">
+                        <span class="material-icons">arrow_forward</span>
                     </button>
                 </div>
 
@@ -98,136 +95,171 @@
                 </svg>
             </div>
 
+            {% include 'partials/run_feed.html' %}
+
             <!-- full page settings -->
             <div class="settings_page is_hidden" id="settings_page">
-                <div class="u_max_w_900 u_mx_auto">
-                    <h2 class="settings_section_title">project settings</h2>
+                <!-- settings sidebar -->
+                <div class="settings_sidebar">
+                    <div class="settings_sidebar_content">
+                        <button class="settings_sidebar_item active" data-section="project_settings">
+                            <span class="material-icons">folder</span>
+                            project settings
+                        </button>
+                        <button class="settings_sidebar_item" data-section="flowchart_settings">
+                            <span class="material-icons">description</span>
+                            flowchart settings
+                        </button>
+                        <button class="settings_sidebar_item" data-section="manage">
+                            <span class="material-icons">manage_accounts</span>
+                            manage
+                        </button>
+                        <button class="settings_sidebar_item" data-section="backups">
+                            <span class="material-icons">backup</span>
+                            backups
+                        </button>
+                    </div>
+                </div>
 
-                    <div class="form_group">
-                        <label class="form_label">project root</label>
-                        <div class="data_save_details_card">
-                            <!-- styles moved to css; keep semantic structure clean -->
-                            <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons u_icon_18 u_opacity_07">folder</span>
-                                <code id="project_root_path" class="u_opacity_09">loading...</code>
-                                <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="copy_project_root_btn" title="copy path" style="background-color: #2D2D2D;">
-                                    <span class="material-icons">content_copy</span>
-                                    COPY
-                                </button>
+                <!-- settings content area -->
+                <div class="settings_content_wrapper">
+                    <div class="settings_content" id="settings_content">
+                    <!-- project settings section -->
+                    <div class="settings_section active" id="project_settings">
+                        <h2 class="settings_section_title">project settings</h2>
+
+                        <div class="form_group">
+                            <label class="form_label">project root</label>
+                            <div class="data_save_details_card">
+                                <!-- styles moved to css; keep semantic structure clean -->
+                                <div class="u_flex u_items_center u_gap_12">
+                                    <span class="material-icons u_icon_18 u_opacity_07">folder</span>
+                                    <code id="project_root_path" class="u_opacity_09">loading...</code>
+                                    <div class="u_flex_grow_1"></div>
+                                    <button class="btn btn_secondary" id="copy_project_root_btn" title="copy path" style="background-color: #2D2D2D;">
+                                        <span class="material-icons">content_copy</span>
+                                        COPY
+                                    </button>
+                                </div>
+                                <div class="form_help_text">absolute path to the python project root detected by the app</div>
                             </div>
-                            <div class="form_help_text">absolute path to the python project root detected by the app</div>
+                        </div>
+
+                        <div class="form_group">
+                            <label class="form_label">default editor</label>
+                            <div class="dropdown_container">
+                                <input type="text" id="default_editor_input" class="form_input dropdown_input" placeholder="detecting installed editors..." readonly>
+                                <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                                <div class="dropdown_menu" id="default_editor_dropdown">
+                                    <div class="dropdown_loading">scanning editors...</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">used when opening files from the app</div>
                         </div>
                     </div>
 
+                    <!-- flowchart settings section -->
+                    <div class="settings_section" id="flowchart_settings">
+                        <h2 class="settings_section_title">flowchart settings</h2>
 
-
-                    <div class="form_group">
-                        <label class="form_label">default editor</label>
-                        <div class="dropdown_container">
-                            <input type="text" id="default_editor_input" class="form_input dropdown_input" placeholder="detecting installed editors..." readonly>
-                            <span class="dropdown_arrow material-icons">arrow_drop_down</span>
-                            <div class="dropdown_menu" id="default_editor_dropdown">
-                                <div class="dropdown_loading">scanning editors...</div>
+                        <div class="form_group">
+                            <label class="form_label">flowchart file path</label>
+                            <div class="data_save_details_card">
+                                <div class="u_flex u_items_center u_gap_12">
+                                    <span class="material-icons u_icon_18 u_opacity_07">description</span>
+                                    <code id="flowchart_file_path" class="u_opacity_09">loading...</code>
+                                    <div class="u_flex_grow_1"></div>
+                                    <button class="btn btn_secondary" id="copy_flowchart_file_btn" title="copy path" style="background-color: #2D2D2D;">
+                                        <span class="material-icons">content_copy</span>
+                                        COPY
+                                    </button>
+                                </div>
+                                <div class="form_help_text">absolute path to the current flowchart json file</div>
                             </div>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">used when opening files from the app</div>
-                    </div>
 
-                    <h2 class="settings_section_title">flowchart settings</h2>
-
-                    <div class="form_group">
-                        <label class="form_label">flowchart file path</label>
-                        <div class="data_save_details_card">
-                            <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons u_icon_18 u_opacity_07">description</span>
-                                <code id="flowchart_file_path" class="u_opacity_09">loading...</code>
-                                <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="copy_flowchart_file_btn" title="copy path" style="background-color: #2D2D2D;">
-                                    <span class="material-icons">content_copy</span>
-                                    COPY
-                                </button>
-                            </div>
-                            <div class="form_help_text">absolute path to the current flowchart json file</div>
-                        </div>
-                    </div>
-
-                    <div class="form_group">
-                        <label class="form_label">rename flowchart</label>
-                        <div class="data_save_details_card">
-                            <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons u_icon_18 u_opacity_07">drive_file_rename_outline</span>
-                                <input type="text" id="rename_flowchart_input" class="form_input" placeholder="enter new name" style="max-width: 260px;">
-                                <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary" id="rename_flowchart_btn" title="rename" style="background-color: #2D2D2D;">
-                                    <span class="material-icons">edit</span>
-                                    RENAME
-                                </button>
-                            </div>
-                            <div class="form_help_text">renames the current flowchart file and its history/backups folders.</div>
-                        </div>
-                    </div>
-
-                    <h2 class="settings_section_title">manage</h2>
-
-                    <div class="form_group">
-                        <label class="form_label">clear history</label>
-                        <div class="data_save_details_card">
-                            <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons u_icon_18 u_opacity_07">history_toggle_off</span>
-                                <span class="form_text_md">clear execution history for current flowchart</span>
-                                <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn">
-                                    <span class="material-icons">cleaning_services</span>
-                                    Clear Executions
-                                </button>
-                            </div>
-                            <div class="form_help_text">this removes all files under <code>history/&lt;flowchart&gt;</code>.</div>
-                        </div>
-                        <div class="data_save_details_card u_mt_12">
-                            <div class="u_flex u_items_center u_gap_12">
-                                <span class="material-icons u_icon_18 u_opacity_07">delete_sweep</span>
-                                <span class="form_text_md">clear executions key and remove history files</span>
-                                <div class="u_flex_grow_1"></div>
-                                <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn">
-                                    <span class="material-icons">delete</span>
-                                    Clear Executions & History
-                                </button>
-                            </div>
-                            <div class="form_help_text">this resets `executions` in the flowchart json and deletes all related history entries.</div>
-                        </div>
-                    </div>
-
-                    <h2 class="settings_section_title">backups</h2>
-                    <div class="form_group">
-                        <div class="backups_details_card">
-                            <div style="overflow-x: auto;">
-                                <table id="backups_table" class="backups_table">
-                                    <thead>
-                                        <tr>
-                                            <th>time</th>
-                                            <th>time ago</th>
-                                            <th>date</th>
-                                            <th class="col_nodes">nodes</th>
-                                            <th class="col_connections">connections</th>
-                                            <th class="col_groups">groups</th>
-                                            <th class="col_delete">delete</th>
-                                            <th class="col_restore">restore</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="backups_table_body">
-                                        <!-- active row placeholder, rendered via js -->
-                                    </tbody>
-                                </table>
+                        <div class="form_group">
+                            <label class="form_label">rename flowchart</label>
+                            <div class="data_save_details_card">
+                                <div class="u_flex u_items_center u_gap_12">
+                                    <span class="material-icons u_icon_18 u_opacity_07">drive_file_rename_outline</span>
+                                    <input type="text" id="rename_flowchart_input" class="form_input" placeholder="enter new name" style="max-width: 260px;">
+                                    <div class="u_flex_grow_1"></div>
+                                    <button class="btn btn_secondary" id="rename_flowchart_btn" title="rename" style="background-color: #2D2D2D;">
+                                        <span class="material-icons">edit</span>
+                                        RENAME
+                                    </button>
+                                </div>
+                                <div class="form_help_text">renames the current flowchart file and its history/backups folders.</div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- manage section -->
+                    <div class="settings_section" id="manage">
+                        <h2 class="settings_section_title">manage</h2>
+
+                        <div class="form_group">
+                            <label class="form_label">clear history</label>
+                            <div class="data_save_details_card">
+                                <div class="u_flex u_items_center u_gap_12">
+                                    <span class="material-icons u_icon_18 u_opacity_07">history_toggle_off</span>
+                                    <span class="form_text_md">clear execution history for current flowchart</span>
+                                    <div class="u_flex_grow_1"></div>
+                                    <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn">
+                                        <span class="material-icons">cleaning_services</span>
+                                        Clear Executions
+                                    </button>
+                                </div>
+                                <div class="form_help_text">this removes all files under <code>history/&lt;flowchart&gt;</code>.</div>
+                            </div>
+                            <div class="data_save_details_card u_mt_12">
+                                <div class="u_flex u_items_center u_gap_12">
+                                    <span class="material-icons u_icon_18 u_opacity_07">delete_sweep</span>
+                                    <span class="form_text_md">clear executions key and remove history files</span>
+                                    <div class="u_flex_grow_1"></div>
+                                    <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn">
+                                        <span class="material-icons">delete</span>
+                                        Clear Executions & History
+                                    </button>
+                                </div>
+                                <div class="form_help_text">this resets `executions` in the flowchart json and deletes all related history entries.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- backups section -->
+                    <div class="settings_section" id="backups">
+                        <h2 class="settings_section_title">backups</h2>
+                        <div class="form_group">
+                            <div class="backups_details_card">
+                                <div style="overflow-x: auto;">
+                                    <table id="backups_table" class="backups_table">
+                                        <thead>
+                                            <tr>
+                                                <th>time</th>
+                                                <th>time ago</th>
+                                                <th>date</th>
+                                                <th class="col_nodes">nodes</th>
+                                                <th class="col_connections">connections</th>
+                                                <th class="col_groups">groups</th>
+                                                <th class="col_delete">delete</th>
+                                                <th class="col_restore">restore</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="backups_table_body">
+                                            <!-- active row placeholder, rendered via js -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- spacing block at bottom of settings -->
                     <div id="settings_bottom_spacer" style="width: 100px; height: 35px;"></div>
                 </div>
             </div>
-
-            {% include 'partials/run_feed.html' %}
         </div>
 {% block scripts %}
     <!-- d3 for builder canvas -->
@@ -287,477 +319,493 @@
 
         <!-- properties sidebar -->
         <div class="properties_sidebar" id="properties_sidebar">
-        <!-- pinned header for node type -->
-        <div class="properties_header" id="properties_header">
-            <div id="properties_header_text">NODE</div>
-        </div>
-        
-        <!-- default state -->
-        <div class="properties_content active" id="default_properties">
-            <div class="sidebar_content">
-                <div style="text-align: center; padding: 40px 20px; color: var(--on-surface); opacity: 0.7; margin-top: -60px;">
-                    <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">info</span>
-                    <p>select nodes to view properties</p>
-                    <p style="font-size: 0.8em; margin-top: 8px;">shift+click for multi-select</p>
+
+            <!-- pinned header for node type -->
+            <div class="properties_header" id="properties_header">
+                <div id="properties_header_text">NODE</div>
+            </div>
+            
+            <!-- default state -->
+            <div class="properties_content active" id="default_properties">
+                <div class="sidebar_content">
+                    <div style="text-align: center; padding: 40px 20px; color: var(--on-surface); opacity: 0.7; margin-top: -60px;">
+                        <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">info</span>
+                        <p>select nodes to view properties</p>
+                        <p style="font-size: 0.8em; margin-top: 8px;">shift+click for multi-select</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
         <!-- settings moved to full page; this legacy panel is removed -->
 
-        <!-- single node properties -->
-        <div class="properties_content" id="single_node_properties">
-            <div class="sidebar_content">
-                <!-- input node: inputs section only -->
-                <div class="form_group" id="input_node_inputs_section" style="display: none; flex: 1;">
-                    <label class="form_label">inputs</label>
-                    <div id="input_node_inputs_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
-                        <div id="input_node_inputs_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
-                            <p style="font-size: 0.8em;">analyzing inputs...</p>
-                        </div>
-                        <div id="input_node_inputs_content" style="display: none; flex: 1;"></div>
-                        <div id="input_node_inputs_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
-                            <p style="font-size: 0.8em;">no inputs found</p>
-                        </div>
-                        <div id="input_node_inputs_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>
-                            <p id="input_node_inputs_error_message" style="font-size: 0.8em;">failed to analyze inputs</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form_group">
-                    <label class="form_label" for="node_name">node name</label>
-                    <input type="text" id="node_name" class="form_input" placeholder="enter node name">
-                </div>
-                <div class="form_group">
-                    <label class="form_label" for="python_file">python file</label>
-                    <div class="dropdown_container" style="position: relative;">
-                        <input type="text" id="python_file" class="form_input dropdown_input" placeholder="" readonly>
-                        <span class="dropdown_arrow material-icons">folder_open</span>
-                        <div id="python_file_status_block" style="position: absolute; left: 10px; right: 28px; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; pointer-events: none;">
-                            <span id="python_file_status_icon" class="material-icons" style="font-size: 16px;">close</span>
-                            <span id="python_file_status_text" style="font-size: 0.85rem; opacity: 0.9;">select python file</span>
+            <!-- single node properties -->
+            <div class="properties_content" id="single_node_properties">
+                <div class="sidebar_content">
+                    <!-- input node: inputs section only -->
+                    <div class="form_group" id="input_node_inputs_section" style="display: none; flex: 1;">
+                        <label class="form_label">inputs</label>
+                        <div id="input_node_inputs_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                            <div id="input_node_inputs_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
+                                <p style="font-size: 0.8em;">analyzing inputs...</p>
+                            </div>
+                            <div id="input_node_inputs_content" style="display: none; flex: 1;"></div>
+                            <div id="input_node_inputs_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
+                                <p style="font-size: 0.8em;">no inputs found</p>
+                            </div>
+                            <div id="input_node_inputs_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>
+                                <p id="input_node_inputs_error_message" style="font-size: 0.8em;">failed to analyze inputs</p>
+                            </div>
                         </div>
                     </div>
-                    <div id="python_file_path_block" class="data_save_value data_save_value_monospace" style="margin-top: 6px;"></div>
-                </div>
 
-                <!-- quick action to add an if node magnetised to this python node -->
-                <div class="form_group" id="python_quick_actions">
-                    <button class="btn btn_primary" id="add_if_condition_btn" style="width: 100%;">
-                        <span class="material-icons">alt_route</span>
-                        <span class="btn_label">+ if condition</span>
-                    </button>
-                </div>
-
-                <!-- data save node: variable selection (dropdown of python node returns) -->
-                <div class="form_group" id="data_save_variable_section" style="display: none;">
-                    <label class="form_label" for="data_save_variable_dropdown">variable</label>
-                    <select id="data_save_variable_dropdown" class="form_input">
-                        <option value="" style="font-style: italic;">select a variable</option>
-                    </select>
-                    <div id="data_save_variable_help" style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
-                        choose from the python node's returns (data out)
+                    <div class="form_group">
+                        <label class="form_label" for="node_name">node name</label>
+                        <input type="text" id="node_name" class="form_input" placeholder="enter node name">
                     </div>
-                    <div id="data_save_variable_error" style="display:none; color:#f44336; font-size: .8rem; margin-top: 6px;">failed to load variables</div>
-                </div>
-
-                <!-- data save node: name data removed -->
-
-                <div class="form_group" id="arguments_section" style="display: none; flex: 1;">
-                    <label class="form_label">arguments (data in)</label>
-                    <div id="arguments_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
-                        <div id="arguments_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
-                            <p style="font-size: 0.8em;">analyzing function...</p>
+                    <div class="form_group">
+                        <label class="form_label" for="python_file">python file</label>
+                        <div class="dropdown_container" style="position: relative;">
+                            <input type="text" id="python_file" class="form_input dropdown_input" placeholder="" readonly>
+                            <span class="dropdown_arrow material-icons">folder_open</span>
+                            <div id="python_file_status_block" style="position: absolute; left: 10px; right: 28px; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; pointer-events: none;">
+                                <span id="python_file_status_icon" class="material-icons" style="font-size: 16px;">close</span>
+                                <span id="python_file_status_text" style="font-size: 0.85rem; opacity: 0.9;">select python file</span>
+                            </div>
                         </div>
-                        <div id="arguments_content" style="display: none; flex: 1;">
-                            <!-- arguments will be populated here -->
-                        </div>
-                        <div id="arguments_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
-                            <p style="font-size: 0.8em;">no arguments found</p>
-                        </div>
+                        <div id="python_file_path_block" class="data_save_value data_save_value_monospace" style="margin-top: 6px;"></div>
                     </div>
-                </div>
-                <div class="form_group" id="returns_section" style="display: none; flex: 1;">
-                    <label class="form_label">returns (data out)</label>
-                    <div id="returns_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
-                        <div id="returns_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
-                            <p style="font-size: 0.8em;">analyzing function...</p>
-                        </div>
-                        <div id="returns_content" style="display: none; flex: 1;">
-                            <!-- returns will be populated here -->
-                        </div>
-                        <div id="returns_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
-                            <p style="font-size: 0.8em;">no return values found</p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- if node variables section -->
-                <div class="form_group" id="if_node_variables_section" style="display: none; flex: 1;">
-                    <label class="form_label">available variables</label>
-                    <div id="if_node_variables_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
-                        <div id="if_node_variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
-                            <p style="font-size: 0.8em;">analyzing connected python nodes...</p>
+                    <!-- quick action to add an if node magnetised to this python node -->
+                    <div class="form_group" id="python_quick_actions">
+                        <button class="btn btn_primary" id="add_if_condition_btn" style="width: 100%;">
+                            <span class="material-icons">alt_route</span>
+                            <span class="btn_label">+ if condition</span>
+                        </button>
+                    </div>
+
+                    <!-- data save node: variable selection (dropdown of python node returns) -->
+                    <div class="form_group" id="data_save_variable_section" style="display: none;">
+                        <label class="form_label" for="data_save_variable_dropdown">variable</label>
+                        <select id="data_save_variable_dropdown" class="form_input">
+                            <option value="" style="font-style: italic;">select a variable</option>
+                        </select>
+                        <div id="data_save_variable_help" style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">
+                            choose from the python node's returns (data out)
                         </div>
-                        <div id="if_node_variables_content" style="display: none; flex: 1;">
-                            <!-- if node variables will be populated here -->
-                        </div>
-                        <div id="if_node_variables_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
-                            <p style="font-size: 0.8em;">no variables available</p>
-                            <p style="font-size: 0.7em; margin-top: 4px;">connect to a python node to see available variables</p>
-                        </div>
-                        <div id="if_node_variables_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
-                            <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>
-                            <p id="if_node_variables_error_message" style="font-size: 0.8em;">failed to analyze variables</p>
+                        <div id="data_save_variable_error" style="display:none; color:#f44336; font-size: .8rem; margin-top: 6px;">failed to load variables</div>
+                    </div>
+
+                    <!-- data save node: name data removed -->
+
+                    <div class="form_group" id="arguments_section" style="display: none; flex: 1;">
+                        <label class="form_label">arguments (data in)</label>
+                        <div id="arguments_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                            <div id="arguments_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
+                                <p style="font-size: 0.8em;">analyzing function...</p>
+                            </div>
+                            <div id="arguments_content" style="display: none; flex: 1;">
+                                <!-- arguments will be populated here -->
+                            </div>
+                            <div id="arguments_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
+                                <p style="font-size: 0.8em;">no arguments found</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    <div class="form_group" id="returns_section" style="display: none; flex: 1;">
+                        <label class="form_label">returns (data out)</label>
+                        <div id="returns_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                            <div id="returns_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
+                                <p style="font-size: 0.8em;">analyzing function...</p>
+                            </div>
+                            <div id="returns_content" style="display: none; flex: 1;">
+                                <!-- returns will be populated here -->
+                            </div>
+                            <div id="returns_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
+                                <p style="font-size: 0.8em;">no return values found</p>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="form_group" style="flex-shrink: 0; margin-top: auto;">
-                    <button class="btn btn_secondary btn_danger_subtle" id="delete_node_from_sidebar" style="width: 100%; text-transform: capitalize;">
-                        <span class="material-icons">delete</span>
-                        <span class="btn_label">Delete Node</span>
-                    </button>
+                    <!-- if node variables section -->
+                    <div class="form_group" id="if_node_variables_section" style="display: none; flex: 1;">
+                        <label class="form_label">available variables</label>
+                        <div id="if_node_variables_list" style="flex: 1; display: flex; flex-direction: column; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                            <div id="if_node_variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">hourglass_empty</span>
+                                <p style="font-size: 0.8em;">analyzing connected python nodes...</p>
+                            </div>
+                            <div id="if_node_variables_content" style="display: none; flex: 1;">
+                                <!-- if node variables will be populated here -->
+                            </div>
+                            <div id="if_node_variables_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">info</span>
+                                <p style="font-size: 0.8em;">no variables available</p>
+                                <p style="font-size: 0.7em; margin-top: 4px;">connect to a python node to see available variables</p>
+                            </div>
+                            <div id="if_node_variables_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
+                                <span class="material-icons" style="font-size: 16px; margin-bottom: 4px;">error</span>
+                                <p id="if_node_variables_error_message" style="font-size: 0.8em;">failed to analyze variables</p>
+                            </div>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
-        </div>
 
-        <!-- annotation properties -->
-        <div class="properties_content" id="annotation_properties">
-            <div class="sidebar_content">
-                <div class="form_group">
-                    <label class="form_label" for="annotation_text_input">text</label>
-                    <input type="text" id="annotation_text_input" class="form_input" placeholder="enter text">
-                </div>
-                <div class="form_group">
-                    <label class="form_label" for="annotation_font_size_input">font size</label>
-                    <input type="number" min="8" max="72" step="1" id="annotation_font_size_input" class="form_input" placeholder="14">
+            <!-- annotation properties -->
+            <div class="properties_content" id="annotation_properties">
+                <div class="sidebar_content">
+                    <div class="form_group" id="text_annotation_properties">
+                        <div class="form_group">
+                            <label class="form_label" for="annotation_text_input">text</label>
+                            <input type="text" id="annotation_text_input" class="form_input" placeholder="enter text">
+                        </div>
+                        <div class="form_group">
+                            <label class="form_label" for="annotation_font_size_input">font size</label>
+                            <input type="number" min="8" max="72" step="1" id="annotation_font_size_input" class="form_input" placeholder="14">
+                        </div>
+                    </div>
+                    <div class="form_group" id="arrow_annotation_properties" style="display: none;">
+                        <div class="form_group">
+                            <label class="form_label" for="annotation_stroke_width_input">stroke width</label>
+                            <input type="number" min="1" max="10" step="1" id="annotation_stroke_width_input" class="form_input" placeholder="2">
+                        </div>
+                        <div class="form_group">
+                            <label class="form_label" for="annotation_stroke_color_input">stroke color</label>
+                            <input type="color" id="annotation_stroke_color_input" class="form_input" value="#ffffff">
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- multi-select properties -->
-        <div class="properties_content" id="multi_select_properties">
-            <div class="sidebar_content">
-                <div class="form_group">
-                    <label class="form_label">selected nodes</label>
-                    <div id="selected_nodes_list" style="max-height: 200px; overflow-y: auto; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
-                        <!-- selected nodes will be listed here -->
+            <!-- multi-select properties -->
+            <div class="properties_content" id="multi_select_properties">
+                <div class="sidebar_content">
+                    <div class="form_group">
+                        <label class="form_label">selected nodes</label>
+                        <div id="selected_nodes_list" style="max-height: 200px; overflow-y: auto; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                            <!-- selected nodes will be listed here -->
+                        </div>
                     </div>
-                </div>
-                <div class="form_group">
-                    <button class="btn btn_primary" id="create_group_btn" style="width: 100%; margin-bottom: 8px;">
-                        <span class="material-icons">group_work</span>
-                        create group
-                    </button>
-                    <button class="btn btn_secondary" id="align_nodes_btn" style="width: 100%; margin-bottom: 8px;">
-                        <span class="material-icons">align_horizontal_center</span>
-                        align nodes
-                    </button>
-                    <button class="btn btn_secondary btn_danger_subtle" id="delete_selected_nodes" style="width: 100%;">
-                        <span class="material-icons">delete</span>
-                        <span style="display: inline-block; margin-bottom: 2px;">Delete Selected</span>
-                    </button>
+                    <div class="form_group">
+                        <button class="btn btn_primary" id="create_group_btn" style="width: 100%; margin-bottom: 8px;">
+                            <span class="material-icons">group_work</span>
+                            create group
+                        </button>
+                        <button class="btn btn_secondary" id="align_nodes_btn" style="width: 100%; margin-bottom: 8px;">
+                            <span class="material-icons">align_horizontal_center</span>
+                            align nodes
+                        </button>
+
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- link properties -->
-        <div class="properties_content" id="link_properties">
-            <div class="sidebar_content">
-                <div class="form_group">
-                    <label class="form_label">connection</label>
-                    <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <span id="link_source_name" style="font-weight: 500;">source node</span>
-                                <span id="link_source_file" style="font-size: 0.8em; opacity: 0.7; margin-top: 2px;">source_file.py</span>
+            <!-- link properties -->
+            <div class="properties_content" id="link_properties">
+                <div class="sidebar_content">
+                    <div class="form_group">
+                        <label class="form_label">connection</label>
+                        <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <span id="link_source_name" style="font-weight: 500;">source node</span>
+                                    <span id="link_source_file" style="font-size: 0.8em; opacity: 0.7; margin-top: 2px;">source_file.py</span>
+                                </div>
+                                <span class="material-icons" style="color: var(--primary-color);">arrow_downward</span>
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <span id="link_target_name" style="font-weight: 500;">target node</span>
+                                    <span id="link_target_file" style="font-size: 0.8em; opacity: 0.7; margin-top: 2px;">target_file.py</span>
+                                </div>
                             </div>
-                            <span class="material-icons" style="color: var(--primary-color);">arrow_downward</span>
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <span id="link_target_name" style="font-weight: 500;">target node</span>
-                                <span id="link_target_file" style="font-size: 0.8em; opacity: 0.7; margin-top: 2px;">target_file.py</span>
+                        </div>
+                    </div>
+                    
+                    <!-- if-to-python connection variables dropdown -->
+                    <div class="form_group" id="if_connection_variables_section" style="display: none;">
+                        <label class="form_label">create condition</label>
+                        <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                            <div id="if_variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">hourglass_empty</span>
+                                <p>analyzing python node returns...</p>
+                            </div>
+                            <div id="if_variables_list" style="display: none;">
+                                <label class="form_label" for="if_variables_dropdown" style="margin: 0 0 6px 0;">variable</label>
+                                <div class="dropdown_container" style="width: 100%; margin-bottom: 8px;">
+                                    <input type="text" id="if_variables_dropdown" class="form_input dropdown_input" placeholder="select a variable" readonly>
+                                    <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                                    <div class="dropdown_menu" id="if_variables_dropdown_menu"></div>
+                                </div>
+                                
+
+                                <!-- condition builder for if→python connection -->
+                                <div id="if_condition_builder" style="margin-top: 12px;">
+                                    <div style="display: grid; grid-template-columns: 1fr; row-gap: 10px; align-items: start;">
+                                        <div id="if_combiner_container">
+                                            <label class="form_label" style="margin: 0 0 6px 0;">combiner</label>
+                                            <select id="if_condition_combiner" class="form_input">
+                                                <option value="and">and</option>
+                                                <option value="or">or</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form_label" style="margin: 0 0 6px 0;">operator</label>
+                                            <div class="dropdown_container">
+                                                <input type="text" id="if_operator_dropdown" class="form_input dropdown_input" placeholder="select operator" readonly>
+                                                <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                                                <div class="dropdown_menu" id="if_operator_dropdown_menu"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="form_label" style="margin: 0 0 6px 0;">compare to</label>
+                                            <input id="if_compare_value_input" type="text" class="form_input" placeholder="enter value" />
+                                        </div>
+                                        <div style="display:flex; align-items:flex-end;">
+                                            <button id="if_add_condition_btn" class="btn btn_primary" style="width: 100%;">
+                                                <span class="material-icons" style="font-size: 18px;">add</span>
+                                                add condition
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end condition builder -->
+                            </div>
+                            <div id="if_variables_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
+                                <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">error</span>
+                                <p id="if_variables_error_message">failed to analyze variables</p>
+                            </div>
+                            <div id="if_variables_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">info</span>
+                                <p>no return variables available</p>
+                                <p style="font-size: 0.8em; margin-top: 8px;">the python node may not return any data</p>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- if-to-python connection variables dropdown -->
-                <div class="form_group" id="if_connection_variables_section" style="display: none;">
-                    <label class="form_label">create condition</label>
-                    <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
-                        <div id="if_variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">hourglass_empty</span>
-                            <p>analyzing python node returns...</p>
-                        </div>
-                        <div id="if_variables_list" style="display: none;">
-                              <label class="form_label" for="if_variables_dropdown" style="margin: 0 0 6px 0;">variable</label>
-                              <div class="dropdown_container" style="width: 100%; margin-bottom: 8px;">
-                                  <input type="text" id="if_variables_dropdown" class="form_input dropdown_input" placeholder="select a variable" readonly>
-                                  <span class="dropdown_arrow material-icons">arrow_drop_down</span>
-                                  <div class="dropdown_menu" id="if_variables_dropdown_menu"></div>
-                              </div>
-                              
 
-                              <!-- condition builder for if→python connection -->
-                              <div id="if_condition_builder" style="margin-top: 12px;">
-                                  <div style="display: grid; grid-template-columns: 1fr; row-gap: 10px; align-items: start;">
-                                      <div id="if_combiner_container">
-                                          <label class="form_label" style="margin: 0 0 6px 0;">combiner</label>
-                                          <select id="if_condition_combiner" class="form_input">
-                                              <option value="and">and</option>
-                                              <option value="or">or</option>
-                                          </select>
-                                      </div>
-                                      <div>
-                                          <label class="form_label" style="margin: 0 0 6px 0;">operator</label>
-                                          <div class="dropdown_container">
-                                              <input type="text" id="if_operator_dropdown" class="form_input dropdown_input" placeholder="select operator" readonly>
-                                              <span class="dropdown_arrow material-icons">arrow_drop_down</span>
-                                              <div class="dropdown_menu" id="if_operator_dropdown_menu"></div>
-                                          </div>
-                                      </div>
-                                      <div>
-                                          <label class="form_label" style="margin: 0 0 6px 0;">compare to</label>
-                                          <input id="if_compare_value_input" type="text" class="form_input" placeholder="enter value" />
-                                      </div>
-                                      <div style="display:flex; align-items:flex-end;">
-                                          <button id="if_add_condition_btn" class="btn btn_primary" style="width: 100%;">
-                                              <span class="material-icons" style="font-size: 18px;">add</span>
-                                              add condition
-                                          </button>
-                                      </div>
-                                  </div>
-                              </div>
-                              <!-- end condition builder -->
-                        </div>
-                        <div id="if_variables_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">error</span>
-                            <p id="if_variables_error_message">failed to analyze variables</p>
-                        </div>
-                        <div id="if_variables_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">info</span>
-                            <p>no return variables available</p>
-                            <p style="font-size: 0.8em; margin-top: 8px;">the python node may not return any data</p>
+                    <!-- active if conditions section -->
+                    <div class="form_group" id="if_active_conditions_section" style="display: none;">
+                        <label class="form_label">active if conditions</label>
+                        <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px;">
+                            <div id="active_if_conditions_list">
+                                <!-- conditions will be rendered here -->
+                            </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="form_group">
+                        <label class="form_label">shared variables</label>
+                        <div id="shared_variables_container" style="max-height: 300px; overflow-y: auto;">
+                            <div id="variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">hourglass_empty</span>
+                                <p>analyzing variable dependencies...</p>
+                            </div>
+                            <div id="variables_list" style="display: none;">
+                                <!-- variables will be populated here -->
+                            </div>
+                            <div id="variables_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
+                                <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">error</span>
+                                <p id="variables_error_message">failed to analyze variables</p>
+                            </div>
+                            <div id="variables_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
+                                <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">info</span>
+                                <p>no shared variables detected</p>
+                                <p style="font-size: 0.8em; margin-top: 8px;">variables may be passed through function calls or imports</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form_group">
+                        <button class="btn btn_secondary" id="refresh_variables_btn" style="width: 100%; margin-bottom: 8px;">
+                            <span class="material-icons">refresh</span>
+                            <span class="delete_button_text_inner">Refresh Analysis</span>
+                        </button>
 
-                <!-- active if conditions section -->
-                <div class="form_group" id="if_active_conditions_section" style="display: none;">
-                    <label class="form_label">active if conditions</label>
-                    <div style="background: var(--surface-variant); border-radius: 4px; padding: 12px;">
-                        <div id="active_if_conditions_list">
-                            <!-- conditions will be rendered here -->
-                        </div>
                     </div>
-                </div>
-                
-                <div class="form_group">
-                    <label class="form_label">shared variables</label>
-                    <div id="shared_variables_container" style="max-height: 300px; overflow-y: auto;">
-                        <div id="variables_loading" style="text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">hourglass_empty</span>
-                            <p>analyzing variable dependencies...</p>
-                        </div>
-                        <div id="variables_list" style="display: none;">
-                            <!-- variables will be populated here -->
-                        </div>
-                        <div id="variables_error" style="display: none; text-align: center; padding: 20px; color: #f44336;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">error</span>
-                            <p id="variables_error_message">failed to analyze variables</p>
-                        </div>
-                        <div id="variables_empty" style="display: none; text-align: center; padding: 20px; color: var(--on-surface); opacity: 0.7;">
-                            <span class="material-icons" style="font-size: 24px; margin-bottom: 8px;">info</span>
-                            <p>no shared variables detected</p>
-                            <p style="font-size: 0.8em; margin-top: 8px;">variables may be passed through function calls or imports</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form_group">
-                    <button class="btn btn_secondary" id="refresh_variables_btn" style="width: 100%; margin-bottom: 8px;">
-                        <span class="material-icons">refresh</span>
-                        <span class="delete_button_text_inner">Refresh Analysis</span>
-                    </button>
-                    <button class="btn btn_secondary btn_danger_subtle" id="delete_link_btn" style="width: 100%;">
-                        <span class="material-icons">delete</span>
-                        <span style="display: inline-block; margin-bottom: 2px;">Delete Connection</span>
-                    </button>
                 </div>
             </div>
-        </div>
 
-        <!-- group properties -->
-        <div class="properties_content" id="group_properties">
-            <div class="sidebar_content">
-                <div class="form_group">
-                    <label class="form_label" for="group_name">group name</label>
-                    <input type="text" id="group_name" class="form_input" placeholder="enter group name">
-                </div>
-                <div class="form_group">
-                    <label class="form_label">group colour</label>
-                    <div id="group_color_palette" class="color_palette"></div>
-                </div>
-                <div class="form_group">
-                    <label class="form_label">group members</label>
-                    <div id="group_members_list" style="max-height: 200px; overflow-y: auto; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
-                        <!-- group members will be listed here -->
+            <!-- group properties -->
+            <div class="properties_content" id="group_properties">
+                <div class="sidebar_content">
+                    <div class="form_group">
+                        <label class="form_label" for="group_name">group name</label>
+                        <input type="text" id="group_name" class="form_input" placeholder="enter group name">
                     </div>
-                </div>
-                <div class="form_group">
-                    <button class="btn btn_secondary btn_danger_subtle" id="ungroup_nodes" style="width: 100%; margin-bottom: 8px;">
-                        <span class="material-icons delete_button_icon_1">ungroup</span>
-                        <span class="delete_button_text_inner">ungroup</span>
-                    </button>
-                    <button class="btn btn_secondary btn_danger_subtle" id="delete_group" style="width: 100%;">
-                        <span class="material-icons">delete</span>
-                        <span style="display: inline-block; margin-bottom: 2px;">Delete Group</span>
-                    </button>
+                    <div class="form_group">
+                        <label class="form_label">group colour</label>
+                        <div id="group_color_palette" class="color_palette"></div>
+                    </div>
+                    <div class="form_group">
+                        <label class="form_label">group members</label>
+                        <div id="group_members_list" style="max-height: 200px; overflow-y: auto; background: var(--surface-variant); border-radius: 4px; padding: 8px;">
+                            <!-- group members will be listed here -->
+                        </div>
+                    </div>
+                    <div class="form_group">
+                        <button class="btn btn_secondary btn_danger_subtle" id="ungroup_nodes" style="width: 100%; margin-bottom: 8px;">
+                            <span class="material-icons delete_button_icon_1">ungroup</span>
+                            <span class="delete_button_text_inner">ungroup</span>
+                        </button>
+
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- run mode execution panel -->
-        <div class="properties_content" id="run_execution_properties">
-            <div class="sidebar_content">
-                <!-- 1. execution status -->
-                <div class="form_group">
-                    <label class="form_label">execution status</label>
-                    <div id="execution_status" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">info</span>
-                            <span id="execution_status_text">ready to start execution</span>
-                        </div>
-                        <!-- execution time (integrated into status block) -->
-                        <div id="execution_time_row" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <div style="display:flex; align-items: center; gap: 8px;">
-                                <span class="material-icons" style="color: #4caf50; font-size: 18px;">schedule</span>
-                                <span id="execution_time_text">0ms</span>
-                                <div style="flex: 1;"></div>
-                                <span id="execution_timestamp" style="font-size: 0.8em; opacity: 0.7;">--:--:--</span>
+            <!-- run mode execution panel -->
+            <div class="properties_content" id="run_execution_properties">
+                <div class="sidebar_content">
+                    <!-- 1. execution status -->
+                    <div class="form_group">
+                        <label class="form_label">execution status</label>
+                        <div id="execution_status" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">info</span>
+                                <span id="execution_status_text">ready to start execution</span>
                             </div>
-                        </div>
-                        <!-- failure info (shown only when run has failed and no node is selected) -->
-                        <div id="execution_failure_info" style="display:none; margin-top:12px; background: #2a1a1a; border: 1px solid rgba(244,67,54,0.35); border-radius: 8px; padding: 12px;">
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                                <span class="material-icons" style="color:#f44336;">error</span>
-                                <strong style="color:#f44336; text-transform: lowercase;">execution failed</strong>
+                            <!-- execution time (integrated into status block) -->
+                            <div id="execution_time_row" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                <div style="display:flex; align-items: center; gap: 8px;">
+                                    <span class="material-icons" style="color: #4caf50; font-size: 18px;">schedule</span>
+                                    <span id="execution_time_text">0ms</span>
+                                    <div style="flex: 1;"></div>
+                                    <span id="execution_timestamp" style="font-size: 0.8em; opacity: 0.7;">--:--:--</span>
+                                </div>
                             </div>
-                            <div id="failed_node_title" style="margin-bottom:6px;">node: -</div>
-                            <div id="failed_node_path" style="font-family: monospace; opacity:0.85; background: rgba(255,255,255,0.08); padding: 8px; border-radius: 4px;">path: -</div>
-                            <div id="failed_node_error" style="margin-top:8px; font-size:0.85em; color:#f28b82; white-space: pre-wrap;"></div>
-                            <div style="margin-top:10px; text-align:right;">
-                                <button id="go_to_failed_node_btn" class="btn btn_secondary" style="text-transform: lowercase;">
-                                    <span class="material-icons">center_focus_strong</span>
-                                    go to node
-                                </button>
+                            <!-- failure info (shown only when run has failed and no node is selected) -->
+                            <div id="execution_failure_info" style="display:none; margin-top:12px; background: #2a1a1a; border: 1px solid rgba(244,67,54,0.35); border-radius: 8px; padding: 12px;">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                    <span class="material-icons" style="color:#f44336;">error</span>
+                                    <strong style="color:#f44336; text-transform: lowercase;">execution failed</strong>
+                                </div>
+                                <div id="failed_node_title" style="margin-bottom:6px;">node: -</div>
+                                <div id="failed_node_path" style="font-family: monospace; opacity:0.85; background: rgba(255,255,255,0.08); padding: 8px; border-radius: 4px;">path: -</div>
+                                <div id="failed_node_error" style="margin-top:8px; font-size:0.85em; color:#f28b82; white-space: pre-wrap;"></div>
+                                <div style="margin-top:10px; text-align:right;">
+                                    <button id="go_to_failed_node_btn" class="btn btn_secondary" style="text-transform: lowercase;">
+                                        <span class="material-icons">center_focus_strong</span>
+                                        go to node
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 2. node file info -->
-                <div class="form_group">
-                    <label class="form_label">node file info</label>
-                    <div id="node_file_info" style="background: var(--surface-variant); border-radius: 4px; padding: 0px; margin-bottom: 16px;">
-                        <div id="node_file_content">
-                            <p style="opacity: 0.7; text-align: center; padding: 20px;">select a node to view file details</p>
+                    <!-- 2. node file info -->
+                    <div class="form_group">
+                        <label class="form_label">node file info</label>
+                        <div id="node_file_info" style="background: var(--surface-variant); border-radius: 4px; padding: 0px; margin-bottom: 16px;">
+                            <div id="node_file_content">
+                                <p style="opacity: 0.7; text-align: center; padding: 20px;">select a node to view file details</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- global execution progress for default/no selection -->
-                <div class="form_group" id="execution_progress_group">
-                    <label class="form_label">progress</label>
-                    <div id="execution_progress" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">timeline</span>
-                            <span id="execution_progress_text">0 of 0</span>
+                    <!-- global execution progress for default/no selection -->
+                    <div class="form_group" id="execution_progress_group">
+                        <label class="form_label">progress</label>
+                        <div id="execution_progress" style="background: var(--surface-variant); border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span class="material-icons" style="color: var(--on-surface); opacity: 0.7;">timeline</span>
+                                <span id="execution_progress_text">0 of 0</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 3. node input (arguments, inputs) -->
-                <div class="form_group">
-                    <label class="form_label">node input (arguments, inputs)</label>
-                    <div id="node_input_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #90caf9; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
-                        <div id="node_input_content"></div>
+                    <!-- 3. node input (arguments, inputs) -->
+                    <div class="form_group">
+                        <label class="form_label">node input (arguments, inputs)</label>
+                        <div id="node_input_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #90caf9; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
+                            <div id="node_input_content"></div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- 4. node output (returns) -->
-                <div class="form_group">
-                    <label class="form_label">node output (returns)</label>
-                    <div id="node_output_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #ffa726; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
-                        <div id="node_output_content"></div>
+                    <!-- 4. node output (returns) -->
+                    <div class="form_group">
+                        <label class="form_label">node output (returns)</label>
+                        <div id="node_output_log" style="max-height: 200px; overflow-y: auto; background: #1a1a1a; color: #ffa726; border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap;">
+                            <div id="node_output_content"></div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- 4.5 returns (data out) - detailed variables list for python nodes after execution -->
-                <div class="form_group" id="python_returns_group" style="display: none;">
-                    <label class="form_label">returns (data out)</label>
-                    <div id="python_returns_content" style="background: transparent; border-radius: 4px; padding: 0;"></div>
-                </div>
+                    <!-- 4.5 returns (data out) - detailed variables list for python nodes after execution -->
+                    <div class="form_group" id="python_returns_group" style="display: none;">
+                        <label class="form_label">returns (data out)</label>
+                        <div id="python_returns_content" style="background: transparent; border-radius: 4px; padding: 0;"></div>
+                    </div>
 
-                <!-- 5. console output -->
-                <div class="form_group">
-                    <label class="form_label">console output</label>
-                    <div id="console_output_log" style="max-height: 300px; overflow-y: auto; background: #1a1a1a; color: var(--on-surface); border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: pre-wrap;"></div>
-                </div>
+                    <!-- 5. console output -->
+                    <div class="form_group">
+                        <label class="form_label">console output</label>
+                        <div id="console_output_log" style="max-height: 300px; overflow-y: auto; background: #1a1a1a; color: var(--on-surface); border-radius: 4px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                    </div>
 
-                <!-- data save run-mode details (shown only when selecting a data_save node in run mode) -->
-                <div class="form_group" id="data_save_details_group" style="display: none;">
-                    <label class="form_label">data save</label>
-                    <div id="data_save_details_card" class="data_save_details_card">
-                        <div class="data_save_details_grid">
-                            <div class="data_save_field">
-                                <div class="data_save_label">node name</div>
-                                <div id="ds_node_name" class="data_save_value"></div>
-                            </div>
-                            <div class="data_save_field">
-                                <div class="data_save_label">python variable</div>
-                                <div id="ds_variable_name" class="data_save_value data_save_value_monospace"></div>
-                            </div>
-                            <div class="data_save_field">
-                                <div class="data_save_label">type</div>
-                                <div id="ds_variable_type" class="data_save_value data_save_value_monospace"></div>
-                            </div>
-                            <div class="data_save_field">
-                                <div class="data_save_label">value</div>
-                                <pre id="ds_variable_value" class="data_save_value_pre"></pre>
-                            </div>
-                            <div class="data_save_field">
-                                <div class="data_save_label">history</div>
-                                <div id="ds_history_confirmation" class="data_save_history data_save_history_waiting">
-                                    <span class="material-icons data_save_history_icon" id="ds_history_icon">hourglass_empty</span>
-                                    <span id="ds_history_text">waiting to save...</span>
+                    <!-- data save run-mode details (shown only when selecting a data_save node in run mode) -->
+                    <div class="form_group" id="data_save_details_group" style="display: none;">
+                        <label class="form_label">data save</label>
+                        <div id="data_save_details_card" class="data_save_details_card">
+                            <div class="data_save_details_grid">
+                                <div class="data_save_field">
+                                    <div class="data_save_label">node name</div>
+                                    <div id="ds_node_name" class="data_save_value"></div>
+                                </div>
+                                <div class="data_save_field">
+                                    <div class="data_save_label">python variable</div>
+                                    <div id="ds_variable_name" class="data_save_value data_save_value_monospace"></div>
+                                </div>
+                                <div class="data_save_field">
+                                    <div class="data_save_label">type</div>
+                                    <div id="ds_variable_type" class="data_save_value data_save_value_monospace"></div>
+                                </div>
+                                <div class="data_save_field">
+                                    <div class="data_save_label">value</div>
+                                    <pre id="ds_variable_value" class="data_save_value_pre"></pre>
+                                </div>
+                                <div class="data_save_field">
+                                    <div class="data_save_label">history</div>
+                                    <div id="ds_history_confirmation" class="data_save_history data_save_history_waiting">
+                                        <span class="material-icons data_save_history_icon" id="ds_history_icon">hourglass_empty</span>
+                                        <span id="ds_history_text">waiting to save...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
-        </div>
 
-        
-        <!-- pinned footer actions -->
-        <div class="properties_footer">
-            <button class="btn btn_secondary btn_danger_subtle" id="sidebar_delete_btn" style="display: none; text-transform: capitalize;">
-                <span class="material-icons">delete</span>
-                <span style="display: inline-block; margin-bottom: 2px;">Delete</span>
-            </button>
+            <div class="checker"></div>
+
+            <!-- pinned footer actions -->
+            <div class="properties_footer">
+                <button class="btn btn_secondary btn_danger_subtle" id="sidebar_delete_btn" style="display: none; text-transform: capitalize;">
+                    <span class="material-icons">delete</span>
+                    <span style="display: inline-block; margin-bottom: 2px;">Delete</span>
+                </button>
+                <button class="btn btn_secondary btn_danger_subtle" id="delete_node_from_sidebar" style="display: none; text-transform: capitalize;">
+                    <span class="material-icons">delete</span>
+                    <span class="btn_label">Delete Node</span>
+                </button>
+                <button class="btn btn_secondary btn_danger_subtle" id="delete_selected_nodes" style="display: none; text-transform: capitalize;">
+                    <span class="material-icons">delete</span>
+                    <span style="display: inline-block; margin-bottom: 2px;">Delete Selected</span>
+                </button>
+                <button class="btn btn_secondary btn_danger_subtle" id="delete_link_btn" style="display: none; text-transform: capitalize;">
+                    <span class="material-icons">delete</span>
+                    <span style="display: inline-block; margin-bottom: 2px;">Delete Link</span>
+                </button>
+                <button class="btn btn_secondary btn_danger_subtle" id="delete_group" style="display: none; text-transform: capitalize;">
+                    <span class="material-icons">delete</span>
+                    <span style="display: inline-block; margin-bottom: 2px;">Delete Group</span>
+                </button>
+            </div>
         </div>
     </div>
 

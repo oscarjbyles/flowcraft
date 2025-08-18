@@ -3,6 +3,9 @@
     if (!window.Sidebar) return;
 
     Sidebar.prototype.initializeSettings = function() {
+        // initialize settings sidebar navigation
+        this.initializeSettingsSidebar();
+        
         // cache editor dropdown elements
         this.defaultEditorInput = document.getElementById('default_editor_input');
         this.defaultEditorDropdown = document.getElementById('default_editor_dropdown');
@@ -36,55 +39,56 @@
             clearAllBtn.addEventListener('click', async () => {
                 try {
                     const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
-                    const resp = await fetch('/api/history/clear-all', {
+                    const resp = await fetch('/api/history/clear_all', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ flowchart_name: current })
                     });
                     const data = await resp.json();
                     if (data.status === 'success') {
-                        this.showSuccess(data.message || 'executions cleared');
-                        // refresh dashboard kpis if present
-                        try { window.location.reload(); } catch (_) {}
+                        this.showSuccess(data.message || 'executions and history cleared');
                     } else {
-                        this.showError(data.message || 'failed to clear executions');
+                        this.showError(data.message || 'failed to clear executions and history');
                     }
                 } catch (err) {
-                    this.showError('error clearing executions');
+                    this.showError('error clearing executions and history');
                 }
             });
         }
 
-        // fetch and display project root path
-        const projectRootEl = document.getElementById('project_root_path');
-        const copyBtn = document.getElementById('copy_project_root_btn');
-        if (projectRootEl) {
-            (async () => {
-                try {
-                    const resp = await fetch('/api/project-root');
-                    const data = await resp.json();
-                    if (data.status === 'success') {
-                        projectRootEl.textContent = data.root || '-';
-                        if (copyBtn) {
-                            copyBtn.addEventListener('click', async () => {
-                                try {
-                                    await navigator.clipboard.writeText(projectRootEl.textContent);
-                                    this.showSuccess('copied');
-                                } catch (_) {
-                                    this.showError('failed to copy');
-                                }
-                            });
-                        }
-                    } else {
-                        projectRootEl.textContent = data.message || 'failed to load';
-                    }
-                } catch (err) {
-                    projectRootEl.textContent = 'error loading path';
+        // wire project root copy button and load project root path
+        const projectRootBtn = document.getElementById('copy_project_root_btn');
+        const projectRootPath = document.getElementById('project_root_path');
+        
+        const loadProjectRoot = async () => {
+            if (!projectRootPath) return;
+            try {
+                const resp = await fetch('/api/project-root');
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    projectRootPath.textContent = data.root || '-';
+                } else {
+                    projectRootPath.textContent = data.message || 'failed to load';
                 }
-            })();
+            } catch (err) {
+                projectRootPath.textContent = 'error loading path';
+            }
+        };
+        
+        loadProjectRoot();
+        
+        if (projectRootBtn && projectRootPath) {
+            projectRootBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(projectRootPath.textContent || '');
+                    this.showSuccess('copied');
+                } catch (_) {
+                    this.showError('failed to copy');
+                }
+            });
         }
 
-        // flowchart file path display
+        // wire flowchart file path copy button
         const flowPathEl = document.getElementById('flowchart_file_path');
         const flowCopyBtn = document.getElementById('copy_flowchart_file_btn');
         const refreshFlowPath = async () => {
@@ -118,12 +122,13 @@
         // render backups table
         this.initializeBackupsTable();
 
-        // refresh backups when settings button is clicked
+        // refresh data when settings button is clicked
         const settingsBtnEl = document.getElementById('settings_btn');
         if (settingsBtnEl) {
             settingsBtnEl.addEventListener('click', () => {
                 try { this.loadAndRenderBackups && this.loadAndRenderBackups(); } catch (_) {}
                 try { refreshFlowPath && refreshFlowPath(); } catch (_) {}
+                try { loadProjectRoot && loadProjectRoot(); } catch (_) {}
             });
         }
 
@@ -134,56 +139,92 @@
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                this.defaultEditorInput.value = parsed.name || parsed.path || 'custom editor';
-                this.defaultEditorInput.dataset.path = parsed.path || '';
-            } catch (_) {}
+                this.defaultEditorInput.value = parsed.name || '';
+            } catch (_) {
+                // ignore invalid saved data
+            }
         }
 
-        // fetch installed editors
+        // scan for installed editors
         this.fetchInstalledEditors();
 
-        // open/close behavior
-        this.defaultEditorInput.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleEditorDropdown();
+        // wire dropdown interactions
+        this.defaultEditorInput.addEventListener('click', () => {
+            this.defaultEditorDropdown.classList.toggle('active');
         });
+
+        // close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            const container = this.defaultEditorInput.closest('.dropdown_container');
-            if (!container.contains(e.target)) {
-                this.closeEditorDropdown();
+            if (!this.defaultEditorInput.contains(e.target) && !this.defaultEditorDropdown.contains(e.target)) {
+                this.defaultEditorDropdown.classList.remove('active');
             }
         });
 
-        // wire flowchart rename controls
+        // wire rename flowchart functionality
         const renameInput = document.getElementById('rename_flowchart_input');
         const renameBtn = document.getElementById('rename_flowchart_btn');
-        if (renameBtn && renameInput) {
+        if (renameInput && renameBtn) {
             renameBtn.addEventListener('click', async () => {
-                const raw = (renameInput.value || '').trim();
-                if (!raw) { this.showError('enter a new name'); return; }
-                const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
-                if (!current) { this.showError('no flowchart selected'); return; }
+                const newName = renameInput.value.trim();
+                if (!newName) {
+                    this.showError('please enter a name');
+                    return;
+                }
                 try {
-                    const result = await this.state.storage.renameFlowchart(current, raw);
-                    if (result.success) {
-                        const newFilename = result.newFilename;
-                        const display = newFilename.replace('.json','');
-                        this.state.storage.setCurrentFlowchart(newFilename);
-                        // reload flowchart state and refresh lists
-                        try { await this.state.load(newFilename); } catch (_) {}
-                        try { await this.loadFlowcharts && this.loadFlowcharts(); } catch (_) {}
-                        this.setCurrentFlowchart(display);
-                        try { this.urlManager.updateFlowchartInURL(newFilename); } catch (_) {}
+                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
+                    if (!current) {
+                        this.showError('no flowchart selected');
+                        return;
+                    }
+                    const resp = await fetch('/api/flowcharts/rename', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            old_name: current,
+                            new_name: newName 
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.status === 'success') {
                         this.showSuccess('flowchart renamed');
-                        try { refreshFlowPath && refreshFlowPath(); } catch (_) {}
+                        renameInput.value = '';
+                        // refresh flowchart list if available
+                        if (this.state?.storage?.refreshFlowcharts) {
+                            this.state.storage.refreshFlowcharts();
+                        }
                     } else {
-                        this.showError(result.message || 'failed to rename');
+                        this.showError(data.message || 'failed to rename flowchart');
                     }
                 } catch (err) {
                     this.showError('error renaming flowchart');
                 }
             });
         }
+    };
+
+    // initialize settings sidebar navigation
+    Sidebar.prototype.initializeSettingsSidebar = function() {
+        const sidebarItems = document.querySelectorAll('.settings_sidebar_item');
+        const settingsSections = document.querySelectorAll('.settings_section');
+
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetSection = item.getAttribute('data-section');
+                
+                // update active states
+                sidebarItems.forEach(btn => btn.classList.remove('active'));
+                item.classList.add('active');
+                
+                // show target section, hide others
+                settingsSections.forEach(section => {
+                    if (section.id === targetSection) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+            });
+        });
     };
 
     Sidebar.prototype.fetchInstalledEditors = async function() {
@@ -417,10 +458,10 @@
                     activeData = activeResp.ok ? await activeResp.json() : null;
                 } catch (_) {}
 
-                renderRows(activeData || { nodes: [], links: [] }, backups, false);
+                renderRows(activeData || { nodes: [], links: [], groups: [] }, backups, false);
                 console.log('[backups] table rendered');
             } catch (err) {
-                tableBody.innerHTML = '<tr><td colspan="5" style="opacity:.7">failed to load backups</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" style="opacity:.7">failed to load backups</td></tr>';
                 console.error('[backups] failed to load backups', err);
             }
         };

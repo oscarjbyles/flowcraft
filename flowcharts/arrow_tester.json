@@ -1,0 +1,51 @@
+{
+  "nodes": [
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755428867355.153,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 957.5841674804688,
+      "y": 590.6985168457031
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "annotations": [
+    {
+      "endX": 1154.28560016657,
+      "endY": 636.9124106860924,
+      "id": 1755428783965.9648,
+      "startX": 1054.28560016657,
+      "startY": 636.9124106860924,
+      "strokeColor": "var(--on-surface)",
+      "strokeWidth": 2,
+      "type": "arrow",
+      "x": 761.7307295611013,
+      "y": 1009.5332602954674
+    },
+    {
+      "_arrowDragEnd": true,
+      "_arrowDragStartX": -257.6225129114275,
+      "_arrowDragStartY": 2101.8639834037713,
+      "_newEndX": 363.971986922363,
+      "_newEndY": 2162.9031465785383,
+      "_newStartX": 1118.5815886510725,
+      "_newStartY": 707.4501650443962,
+      "endX": 1218.5815886510725,
+      "endY": 707.4501650443962,
+      "id": 1755429194512.288,
+      "startX": 1118.5815886510725,
+      "startY": 707.4501650443962,
+      "strokeColor": "var(--on-surface)",
+      "strokeWidth": 2,
+      "type": "arrow",
+      "x": -257.6225129114275,
+      "y": 2101.8639834037713
+    }
+  ],
+  "force": false
+}
