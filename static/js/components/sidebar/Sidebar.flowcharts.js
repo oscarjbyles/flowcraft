@@ -10,28 +10,7 @@
             this.showCreateFlowchartModal();
         });
 
-        document.getElementById('export_btn').addEventListener('click', () => {
-            this.exportCurrentFlowchart();
-        });
 
-        // open data matrix page for current flowchart
-        const dmBtn = document.getElementById('data_matrix_btn');
-        if (dmBtn) {
-            dmBtn.addEventListener('click', () => {
-                // if leaving run mode, perform full clear same as clear button
-                try {
-                    if (window.flowchartApp && window.flowchartApp.state && window.flowchartApp.state.isRunMode) {
-                        if (typeof window.flowchartApp.clearRunModeState === 'function') {
-                            window.flowchartApp.clearRunModeState();
-                        } else if (typeof window.flowchartApp.clearAllNodeColorState === 'function') {
-                            window.flowchartApp.clearAllNodeColorState();
-                        }
-                    }
-                } catch (_) {}
-                const url = this.urlManager.buildUrlPreserveContext('/data');
-                window.location.href = url;
-            });
-        }
 
         document.getElementById('close_create_modal').addEventListener('click', () => {
             this.hideCreateFlowchartModal();

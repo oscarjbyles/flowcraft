@@ -9,7 +9,7 @@
     padding: 0 16px;
     font-size: 0.75rem;
     color: var(--on-surface);
-    /* pin to bottom aligned with left sidebar */
+    /* pin to bottom aligned with left navigation */
     position: fixed;
     left: 320px;
     right: 0;

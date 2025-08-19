@@ -63,7 +63,7 @@
 /* run mode live feed bar at bottom */
 .run_feed_bar {
     position: fixed;
-    left: 320px; /* start to the right of the left sidebar */
+    left: 320px; /* start to the right of the left navigation */
     right: 0;
     bottom: 32px;
     height: 300px;
@@ -142,7 +142,7 @@
     gap: 8px;
 }
 
-/* responsive adjustment: when sidebar shrinks, align left edge accordingly */
+/* responsive adjustment: when navigation shrinks, align left edge accordingly */
 @media (max-width: 768px) {
   .run_feed_bar { left: 240px; }
 }

@@ -78,34 +78,7 @@
     margin-left: 5px;
 }
 
-.btn_modal {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-}
-
-.btn_modal_primary {
-    background-color: var(--primary-color);
-    color: var(--on-primary);
-}
-
-.btn_modal_primary:hover {
-    background-color: var(--primary-dark);
-}
-
-.btn_modal_secondary {
-    background-color: var(--surface-variant);
-    color: var(--on-surface);
-}
-
-.btn_modal_secondary:hover {
-    background-color: var(--hover-color);
-}
+/* modal button styles moved to /static/css/components/buttons.css */
 
 /* removed create python script button and modal styles */
 

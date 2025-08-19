@@ -2,9 +2,17 @@
 
 /* base layer: resets and element defaults kept minimal to avoid visual change */
 @layer base {
-  * { box-sizing: border-box; }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
   html, body { height: 100%; }
-  body { margin: 0; background-color: var(--background-color); color: var(--on-background); font-family: 'Roboto', sans-serif; }
+  body { 
+    background-color: var(--background-color); 
+    color: var(--on-background); 
+    font-family: 'Roboto', sans-serif; 
+  }
 }
 
 /* utilities: single-purpose helpers to replace inline styles incrementally */
@@ -84,23 +92,14 @@
   }
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--background-color);
-    color: var(--on-background);
     height: 100vh;
     overflow: hidden;
 }
 
 /* ensure most ui text inherits roboto */
-html, body, .app_container, .sidebar, .properties_sidebar, .main_content,
-.sidebar_item, .sidebar_section_title, .sidebar_title, .status_bar,
+html, body, .app_container, .navigation, .properties_sidebar, .main_content,
+.navigation_item, .navigation_section_title, .navigation_title, .status_bar,
 button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .dropdown_no_results,
 .modal_title, .btn {
     font-family: 'Roboto', sans-serif;

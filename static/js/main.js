@@ -9,7 +9,7 @@
             'StateManager', 'EventManager',
             'DragHandler', 'SelectionHandler', 'ConnectionHandler',
             'NodeRenderer', 'LinkRenderer', 'GroupRenderer',
-            'Sidebar', 'FlowchartBuilder'
+            'Navigation', 'FlowchartBuilder'
         ];
 
         const missing = requiredClasses.filter(className => !window[className]);

@@ -1,7 +1,7 @@
 (function(){
     'use strict';
 
-    // flowchart selector and create modal for left sidebar on all pages
+    // flowchart selector and create modal for left navigation on all pages
     // comments are lowercase per project convention
 
     function onDomReady(fn){
@@ -42,6 +42,19 @@
 
     function fetchFlowcharts(){
         return fetch('/api/flowcharts').then(r => r.json()).catch(() => ({ status:'error', flowcharts: [] }));
+    }
+
+    function buildHref(path){
+        try {
+            const u = new URL(path, window.location.origin);
+            const params = new URLSearchParams(window.location.search);
+            // preserve flowchart context
+            const flowchart = params.get('flowchart');
+            if (flowchart) u.searchParams.set('flowchart', flowchart);
+            return u.pathname + (u.search ? u.search : '');
+        } catch(_) {
+            return path;
+        }
     }
 
     function renderDropdown(dropdownEl, items){
@@ -247,6 +260,41 @@
                         preventSpaces(nameInput);
                     }
                 }
+
+                // export button handling (left navigation)
+                const exportBtn = document.getElementById('export_btn');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', () => {
+                        // delegate to sidebar if available, otherwise navigate to builder
+                        if (window.flowchartApp && window.flowchartApp.sidebar && typeof window.flowchartApp.sidebar.exportCurrentFlowchart === 'function') {
+                            window.flowchartApp.sidebar.exportCurrentFlowchart();
+                        } else {
+                            window.location.href = buildHref('/');
+                        }
+                    });
+                }
+
+                // data matrix button handling (left navigation)
+                const dmBtn = document.getElementById('data_matrix_btn');
+                if (dmBtn) {
+                    dmBtn.addEventListener('click', () => {
+                        // if leaving run mode, perform full clear same as clear button
+                        try {
+                            if (window.flowchartApp && window.flowchartApp.state && window.flowchartApp.state.isRunMode) {
+                                if (typeof window.flowchartApp.clearRunModeState === 'function') {
+                                    window.flowchartApp.clearRunModeState();
+                                } else if (typeof window.flowchartApp.clearAllNodeColorState === 'function') {
+                                    window.flowchartApp.clearAllNodeColorState();
+                                }
+                            }
+                        } catch (_) {}
+                        const url = urlMgr && typeof urlMgr.buildUrlPreserveContext === 'function' 
+                            ? urlMgr.buildUrlPreserveContext('/data')
+                            : '/data';
+                        window.location.href = url;
+                    });
+                }
+
                 try { console.log('[nav-flow] setup complete'); } catch(_) {}
             });
         }

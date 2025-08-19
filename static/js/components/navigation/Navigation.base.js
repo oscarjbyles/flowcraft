@@ -1,7 +1,7 @@
 (function(){
     'use strict';
 
-    // lightweight navigation module for left sidebar
+    // lightweight navigation module for left navigation
     // comments are lowercase per project convention
 
     function onDomReady(fn){
@@ -42,7 +42,7 @@
     }
 
     const Navigation = {
-        // wire left sidebar buttons; if app is provided, use rich behavior (mode switches, clears), otherwise navigate only
+        // wire left navigation buttons; if app is provided, use rich behavior (mode switches, clears), otherwise navigate only
         setupNavButtons(app){
             onDomReady(() => {
                 console.log('[nav] setupNavButtons start', { hasApp: !!app, path: window.location.pathname });
@@ -84,7 +84,7 @@
                 const settings = document.getElementById('settings_btn');
                 if (settings) settings.onclick = () => { clearRunVisualsIfNeeded(app); window.location.href = buildHref('/settings'); };
 
-                // export (builder handles its own export via sidebar module; only handle on non-app pages)
+                // export (builder handles its own export via navigation module; only handle on non-app pages)
                 if (!app) {
                     const exp = document.getElementById('export_btn');
                     if (exp) exp.onclick = () => { window.location.href = buildHref('/'); };
@@ -110,7 +110,7 @@
                 console.log('[nav] calling setupFlowchartUI');
                 window.Navigation.setupFlowchartUI(null);
             } else if (app) {
-                console.log('[nav] skipping setupFlowchartUI on builder (handled by Sidebar)');
+                console.log('[nav] skipping setupFlowchartUI on builder (handled by Navigation)');
             } else {
                 console.warn('[nav] setupFlowchartUI not available on window.Navigation');
             }

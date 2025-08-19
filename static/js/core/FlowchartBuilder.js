@@ -130,8 +130,8 @@ class FlowchartBuilder {
     }
 
     initializeUI() {
-        // setup sidebar buttons
-        this.setupSidebarButtons();
+        // setup navigation buttons
+this.setupNavigationButtons();
         
         // setup status bar
         this.setupStatusBar();
@@ -539,8 +539,8 @@ class FlowchartBuilder {
             );
     }
 
-    setupSidebarButtons() {
-        // delegate to centralized navigation module for left sidebar
+    setupNavigationButtons() {
+        // delegate to centralized navigation module for left navigation
         try { if (window.Navigation && typeof window.Navigation.setupNavButtons === 'function') window.Navigation.setupNavButtons(this); } catch(_) {}
 
         // safe attach helper to avoid hard failures when elements are missing

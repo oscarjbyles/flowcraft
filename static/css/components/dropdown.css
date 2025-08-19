@@ -93,6 +93,15 @@
     font-size: 0.875rem;
 }
 
+/* properties sidebar-specific overrides */
+.properties_sidebar .dropdown_menu {
+    background-color: var(--surface-color);
+}
+
+.properties_sidebar .dropdown_item:hover {
+    background-color: var(--hover-color);
+}
+
 /* legacy layer styles for compatibility */
 @layer components {
   .dropdown_menu_is_open {

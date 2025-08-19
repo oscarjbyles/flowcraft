@@ -31,22 +31,9 @@ This document provides a comprehensive analysis of the JavaScript architecture i
 
 ### Components (17 files, 3,847 total lines)
 
-#### Sidebar Components (15 files, 3,614 total lines)
-- **Sidebar.base.js** (142 lines) - Core sidebar functionality
-- **Sidebar.nodes.js** (693 lines) - Node property editing
-- **Sidebar.runview.js** (785 lines) - Execution monitoring interface
-- **Sidebar.selection.js** (352 lines) - Multi-selection management
-- **Sidebar.flowcharts.js** (377 lines) - Flowchart management
-- **Sidebar.content.js** (368 lines) - Content switching logic
-- **Sidebar.settings.js** (487 lines) - Application settings
-- **Sidebar.links.js** (266 lines) - Link property editing
-- **Sidebar.iflogic.js** (484 lines) - Conditional logic editing
-- **Sidebar.files.js** (328 lines) - File management interface
-- **Sidebar.analysis.js** (196 lines) - Analysis tools
-- **Sidebar.forms.js** (103 lines) - Form handling
-- **Sidebar.url.js** (51 lines) - URL management
-- **Sidebar.status.js** (40 lines) - Status display
-- **Sidebar.events.js** (47 lines) - Event handling
+#### Navigation Components (2 files, 392 total lines)
+- **Navigation.base.js** (133 lines) - Core navigation functionality
+- **Navigation.flowcharts.js** (259 lines) - Flowchart navigation
 
 #### Sidebar Panels (6 files, 2.8KB total)
 - **Panel.single.js** (19 lines) - Single node panel
@@ -60,9 +47,7 @@ This document provides a comprehensive analysis of the JavaScript architecture i
 - **Visibility.js** (27 lines) - Visibility controls
 - **Dropdowns.js** (12 lines) - Dropdown components
 
-#### Navigation (2 files, 392 total lines)
-- **Navigation.base.js** (133 lines) - Core navigation functionality
-- **Navigation.flowcharts.js** (259 lines) - Flowchart navigation
+
 
 ### Pages (2 files, 819 total lines)
 - **DataMatrix.js** (589 lines) - Data matrix visualization page

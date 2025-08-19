@@ -68,7 +68,7 @@
     const flowFilename = (flowFileParam || `${flowDisplay}.json`);
     try { console.log('[dm] url params', { modeParam, flowNameParam, flowFileParam, flowDisplay, flowFilename }); } catch(_) {}
 
-    // wire sidebar navigation to preserve flowchart across pages
+    // wire navigation to preserve flowchart across pages
     function withFlowchart(href){
         const u = new URL(href, window.location.origin);
         // builder pages + dashboard use ?flowchart=display and ?mode=...

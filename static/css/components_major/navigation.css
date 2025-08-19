@@ -1,7 +1,7 @@
-/* shared sidebar styles for consistency across pages (comments are lowercase as requested) */
+/* shared navigation styles for consistency across pages (comments are lowercase as requested) */
 
 /* container */
-.sidebar {
+.navigation {
   width: 320px;
   height: 100vh;
   background: linear-gradient(180deg, var(--surface-color) 0%, var(--surface-variant) 100%);
@@ -13,14 +13,14 @@
 }
 
 /* header */
-.sidebar_header {
+.navigation_header {
   padding: 24px 20px 10px 20px;
   display: flex;
   align-items: center;
   gap: 16px;
   background: transparent;
 }
-.sidebar_title {
+.navigation_title {
   font-size: 1.3rem;
   font-weight: 600;
   color: white;
@@ -51,29 +51,29 @@
 }
 
 /* content */
-.sidebar_content {
+.navigation_content {
   flex: 1;
   padding: 16px;
   display: flex;
   flex-direction: column;
 }
-.sidebar_footer {
+.navigation_footer {
   margin-top: auto;
   padding-top: 8px;
 }
 
 /* sections */
-.sidebar_section {
+.navigation_section {
   margin-bottom: 24px;
 }
-.sidebar_section.disabled {
+.navigation_section.disabled {
   opacity: 0.4;
   pointer-events: none;
 }
-.sidebar_section.disabled .sidebar_item {
+.navigation_section.disabled .navigation_item {
   cursor: not-allowed;
 }
-.sidebar_section_title {
+.navigation_section_title {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--on-surface);
@@ -84,7 +84,7 @@
 }
 
 /* items */
-.sidebar_item {
+.navigation_item {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -110,28 +110,28 @@
 #dashboard_btn {
   margin-bottom: 26px;
 }
-.sidebar_item:hover {
+.navigation_item:hover {
   background: linear-gradient(135deg, var(--hover-color) 0%, rgba(51, 51, 51, 0.9) 100%);
 }
-.sidebar_item.active {
+.navigation_item.active {
   background: #484848;
   color: var(--on-primary);
 }
-.sidebar_item.flow_view_active {
+.navigation_item.flow_view_active {
   background-color: #484848;
   color: var(--on-primary);
 }
-.sidebar_item.flow_view_active:hover {
+.navigation_item.flow_view_active:hover {
   background-color: #555555;
 }
-.sidebar_item.run_mode_active {
+.navigation_item.run_mode_active {
   background-color: #484848;
   color: var(--on-primary);
 }
-.sidebar_item.run_mode_active:hover {
+.navigation_item.run_mode_active:hover {
   background-color: #555555;
 }
-.sidebar_item .material-icons {
+.navigation_item .material-icons {
   margin-right: 10px;
   font-size: 20px;
   width: 26px;
@@ -168,70 +168,11 @@
   text-decoration: underline;
 }
 
-/* dropdowns inside sidebar (scoped to avoid collisions) */
-.sidebar .dropdown_container {
-  position: relative;
-}
-.sidebar .dropdown_input {
-  cursor: pointer;
-  padding-right: 40px;
-}
-.sidebar .dropdown_arrow {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--on-surface);
-  pointer-events: none;
-  font-size: 20px;
-}
-.sidebar .dropdown_menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: var(--surface-variant);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  z-index: 1000;
-  display: none;
-  max-height: 200px;
-  overflow-y: auto;
-}
-.sidebar .dropdown_menu.show {
-  display: block;
-}
-.sidebar .dropdown_item {
-  padding: 12px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.sidebar .dropdown_item:last-child {
-  border-bottom: none;
-}
-.sidebar .dropdown_item:hover {
-  background-color: var(--hover-color);
-}
-.sidebar .dropdown_item.selected {
-  background-color: var(--primary-color);
-  color: var(--on-primary);
-}
-.sidebar .dropdown_loading,
-.sidebar .dropdown_no_results {
-  padding: 12px;
-  text-align: center;
-  color: var(--on-surface);
-  opacity: 0.7;
-  font-size: 0.875rem;
-}
+/* dropdown styles moved to /static/css/components/dropdown.css */
 
 /* responsive */
 @media (max-width: 768px) {
-  .sidebar {
+  .navigation {
     width: 240px;
   }
 }
