@@ -106,6 +106,59 @@
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
+/* stop button styles */
+.btn_stop {
+    background-color: #f44336 !important;
+    color: white !important;
+}
+
+.btn_stop:hover {
+    background-color: #d32f2f !important;
+}
+
+/* inline button styles */
+.btn_inline {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    height: 24px;
+}
+
+/* button row layout */
+.btn_row {
+    display: flex;
+    gap: 8px;
+}
+
+/* disabled/active state for buttons */
+.btn[disabled], .btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+/* start button container specific styles */
+.start_button_container .btn {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.start_button_container .btn.btn_primary { 
+    border-color: var(--primary-color); 
+}
+
+.start_button_container .btn.btn_secondary { 
+    border-color: var(--border-color); 
+}
+
+.start_button_container .material-icons { 
+    font-size: 18px; 
+}
+
 /* legacy layer styles for compatibility */
 @layer components {
   .btn_variant_primary {

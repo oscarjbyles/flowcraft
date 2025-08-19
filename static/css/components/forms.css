@@ -197,22 +197,7 @@
     border-radius: 0px;
 }
 
-.mini_btn { 
-    display: inline-flex; 
-    align-items: center; 
-    gap: 6px; 
-    padding: 6px 12px; 
-    border: 1px solid var(--border-color); 
-    background: var(--surface-color); 
-    color: var(--on-surface); 
-    border-radius: 6px; 
-    cursor: pointer; 
-    font-size: 0.8rem; 
-}
-
-.mini_btn:hover { 
-    background: var(--hover-color); 
-}
+/* mini_btn styles moved to /static/css/components/buttons.css */
 
 .mini_breadcrumb { 
     display: flex; 

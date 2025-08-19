@@ -144,24 +144,4 @@
     border-radius: 3px;
 }
 
-/* dropdown delete button */
-.dropdown_delete_btn {
-    background: none;
-    border: none;
-    color: #f44336;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dropdown_delete_btn:hover {
-    background: rgba(244, 67, 54, 0.1);
-}
-
-.dropdown_delete_btn .material-icons {
-    font-size: 16px;
-}
+/* dropdown_delete_btn styles moved to /static/css/components/dropdown.css */

@@ -165,10 +165,7 @@
   background: rgba(158,158,158,.15);
   color: #bdbdbd;
 }
-.btn_row {
-  display: flex;
-  gap: 8px;
-}
+/* btn_row styles moved to /static/css/components/buttons.css */
 .muted {
   opacity: .7;
   font-size: .85rem;

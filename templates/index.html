@@ -116,9 +116,7 @@
     <script src="/static/js/rendering/GroupRenderer.js"></script>
     <script src="/static/js/rendering/AnnotationRenderer.js"></script>
 
-    <!-- navigation components -->
-    <script src="/static/js/components/navigation/Navigation.base.js"></script>
-    <script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
+
 
     <!-- properties sidebar components -->
     <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
@@ -206,9 +204,12 @@
                     </div>
                     <div class="form_group">
                         <label class="form_label" for="python_file">python file</label>
-                        <div class="dropdown_container" style="position: relative;">
+                        <div class="dropdown_container" id="python_file_container" style="position: relative;">
                             <input type="text" id="python_file" class="form_input dropdown_input" placeholder="" readonly>
                             <span class="dropdown_arrow material-icons">folder_open</span>
+                            <div class="dropdown_menu" id="python_file_dropdown">
+                                <div class="dropdown_loading">loading python files...</div>
+                            </div>
                             <div id="python_file_status_block" style="position: absolute; left: 10px; right: 28px; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; pointer-events: none;">
                                 <span id="python_file_status_icon" class="material-icons" style="font-size: 16px;">close</span>
                                 <span id="python_file_status_text" style="font-size: 0.85rem; opacity: 0.9;">select python file</span>

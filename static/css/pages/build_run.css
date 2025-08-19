@@ -1,25 +1,8 @@
 /* build and run mode specific styles */
 
-/* run mode start/clear buttons – align with build toolbar buttons (keep colors) */
-.start_button_container .btn {
-    height: 40px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px 12px;
-}
-.start_button_container .btn.btn_primary { border-color: var(--primary-color); }
-.start_button_container .btn.btn_secondary { border-color: var(--border-color); }
-.start_button_container .material-icons { font-size: 18px; }
+/* run mode start/clear buttons – styles moved to /static/css/components/buttons.css */
 
-/* disabled/active state for run feed controls */
-.btn[disabled], .btn.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-    filter: grayscale(100%);
-}
+/* disabled/active state for run feed controls - moved to buttons.css */
 
 /* hide connection dots in run mode */
 .run_mode .node-group:hover .connection_dot {
@@ -304,14 +287,7 @@
 /* ensure toggle bar follows same non-run default if needed */
 .main_content:not(.run_mode) .sidebar_toggle_container { right: 290px; }
 
-.btn_stop {
-    background-color: #f44336 !important;
-    color: white !important;
-}
-
-.btn_stop:hover {
-    background-color: #d32f2f !important;
-}
+/* btn_stop styles moved to /static/css/components/buttons.css */
 
 .loading_wheel {
     width: 24px;

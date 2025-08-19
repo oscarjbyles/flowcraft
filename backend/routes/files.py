@@ -46,6 +46,42 @@ def get_python_files():
         return jsonify({'status': 'error', 'message': f'failed to list python files: {str(e)}'}), 500
 
 
+@files_bp.route('/python-files/validate', methods=['GET'])
+def validate_python_file():
+    path = request.args.get('path', '').strip()
+    if not path:
+        return jsonify({'status': 'error', 'message': 'path parameter is required'}), 400
+    
+    try:
+        project_root = current_app.config.get('FLOWCRAFT_PROJECT_ROOT') or os.getcwd()
+        # normalize path and remove any leading 'nodes/' prefix
+        import re
+        normalized_path = path.replace('\\', '/')
+        normalized_path = re.sub(r'^(?:nodes/)+', '', normalized_path)
+        file_path = os.path.normpath(os.path.join(project_root, normalized_path))
+        
+        # check if file exists and is readable
+        if not os.path.exists(file_path):
+            return jsonify({'status': 'success', 'valid': False, 'message': 'file not found'})
+        
+        if not os.path.isfile(file_path):
+            return jsonify({'status': 'success', 'valid': False, 'message': 'path is not a file'})
+        
+        if not path.lower().endswith('.py'):
+            return jsonify({'status': 'success', 'valid': False, 'message': 'file is not a python file'})
+        
+        # try to read the file to ensure it's accessible
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                f.read(1)  # just read one character to test access
+            return jsonify({'status': 'success', 'valid': True, 'message': 'file is valid'})
+        except Exception as e:
+            return jsonify({'status': 'success', 'valid': False, 'message': f'file is not readable: {str(e)}'})
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'validation failed: {str(e)}'}), 500
+
+
 @files_bp.route('/nodes/browse', methods=['GET'])
 def browse_nodes():
     rel_path = (request.args.get('path') or '').strip().replace('\\', '/')

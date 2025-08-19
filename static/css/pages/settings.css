@@ -251,11 +251,7 @@
     gap: 6px; 
 }
 
-.backups_table .btn_inline { 
-    padding: 4px 8px; 
-    font-size: 0.75rem; 
-    height: 24px; 
-}
+/* btn_inline styles moved to /static/css/components/buttons.css */
 
 .backups_table th.col_delete, .backups_table th.col_restore,
 .backups_table td.col_delete, .backups_table td.col_restore {

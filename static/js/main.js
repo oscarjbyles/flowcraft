@@ -6,6 +6,7 @@
     function checkDependencies() {
         const requiredClasses = [
             'EventEmitter', 'Geometry', 'Storage', 'Validation', 'URLManager',
+            'DropdownManager', // add DropdownManager to required dependencies
             'StateManager', 'EventManager',
             'DragHandler', 'SelectionHandler', 'ConnectionHandler',
             'NodeRenderer', 'LinkRenderer', 'GroupRenderer',
@@ -92,11 +93,29 @@
                     console.log(`cleared ${count} orphaned input nodes`);
                     return count;
                 },
-                setRunFeedBarDisplay: (display) => window.flowchartApp.setRunFeedBarDisplay(display)
+                setRunFeedBarDisplay: (display) => window.flowchartApp.setRunFeedBarDisplay(display),
+                testDropdownManager: () => {
+                    console.log('Testing DropdownManager...');
+                    if (window.DropdownManager) {
+                        console.log('✅ DropdownManager is available');
+                        console.log('Active dropdowns:', window.DropdownManager.activeDropdowns.size);
+                        return true;
+                    } else {
+                        console.log('❌ DropdownManager is not available');
+                        return false;
+                    }
+                }
             };
 
             console.log('flowchart application initialized');
             console.log('debug helpers available at window.debugFlowchart');
+            
+            // verify DropdownManager is loaded
+            if (window.DropdownManager) {
+                console.log('✅ DropdownManager loaded successfully');
+            } else {
+                console.warn('⚠️ DropdownManager not found - dropdown functionality may not work');
+            }
             
         } catch (error) {
             console.error('failed to initialize flowchart application:', error);
