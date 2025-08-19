@@ -1,11 +1,41 @@
-// settings-related sidebar methods
-(function(){
-    if (!window.Sidebar) return;
-
-    Sidebar.prototype.initializeSettings = function() {
-        // initialize settings sidebar navigation
+// dedicated settings page functionality
+class Settings {
+    constructor() {
+        this.urlManager = new URLManager();
         this.initializeSettingsSidebar();
-        
+        this.initializeFormHandlers();
+        this.loadSettingsData();
+        this.initializeBackupsTable();
+        this.setupNavigation();
+    }
+
+    // initialize settings sidebar navigation
+    initializeSettingsSidebar() {
+        const sidebarItems = document.querySelectorAll('.settings_sidebar_item');
+        const settingsSections = document.querySelectorAll('.settings_section');
+
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetSection = item.getAttribute('data-section');
+                
+                // update active states
+                sidebarItems.forEach(btn => btn.classList.remove('active'));
+                item.classList.add('active');
+                
+                // show target section, hide others
+                settingsSections.forEach(section => {
+                    if (section.id === targetSection) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+            });
+        });
+    }
+
+    // initialize form handlers for settings
+    initializeFormHandlers() {
         // cache editor dropdown elements
         this.defaultEditorInput = document.getElementById('default_editor_input');
         this.defaultEditorDropdown = document.getElementById('default_editor_dropdown');
@@ -15,7 +45,7 @@
         if (clearBtn) {
             clearBtn.addEventListener('click', async () => {
                 try {
-                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
+                    const current = this.getCurrentFlowchart();
                     const resp = await fetch('/api/history/clear', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -38,7 +68,7 @@
         if (clearAllBtn) {
             clearAllBtn.addEventListener('click', async () => {
                 try {
-                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
+                    const current = this.getCurrentFlowchart();
                     const resp = await fetch('/api/history/clear_all', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -94,11 +124,12 @@
         const refreshFlowPath = async () => {
             if (!flowPathEl) return;
             try {
-                const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
+                const current = this.getCurrentFlowchart();
                 if (!current) { flowPathEl.textContent = '-'; return; }
-                const list = await this.state.storage.listFlowcharts();
-                if (list && list.success && Array.isArray(list.flowcharts)) {
-                    const match = list.flowcharts.find(f => f.filename === current);
+                const resp = await fetch('/api/flowcharts');
+                const data = await resp.json();
+                if (data.status === 'success' && Array.isArray(data.flowcharts)) {
+                    const match = data.flowcharts.find(f => f.filename === current);
                     flowPathEl.textContent = (match && match.path) ? match.path : '-';
                 } else {
                     flowPathEl.textContent = 'failed to load';
@@ -119,11 +150,49 @@
             });
         }
 
-        // render backups table
-        this.initializeBackupsTable();
+        // wire rename flowchart functionality
+        const renameInput = document.getElementById('rename_flowchart_input');
+        const renameBtn = document.getElementById('rename_flowchart_btn');
+        if (renameInput && renameBtn) {
+            renameBtn.addEventListener('click', async () => {
+                const newName = renameInput.value.trim();
+                if (!newName) {
+                    this.showError('please enter a name');
+                    return;
+                }
+                try {
+                    const current = this.getCurrentFlowchart();
+                    if (!current) {
+                        this.showError('no flowchart selected');
+                        return;
+                    }
+                    const resp = await fetch('/api/flowcharts/rename', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            old_name: current,
+                            new_name: newName 
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.status === 'success') {
+                        this.showSuccess('flowchart renamed');
+                        renameInput.value = '';
+                    } else {
+                        this.showError(data.message || 'failed to rename flowchart');
+                    }
+                } catch (err) {
+                    this.showError('error renaming flowchart');
+                }
+            });
+        }
 
+        // initialize editor dropdown functionality
+        this.initializeEditorDropdown();
+    }
 
-
+    // initialize editor dropdown
+    initializeEditorDropdown() {
         if (!this.defaultEditorInput || !this.defaultEditorDropdown) return;
 
         // load saved preference from localstorage
@@ -151,75 +220,10 @@
                 this.defaultEditorDropdown.classList.remove('active');
             }
         });
+    }
 
-        // wire rename flowchart functionality
-        const renameInput = document.getElementById('rename_flowchart_input');
-        const renameBtn = document.getElementById('rename_flowchart_btn');
-        if (renameInput && renameBtn) {
-            renameBtn.addEventListener('click', async () => {
-                const newName = renameInput.value.trim();
-                if (!newName) {
-                    this.showError('please enter a name');
-                    return;
-                }
-                try {
-                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
-                    if (!current) {
-                        this.showError('no flowchart selected');
-                        return;
-                    }
-                    const resp = await fetch('/api/flowcharts/rename', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            old_name: current,
-                            new_name: newName 
-                        })
-                    });
-                    const data = await resp.json();
-                    if (data.status === 'success') {
-                        this.showSuccess('flowchart renamed');
-                        renameInput.value = '';
-                        // refresh flowchart list if available
-                        if (this.state?.storage?.refreshFlowcharts) {
-                            this.state.storage.refreshFlowcharts();
-                        }
-                    } else {
-                        this.showError(data.message || 'failed to rename flowchart');
-                    }
-                } catch (err) {
-                    this.showError('error renaming flowchart');
-                }
-            });
-        }
-    };
-
-    // initialize settings sidebar navigation
-    Sidebar.prototype.initializeSettingsSidebar = function() {
-        const sidebarItems = document.querySelectorAll('.settings_sidebar_item');
-        const settingsSections = document.querySelectorAll('.settings_section');
-
-        sidebarItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const targetSection = item.getAttribute('data-section');
-                
-                // update active states
-                sidebarItems.forEach(btn => btn.classList.remove('active'));
-                item.classList.add('active');
-                
-                // show target section, hide others
-                settingsSections.forEach(section => {
-                    if (section.id === targetSection) {
-                        section.classList.add('active');
-                    } else {
-                        section.classList.remove('active');
-                    }
-                });
-            });
-        });
-    };
-
-    Sidebar.prototype.fetchInstalledEditors = async function() {
+    // fetch installed editors
+    async fetchInstalledEditors() {
         try {
             const resp = await fetch('/api/editors');
             const data = await resp.json();
@@ -235,9 +239,10 @@
         } catch (err) {
             this.defaultEditorDropdown.innerHTML = '<div class="dropdown_no_results">error detecting editors</div>';
         }
-    };
+    }
 
-    Sidebar.prototype.renderEditorsDropdown = function(editors) {
+    // render editors dropdown
+    renderEditorsDropdown(editors) {
         if (!Array.isArray(editors) || editors.length === 0) {
             this.defaultEditorDropdown.innerHTML = '<div class="dropdown_no_results">no editors found</div>';
             return;
@@ -257,59 +262,63 @@
                 this.closeEditorDropdown();
             });
         });
-    };
+    }
 
-    Sidebar.prototype.setDefaultEditor = function(editor) {
+    // set default editor
+    setDefaultEditor(editor) {
         this.defaultEditorInput.value = editor.name;
         this.defaultEditorInput.dataset.path = editor.path || '';
         localStorage.setItem('flowcraft_default_editor', JSON.stringify(editor));
         this.showSuccess(`default editor set to ${editor.name}`);
-    };
+    }
 
-    Sidebar.prototype.toggleEditorDropdown = function() {
-        this.defaultEditorDropdown.classList.toggle('show');
-    };
-
-    Sidebar.prototype.closeEditorDropdown = function() {
+    // close editor dropdown
+    closeEditorDropdown() {
         this.defaultEditorDropdown.classList.remove('show');
-    };
+    }
 
-    Sidebar.prototype.initializeBackupsTable = function() {
+    // load settings data
+    loadSettingsData() {
+        // refresh data when settings page loads
+        try { this.loadAndRenderBackups && this.loadAndRenderBackups(); } catch (_) {}
+    }
+
+    // initialize backups table
+    initializeBackupsTable() {
         const tableBody = document.getElementById('backups_table_body');
         if (!tableBody) return;
-        const storage = this.state?.storage || null;
-        const current = storage && storage.getCurrentFlowchart ? storage.getCurrentFlowchart() : 'default.json';
+        const current = this.getCurrentFlowchart();
 
-            const formatTimeAgo = (isoOrReadable) => {
-                try {
-                    // parse 'YYYY-MM-DD HH:MM:SS' as local time (not utc) for accurate diff
-                    let d;
-                    if (typeof isoOrReadable === 'string' && isoOrReadable.includes(' ')) {
-                        const [ds, ts] = isoOrReadable.split(' ');
-                        const [y, m, da] = ds.split('-').map(n => parseInt(n, 10));
-                        const [hh, mm, ss] = ts.split(':').map(n => parseInt(n, 10));
-                        d = new Date(y, (m || 1) - 1, da || 1, hh || 0, mm || 0, ss || 0, 0);
-                    } else if (typeof isoOrReadable === 'string') {
-                        d = new Date(isoOrReadable);
-                    } else {
-                        return '';
-                    }
-                    const now = new Date();
-                    let diff = Math.max(0, Math.floor((now.getTime() - d.getTime()) / 1000));
-                    const days = Math.floor(diff / 86400); diff -= days * 86400;
-                    const hours = Math.floor(diff / 3600); diff -= hours * 3600;
-                    const minutes = Math.floor(diff / 60); diff -= minutes * 60;
-                    const seconds = diff;
-                    const parts = [];
-                    if (days > 0) parts.push(days + ' day');
-                    if (hours > 0) parts.push(hours + ' hou');
-                    if (minutes > 0) parts.push(minutes + ' min');
-                    if (seconds > 0 || parts.length === 0) parts.push(seconds + ' sec');
-                    return parts.join(', ');
-                } catch (_) { return ''; }
-            };
+        const formatTimeAgo = (isoOrReadable) => {
+            try {
+                // parse 'YYYY-MM-DD HH:MM:SS' as local time (not utc) for accurate diff
+                let d;
+                if (typeof isoOrReadable === 'string' && isoOrReadable.includes(' ')) {
+                    const [ds, ts] = isoOrReadable.split(' ');
+                    const [y, m, da] = ds.split('-').map(n => parseInt(n, 10));
+                    const [hh, mm, ss] = ts.split(':').map(n => parseInt(n, 10));
+                    d = new Date(y, (m || 1) - 1, da || 1, hh || 0, mm || 0, ss || 0, 0);
+                } else if (typeof isoOrReadable === 'string') {
+                    d = new Date(isoOrReadable);
+                } else {
+                    return '';
+                }
+                const now = new Date();
+                let diff = Math.max(0, Math.floor((now.getTime() - d.getTime()) / 1000));
+                const days = Math.floor(diff / 86400); diff -= days * 86400;
+                const hours = Math.floor(diff / 3600); diff -= hours * 3600;
+                const minutes = Math.floor(diff / 60); diff -= minutes * 60;
+                const seconds = diff;
+                const parts = [];
+                if (days > 0) parts.push(days + ' day');
+                if (hours > 0) parts.push(hours + ' hou');
+                if (minutes > 0) parts.push(minutes + ' min');
+                if (seconds > 0 || parts.length === 0) parts.push(seconds + ' sec');
+                return parts.join(', ');
+            } catch (_) { return ''; }
+        };
 
-            const renderRows = (activeData, backups, showAll = false) => {
+        const renderRows = (activeData, backups, showAll = false) => {
             const max = 10;
             const slice = showAll ? backups : backups.slice(0, max);
             const rows = [];
@@ -318,7 +327,7 @@
             const activeNodes = (activeData?.nodes || []).length;
             const activeLinks = (activeData?.links || []).length;
             const activeGroups = (activeData?.groups || []).length;
-                rows.push(`
+            rows.push(`
                 <tr class="backups_active_row">
                     <td colspan="3">${this.escapeHTML('active flowchart')}</td>
                     <td>${activeNodes}</td>
@@ -354,16 +363,16 @@
                             </div>
                         </td>
                     </tr>
-                `);
+                    `);
             }
 
             // show more row if needed
-                if (!showAll && backups.length > max) {
+            if (!showAll && backups.length > max) {
                 rows.push(`
                     <tr>
                         <td colspan="8" class="backups_show_more" style="text-align:center;">Show More</td>
                     </tr>
-                `);
+                    `);
             }
 
             tableBody.innerHTML = rows.join('');
@@ -402,14 +411,6 @@
                         console.log('[backups] restore response', { status: resp.status, ok: resp.ok, data });
                         if (resp.ok && data && data.status === 'success') {
                             this.showSuccess('restored backup');
-                            // refresh in-place: reload flowchart data and re-render without page reload
-                            try {
-                                console.log('[backups] reloading state after restore');
-                                await this.state.load();
-                                console.log('[backups] reloaded state');
-                            } catch (err) {
-                                console.error('[backups] error reloading state', err);
-                            }
                             // refresh the backups table to reflect any changes
                             try {
                                 await this.loadAndRenderBackups();
@@ -459,9 +460,40 @@
         };
 
         this.loadAndRenderBackups();
-    };
+    }
 
-    Sidebar.prototype.escapeHTML = function(str) {
+    // setup navigation to preserve flowchart context
+    setupNavigation() {
+        // wire back navigation to preserve flowchart context
+        const backBtn = document.querySelector('.back_link') || document.querySelector('[data-back-link]');
+        if (backBtn) {
+            backBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const backUrl = this.urlManager.buildUrlPreserveContext('/');
+                window.location.href = backUrl;
+            });
+        }
+    }
+
+    // get current flowchart name
+    getCurrentFlowchart() {
+        return this.urlManager.getFlowchartFilenameFromURL();
+    }
+
+    // utility methods
+    showSuccess(message) {
+        // simple success notification - can be enhanced later
+        console.log('[Settings] Success:', message);
+        // could add toast notification here
+    }
+
+    showError(message) {
+        // simple error notification - can be enhanced later
+        console.error('[Settings] Error:', message);
+        // could add toast notification here
+    }
+
+    escapeHTML(str) {
         try {
             return String(str)
                 .replace(/&/g, '&amp;')
@@ -470,9 +502,8 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         } catch (_) { return ''; }
-    };
+    }
+}
 
-
-})();
-
-
+// export for use in other modules
+window.Settings = Settings;

@@ -1,19 +1,76 @@
 /* shared button styles */
 @layer components {
-  .btn { display:inline-flex; align-items:center; gap: var(--space_8); padding: 8px 16px; border-radius: var(--radius_6); font-size: var(--font_14); cursor:pointer; border: 1px solid var(--border-color); background: var(--surface-variant); color: var(--on-surface); }
-  .btn .material-icons { font-size: 18px; display:inline-flex; align-items:center; justify-content:center; line-height: 1; }
-  .btn .btn_label { display:inline-flex; align-items:center; }
-  .btn_variant_primary { background: var(--primary-color); color: var(--on-primary); border-color: var(--primary-color); }
-  .btn_variant_secondary { background: var(--surface-variant); color: var(--on-surface); }
-  .btn_variant_danger_subtle { background: #2a0e0e; color: #ffffff; border: none; }
-  .btn_is_disabled { opacity: .5; pointer-events: none; filter: grayscale(100%); }
-  .btn_size_small { padding: 6px 10px; font-size: .85rem; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space_8);
+    padding: 8px 16px;
+    border-radius: var(--radius_6);
+    font-size: var(--font_14);
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: var(--surface-variant);
+    color: var(--on-surface);
+  }
+  .btn .material-icons {
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .btn .btn_label {
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn_variant_primary {
+    background: var(--primary-color);
+    color: var(--on-primary);
+    border-color: var(--primary-color);
+  }
+  .btn_variant_secondary {
+    background: var(--surface-variant);
+    color: var(--on-surface);
+  }
+  .btn_variant_danger_subtle {
+    background: #2a0e0e;
+    color: #ffffff;
+    border: none;
+  }
+  .btn_is_disabled {
+    opacity: .5;
+    pointer-events: none;
+    filter: grayscale(100%);
+  }
+  .btn_size_small {
+    padding: 6px 10px;
+    font-size: .85rem;
+  }
 
   /* unify existing mini and explorer buttons without changing html */
-  .mini_btn, .explorer_btn { display:inline-flex; align-items:center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border-color); background: var(--surface-variant); color: var(--on-surface); border-radius: 8px; cursor: pointer; font-size: .85rem; }
-  .mini_btn:hover, .explorer_btn:hover { background: var(--hover-color); }
-  .mini_btn .material-icons { font-size: 16px; }
-  .mini_btn_danger { background: rgba(244, 67, 54, 0.12); color:#f44336; border: none; }
+  .mini_btn,
+  .explorer_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-variant);
+    color: var(--on-surface);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .85rem;
+  }
+  .mini_btn:hover,
+  .explorer_btn:hover {
+    background: var(--hover-color);
+  }
+  .mini_btn .material-icons {
+    font-size: 16px;
+  }
+  .mini_btn_danger {
+    background: rgba(244, 67, 54, 0.12);
+    color: #f44336;
+    border: none;
+  }
 }
-
-

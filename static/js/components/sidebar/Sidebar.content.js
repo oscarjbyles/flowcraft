@@ -205,16 +205,13 @@
                     link: { panel: 'execution', sections: {} },
                     group: { panel: 'execution', sections: {} },
                     annotation: { panel: 'execution', sections: {} }
-                },
-                settings: {
-                    default: { panel: 'default', sections: {} }
                 }
             };
         }
 
         // main entry point used by sidebar
         apply(selection) {
-            const mode = this.sidebar.state.isRunMode ? 'run' : (this.sidebar.state.isSettingsMode ? 'settings' : 'build');
+            const mode = this.sidebar.state.isRunMode ? 'run' : 'build';
             const context = this.getContext(selection);
             const conf = this.getConfig(mode, context);
             if (!conf) return;

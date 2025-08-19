@@ -39,53 +39,9 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     height: 100vh;
 }
 
-/* sidebar styles are defined in /static/css/sidebar.css to avoid duplication */
+/* properties sidebar styles moved to /static/css/components_major/sidebar.css */
 
-.properties_sidebar {
-    width: 320px;
-    height: calc(100vh - 32px);
-    background-color: var(--surface-color);
-    border-left: 1px solid var(--border-color);
-    display: none; /* hidden by default to avoid flash; js shows per-mode */
-    flex-direction: column;
-    position: fixed;
-    right: 0;
-    top: 0;
-    z-index: 1000;
-    overflow: hidden; /* prevent content from spilling out */
-}
-
-.properties_content {
-    display: none;
-    height: calc(100vh - 32px);
-}
-
-.properties_content.active {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0; /* allow flex shrinking */
-}
-
-/* sidebar header styles are defined in /static/css/sidebar.css */
-
-/* sidebar title styles are defined in /static/css/sidebar.css */
-
-/* app logo styles are defined in /static/css/sidebar.css */
-
-/* sidebar content styles are defined in /static/css/sidebar.css */
-
-/* sidebar footer styles are defined in /static/css/sidebar.css */
-
-/* sidebar section styles are defined in /static/css/sidebar.css */
-
-/* sidebar section title styles are defined in /static/css/sidebar.css */
-
-/* sidebar item styles are defined in /static/css/sidebar.css */
-
-/* sidebar disabled state styles are defined in /static/css/sidebar.css */
-
+/* create button styles */
 .btn_create {
     background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%) !important;
     color: white !important;
@@ -96,84 +52,6 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
     margin-top: 0px;
 }
-
-/* create flowchart link styles are defined in /static/css/sidebar.css */
-
-.dropdown_delete_btn {
-    background: none;
-    border: none;
-    color: #f44336;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dropdown_delete_btn:hover {
-    background: rgba(244, 67, 54, 0.1);
-}
-
-.dropdown_delete_btn .material-icons {
-    font-size: 16px;
-}
-
-.variable_item {
-    background: var(--surface-variant);
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-left: 3px solid var(--primary-color);
-}
-
-.variable_name {
-    font-weight: 500;
-    color: var(--primary-color);
-    margin-bottom: 4px;
-}
-
-.variable_type {
-    font-size: 0.75rem;
-    background: rgba(25, 118, 210, 0.1);
-    color: var(--primary-color);
-    padding: 2px 6px;
-    border-radius: 3px;
-    display: inline-block;
-    margin-right: 8px;
-}
-
-.variable_confidence {
-    font-size: 0.75rem;
-    padding: 2px 6px;
-    border-radius: 3px;
-    display: inline-block;
-}
-
-.confidence_high {
-    background: rgba(76, 175, 80, 0.1);
-    color: #4caf50;
-}
-
-.confidence_medium {
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
-}
-
-.confidence_low {
-    background: rgba(158, 158, 158, 0.1);
-    color: #9e9e9e;
-}
-
-.variable_details {
-    font-size: 0.8em;
-    color: var(--on-surface);
-    opacity: 0.8;
-    margin-top: 4px;
-}
-
-/* sidebar icon spacing is defined in /static/css/sidebar.css */
 
 .main_content {
     flex: 1;
@@ -282,142 +160,6 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     flex: 1;
     position: relative;
     overflow: hidden;
-}
-
-/* full page settings container */
-.settings_page {
-    display: flex;
-    flex-direction: row;
-    overflow-y: auto;
-    background-color: var(--background-color);
-    height: 100%;
-    margin-left: 0px; /* position to the right of the main navigation sidebar */
-}
-
-/* visibility toggle class to avoid inline styles */
-.settings_page.is_hidden { display: none !important; }
-
-/* settings sidebar */
-.settings_sidebar {
-    width: 320px;
-    background-color: var(--surface-color);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    padding: 16px;
-}
-
-.settings_sidebar_header {
-    padding: 20px 16px 16px 16px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.settings_sidebar_title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--on-surface);
-    margin: 0;
-    text-transform: capitalize;
-}
-
-.settings_sidebar_content {
-    flex: 1;
-}
-
-.settings_sidebar_item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: left;
-    padding-left: 14px;
-    padding-right: 18px;
-    padding-bottom: 12px;
-    padding-top: 12px;
-    margin-bottom: 10px;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: none;
-    width: 100%;
-    color: var(--on-surface);
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-transform: capitalize;
-    letter-spacing: 0.5px;
-    opacity: 0.95;
-}
-
-.settings_sidebar_item:hover {
-    background: linear-gradient(135deg, var(--hover-color) 0%, rgba(51, 51, 51, 0.9) 100%);
-}
-
-.settings_sidebar_item.active {
-    background: #484848;
-    color: var(--on-primary);
-}
-
-.settings_sidebar_item .material-icons {
-    margin-right: 10px;
-    font-size: 20px;
-    width: 26px;
-}
-
-/* settings content area */
-.settings_content_wrapper {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 24px;
-    overflow-y: auto;
-}
-
-.settings_content {
-    max-width: 800px;
-    width: 100%;
-}
-
-/* settings sections */
-.settings_section {
-    display: none;
-}
-
-.settings_section.active {
-    display: block;
-}
-
-/* ensure settings sections have proper spacing */
-.settings_section:first-child {
-    margin-top: 0;
-}
-
-.settings_section:last-child {
-    margin-bottom: 0;
-}
-
-/* settings page layout: align content with left edge of main content */
-.settings_page .u_max_w_900.u_mx_auto { margin-left: 0; margin-right: 0; }
-/* settings page: fix content width to 900px */
-.settings_page .u_max_w_900.u_mx_auto { width: 900px; }
-
-/* ensure long paths wrap neatly inside the project root block */
-#project_root_path {
-    word-break: break-all;
-}
-
-/* small helpers for settings page moved from inline styles */
-.form_help_text { font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; }
-.form_text_md { font-size: 0.9rem; }
-.u_opacity_09 { opacity: 0.9; }
-/* settings section title */
-.settings_section_title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin: 8px 0 16px 0;
-    letter-spacing: .3px;
-    text-transform: capitalize;
 }
 
 #flowchart_canvas {
@@ -749,10 +491,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-color: var(--primary-color);
 }
 
-/* settings page specific form input padding */
-.settings_page .form_input {
-    padding: 6px 12px;
-}
+
 
 .form_textarea {
     width: 100%;
@@ -771,26 +510,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-color: var(--primary-color);
 }
 
-.status_bar {
-    height: 32px;
-    background-color: var(--surface-color);
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    font-size: 0.75rem;
-    color: var(--on-surface);
-    /* pin to bottom aligned with left sidebar */
-    position: fixed;
-    left: 320px;
-    right: 0;
-    bottom: 0;
-    z-index: 900;
-}
-/* adjust status bar width to respect right sidebar */
-.main_content:not(.full_width):not(.sidebar_collapsed) .status_bar { right: 320px; }
-.main_content.run_mode:not(.sidebar_collapsed) .status_bar { right: 450px; }
-.main_content.sidebar_collapsed .status_bar { right: 0 !important; }
+/* status bar styles moved to /static/css/components_major/statusbar.css */
 /* run mode live feed bar at bottom */
 .run_feed_bar {
     position: fixed;
@@ -876,7 +596,6 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 /* responsive adjustment: when sidebar shrinks, align left edge accordingly */
 @media (max-width: 768px) {
   .run_feed_bar { left: 240px; }
-  .status_bar { left: 240px; }
 }
 
 .run_feed_item {
@@ -934,8 +653,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     min-height: 200px;
 }
 
-/* compact status text and actions */
-.status_bar #status_text { margin-right: 8px; }
+/* status bar styles moved to /static/css/components_major/statusbar.css */
 
 /* console output: simplify to match other log blocks */
 #console_output_log {
@@ -1162,8 +880,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-left: 1px solid var(--border-color);
 }
 
-/* collapsed sidebar: hide panel, expand canvas and move start toolbar left */
-.properties_sidebar.collapsed { display: none !important; }
+/* properties sidebar styles moved to /static/css/components_major/sidebar.css */
 .main_content.sidebar_collapsed { margin-right: 0 !important; }
 .start_button_container.sidebar_collapsed { right: 52px !important; }
 .sidebar_toggle_container.sidebar_collapsed { right: 0px !important; }
@@ -1345,95 +1062,15 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
     border-color: var(--primary-color);
 }
 
+/* properties sidebar styles moved to /static/css/components_major/sidebar.css */
+
 /* run mode - expanded properties sidebar */
 .main_content.run_mode {
     margin-right: 450px;
 }
 
-.properties_sidebar.run_mode {
-    width: 450px;
-}
-
 /* ensure the bottom feed does not sit under the right sidebar area visually */
 .run_feed_bar { margin-right: 450px; }
-.properties_sidebar.run_mode ~ .run_feed_bar { margin-right: 450px; }
-
-/* history view removed */
-
-.properties_sidebar.history_mode {
-    width: 430px;
-}
-
-.properties_sidebar.run_mode .properties_content.active {
-    display: flex !important;
-    flex-direction: column;
-    width: 100%;
-    flex: 1;
-    overflow: hidden;
-}
-
-.properties_sidebar.run_mode .sidebar_content {
-    flex: 1;
-    width: 100%;
-    border-right: none;
-    overflow-y: auto;
-}
-
-.properties_sidebar.run_mode .sidebar_content:last-child {
-    border-right: none;
-}
-
-/* node file info card - improve readability in run mode */
-.node_file_card {
-    background: var(--surface-variant);
-    border: none;
-    border-radius: 8px;
-    padding: 12px;
-}
-.node_file_header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    margin-bottom: 10px;
-}
-.node_file_header .material-icons { font-size: 18px; }
-.node_file_meta { display: flex; flex-direction: column; gap: 10px; }
-.node_file_row { display: grid; grid-template-columns: 110px 1fr; align-items: start; gap: 10px; }
-.node_file_group { display: grid; grid-auto-rows: minmax(0, auto); gap: 10px; }
-.node_file_label { font-size: 0.8rem; opacity: .8; text-transform: lowercase; }
-.node_file_value {
-    font-size: 0.9rem;
-    background: rgba(255,255,255,.03);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 6px 10px;
-}
-.node_file_value_mono { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #90caf9; background: rgba(25,118,210,.08); border-color: rgba(25,118,210,.3); }
-
-/* pin footer actions at bottom of properties sidebar */
-.properties_footer {
-    border-top: 1px solid var(--border-color);
-    padding: 12px;
-    background: var(--surface-color);
-    display: none; /* hidden by default; shown when actionable selection exists */
-    gap: 8px;
-    position: relative; /* ensure it stays within the sidebar */
-    bottom: 0; /* pin to bottom of sidebar */
-    left: 0;
-    right: 0;
-    z-index: 1; /* ensure it's above other content */
-}
-.properties_footer .btn {
-    width: 100%;
-}
-/* header section at top of properties sidebar */
-.properties_header {
-    border-bottom: 1px solid var(--border-color);
-    padding: 16px;
-    background: var(--surface-color);
-    display: none; /* hidden by default; shown for single node selection */
-}
 #properties_header_text { font-size: 1.3rem; font-weight: 600; letter-spacing: .5px; }
         
 /* default properties layout when no selection */
@@ -1708,13 +1345,7 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
   margin-top: 8px;
 }
 
-/* backups details card (separate class to allow independent styling) */
-.backups_details_card {
-  background: transparent;
-  border-radius: 4px;
-  padding: 0px;
-  margin-top: 8px;
-}
+
 
 .data_save_details_grid {
   display: grid;
@@ -1958,47 +1589,5 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 }
 
 
-/* backups table - compact layout */
-.backups_table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.8rem;
-}
-.backups_table th, .backups_table td {
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--border-color);
-    text-align: left;
-    white-space: nowrap;
-}
-.backups_table thead th {
-    position: sticky;
-    top: 0;
-    background: var(--surface-variant);
-    z-index: 1;
-}
-/* rounded corners on header row */
-.backups_table thead th:first-child { border-top-left-radius: 4px; }
-.backups_table thead th:last-child { border-top-right-radius: 4px; }
-.backups_table tr:hover td { background: var(--hover-color); }
-.backups_active_row td { background: #1E1E1E !important; }
-.backups_table .cell_actions { display: flex; gap: 6px; }
-.backups_table .btn_inline { padding: 4px 8px; font-size: 0.75rem; height: 24px; }
-.backups_table th.col_delete, .backups_table th.col_restore,
-.backups_table td.col_delete, .backups_table td.col_restore {
-    width: 60px;
-}
-/* make nodes, connections, and groups the same width */
-.backups_table th.col_nodes, .backups_table td.col_nodes,
-.backups_table th.col_connections, .backups_table td.col_connections,
-.backups_table th.col_groups, .backups_table td.col_groups {
-    width: 120px;
-}
-.backups_show_more {
-    text-align: center;
-    padding: 8px 0;
-    cursor: pointer;
-    color: #90caf9;
-    user-select: none;
-}
-.backups_show_more:hover { text-decoration: underline; }
+
 

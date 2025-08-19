@@ -87,8 +87,8 @@
       "pythonFile": "1_categories_selectors/1_1_2_add_base_url_if_needed.py",
       "type": "python_file",
       "width": 228.48333740234375,
-      "x": 1253.6943359375,
-      "y": 849.4277648925781
+      "x": 1245.58251953125,
+      "y": 853.4836120605469
     },
     {
       "description": "",
@@ -459,6 +459,38 @@
       "type": "text",
       "x": 748.5643919383394,
       "y": 1243.6975349386773
+    }
+  ],
+  "executions": [
+    {
+      "execution_id": "d198c8ec-c019-4f84-8189-fc0085433d17",
+      "timestamp": "2025-08-19T19:06:26.452508",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 18,
+      "successful_nodes": 5,
+      "completed_nodes": 6,
+      "success_percentage": 27.8,
+      "completed_percentage": 33.3,
+      "failed_node": "1.1.2 - add base URL if needed",
+      "elapsed_ms": 20143,
+      "execution_time": "20.143s",
+      "error_snippet": "Line 6: name 'base_url' is not defined"
+    },
+    {
+      "execution_id": "06f67189-1108-4569-b9e8-910d13523371",
+      "timestamp": "2025-08-19T13:57:47.667137",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 2252,
+      "execution_time": "2.252s",
+      "error_snippet": "execution was cancelled by user"
     }
   ]
 }

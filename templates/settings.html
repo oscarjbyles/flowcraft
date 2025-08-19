@@ -1,0 +1,216 @@
+{% extends "base/base.html" %}
+{% block title %}Settings - FlowCraft{% endblock %}
+
+{% block main_content_class %}settings_page{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/pages/settings.css">{% endblock %}
+
+{% block content %}
+<!-- settings page -->
+<div class="settings_page">
+    <!-- back navigation -->
+    <div class="settings_header">
+        <a href="#" class="back_link" data-back-link>
+            <span class="material-icons">arrow_back</span>
+            back to flowchart
+        </a>
+    </div>
+    <!-- settings content container -->
+    <div class="settings_content_container">
+        <!-- settings sidebar -->
+        <div class="settings_sidebar">
+        <div class="settings_sidebar_content">
+            <button class="settings_sidebar_item active" data-section="project_settings">
+                <span class="material-icons">folder</span>
+                project settings
+            </button>
+            <button class="settings_sidebar_item" data-section="flowchart_settings">
+                <span class="material-icons">description</span>
+                flowchart settings
+            </button>
+            <button class="settings_sidebar_item" data-section="manage">
+                <span class="material-icons">manage_accounts</span>
+                manage
+            </button>
+            <button class="settings_sidebar_item" data-section="backups">
+                <span class="material-icons">backup</span>
+                backups
+            </button>
+        </div>
+    </div>
+
+    <!-- settings content area -->
+    <div class="settings_content_wrapper">
+        <div class="settings_content" id="settings_content">
+        <!-- project settings section -->
+        <div class="settings_section active" id="project_settings">
+            <h2 class="settings_section_title">project settings</h2>
+
+            <div class="form_group">
+                <label class="form_label">project root</label>
+                <div class="data_save_details_card">
+                    <!-- styles moved to css; keep semantic structure clean -->
+                    <div class="u_flex u_items_center u_gap_12">
+                        <span class="material-icons u_icon_18 u_opacity_07">folder</span>
+                        <code id="project_root_path" class="u_opacity_09">loading...</code>
+                        <div class="u_flex_grow_1"></div>
+                        <button class="btn btn_secondary" id="copy_project_root_btn" title="copy path" style="background-color: #2D2D2D;">
+                            <span class="material-icons">content_copy</span>
+                            COPY
+                        </button>
+                    </div>
+                    <div class="form_help_text">absolute path to the python project root detected by the app</div>
+                </div>
+            </div>
+
+            <div class="form_group">
+                <label class="form_label">default editor</label>
+                <div class="dropdown_container">
+                    <input type="text" id="default_editor_input" class="form_input dropdown_input" placeholder="detecting installed editors..." readonly>
+                    <span class="dropdown_arrow material-icons">arrow_drop_down</span>
+                    <div class="dropdown_menu" id="default_editor_dropdown">
+                        <div class="dropdown_loading">scanning editors...</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--on-surface); opacity: 0.7; margin-top: 6px;">used when opening files from the app</div>
+            </div>
+        </div>
+
+        <!-- flowchart settings section -->
+        <div class="settings_section" id="flowchart_settings">
+            <h2 class="settings_section_title">flowchart settings</h2>
+
+            <div class="form_group">
+                <label class="form_label">flowchart file path</label>
+                <div class="data_save_details_card">
+                    <div class="u_flex u_items_center u_gap_12">
+                        <span class="material-icons u_icon_18 u_opacity_07">description</span>
+                        <code id="flowchart_file_path" class="u_opacity_09">loading...</code>
+                        <div class="u_flex_grow_1"></div>
+                        <button class="btn btn_secondary" id="copy_flowchart_file_btn" title="copy path" style="background-color: #2D2D2D;">
+                            <span class="material-icons">content_copy</span>
+                            COPY
+                        </button>
+                    </div>
+                    <div class="form_help_text">absolute path to the current flowchart json file</div>
+                </div>
+            </div>
+
+            <div class="form_group">
+                <label class="form_label">rename flowchart</label>
+                <div class="data_save_details_card">
+                    <div class="u_flex u_items_center u_gap_12">
+                        <span class="material-icons u_icon_18 u_opacity_07">drive_file_rename_outline</span>
+                        <input type="text" id="rename_flowchart_input" class="form_input" placeholder="enter new name" style="max-width: 260px;">
+                        <div class="u_flex_grow_1"></div>
+                        <button class="btn btn_secondary" id="rename_flowchart_btn" title="rename" style="background-color: #2D2D2D;">
+                            <span class="material-icons">edit</span>
+                            RENAME
+                        </button>
+                    </div>
+                    <div class="form_help_text">renames the current flowchart file and its history/backups folders.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- manage section -->
+        <div class="settings_section" id="manage">
+            <h2 class="settings_section_title">manage</h2>
+
+            <div class="form_group">
+                <label class="form_label">clear history</label>
+                <div class="data_save_details_card">
+                    <div class="u_flex u_items_center u_gap_12">
+                        <span class="material-icons u_icon_18 u_opacity_07">history_toggle_off</span>
+                        <span class="form_text_md">clear execution history for current flowchart</span>
+                        <div class="u_flex_grow_1"></div>
+                        <button class="btn btn_secondary btn_danger_subtle" id="clear_history_btn">
+                            <span class="material-icons">cleaning_services</span>
+                            Clear Executions
+                        </button>
+                    </div>
+                    <div class="form_help_text">this removes all files under <code>history/&lt;flowchart&gt;</code>.</div>
+                </div>
+                <div class="data_save_details_card u_mt_12">
+                    <div class="u_flex u_items_center u_gap_12">
+                        <span class="material-icons u_icon_18 u_opacity_07">delete_sweep</span>
+                        <span class="form_text_md">clear executions key and remove history files</span>
+                        <div class="u_flex_grow_1"></div>
+                        <button class="btn btn_secondary btn_danger_subtle" id="clear_executions_btn">
+                            <span class="material-icons">delete</span>
+                            Clear Executions & History
+                        </button>
+                    </div>
+                    <div class="form_help_text">this resets `executions` in the flowchart json and deletes all related history entries.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- backups section -->
+        <div class="settings_section" id="backups">
+            <h2 class="settings_section_title">backups</h2>
+            <div class="form_group">
+                <div class="backups_details_card">
+                    <div style="overflow-x: auto;">
+                        <table id="backups_table" class="backups_table">
+                            <thead>
+                                <tr>
+                                    <th>time</th>
+                                    <th>time ago</th>
+                                    <th>date</th>
+                                    <th class="col_nodes">nodes</th>
+                                    <th class="col_connections">connections</th>
+                                    <th class="col_groups">groups</th>
+                                    <th class="col_delete">delete</th>
+                                    <th class="col_restore">restore</th>
+                                </tr>
+                            </thead>
+                            <tbody id="backups_table_body">
+                                <!-- active row placeholder, rendered via js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- spacing block at bottom of settings -->
+        <div id="settings_bottom_spacer" style="width: 100px; height: 35px;"></div>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- url management and navigation -->
+<script src="/static/js/utils/URLManager.js"></script>
+<script src="/static/js/components/navigation/Navigation.base.js"></script>
+<script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
+<!-- settings page functionality -->
+<script src="/static/js/pages/Settings.js"></script>
+<script>
+// initialize navigation and settings when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // initialize navigation
+    try { 
+        if (window.Navigation && typeof window.Navigation.init === 'function') {
+            window.Navigation.init(null);
+        }
+    } catch (error) {
+        console.error('Error initializing Navigation:', error);
+    }
+    
+    // initialize settings
+    if (typeof Settings !== 'undefined') {
+        try {
+            new Settings();
+            console.log('Settings initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Settings:', error);
+        }
+    } else {
+        console.error('Settings class not found');
+    }
+});
+</script>
+{% endblock %}

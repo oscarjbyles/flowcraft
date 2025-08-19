@@ -1489,8 +1489,6 @@ class FlowchartBuilder {
             const mode = params.get('mode');
             if (mode === 'run') {
                 this.switchToRunMode();
-            } else if (mode === 'settings') {
-                this.switchToSettingsMode();
             } else {
                 this.updateModeUI('build', null);
             }
@@ -1771,10 +1769,6 @@ class FlowchartBuilder {
 
             // history mode removed
 
-    switchToSettingsMode() {
-        this.state.setMode('settings');
-    }
-
     toggleFlowView() {
         // allow flow view toggle in both build and run modes
         this.state.setFlowView(!this.state.isFlowView);
@@ -2003,7 +1997,7 @@ class FlowchartBuilder {
         const scriptsBtn = document.getElementById('scripts_btn');
         const runBtn = document.getElementById('run_btn');
         // history button removed
-        const settingsBtn = document.getElementById('settings_btn');
+
         const floatingToolbar = document.getElementById('floating_toolbar');
         const floatingToolbarSecondary = document.getElementById('floating_toolbar_secondary');
         const buildToolbar = document.getElementById('build_toolbar');
@@ -2017,7 +2011,7 @@ class FlowchartBuilder {
         const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
         const addNodeSection = document.getElementById('add_node_section');
         const canvasContainer = document.querySelector('.canvas_container');
-        const settingsPage = document.getElementById('settings_page');
+
         const trackBtn = document.getElementById('track_toggle_btn');
         
         // reset all button states
@@ -2025,10 +2019,9 @@ class FlowchartBuilder {
         if (scriptsBtn) scriptsBtn.classList.remove('run_mode_active');
         runBtn.classList.remove('run_mode_active');
         // no history button to reset
-        if (settingsBtn) settingsBtn.classList.remove('run_mode_active');
+
         
-        // ensure settings page is hidden unless in settings mode (use class, not inline style)
-        if (settingsPage) settingsPage.classList.add('is_hidden');
+
         if (canvasContainer) canvasContainer.style.display = 'block';
         // do not force-show sidebar on generic reset; let per-mode branches control visibility to prevent flash
         if (propertiesSidebar) propertiesSidebar.style.display = propertiesSidebar.style.display;
@@ -2219,48 +2212,8 @@ class FlowchartBuilder {
                 }
             } catch (_) {}
             
-        } else if (mode === 'settings') {
-            // activate settings mode as full page view
-            if (settingsBtn) settingsBtn.classList.add('run_mode_active');
-            floatingToolbar.style.display = 'none';
-            if (floatingToolbarSecondary) floatingToolbarSecondary.style.display = 'none'; // hide secondary toolbar in settings mode
-            if (topToolbars) topToolbars.style.display = 'none';
-            if (buildToolbar) buildToolbar.style.display = 'none'; // hide build toolbar in settings
-            if (annotationToolbar) annotationToolbar.style.display = 'none'; // hide annotation toolbar in settings
-            // hide auto track button in settings mode (toolbar hidden, but keep explicit)
-            if (trackBtn) trackBtn.style.display = 'none';
-            if (addNodeSection) addNodeSection.classList.add('disabled');
-            // hide start button if visible
-            startButtonContainer.style.display = 'none';
-            if (sidebarToggleContainer) sidebarToggleContainer.style.display = 'none';
-
-            // remove run_mode expansions
-            mainContent.classList.remove('run_mode');
-            propertiesSidebar.classList.remove('run_mode');
-            // hide sidebar in settings full-page mode
-            if (propertiesSidebar) propertiesSidebar.style.display = 'none';
-
-            // hide canvas and right sidebar, expand main content
-            if (canvasContainer) canvasContainer.style.display = 'none';
-            if (propertiesSidebar) propertiesSidebar.style.display = 'none';
-            if (mainContent) mainContent.classList.add('full_width');
-
-            // hide other special panels
-            // also hide live execution feed when entering settings
-            const runFeedBar = document.getElementById('run_feed_bar'); 
-            if (runFeedBar) {
-                this.setRunFeedBarDisplay('none');
-                // clear run mode attribute when entering settings
-                runFeedBar.removeAttribute('data-run-mode');
-            }
-            this.hideExecutionPanel();
-
-            // show full page settings
-            this.showSettingsPage();
-            // if we came from run/history, also clear runtime condition indicators
-            if (previousMode === 'run' || previousMode === 'history') {
-                try { this.clearIfRuntimeIndicators(); } catch (_) {}
-            }
+        } else if (mode === 'run') {
+            // run mode handling is already done above
         }
         
         // ensure multiselect button is visible again only in build mode
@@ -2414,16 +2367,6 @@ class FlowchartBuilder {
     }
 
     // history panel removed
-
-    showSettingsPage() {
-        const settingsPage = document.getElementById('settings_page');
-        if (settingsPage) settingsPage.classList.remove('is_hidden');
-    }
-
-    hideSettingsPage() {
-        const settingsPage = document.getElementById('settings_page');
-        if (settingsPage) settingsPage.classList.add('is_hidden');
-    }
 
     // history panel removed
 

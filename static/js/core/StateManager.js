@@ -809,10 +809,6 @@ class StateManager extends BaseEmitter {
 
     // history mode removed
 
-    get isSettingsMode() {
-        return this.currentMode === 'settings';
-    }
-
     // canvas state
     setTransform(transform) {
         this.transform = transform;

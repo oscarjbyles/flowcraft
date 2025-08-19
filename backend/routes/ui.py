@@ -28,6 +28,12 @@ def data_matrix_page():
     return render_template('data_matrix.html')
 
 
+@ui_bp.route('/settings')
+def settings_page():
+    """settings page - application and flowchart settings."""
+    return render_template('settings.html')
+
+
 # legacy css route removed; all styles now served from /static/css
 
 

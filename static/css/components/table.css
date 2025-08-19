@@ -1,9 +1,27 @@
 /* shared table styles */
 @layer components {
-  .table_wrap { background: var(--surface-variant); border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
-  .table { width:100%; border-collapse: collapse; table-layout: fixed; }
-  .table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border-color); text-align:left; font-size:.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .table thead { background:#242424; }
+  .table_wrap {
+    background: var(--surface-variant);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .table th,
+  .table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    font-size: .9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .table thead {
+    background: #242424;
+  }
 }
-
-

@@ -16,10 +16,17 @@
 <link rel="stylesheet" href="/static/css/components/table.css">
 <link rel="stylesheet" href="/static/css/components/badges.css">
 <link rel="stylesheet" href="/static/css/components/toolbar.css">
-<link rel="stylesheet" href="/static/css/components/status_bar.css">
 <link rel="stylesheet" href="/static/css/components/breadcrumb.css">
+<!-- major component styles -->
+<link rel="stylesheet" href="/static/css/components_major/navigation.css">
+<link rel="stylesheet" href="/static/css/components_major/sidebar.css">
+<link rel="stylesheet" href="/static/css/components_major/statusbar.css">
 <!-- existing styles (loaded last for fidelity) -->
-<link rel="stylesheet" href="/static/css/sidebar.css">
 <link rel="stylesheet" href="/static/css/index.css">
+
+<!-- page-specific styles -->
+{% if request.endpoint == 'ui.settings_page' %}
+<link rel="stylesheet" href="/static/css/pages/settings.css">
+{% endif %}
 
 

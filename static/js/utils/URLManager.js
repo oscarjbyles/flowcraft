@@ -128,7 +128,7 @@ class URLManager {
 
         if (url.pathname === '/data') {
             url.searchParams.set('flowchart_name', filename);
-        } else if (url.pathname === '/' || url.pathname === '/scripts' || url.pathname === '/dashboard') {
+        } else if (url.pathname === '/' || url.pathname === '/scripts' || url.pathname === '/dashboard' || url.pathname === '/settings') {
             if (display && display !== 'default') url.searchParams.set('flowchart', display);
         }
         // always include mode for consistency

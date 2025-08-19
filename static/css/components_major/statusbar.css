@@ -1,0 +1,30 @@
+/* status bar component styles */
+
+.status_bar {
+    height: 32px;
+    background-color: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 0.75rem;
+    color: var(--on-surface);
+    /* pin to bottom aligned with left sidebar */
+    position: fixed;
+    left: 320px;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+}
+
+/* adjust status bar width to respect right sidebar */
+.main_content:not(.full_width):not(.sidebar_collapsed) .status_bar { right: 320px; }
+.main_content.run_mode:not(.sidebar_collapsed) .status_bar { right: 450px; }
+.main_content.sidebar_collapsed .status_bar { right: 0 !important; }
+
+/* responsive adjustments */
+@media (max-width: 768px) {
+    .status_bar { left: 240px; }
+}
+
+.status_bar #status_text { margin-right: 8px; }

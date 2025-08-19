@@ -33,7 +33,7 @@
 
     function setActiveNav(){
         const path = window.location.pathname;
-        const ids = ['dashboard_btn','build_btn','scripts_btn','run_btn','settings_btn','export_btn','data_matrix_btn'];
+        const ids = ['dashboard_btn','build_btn','scripts_btn','run_btn','export_btn','data_matrix_btn'];
         ids.forEach(id => { const el = document.getElementById(id); if (el){ el.classList.remove('active'); el.classList.remove('run_mode_active'); }});
         const map = { '/dashboard':'dashboard_btn', '/scripts':'scripts_btn', '/data':'data_matrix_btn' };
         const id = map[path];
@@ -82,15 +82,7 @@
 
                 // settings
                 const settings = document.getElementById('settings_btn');
-                if (settings) settings.onclick = () => {
-                    if (app && typeof app.switchToSettingsMode === 'function') {
-                        clearRunVisualsIfNeeded(app);
-                        app.switchToSettingsMode();
-                        try { const u = new URL(window.location.href); u.searchParams.set('mode','settings'); window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); } catch(_) {}
-                    } else {
-                        window.location.href = buildHref('/?mode=settings');
-                    }
-                };
+                if (settings) settings.onclick = () => { clearRunVisualsIfNeeded(app); window.location.href = buildHref('/settings'); };
 
                 // export (builder handles its own export via sidebar module; only handle on non-app pages)
                 if (!app) {

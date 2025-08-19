@@ -1,0 +1,226 @@
+/* properties sidebar styles (right sidebar) */
+
+.properties_sidebar {
+    width: 320px;
+    height: calc(100vh - 32px);
+    background-color: var(--surface-color);
+    border-left: 1px solid var(--border-color);
+    display: none; /* hidden by default to avoid flash; js shows per-mode */
+    flex-direction: column;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 1000;
+    overflow: hidden; /* prevent content from spilling out */
+}
+
+.properties_content {
+    display: none;
+    height: calc(100vh - 32px);
+}
+
+.properties_content.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0; /* allow flex shrinking */
+}
+
+/* collapsed sidebar: hide panel, expand canvas and move start toolbar left */
+.properties_sidebar.collapsed { display: none !important; }
+
+/* run mode - expanded properties sidebar */
+.properties_sidebar.run_mode {
+    width: 450px;
+}
+
+.properties_sidebar.history_mode {
+    width: 430px;
+}
+
+.properties_sidebar.run_mode .properties_content.active {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+    overflow: hidden;
+}
+
+.properties_sidebar.run_mode .sidebar_content {
+    flex: 1;
+    width: 100%;
+    border-right: none;
+    overflow-y: auto;
+}
+
+.properties_sidebar.run_mode .sidebar_content:last-child {
+    border-right: none;
+}
+
+/* pin footer actions at bottom of properties sidebar */
+.properties_footer {
+    border-top: 1px solid var(--border-color);
+    padding: 12px;
+    background: var(--surface-color);
+    display: none; /* hidden by default; shown when actionable selection exists */
+    gap: 8px;
+    position: relative; /* ensure it stays within the sidebar */
+    bottom: 0; /* pin to bottom of sidebar */
+    left: 0;
+    right: 0;
+    z-index: 1; /* ensure it's above other content */
+}
+.properties_footer .btn {
+    width: 100%;
+}
+
+/* header section at top of properties sidebar */
+.properties_header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    background: var(--surface-color);
+    display: none; /* hidden by default; shown for single node selection */
+}
+
+/* dropdowns inside properties sidebar (custom background for clarity) */
+.properties_sidebar .dropdown_container {
+    position: relative;
+}
+.properties_sidebar .dropdown_input {
+    cursor: pointer;
+    padding-right: 40px;
+}
+.properties_sidebar .dropdown_arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--on-surface);
+    pointer-events: none;
+    font-size: 20px;
+}
+.properties_sidebar .dropdown_menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2b2b2b;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    z-index: 1000;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.properties_sidebar .dropdown_menu.show {
+    display: block;
+}
+.properties_sidebar .dropdown_item {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.properties_sidebar .dropdown_item:last-child {
+    border-bottom: none;
+}
+.properties_sidebar .dropdown_item:hover {
+    background-color: #3a3a3a;
+}
+.properties_sidebar .dropdown_item.selected {
+    background-color: var(--primary-color);
+    color: var(--on-primary);
+}
+.properties_sidebar .dropdown_loading,
+.properties_sidebar .dropdown_no_results {
+    padding: 12px;
+    text-align: center;
+    color: var(--on-surface);
+    opacity: 0.7;
+    font-size: 0.875rem;
+}
+
+/* node file info card - improve readability in run mode */
+.node_file_card {
+    background: var(--surface-variant);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+}
+.node_file_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.node_file_header .material-icons { font-size: 18px; }
+.node_file_meta { display: flex; flex-direction: column; gap: 10px; }
+.node_file_row { display: grid; grid-template-columns: 110px 1fr; align-items: start; gap: 10px; }
+.node_file_group { display: grid; grid-auto-rows: minmax(0, auto); gap: 10px; }
+.node_file_label { font-size: 0.8rem; opacity: .8; text-transform: lowercase; }
+.node_file_value {
+    font-size: 0.9rem;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+.node_file_value_mono { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #90caf9; background: rgba(25,118,210,.08); border-color: rgba(25,118,210,.3); }
+
+/* variable item styles */
+.variable_item {
+    background: var(--surface-variant);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.variable_name {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 4px;
+}
+
+.variable_type {
+    font-size: 0.75rem;
+    background: rgba(25, 118, 210, 0.1);
+    color: var(--primary-color);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.variable_confidence {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* dropdown delete button */
+.dropdown_delete_btn {
+    background: none;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown_delete_btn:hover {
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.dropdown_delete_btn .material-icons {
+    font-size: 16px;
+}
