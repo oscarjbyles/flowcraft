@@ -1,0 +1,23 @@
+/* context menu styles */
+
+.context_menu {
+    position: absolute;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 0;
+    min-width: 160px;
+    z-index: 1000;
+    display: none;
+}
+
+.context_menu_item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--on-surface);
+}
+
+.context_menu_item:hover {
+    background-color: var(--hover-color);
+}

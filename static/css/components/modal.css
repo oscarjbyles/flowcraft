@@ -1,6 +1,6 @@
-/* shared modal styles */
-@layer components {
-  .modal_overlay {
+/* modal styles */
+
+.modal_overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -10,31 +10,43 @@
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: var(--z_modal);
-  }
-  .modal_overlay_is_open {
+    z-index: 10000;
+}
+
+.modal_overlay.show {
     display: flex;
-  }
-  .modal_content {
+}
+
+.modal_content {
     background: var(--surface-color);
     border-radius: 12px;
     padding: 24px;
     min-width: 400px;
-    max-width: 550px;
-    box-shadow: var(--shadow_1);
-  }
-  .modal_header {
+    max-width: 500px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* removed slide-in animation for lightboxes */
+
+/* move create flowchart modal upward */
+#create_flowchart_modal .modal_content {
+    margin-top: -50px;
+}
+
+.modal_header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
-  }
-  .modal_title {
+}
+
+.modal_title {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--on-surface);
-  }
-  .modal_close {
+}
+
+.modal_close {
     background: none;
     border: none;
     color: var(--on-surface);
@@ -42,17 +54,31 @@
     padding: 4px;
     border-radius: 4px;
     transition: background-color 0.2s ease;
-  }
-  .modal_close:hover {
+}
+
+.modal_close:hover {
     background-color: var(--hover-color);
-  }
-  .modal_actions {
+}
+
+.modal_actions {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
     margin-top: 24px;
-  }
-  .btn_modal {
+}
+
+.delete_button_icon_1 {
+    position: relative;
+    top:1px;
+}
+
+.delete_button_text_inner {
+    position: relative;
+    top:-2px;
+    margin-left: 5px;
+}
+
+.btn_modal {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
@@ -61,19 +87,57 @@
     font-weight: 500;
     transition: all 0.2s ease;
     text-transform: uppercase;
-  }
-  .btn_modal_primary {
+}
+
+.btn_modal_primary {
     background-color: var(--primary-color);
     color: var(--on-primary);
-  }
-  .btn_modal_primary:hover {
+}
+
+.btn_modal_primary:hover {
     background-color: var(--primary-dark);
-  }
-  .btn_modal_secondary {
+}
+
+.btn_modal_secondary {
     background-color: var(--surface-variant);
     color: var(--on-surface);
-  }
-  .btn_modal_secondary:hover {
+}
+
+.btn_modal_secondary:hover {
     background-color: var(--hover-color);
+}
+
+/* removed create python script button and modal styles */
+
+/* fixed size for select python modal */
+#select_python_modal .modal_content {
+    width: 800px;
+    min-width: 800px;
+    max-width: 800px;
+    height: 570px;
+    min-height: 570px;
+    max-height: 570px;
+}
+
+/* ensure content doesn't push actions off-screen in select modal */
+#select_python_modal .modal_content { display: flex; flex-direction: column; }
+#select_python_modal .form_group { flex: 1 1 auto; display: flex; flex-direction: column; overflow: visible; min-height: 0; }
+#select_python_modal .mini_explorer { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; overflow: visible; }
+#select_python_modal .mini_list { flex: 1 1 auto; min-height: 0; overflow-y: auto; max-height: none; }
+#select_python_modal .mini_list { margin-top: 8px; }
+#select_python_modal .mini_breadcrumb { flex: 0 0 auto; }
+#select_python_modal .mini_explorer_toolbar { flex: 0 0 auto; }
+#select_python_modal .modal_actions { flex: 0 0 auto; margin-top: 12px; }
+
+/* explicitly make the fe_list scrollable */
+#fe_list { overflow-y: auto; min-height: 0; }
+
+/* ensure the inline create file group isn't clipped */
+#fe_new_file_group { position: relative; z-index: 1; flex: 0 0 auto; padding: 6px 0 8px 0; margin-bottom: 8px; }
+
+/* legacy layer styles for compatibility */
+@layer components {
+  .modal_overlay_is_open {
+    display: flex;
   }
 }

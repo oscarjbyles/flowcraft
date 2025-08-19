@@ -1,11 +1,176 @@
 /* toolbar component styles */
-@layer components {
-  .build_toolbar {
+
+/* floating toolbars on the left */
+.left_toolbars {
+    position: absolute;
+    top: 14px;
+    left: 335px; /* aligned with properties sidebar edge */
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px; /* space between the two toolbars */
+}
+
+/* primary floating toolbar */
+.floating_toolbar {
+    /* positioned by parent container */
+    position: static;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    /* match annotation_toolbar radius */
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* secondary floating toolbar to the right of the primary */
+.floating_toolbar_secondary {
+    /* positioned by parent container */
+    position: static;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    /* make the outer toolbar fully pill-shaped (infinite radius) */
+    border-radius: 9999px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* make buttons inside the secondary toolbar circular */
+.floating_toolbar_secondary .toolbar_btn {
+    border-radius: 50%;
+}
+
+.toolbar_btn {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-variant);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--on-surface);
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: var(--space_8);
-    position: relative;
-  }
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0;
+}
+
+.toolbar_btn:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+}
+
+.toolbar_btn.active {
+    background: var(--primary-color);
+    color: var(--on-primary);
+    border-color: var(--primary-color);
+}
+
+.toolbar_btn .material-icons {
+    font-size: 20px;
+}
+
+/* container to hold top toolbars side-by-side and anchor near right sidebar */
+.top_toolbars {
+    position: absolute;
+    top: 14px;
+    right: 340px; /* 320px properties sidebar + 20px gap in build mode */
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px; /* space between the two toolbars */
+}
+
+/* build mode horizontal toolbar */
+.build_toolbar {
+    position: static; /* controlled by container */
+    display: none; /* shown only in build mode */
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding-left: 0px;
+}
+
+/* secondary toolbar to the left of build toolbar (icon-only) */
+.annotation_toolbar {
+    position: static; /* controlled by container */
+    display: none; /* shown only in build mode */
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* icon-only buttons, match height of build toolbar buttons via shared .btn styles */
+.annotation_toolbar .toolbar_icon_btn {
+    width: 40px;
+    height: 40px;
+    padding: 0; /* remove default .btn padding so centering is exact */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0; /* avoid font metrics affecting centering */
+}
+.annotation_toolbar .material-icons {
+    font-size: 18px;
+    line-height: 1; /* keep glyph box tight */
+    display: block; /* prevent inline baseline shifts */
+}
+.build_toolbar .material-icons { font-size: 18px; }
+
+/* force equal heights across both toolbars */
+.annotation_toolbar .btn,
+.build_toolbar .btn { 
+    height: 40px; 
+}
+
+.build_toolbar_toggle {
+    width:40px;
+}
+
+.annotation_toolbar .toolbar_icon_btn:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+}
+
+/* compact toggle button should be a fixed 38x38 box (including padding) */
+#toggle_sidebar_btn {
+    width: 38px;
+    min-width: 38px;
+    max-width: 38px;
+    height: 58px;
+    min-height: 58px;
+    max-height: 58px;
+    padding: 0; /* ensure total footprint stays 38x38 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-bottom-right-radius: 0px;
+    border-top-right-radius: 0px;
+    border-right-width: 0px;
+}
+#toggle_sidebar_btn .material-icons { font-size: 18px; }
+
+/* legacy layer styles for compatibility */
+@layer components {
   .build_toolbar_items {
     display: flex;
     align-items: center;

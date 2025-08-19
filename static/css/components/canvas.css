@@ -1,0 +1,370 @@
+/* canvas and flowchart styles */
+
+.canvas_container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#flowchart_canvas {
+    width: 100%;
+    height: 100%;
+    background-color: var(--background-color);
+}
+
+/* node styles */
+.node {
+    fill: var(--surface-color);
+    stroke: var(--border-color);
+    stroke-width: 2px;
+    cursor: pointer;
+}
+        
+.node:not(.dragging) {
+    transition: all 0.2s ease;
+}
+
+.node:hover {
+    fill: var(--surface-variant);
+    stroke: var(--primary-color);
+}
+
+.node.selected {
+    fill: var(--primary-color);
+    stroke: var(--primary-dark);
+}
+
+.node.multi_selected {
+    fill: var(--secondary-color);
+    stroke: var(--primary-color);
+    stroke-width: 3px;
+}
+
+.node.selection_preview {
+    fill: rgba(74, 165, 245, 0.3);
+    stroke: #4aa5f5;
+    stroke-width: 2px;
+    stroke-dasharray: 3,3;
+}
+
+.node_text {
+    fill: var(--on-surface);
+    text-anchor: middle;
+    dominant-baseline: middle;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Roboto', sans-serif;
+    pointer-events: none;
+}
+
+.node_text.selected {
+    fill: var(--on-primary);
+}
+
+.node_text.multi_selected {
+    fill: var(--on-secondary);
+}
+
+/* input node styles */
+.node.input_node {
+    fill: var(--surface-variant);
+    stroke: var(--border-color);
+    stroke-width: 2px;
+}
+        
+.node.input_node.selected {
+    stroke: var(--primary-color);
+}
+
+.node.input_node:hover {
+    fill: #3d3d3d;
+    stroke: #42a5f5;
+}
+
+.input_param_label {
+    font-size: 14px;
+    font-weight: 500;
+    fill: var(--on-surface);
+    text-anchor: start; /* pin label to left of node */
+    /* prevent accidental selection or clicks on the label */
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+    cursor: default;
+}
+
+.input_field_bg {
+    fill: var(--background-color);
+    stroke: var(--border-color);
+    stroke-width: 1px;
+}
+
+.input_field_bg:hover {
+    stroke: var(--primary-color);
+}
+
+.input_field_text {
+    font-size: 14px;
+    fill: var(--on-surface);
+    text-anchor: start;
+    pointer-events: none;
+}
+
+/* group styles */
+.group_container {
+    fill: none;
+    stroke: var(--primary-color);
+    stroke-width: 2px;
+    stroke-dasharray: 8,4;
+    opacity: 0.7;
+}
+
+.group_container.selected {
+    stroke: var(--primary-color);
+    stroke-width: 3px;
+    opacity: 1;
+}
+
+.group_label {
+    fill: var(--primary-color);
+    font-size: 14px; /* match python node title size */
+    font-weight: 500;
+    font-family: 'Roboto', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    cursor: move;
+}
+
+.group_label.selected {
+    font-weight: bold;
+}
+
+/* color palette for group colour selection */
+.color_palette { 
+    display: grid; 
+    grid-template-columns: repeat(6, 1fr); 
+    gap: 8px; 
+}
+.color_swatch { 
+    width: 28px; 
+    height: 28px; 
+    border-radius: 6px; 
+    border: 2px solid var(--border-color); 
+    cursor: pointer; 
+    padding: 0; 
+}
+.color_swatch:hover { 
+    transform: scale(1.05); 
+    border-color: var(--primary-color); 
+}
+.color_swatch.active { 
+    box-shadow: 0 0 0 2px var(--on-background) inset; 
+    border-color: var(--on-background); 
+}
+
+/* link/connection styles */
+.link {
+    fill: none;
+    stroke: var(--border-color);
+    stroke-width: 2px;
+    cursor: pointer;
+}
+
+.link:hover {
+    stroke: var(--primary-color);
+}
+
+.link.selected {
+    stroke: var(--primary-color);
+    stroke-width: 3px;
+}
+
+.link.input_connection {
+    stroke: var(--border-color);
+    stroke-width: 2px;
+    stroke-dasharray: 8,4;
+    opacity: 0.7;
+}
+
+.link.input_connection:hover {
+    stroke: var(--border-color);
+    opacity: 0.8;
+}
+
+/* prevent hover effects for python to data save connections */
+.link.python_to_data_save:hover {
+    stroke: var(--border-color);
+}
+
+.connection_dot {
+    fill: var(--primary-color);
+    stroke: var(--on-primary);
+    stroke-width: 2px;
+    cursor: crosshair;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.node-group:hover .connection_dot {
+    opacity: 1;
+}
+
+.connection_line {
+    stroke: var(--primary-color);
+    stroke-width: 2px;
+    stroke-dasharray: 5,5;
+    fill: none;
+    pointer-events: none;
+}
+
+/* node button styles */
+.refresh_button_bg {
+    fill: var(--primary-color);
+}
+
+.refresh_button_bg:hover {
+    fill: #42a5f5;
+}
+
+.refresh_button {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.refresh_button_text {
+    font-size: 12px;
+    font-weight: bold;
+    fill: var(--on-primary);
+    pointer-events: none;
+}
+
+/* play button styles */
+.play_button {
+    transition: opacity 0.2s ease;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+
+/* scale inner elements on hover to avoid shifting the positioned group */
+.play_button_bg,
+.play_button_icon {
+    transition: transform 0.2s ease, fill 0.2s ease;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+
+.play_button:hover .play_button_bg,
+.play_button:hover .play_button_icon {
+    transform: scale(1.1);
+}
+
+/* apply the same hover scale effect to refresh and pen buttons */
+.refresh_button,
+.pen_button {
+    transform-origin: center;
+    transform-box: fill-box;
+}
+.refresh_button_bg,
+.refresh_button_text,
+.pen_button_bg,
+.pen_button_text {
+    transition: transform 0.2s ease;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+.refresh_button:hover .refresh_button_bg,
+.refresh_button:hover .refresh_button_text,
+.pen_button:hover .pen_button_bg,
+.pen_button:hover .pen_button_text {
+    transform: scale(1.1);
+}
+
+.play_button_bg {
+    transition: transform 0.2s ease, fill 0.2s ease;
+}
+
+.play_button:hover .play_button_bg {
+    fill: #66BB6A !important;
+}
+
+/* annotation styles */
+.annotation_text { 
+    user-select: none; 
+    cursor: move; 
+}
+.annotation_box { 
+    fill: transparent; 
+    stroke: transparent; 
+    rx: 4px; 
+    ry: 4px; 
+    pointer-events: all; 
+}
+.annotation_item.selected .annotation_box { 
+    stroke: var(--primary-color); 
+    stroke-width: 2px; 
+}
+
+/* ensure smooth transitions for annotation visibility changes */
+.annotation_item {
+    transition: opacity 0.2s ease;
+}
+
+/* arrow annotation styles */
+.annotation_arrow { 
+    pointer-events: none; 
+}
+.arrow_head { 
+    pointer-events: none; 
+}
+.arrow_start, .arrow_end { 
+    transition: opacity 0.15s ease, stroke-width 0.15s ease;
+    opacity: 0.8;
+    stroke-width: 2px;
+}
+.arrow_start:hover, .arrow_end:hover { 
+    opacity: 1;
+    stroke-width: 3px;
+}
+.annotation_item.selected .arrow_start,
+.annotation_item.selected .arrow_end {
+    stroke: var(--primary-color);
+    stroke-width: 3px;
+    opacity: 1;
+}
+
+/* coordinate input styles */
+.coordinate_input {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    color: var(--on-surface);
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    text-align: center;
+    outline: none;
+}
+
+.coordinate_input:focus {
+    border-color: var(--primary-color);
+    background: var(--surface-variant);
+}
+
+.coordinate_input:hover {
+    border-color: var(--primary-color);
+}
+
+/* remove spinner buttons from number inputs */
+.coordinate_input::-webkit-outer-spin-button,
+.coordinate_input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.coordinate_input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield; /* add standard property for compatibility */
+}

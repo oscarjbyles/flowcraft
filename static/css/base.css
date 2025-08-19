@@ -1,8 +1,0 @@
-/* base layer: resets and element defaults kept minimal to avoid visual change */
-@layer base {
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body { margin: 0; background-color: var(--background-color); color: var(--on-background); font-family: 'Roboto', sans-serif; }
-}
-
-

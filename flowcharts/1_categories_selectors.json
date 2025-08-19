@@ -463,6 +463,21 @@
   ],
   "executions": [
     {
+      "execution_id": "26efa42b-9220-48c5-9fdf-4789e85e0098",
+      "timestamp": "2025-08-19T20:52:41.864800",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 16.7,
+      "completed_percentage": 22.2,
+      "failed_node": "get web page content",
+      "elapsed_ms": 3227,
+      "execution_time": "3.227s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
       "execution_id": "d198c8ec-c019-4f84-8189-fc0085433d17",
       "timestamp": "2025-08-19T19:06:26.452508",
       "flowchart_name": "1_categories_selectors",

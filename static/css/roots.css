@@ -1,5 +1,5 @@
 /* design tokens for flowcraft (dark theme baseline) */
-@layer tokens {
+@layer roots {
   :root {
     /* colors */
     --primary-color: #1976d2;

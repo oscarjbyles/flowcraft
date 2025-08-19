@@ -1,0 +1,361 @@
+/* build and run mode specific styles */
+
+/* run mode start/clear buttons – align with build toolbar buttons (keep colors) */
+.start_button_container .btn {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+.start_button_container .btn.btn_primary { border-color: var(--primary-color); }
+.start_button_container .btn.btn_secondary { border-color: var(--border-color); }
+.start_button_container .material-icons { font-size: 18px; }
+
+/* disabled/active state for run feed controls */
+.btn[disabled], .btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+/* hide connection dots in run mode */
+.run_mode .node-group:hover .connection_dot {
+    opacity: 0;
+}
+
+/* ensure group label doesn't change cursor in run mode */
+.run_mode .group_label { cursor: default; }
+
+/* node execution states */
+.node.running {
+    fill: #2196f3 !important;
+    stroke: #1976d2 !important;
+}
+
+.node.completed {
+    fill: #4caf50 !important;
+    stroke: #388e3c !important;
+}
+
+.node.error {
+    fill: #f44336 !important;
+    stroke: #d32f2f !important;
+}
+
+/* loading icon for running nodes */
+.node_loading_icon {
+    animation: spin 1s linear infinite;
+}
+
+/* loading circle animation around nodes */
+.node_loading_circle {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* run mode live feed bar at bottom */
+.run_feed_bar {
+    position: fixed;
+    left: 320px; /* start to the right of the left sidebar */
+    right: 0;
+    bottom: 32px;
+    height: 300px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    z-index: 1104; /* above sidebar toggle container (1103) */
+    transition: height 0.3s ease, bottom 0.3s ease;
+}
+
+/* ensure run feed bar is always visible in run mode */
+.run_feed_bar[data-run-mode="true"] {
+    display: flex !important;
+}
+
+/* disable transitions during drag to avoid lag */
+.run_feed_bar.no_transition {
+    transition: none !important;
+}
+
+/* drag handle at the top edge of the feed */
+.run_feed_resizer {
+    position: absolute;
+    top: -6px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 1102;
+}
+
+/* full screen state - snap to top */
+.run_feed_bar.full_screen {
+    top: 0;
+    bottom: 32px;
+    height: auto;
+}
+
+/* responsive adjustment for full screen mode */
+@media (max-width: 768px) {
+  .run_feed_bar.full_screen { 
+    top: 0;
+    bottom: 0;
+    height: auto;
+  }
+}
+
+/* hidden state - only header visible */
+.run_feed_bar.hidden {
+    height: auto;
+    bottom: 32px;
+}
+
+.run_feed_bar.hidden .run_feed_list {
+    display: none;
+}
+
+.run_feed_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-color);
+    z-index: 1101; /* ensure header stays above other content */
+}
+.run_feed_title { font-weight: 600; }
+
+.run_feed_list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* responsive adjustment: when sidebar shrinks, align left edge accordingly */
+@media (max-width: 768px) {
+  .run_feed_bar { left: 240px; }
+}
+
+.run_feed_item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 8px 0;
+}
+
+/* only error lines should show the dark red background */
+.run_feed_item.error { 
+    border: 2px solid #c62828; 
+    padding: 8px;
+}
+
+.run_feed_item.error .run_feed_line { background: #2A0E0E; }
+
+.run_feed_item_title { font-size: 1.05rem; font-weight: 600; }
+.run_feed_output {
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--on-surface);
+    opacity: .9;
+    /* single outer frame so we don't double up borders at the edges */
+    border-top: 1px solid rgba(61, 61, 61, 0.35);
+    border-bottom: 1px solid rgba(61, 61, 61, 0.35);
+}
+.run_feed_line {
+    /* single separator between rows to avoid double borders */
+    border-top: 1px solid rgba(61, 61, 61, 0.35);
+    padding: 4px 0;
+    padding-bottom: 4px;
+}
+.run_feed_line:first-child { border-top: none; }
+.run_feed_meta {
+    font-size: 0.8rem;
+    opacity: .8;
+    align-self: flex-end;
+}
+
+/* placeholder when live feed is empty */
+.run_feed_placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0.7;
+    font-style: italic;
+    padding: 40px 0;
+    min-height: 200px;
+}
+
+/* console output: simplify to match other log blocks */
+#console_output_log {
+    background: #1a1a1a;
+    color: var(--on-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px !important;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+}
+
+/* compact, unobtrusive button styling for status bar */
+#clear_history_status_btn {
+    /* reduce overall footprint to fit 32px bar */
+    font-size: 0.70rem;
+    padding: 2px 8px;
+    height: 22px;
+    line-height: 1;
+
+    /* neutral surface style to blend with bar */
+    background-color: var(--surface-variant) !important;
+    color: var(--on-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+#clear_history_status_btn:hover {
+    background-color: var(--hover-color) !important;
+}
+
+#clear_history_status_btn .material-icons {
+    font-size: 14px;
+}
+
+#clear_history_status_btn .btn_label {
+    font-size: 0.70rem;
+    text-transform: lowercase;
+}
+
+/* start button container */
+.start_button_container {
+    position: absolute;
+    top: 14px;
+    right: 502px; /* moved left to avoid overlap with 38px toggle (in 8px shell) and keep a small gap next to 450px sidebar */
+    z-index: 100;
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px; /* match primary toolbar radius */
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* separate right sidebar toggle bar (to the right of start/clear toolbar) */
+.sidebar_toggle_container {
+    position: absolute;
+    top: 14px;
+    right: 450px; /* align with start toolbar cluster; leaves 20px gap from 450px sidebar */
+    z-index: 1103; /* ensure above most ui, including right sidebar */
+    display: flex;
+    align-items: center;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-width: 0px;
+}
+
+/* split start/clear from sidebar toggle into distinct groups */
+.run_controls_group {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar_toggle_group {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
+
+/* properties sidebar styles moved to /static/css/components_major/sidebar.css */
+.main_content.sidebar_collapsed { margin-right: 0 !important; }
+.start_button_container.sidebar_collapsed { right: 52px !important; }
+.sidebar_toggle_container.sidebar_collapsed { right: 0px !important; }
+.run_feed_bar.sidebar_collapsed { margin-right: 0 !important; }
+
+/* default properties width positioning (when not in run mode, if visible) */
+.main_content:not(.run_mode) .start_button_container {
+    right: 340px; /* 320px sidebar + 20px gap */
+}
+
+/* ensure toggle bar follows same non-run default if needed */
+.main_content:not(.run_mode) .sidebar_toggle_container { right: 290px; }
+
+.btn_stop {
+    background-color: #f44336 !important;
+    color: white !important;
+}
+
+.btn_stop:hover {
+    background-color: #d32f2f !important;
+}
+
+.loading_wheel {
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* run mode - expanded properties sidebar */
+.main_content.run_mode {
+    margin-right: 450px;
+}
+
+/* ensure the bottom feed does not sit under the right sidebar area visually */
+.run_feed_bar { margin-right: 450px; }
+
+/* node order indicators for execution */
+.node_order_circle {
+    fill: var(--primary-color);
+    stroke: var(--on-primary);
+    stroke-width: 2px;
+}
+
+.node_order_text {
+    fill: var(--on-primary);
+    font-size: 12px;
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+
+/* error circles (for error view) */
+.error_circle {
+    fill: #f44336;
+    stroke: none;
+}
+.error_text {
+    fill: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}

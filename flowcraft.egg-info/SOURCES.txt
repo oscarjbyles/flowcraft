@@ -24,7 +24,6 @@ flowcraft.egg-info/top_level.txt
 static/favicon.svg
 static/flowchart.js.backup
 static/css/base.css
-static/css/data_matrix.css
 static/css/index.css
 static/css/sidebar.css
 static/css/tokens.css
