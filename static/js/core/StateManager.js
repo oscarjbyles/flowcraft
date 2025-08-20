@@ -1,35 +1,9 @@
 // centralized state management for the flowchart
 (function() {
     'use strict';
-    // avoid re-defining in case this file is accidentally loaded twice
     if (window.StateManager) { return; }
 
-    // safe base emitter to prevent early-load race with EventEmitter
-    const BaseEmitter = window.EventEmitter || class {
-        constructor() { this.events = {}; }
-        on(event, callback) {
-            if (!this.events[event]) this.events[event] = [];
-            this.events[event].push(callback);
-        }
-        off(event, callback) {
-            if (!this.events[event]) return;
-            const idx = this.events[event].indexOf(callback);
-            if (idx > -1) this.events[event].splice(idx, 1);
-        }
-        emit(event, ...args) {
-            if (!this.events[event]) return;
-            this.events[event].forEach(cb => { try { cb(...args); } catch(e) { try { console.error(e); } catch(_) {} } });
-        }
-        once(event, callback) {
-            const onceCb = (...args) => { try { callback(...args); } finally { this.off(event, onceCb); } };
-            this.on(event, onceCb);
-        }
-        removeAllListeners(event) {
-            if (event) { delete this.events[event]; } else { this.events = {}; }
-        }
-    };
-
-class StateManager extends BaseEmitter {
+class StateManager extends EventEmitter {
     constructor() {
         super();
         

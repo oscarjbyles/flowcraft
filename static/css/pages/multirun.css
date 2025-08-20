@@ -1,0 +1,48 @@
+/* multirun page styles */
+.multirun_page {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.page_header {
+    margin-bottom: 30px;
+}
+
+.page_header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text_primary);
+    margin: 0 0 8px 0;
+}
+
+.page_header p {
+    font-size: 1rem;
+    color: var(--text_secondary);
+    margin: 0;
+}
+
+.page_content {
+    flex: 1;
+    background: var(--surface_primary);
+    border-radius: 8px;
+    border: 1px solid var(--border_primary);
+    padding: 20px;
+    min-height: 400px;
+}
+
+/* responsive design */
+@media (max-width: 768px) {
+    .multirun_page {
+        padding: 15px;
+    }
+    
+    .page_header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .page_content {
+        padding: 15px;
+    }
+}

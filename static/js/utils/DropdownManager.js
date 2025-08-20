@@ -18,9 +18,6 @@ class DropdownManager {
 
     // create a new dropdown instance
     create(config) {
-        if (this.debug) {
-            console.log('DropdownManager.create called with config:', config);
-        }
 
         const {
             containerId,
@@ -36,12 +33,7 @@ class DropdownManager {
         const arrow = arrowId ? document.getElementById(arrowId) : null;
 
         if (!container || !input || !menu) {
-            console.error('dropdown: missing required elements', { containerId, inputId, menuId });
             return null;
-        }
-
-        if (this.debug) {
-            console.log('DropdownManager.create: elements found successfully');
         }
 
         const dropdown = new DropdownInstance({
@@ -379,11 +371,3 @@ class DropdownInstance {
 
 // global instance
 window.DropdownManager = new DropdownManager();
-
-// debug mode (can be enabled for troubleshooting)
-window.DropdownManager.debug = false;
-
-// log initialization
-if (window.DropdownManager.debug) {
-    console.log('DropdownManager initialized successfully');
-}

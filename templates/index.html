@@ -101,10 +101,25 @@
     <!-- d3 for builder canvas -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <!-- core modules -->
+    <!-- core utilities (must be loaded first) -->
+    <script src="/static/js/utils/EventEmitter.js?v=2"></script>
+
+    <!-- utilities -->
+
+    <!-- state management modules -->
+    <script src="/static/js/state/NodeManager.js"></script>
+    <script src="/static/js/state/LinkManager.js"></script>
+    <script src="/static/js/state/GroupManager.js"></script>
+    <script src="/static/js/state/AnnotationManager.js"></script>
     <script src="/static/js/core/StateManager.js"></script>
+    
+    <!-- core modules -->
     <script src="/static/js/core/EventManager.js"></script>
 
+    <!-- execution modules -->
+    <script src="/static/js/execution/ExecutionEngine.js"></script>
+    <script src="/static/js/execution/ExecutionOrchestrator.js"></script>
+    
     <!-- interaction modules -->
     <script src="/static/js/interactions/DragHandler.js"></script>
     <script src="/static/js/interactions/SelectionHandler.js"></script>
@@ -119,15 +134,12 @@
 
 
     <!-- properties sidebar components -->
-    <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
+    <script src="/static/js/components/sidebar/Sidebar.new.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.content.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.constants.js"></script>
     <script src="/static/js/components/sidebar/ui/Dropdowns.js"></script>
     <script src="/static/js/components/sidebar/ui/Visibility.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.execution.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.single.js"></script>
     <script src="/static/js/components/sidebar/panels/Panel.link.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.multi.js"></script>
     <script src="/static/js/components/sidebar/panels/Panel.group.js"></script>
     <script src="/static/js/components/sidebar/panels/Panel.annotation.js"></script>
     <script src="/static/js/components/sidebar/Sidebar.status.js"></script>
@@ -145,6 +157,17 @@
 
     <!-- main application entrypoint (builder) -->
     <script src="/static/js/core/FlowchartBuilder.js"></script>
+    
+    <!-- namespace -->
+    <script src="/static/js/core/FlowCraft.js"></script>
+    <!-- FlowchartBuilder modules -->
+    <script src="/static/js/core/FlowchartBuilder.Initialization.js"></script>
+    <script src="/static/js/core/FlowchartBuilder.Execution.new.js"></script>
+    <script src="/static/js/core/FlowchartBuilder.UI.js"></script>
+    <script src="/static/js/core/FlowchartBuilder.Canvas.js"></script>
+    <script src="/static/js/core/FlowchartBuilder.Nodes.js"></script>
+    <script src="/static/js/core/FlowchartBuilder.History.js"></script>
+    <script src="/static/js/core/FlowchartBuilder.Utils.js"></script>
     <script src="/static/js/main.js"></script>
 {% endblock %}
 

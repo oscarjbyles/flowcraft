@@ -138,6 +138,5 @@ button, input, select, textarea, label, .dropdown_item, .dropdown_loading, .drop
 
 /* status bar styles moved to /static/css/components_major/statusbar.css */
 
-
-
-
+/* page-specific styles */
+@import url('./pages/multirun.css');

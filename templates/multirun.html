@@ -1,0 +1,43 @@
+{% extends "base/base.html" %}
+
+{% block title %}Multirun - Flowcraft{% endblock %}
+
+{% block content %}
+<div class="page_container">
+    <!-- breadcrumb -->
+    {% include "partials/breadcrumb.html" %}
+    
+    <!-- main content area -->
+    <div class="main_content">
+        <!-- sidebar -->
+        <div class="sidebar" id="sidebar">
+            <!-- sidebar content will be loaded dynamically -->
+        </div>
+        
+        <!-- content area -->
+        <div class="content_area" id="content_area">
+            <div class="multirun_page">
+                <div class="page_header">
+                    <h1>Multirun</h1>
+                    <p>Run multiple flowcharts with different parameters</p>
+                </div>
+                
+                <div class="page_content">
+                    <!-- content will be added in next iteration -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/Multirun.js') }}"></script>
+<script>
+    // initialize multirun page
+    document.addEventListener('DOMContentLoaded', function() {
+        const multirunPage = new MultirunPage();
+        multirunPage.init();
+    });
+</script>
+{% endblock %}

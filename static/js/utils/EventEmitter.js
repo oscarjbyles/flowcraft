@@ -1,5 +1,6 @@
 // simple event emitter for component communication
-class EventEmitter {
+if (typeof window.EventEmitter === 'undefined') {
+    class EventEmitter {
     constructor() {
         this.events = {};
     }
@@ -62,6 +63,7 @@ class EventEmitter {
             this.events = {};
         }
     }
-}
+    }
 
-window.EventEmitter = EventEmitter;
+    window.EventEmitter = EventEmitter;
+}

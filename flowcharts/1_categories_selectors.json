@@ -41,7 +41,7 @@
       "pythonFile": "1_categories_selectors/1_1_1_1_use_nav_tag.py",
       "type": "python_file",
       "width": 164.71666717529297,
-      "x": 1127.621337890625,
+      "x": 1125.8800048828125,
       "y": 527.0776062011719
     },
     {
@@ -53,20 +53,20 @@
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
-      "x": 1127.621337890625,
+      "x": 1125.8800048828125,
       "y": 607.0776062011719
     },
     {
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168331256.1504,
-      "magnet_partner_id": 1755168365383.739,
       "name": "1.1.1.2 - use common class names",
       "pythonFile": "",
       "type": "python_file",
       "width": 256.78334045410156,
-      "x": 1420.4766845703125,
-      "y": 526.5706176757812
+      "x": 1444.8553466796875,
+      "y": 533.5359191894531,
+      "magnet_partner_id": 1755168365383.739
     },
     {
       "description": "",
@@ -94,13 +94,13 @@
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168365383.739,
-      "magnet_partner_id": 1755168331256.1504,
       "name": "empty?",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
-      "x": 1420.4766845703125,
-      "y": 606.5706176757812
+      "x": 1444.8553466796875,
+      "y": 613.5359191894531,
+      "magnet_partner_id": 1755168331256.1504
     },
     {
       "dataSource": {
@@ -251,6 +251,50 @@
       "width": 120,
       "x": 1246.6041259765625,
       "y": 1777.9132080078125
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755693819655.1821,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 642.7535400390625,
+      "y": 719.637939453125
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755693822020.8376,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 561.848388671875,
+      "y": 634.239013671875
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755695191829.4268,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 592.413189140155,
+      "y": 896.5088127979035
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755695194701.443,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1711.89013671875,
+      "y": 947.9324951171875
     }
   ],
   "links": [
@@ -467,53 +511,6 @@
       "type": "text",
       "x": 854.4585790066471,
       "y": 1024.4108963170856
-    }
-  ],
-  "executions": [
-    {
-      "execution_id": "d0de9ee0-8aad-4ec5-ab42-d5ca9bce7ce1",
-      "timestamp": "2025-08-20T12:55:30.266357",
-      "flowchart_name": "1_categories_selectors",
-      "status": "stopped",
-      "total_nodes": 18,
-      "successful_nodes": 3,
-      "completed_nodes": 4,
-      "success_percentage": 16.7,
-      "completed_percentage": 22.2,
-      "failed_node": "get web page content",
-      "elapsed_ms": 2569,
-      "execution_time": "2.569s",
-      "error_snippet": "execution was cancelled by user"
-    },
-    {
-      "execution_id": "9d6cfb98-dd9b-4b41-a451-39d932bc8004",
-      "timestamp": "2025-08-20T12:52:44.257704",
-      "flowchart_name": "1_categories_selectors",
-      "status": "stopped",
-      "total_nodes": 18,
-      "successful_nodes": 3,
-      "completed_nodes": 4,
-      "success_percentage": 16.7,
-      "completed_percentage": 22.2,
-      "failed_node": "get web page content",
-      "elapsed_ms": 2708,
-      "execution_time": "2.708s",
-      "error_snippet": "execution was cancelled by user"
-    },
-    {
-      "execution_id": "daca6199-e2b2-41b4-8b22-462d50ccc89b",
-      "timestamp": "2025-08-20T12:50:23.901568",
-      "flowchart_name": "1_categories_selectors",
-      "status": "stopped",
-      "total_nodes": 18,
-      "successful_nodes": 3,
-      "completed_nodes": 4,
-      "success_percentage": 16.7,
-      "completed_percentage": 22.2,
-      "failed_node": "get web page content",
-      "elapsed_ms": 1580,
-      "execution_time": "1.580s",
-      "error_snippet": "execution was cancelled by user"
     }
   ]
 }

@@ -56,21 +56,7 @@ class EventManager {
                 }
                 break;
                 
-            case 'z':
-                if (event.ctrlKey) {
-                    event.preventDefault();
-                    // todo: implement undo
-                    console.log('undo not implemented yet');
-                }
-                break;
-                
-            case 'y':
-                if (event.ctrlKey) {
-                    event.preventDefault();
-                    // todo: implement redo
-                    console.log('redo not implemented yet');
-                }
-                break;
+
         }
     }
 
@@ -92,7 +78,6 @@ class EventManager {
         if (this.state.selectedNodes.size > 0) {
             // check if we're in run mode - nodes cannot be deleted in run mode
             if (this.state.currentMode === 'run') {
-                this.state.emit('statusUpdate', 'cannot delete nodes in run mode');
                 return;
             }
             
@@ -110,29 +95,22 @@ class EventManager {
                 }
             });
             
-            // provide appropriate feedback
-            if (inputNodeAttempts > 0 && deletedCount === 0) {
-                this.state.emit('statusUpdate', 'input nodes cannot be deleted directly');
-            } else if (inputNodeAttempts > 0 && deletedCount > 0) {
-                this.state.emit('statusUpdate', `deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
-            } else if (deletedCount > 0) {
-                this.state.emit('statusUpdate', `deleted ${deletedCount} node(s)`);
-            }
+
             
         } else if (this.state.selectedAnnotation) {
             // delete selected text node (annotation)
             const annotationText = this.state.selectedAnnotation.text || 'text';
             this.state.removeAnnotation(this.state.selectedAnnotation.id);
-            this.state.emit('statusUpdate', `deleted text: ${annotationText}`);
+
             
         } else if (this.state.selectedLink) {
             this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
-            this.state.emit('statusUpdate', 'link deleted');
+
             
         } else if (this.state.selectedGroup) {
             const groupName = this.state.selectedGroup.name;
             this.state.removeGroup(this.state.selectedGroup.id);
-            this.state.emit('statusUpdate', `group "${groupName}" deleted`);
+
         }
     }
 
@@ -149,12 +127,12 @@ class EventManager {
         if (this.state.isConnecting) {
             this.state.setConnecting(false);
             this.state.emit('connectionCancelled');
-            this.state.emit('statusUpdate', 'connection cancelled');
+
         }
         
         // clear selections
         this.state.clearSelection();
-        this.state.emit('statusUpdate', 'selection cleared');
+
     }
 
     handleGroupShortcut() {
@@ -164,12 +142,8 @@ class EventManager {
             const nodeIds = Array.from(this.state.selectedNodes);
             try {
                 const group = this.state.createGroup(nodeIds);
-                this.state.emit('statusUpdate', `created group: ${group.name}`);
             } catch (error) {
-                this.state.emit('statusUpdate', `error creating group: ${error.message}`);
             }
-        } else {
-            this.state.emit('statusUpdate', 'select at least 2 nodes to create a group');
         }
     }
 
@@ -189,7 +163,7 @@ class EventManager {
             group: null
         });
         
-        this.state.emit('statusUpdate', `selected all ${this.state.nodes.length} nodes`);
+
     }
 
     // canvas event handlers
@@ -211,9 +185,7 @@ class EventManager {
                         x: coordinates.x,
                         y: coordinates.y
                     });
-                    this.state.emit('statusUpdate', `added node: ${node.name}`);
                 } catch (error) {
-                    this.state.emit('statusUpdate', `error adding node: ${error.message}`);
                 }
             }
             
@@ -229,62 +201,46 @@ class EventManager {
             this.state.selectNode(node.id, isMultiSelect);
             
             const selectedCount = this.state.selectedNodes.size;
-            if (selectedCount === 1) {
-                this.state.emit('statusUpdate', `selected: ${node.name}`);
-            } else {
-                this.state.emit('statusUpdate', `selected ${selectedCount} nodes`);
-            }
         } catch (error) {
-            this.state.emit('statusUpdate', `error selecting node: ${error.message}`);
         }
     }
 
     handleLinkClick(event, link) {
         try {
             this.state.selectLink(link);
-            this.state.emit('statusUpdate', 'link selected - press delete to remove');
         } catch (error) {
-            this.state.emit('statusUpdate', `error selecting link: ${error.message}`);
         }
     }
 
     handleGroupClick(event, group) {
         try {
             this.state.selectGroup(group.id);
-            this.state.emit('statusUpdate', `selected group: ${group.name}`);
         } catch (error) {
-            this.state.emit('statusUpdate', `error selecting group: ${error.message}`);
         }
     }
 
     // drag event handlers
     handleDragStart(event, node) {
         this.state.setDragging(true, node);
-        this.state.emit('statusUpdate', `dragging: ${node.name}`);
+
     }
 
     handleDragEnd(event, node) {
         this.state.setDragging(false);
-        this.state.emit('statusUpdate', 'drag complete');
+
     }
 
     // connection event handlers
     handleConnectionStart(event, sourceNode) {
         this.state.setConnecting(true, sourceNode);
-        this.state.emit('statusUpdate', `connecting from ${sourceNode.name} - click target node or press escape to cancel`);
+
     }
 
     handleConnectionEnd(event, sourceNode, targetNode) {
         if (sourceNode && targetNode && sourceNode.id !== targetNode.id) {
             try {
                 const link = this.state.addLink(sourceNode.id, targetNode.id);
-                if (link) {
-                    this.state.emit('statusUpdate', 'connection created');
-                } else {
-                    this.state.emit('statusUpdate', 'connection already exists');
-                }
             } catch (error) {
-                this.state.emit('statusUpdate', `error creating connection: ${error.message}`);
             }
         }
         
@@ -293,7 +249,7 @@ class EventManager {
 
     handleConnectionCancel() {
         this.state.setConnecting(false);
-        this.state.emit('statusUpdate', 'connection cancelled');
+
     }
 
     // context menu handlers
@@ -323,7 +279,7 @@ class EventManager {
                 break;
                 
             default:
-                console.warn(`unknown api action: ${action}`);
+                break;
         }
     }
 
@@ -337,13 +293,8 @@ class EventManager {
 
             if (response.ok) {
                 const result = await response.json();
-                this.state.emit('statusUpdate', `build: ${result.message}`);
-            } else {
-                this.state.emit('statusUpdate', 'build failed');
             }
         } catch (error) {
-            console.error('build error:', error);
-            this.state.emit('statusUpdate', 'build error');
         }
     }
 
@@ -357,13 +308,8 @@ class EventManager {
 
             if (response.ok) {
                 const result = await response.json();
-                this.state.emit('statusUpdate', `run: ${result.message}`);
-            } else {
-                this.state.emit('statusUpdate', 'run failed');
             }
         } catch (error) {
-            console.error('run error:', error);
-            this.state.emit('statusUpdate', 'run error');
         }
     }
 

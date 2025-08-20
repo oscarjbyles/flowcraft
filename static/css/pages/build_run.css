@@ -231,7 +231,7 @@
     position: absolute;
     top: 14px;
     right: 502px; /* moved left to avoid overlap with 38px toggle (in 8px shell) and keep a small gap next to 450px sidebar */
-    z-index: 100;
+    z-index: 1104; /* ensure above sidebar toggle container (1103) */
     display: flex;
     align-items: stretch;
     gap: 12px;
@@ -275,7 +275,7 @@
 
 /* properties sidebar styles moved to /static/css/components_major/sidebar.css */
 .main_content.sidebar_collapsed { margin-right: 0 !important; }
-.start_button_container.sidebar_collapsed { right: 52px !important; }
+.start_button_container.sidebar_collapsed { right: 52px !important; z-index: 1104 !important; }
 .sidebar_toggle_container.sidebar_collapsed { right: 0px !important; }
 .run_feed_bar.sidebar_collapsed { margin-right: 0 !important; }
 

@@ -45,7 +45,7 @@
         // wire left navigation buttons; if app is provided, use rich behavior (mode switches, clears), otherwise navigate only
         setupNavButtons(app){
             onDomReady(() => {
-                console.log('[nav] setupNavButtons start', { hasApp: !!app, path: window.location.pathname });
+
                 // dashboard
                 const db = document.getElementById('dashboard_btn');
                 if (db) db.onclick = () => { clearRunVisualsIfNeeded(app); window.location.href = buildHref('/dashboard'); };
@@ -69,13 +69,10 @@
                 // run
                 const run = document.getElementById('run_btn');
                 if (run) run.onclick = () => {
-                    console.log('[debug] run button clicked');
                     if (app && typeof app.switchToRunMode === 'function') {
-                        console.log('[debug] calling app.switchToRunMode()');
                         app.switchToRunMode();
                         try { const u = new URL(window.location.href); u.searchParams.set('mode','run'); window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); } catch(_) {}
                     } else {
-                        console.log('[debug] no app or switchToRunMode function, navigating to:', buildHref('/?mode=run'));
                         window.location.href = buildHref('/?mode=run');
                     }
                 };
@@ -98,23 +95,18 @@
 
                 // highlight active nav (non-builder pages only)
                 setActiveNav();
-                console.log('[nav] setupNavButtons done');
+
             });
         },
 
         init(app){
-            console.log('[nav] init called', { hasApp: !!app });
+
             this.setupNavButtons(app || (window.flowchartApp || null));
             // flowchart ui setup is in Navigation.flowcharts.js
             if (!app && window.Navigation && typeof window.Navigation.setupFlowchartUI === 'function') {
-                console.log('[nav] calling setupFlowchartUI');
+
                 window.Navigation.setupFlowchartUI(null);
-            } else if (app) {
-                console.log('[nav] skipping setupFlowchartUI on builder (handled by Navigation)');
-            } else {
-                console.warn('[nav] setupFlowchartUI not available on window.Navigation');
             }
-            console.log('[nav] init complete');
         }
     };
 
