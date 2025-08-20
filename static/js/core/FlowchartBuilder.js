@@ -5,29 +5,17 @@
 
 class FlowchartBuilder {
     constructor() {
-        // initialize core systems
+        // initialize all systems in logical order
         this.initializeCore();
-        
-        // initialize components
         this.initializeComponents();
-        
-        // setup canvas and rendering
         this.initializeCanvas();
-        
-        // initialize interactions
         this.initializeInteractions();
-        
-        // setup ui components
         this.initializeUI();
-        
-        // initialize app (async)
         this.initializeApp();
         
-        // viewport persistence timers
+        // viewport persistence
         this.viewportSaveTimer = null;
         this.viewportSaveDelay = 250; // ms
-
-
     }
 
     initializeCore() {
@@ -143,78 +131,27 @@ this.setupNavigationButtons();
         this.setupWindowEvents();
 
         // wire modal close for massive change modal if present
-        try {
-            const overlay = document.getElementById('massive_change_modal');
-            const closeBtn = document.getElementById('massive_change_close');
-            if (overlay && closeBtn) {
-                closeBtn.addEventListener('click', () => overlay.classList.remove('modal_overlay_is_open'));
-            }
-        } catch (_) {}
+        const overlay = document.getElementById('massive_change_modal');
+        const closeBtn = document.getElementById('massive_change_close');
+        if (overlay && closeBtn) {
+            closeBtn.addEventListener('click', () => overlay.classList.remove('modal_overlay_is_open'));
+        }
     }
 
     setupCoreEvents() {
-        // state change events
-        this.state.on('stateChanged', () => {
-            this.updateStats();
-        });
-        
-        // status updates
-        this.state.on('statusUpdate', (message) => {
-            this.updateStatusBar(message);
-        });
-        
-        // data events
-        this.state.on('dataSaved', (data) => {
-            if (data.message) {
-                this.updateStatusBar(data.message);
-            }
-        });
-        
-        this.state.on('dataLoaded', (data) => {
-            this.updateStats();
-            // try to restore viewport after data loads (handles initial load and flowchart switches)
-            this.restoreViewportFromStorage();
-            // if currently in history mode, refresh the history list for the newly loaded flowchart
-            try {
-                if (this.state.isHistoryMode) {
-                    this.loadExecutionHistory();
-                }
-            } catch (_) {}
-        });
-        
-        // error events
-        this.state.on('saveError', (data) => {
-            this.updateStatusBar(data.message);
-        });
-        // destructive change guard -> show modal for user decision
-        this.state.on('destructiveChangeDetected', (info) => {
-            try { this.showMassiveChangeModal(info); } catch (_) {}
-        });
-        
-        this.state.on('loadError', (data) => {
-            this.updateStatusBar(data.message);
-        });
+        // group related events for better organization
+        this.setupStateEvents();
+        this.setupDataEvents();
+        this.setupModeEvents();
+        this.setupSelectionEvents();
+        this.setupCoordinateEvents();
+    }
 
-        // zoom events
-        this.state.on('disableZoom', () => this.disableZoom());
-        this.state.on('enableZoom', () => this.enableZoom());
-        
-        // mode change events
-        this.state.on('modeChanged', (data) => {
-            this.updateModeUI(data.mode, data.previousMode);
-            // update coordinates visibility based on mode
-            this.updateNodeCoordinates();
-        });
-        
-        this.state.on('flowViewChanged', (data) => {
-            this.updateFlowViewUI(data.isFlowView);
-        });
-        this.state.on('errorViewChanged', (data) => {
-            this.updateErrorViewUI(data.isErrorView);
-        });
-        
-        // update order when state changes if in flow view
+    setupStateEvents() {
+        // core state changes
         this.state.on('stateChanged', () => {
+            this.updateStats();
+            // update order when state changes if in flow view
             if (this.state.isFlowView) {
                 this.renderNodeOrder();
             }
@@ -225,57 +162,109 @@ this.setupNavigationButtons();
                 }
             }
         });
+        
+        // status updates
+        this.state.on('statusUpdate', (message) => {
+            this.updateStatusBar(message);
+        });
+    }
 
-        // re-render alerts when links are added/updated/removed and error view is on
+    setupDataEvents() {
+        // data events
+        this.state.on('dataSaved', (data) => {
+            if (data.message) {
+                this.updateStatusBar(data.message);
+            }
+        });
+        
+        this.state.on('dataLoaded', (data) => {
+            this.updateStats();
+            this.restoreViewportFromStorage();
+            if (this.state.isHistoryMode) {
+                this.loadExecutionHistory();
+            }
+        });
+        
+        // error events
+        this.state.on('saveError', (data) => {
+            this.updateStatusBar(data.message);
+        });
+        
+        this.state.on('loadError', (data) => {
+            this.updateStatusBar(data.message);
+        });
+        
+        // destructive change guard
+        this.state.on('destructiveChangeDetected', (info) => {
+            this.showMassiveChangeModal(info);
+        });
+    }
+
+    setupModeEvents() {
+        // zoom events
+        this.state.on('disableZoom', () => this.disableZoom());
+        this.state.on('enableZoom', () => this.enableZoom());
+        
+        // mode change events
+        this.state.on('modeChanged', (data) => {
+            this.updateModeUI(data.mode, data.previousMode);
+            this.updateNodeCoordinates();
+        });
+        
+        this.state.on('flowViewChanged', (data) => {
+            this.updateFlowViewUI(data.isFlowView);
+        });
+        
+        this.state.on('errorViewChanged', (data) => {
+            this.updateErrorViewUI(data.isErrorView);
+        });
+        
+        // link events for error view
         ['linkAdded','linkUpdated','linkRemoved'].forEach(evt => {
             this.state.on(evt, () => {
-                if (this.state.isErrorView) {
-                    if (this.linkRenderer && this.linkRenderer.renderCoverageAlerts) {
-                        this.linkRenderer.renderCoverageAlerts();
-                    }
+                if (this.state.isErrorView && this.linkRenderer && this.linkRenderer.renderCoverageAlerts) {
+                    this.linkRenderer.renderCoverageAlerts();
                 }
             });
         });
-        
-        // update coordinates when selection changes
+    }
+
+    setupSelectionEvents() {
+        // selection changes
         this.state.on('selectionChanged', () => {
             this.updateNodeCoordinates();
-            // re-render annotations to apply selected class
             if (this.annotationRenderer && this.annotationRenderer.render) {
                 this.annotationRenderer.render();
             }
-            // in run mode, scroll the live feed to the selected node's output
-            try {
-                if (this.state.isRunMode && this.state.selectedNodes.size === 1) {
-                    const nodeId = Array.from(this.state.selectedNodes)[0];
-                    // delay a frame to allow any pending feed dom updates
-                    setTimeout(() => {
-                        this.scrollRunFeedToNode(nodeId);
-                    }, 0);
-                }
-            } catch (_) {}
+            // scroll to selected node in run mode
+            if (this.state.isRunMode && this.state.selectedNodes.size === 1) {
+                const nodeId = Array.from(this.state.selectedNodes)[0];
+                setTimeout(() => {
+                    this.scrollRunFeedToNode(nodeId);
+                }, 0);
+            }
         });
 
-        // when a node is removed in build mode, clear all selections to reset ui state
+        // node removal in build mode
         this.state.on('nodeRemoved', () => {
             if (this.state.isBuildMode) {
                 this.deselectAll();
             }
         });
         
-        // handle link clicks
+        // link clicks
         this.state.on('linkClicked', (data) => {
             this.selectionHandler.handleLinkClick(data.event, data.link);
         });
-        
-        // update coordinates when nodes are updated (e.g., after dragging)
+    }
+
+    setupCoordinateEvents() {
+        // coordinate updates
         this.state.on('nodeUpdated', () => {
             this.updateNodeCoordinates();
         });
         
-        // update coordinates in real-time during dragging
         this.state.on('updateNodePosition', () => {
-            // use requestAnimationFrame to avoid too many updates during dragging
             if (this.coordinateUpdateFrame) {
                 cancelAnimationFrame(this.coordinateUpdateFrame);
             }
@@ -352,7 +341,7 @@ this.setupNavigationButtons();
                 const isUserGesture = !!(event && event.sourceEvent);
                 if (isUserGesture && this.isExecuting && this.isAutoTrackEnabled && !this.userDisabledTracking) {
                     this.userDisabledTracking = true;
-                    if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
+                    this._refreshTrackBtnUI();
                 }
             });
 
@@ -362,7 +351,7 @@ this.setupNavigationButtons();
     // viewport persistence helpers
     getViewportStorageKey() {
         // use current flowchart name to scope viewport
-        const name = (this.state && this.state.storage && this.state.storage.getCurrentFlowchart()) || 'default.json';
+        const name = this.state.storage.getCurrentFlowchart() || 'default.json';
         return `flowchart_viewport:${name}`;
     }
 
@@ -541,159 +530,143 @@ this.setupNavigationButtons();
 
     setupNavigationButtons() {
         // delegate to centralized navigation module for left navigation
-        try { if (window.Navigation && typeof window.Navigation.setupNavButtons === 'function') window.Navigation.setupNavButtons(this); } catch(_) {}
+        window.Navigation.setupNavButtons(this);
 
-        // safe attach helper to avoid hard failures when elements are missing
+        // setup all button groups
+        this.setupToolbarButtons();
+        this.setupBuildButtons();
+        this.setupAnnotationButtons();
+        this.setupExecutionButtons();
+        this.setupRunFeedButtons();
+        this.setupSidebarToggle();
+    }
+
+    setupToolbarButtons() {
+        // safe attach helper
         const attachClick = (elementId, handler) => {
             const el = document.getElementById(elementId);
             if (el) {
-                el.addEventListener('click', (e) => {
-                    handler(e);
-                });
+                el.addEventListener('click', handler);
             } else {
-                try { console.warn(`[ui] element not found: #${elementId}`); } catch(_) {}
+                console.warn(`[ui] element not found: #${elementId}`);
             }
         };
 
         // floating toolbar buttons
-        attachClick('flow_toggle_btn', () => { this.toggleFlowView(); });
-        // error toggle button
-        const errorToggleBtn = document.getElementById('error_toggle_btn');
-        if (errorToggleBtn) {
-            errorToggleBtn.addEventListener('click', () => {
-                this.toggleErrorView();
-            });
-        } else {
-            console.warn('[error_view] error_toggle_btn not found in dom');
-        }
-        
-        attachClick('group_select_btn', () => { this.toggleGroupSelectMode(); });
-        
-        attachClick('deselect_btn', () => { this.deselectAll(); });
-
-        // reset view to default zoom and center on first node in flow order
+        attachClick('flow_toggle_btn', () => this.toggleFlowView());
+        attachClick('error_toggle_btn', () => this.toggleErrorView());
+        attachClick('group_select_btn', () => this.toggleGroupSelectMode());
+        attachClick('deselect_btn', () => this.deselectAll());
         attachClick('reset_view_btn', () => {
-            if (!this.state || !this.svg || !this.zoom) { return; }
-            try {
+            if (this.state && this.svg && this.zoom) {
                 this.resetViewToFirstNode();
-            } catch (_) {}
+            }
         });
 
         // track toggle button
         const trackBtn = document.getElementById('track_toggle_btn');
         if (trackBtn) {
             const updateTrackBtnUI = () => {
-                if (this.isAutoTrackEnabled && !this.userDisabledTracking) {
-                    trackBtn.classList.add('active');
-                } else {
-                    trackBtn.classList.remove('active');
-                }
+                trackBtn.classList.toggle('active', this.isAutoTrackEnabled && !this.userDisabledTracking);
             };
+            
             trackBtn.addEventListener('click', () => {
-                // user explicitly toggles tracking back on/off
                 const willEnable = !(this.isAutoTrackEnabled && !this.userDisabledTracking);
                 this.isAutoTrackEnabled = willEnable;
-                this.userDisabledTracking = !willEnable ? true : false;
+                this.userDisabledTracking = !willEnable;
                 updateTrackBtnUI();
                 this.updateStatusBar(willEnable ? 'auto tracking enabled' : 'auto tracking disabled');
-                // if enabling during an active execution, immediately pan to the current node
-                if (willEnable && this.isExecuting && this.currentExecutingNodeId && typeof this.centerOnNode === 'function') {
+                
+                if (willEnable && this.isExecuting && this.currentExecutingNodeId) {
                     this.centerOnNode(this.currentExecutingNodeId);
                 }
             });
-            // expose helper to refresh ui elsewhere
+            
             this._refreshTrackBtnUI = updateTrackBtnUI;
         }
-        
-        // add node buttons
-        attachClick('python_node_btn', () => { this.addPythonNode(); });
-        attachClick('if_condition_btn', () => { this.addIfNode(); });
-        attachClick('ai_btn', () => { this.addCallAiNode && this.addCallAiNode(); });
+    }
 
-        // build toolbar toggle (collapsible add bar)
+    setupBuildButtons() {
+        const attachClick = (elementId, handler) => {
+            const el = document.getElementById(elementId);
+            if (el) el.addEventListener('click', handler);
+        };
+
+        // add node buttons
+        attachClick('python_node_btn', () => this.addPythonNode());
+        attachClick('if_condition_btn', () => this.addIfNode());
+        attachClick('ai_btn', () => this.addCallAiNode && this.addCallAiNode());
+
+        // build toolbar toggle
         const buildToolbar = document.getElementById('build_toolbar');
-        const buildToolbarToggle = document.getElementById('build_toolbar_toggle');
         if (buildToolbar) {
-            const collapse = () => { buildToolbar.classList.remove('is_expanded'); };
-            const expand = () => { buildToolbar.classList.add('is_expanded'); };
-            // default collapsed (only + button visible)
-            collapse();
-            // robust delegation to handle dynamic states
+            const collapse = () => buildToolbar.classList.remove('is_expanded');
+            const expand = () => buildToolbar.classList.add('is_expanded');
+            
+            collapse(); // default collapsed
+            
             buildToolbar.addEventListener('click', (e) => {
                 const toggle = e.target.closest('[data-action="toggle-build-toolbar"], #build_toolbar_toggle');
                 if (!toggle) return;
+                
                 const isOpen = buildToolbar.classList.contains('is_expanded');
-                if (isOpen) { collapse(); } else { expand(); }
+                isOpen ? collapse() : expand();
             });
-            // direct toggle click wiring as a fallback
+            
+            // direct toggle fallback
             const directToggle = document.getElementById('build_toolbar_toggle');
             if (directToggle && !directToggle._wired) {
                 directToggle.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isOpen = buildToolbar.classList.contains('is_expanded');
-                    if (isOpen) { collapse(); } else { expand(); }
+                    isOpen ? collapse() : expand();
                 });
                 directToggle._wired = true;
             }
-            // clicking either action should collapse back
-            const pythonBtn = document.getElementById('python_node_btn');
-            const ifBtn = document.getElementById('if_condition_btn');
-            if (pythonBtn) { pythonBtn.addEventListener('click', () => { collapse(); }); }
-            if (ifBtn) { ifBtn.addEventListener('click', () => { collapse(); }); }
-            // expose for mode switching resets
+            
+            // collapse on action clicks
+            ['python_node_btn', 'if_condition_btn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.addEventListener('click', collapse);
+            });
+            
             this._collapseBuildToolbar = collapse;
         }
-        else { try { console.warn('[ui] build_toolbar not found'); } catch(_) {} }
-        
-        // annotation toolbar buttons
-        const addTextBtn = document.getElementById('add_text_btn');
-        if (addTextBtn) {
-            addTextBtn.addEventListener('click', () => {
-                this.addTextAnnotation();
-            });
-        }
-        
-        const addArrowBtn = document.getElementById('add_arrow_btn');
-        if (addArrowBtn) {
-            addArrowBtn.addEventListener('click', () => {
-                this.addArrowAnnotation();
-            });
-        }
+    }
 
-        
-		// start/stop button for execution
-		document.getElementById('execute_start_btn').addEventListener('click', () => {
-			if (this.isExecuting) {
-				this.stopExecution();
-			} else {
-				// prevent rapid double-click from starting two concurrent runs
-				if (this.executionStarting) { return; }
-				this.executionStarting = true;
-				// clear the live execution feed when starting a new run
-				this.clearExecutionFeed();
-				this.startExecution();
-			}
-		});
+    setupAnnotationButtons() {
+        const attachClick = (elementId, handler) => {
+            const el = document.getElementById(elementId);
+            if (el) el.addEventListener('click', handler);
+        };
 
-        // clear button for run mode
-        const clearRunBtn = document.getElementById('execute_clear_btn');
-        if (clearRunBtn) {
-            clearRunBtn.addEventListener('click', () => {
-                // centralised clear used by clear button and when leaving run mode
-                if (typeof this.clearRunModeState === 'function') {
-                    this.clearRunModeState();
-                } else {
-                    // fallback in case method is not available
-                    this.resetNodeStates();
-                    this.clearOutput();
+        attachClick('add_text_btn', () => this.addTextAnnotation());
+        attachClick('add_arrow_btn', () => this.addArrowAnnotation());
+    }
+
+    setupExecutionButtons() {
+        // start/stop button
+        const startBtn = document.getElementById('execute_start_btn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                if (this.isExecuting) {
+                    this.stopExecution();
+                } else if (!this.executionStarting) {
+                    this.executionStarting = true;
                     this.clearExecutionFeed();
-                    this.updateExecutionStatus('info', 'cleared');
-                    try { this.clearIfRuntimeIndicators(); } catch (_) {}
+                    this.startExecution();
                 }
             });
         }
 
-        // run feed elements
+        // clear button
+        const clearBtn = document.getElementById('execute_clear_btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearRunModeState());
+        }
+    }
+
+    setupRunFeedButtons() {
         const runFeedUpBtn = document.getElementById('run_feed_up_btn');
         const runFeedResetBtn = document.getElementById('run_feed_reset_btn');
         const runFeedDownBtn = document.getElementById('run_feed_down_btn');
@@ -707,17 +680,17 @@ this.setupNavigationButtons();
             const hasInlineHeight = !!(runFeedBar.style.height && runFeedBar.style.height.trim() !== '');
             const isNormal = !isFull && !isHidden;
             const isDefaultNormal = isNormal && !hasInlineHeight;
+            
             if (runFeedUpBtn) runFeedUpBtn.disabled = isFull;
             if (runFeedDownBtn) runFeedDownBtn.disabled = isHidden;
             if (runFeedResetBtn) runFeedResetBtn.disabled = isDefaultNormal;
         };
 
+        // setup feed control buttons
         if (runFeedUpBtn && runFeedBar) {
             runFeedUpBtn.addEventListener('click', () => {
-                // go to full screen state
                 runFeedBar.classList.remove('hidden');
                 runFeedBar.classList.add('full_screen');
-                // clear inline height so full screen can stretch properly
                 runFeedBar.style.height = '';
                 updateRunFeedButtons();
             });
@@ -725,10 +698,7 @@ this.setupNavigationButtons();
 
         if (runFeedResetBtn && runFeedBar) {
             runFeedResetBtn.addEventListener('click', () => {
-                // restore normal state
-                runFeedBar.classList.remove('hidden');
-                runFeedBar.classList.remove('full_screen');
-                // clear inline height to return to default css height
+                runFeedBar.classList.remove('hidden', 'full_screen');
                 runFeedBar.style.height = '';
                 updateRunFeedButtons();
             });
@@ -736,19 +706,17 @@ this.setupNavigationButtons();
 
         if (runFeedDownBtn && runFeedBar) {
             runFeedDownBtn.addEventListener('click', () => {
-                // go to hidden state
                 runFeedBar.classList.remove('full_screen');
                 runFeedBar.classList.add('hidden');
-                // clear inline height so future restores start from default
                 runFeedBar.style.height = '';
                 updateRunFeedButtons();
             });
         }
 
-        // initialize button states on load
+        // initialize button states
         updateRunFeedButtons();
 
-        // ensure a placeholder is visible in the live execution feed when empty
+        // setup placeholder
         const list = document.getElementById('run_feed_list');
         if (list && list.children.length === 0) {
             const placeholder = document.createElement('div');
@@ -758,23 +726,20 @@ this.setupNavigationButtons();
             list.appendChild(placeholder);
         }
 
-        // resizable top border for run feed (drag to resize height)
+        // setup resizer
         if (runFeedResizer && runFeedBar) {
             let isDraggingFeed = false;
             let startY = 0;
             let startHeight = 0;
-
-            const minHeight = 120; // minimum collapsed height
-            const getMaxHeight = () => window.innerHeight - 80; // leave some space when not full screen
+            const minHeight = 120;
+            const getMaxHeight = () => window.innerHeight - 80;
 
             const onMouseMove = (e) => {
                 if (!isDraggingFeed) return;
                 const deltaY = startY - e.clientY;
                 const maxHeight = getMaxHeight();
-                let newHeight = Math.min(Math.max(startHeight + deltaY, minHeight), maxHeight);
-                // applying height overrides full/hidden states
-                runFeedBar.classList.remove('full_screen');
-                runFeedBar.classList.remove('hidden');
+                const newHeight = Math.min(Math.max(startHeight + deltaY, minHeight), maxHeight);
+                runFeedBar.classList.remove('full_screen', 'hidden');
                 runFeedBar.style.height = `${newHeight}px`;
                 updateRunFeedButtons();
             };
@@ -786,12 +751,10 @@ this.setupNavigationButtons();
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 runFeedBar.classList.remove('no_transition');
-                // after manual resize, ensure all buttons are active in normal state
                 updateRunFeedButtons();
             };
 
             runFeedResizer.addEventListener('mousedown', (e) => {
-                // ignore when already full screen
                 if (runFeedBar.classList.contains('full_screen')) return;
                 isDraggingFeed = true;
                 startY = e.clientY;
@@ -810,53 +773,29 @@ this.setupNavigationButtons();
                 updateRunFeedButtons();
             });
         }
+    }
 
-        // toggle right properties sidebar visibility in run mode via start/clear toolbar
+    setupSidebarToggle() {
         const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
-        const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
-        if (toggleSidebarBtn && !toggleSidebarBtn._wired) {
-            toggleSidebarBtn.addEventListener('click', () => {
+        if (toggleSidebarBtn) {
+            // remove existing listener to prevent duplicates
+            if (toggleSidebarBtn._wired) {
+                toggleSidebarBtn.removeEventListener('click', toggleSidebarBtn._clickHandler);
+            }
+            
+            // create the click handler
+            toggleSidebarBtn._clickHandler = () => {
                 const propertiesSidebar = document.getElementById('properties_sidebar');
                 const isCurrentlyCollapsed = propertiesSidebar && propertiesSidebar.classList.contains('collapsed');
 
-                // prefer centralized sidebar api to keep ui in sync
-                try {
-                    if (window.flowchartApp && window.flowchartApp.sidebar && typeof window.flowchartApp.sidebar.setCollapsed === 'function') {
-                        window.flowchartApp.sidebar.setCollapsed(!isCurrentlyCollapsed);
-                        return;
-                    }
-                } catch (_) {}
-
-                // fallback: direct class toggles (legacy behavior)
-                const mainContent = document.querySelector('.main_content');
-                const runFeedBar = document.getElementById('run_feed_bar');
-                const startButtonContainer = document.getElementById('start_button_container');
-                const sidebarToggleContainer = document.getElementById('sidebar_toggle_container');
-                const isCollapsed = propertiesSidebar.classList.toggle('collapsed');
-                if (isCollapsed) {
-                    // expand canvas area
-                    mainContent.classList.add('sidebar_collapsed');
-                    if (runFeedBar) runFeedBar.classList.add('sidebar_collapsed');
-                    if (startButtonContainer) startButtonContainer.classList.add('sidebar_collapsed');
-                    if (sidebarToggleContainer) sidebarToggleContainer.classList.add('sidebar_collapsed');
-                    // update button icon/title
-                    toggleSidebarBtn.title = 'show properties';
-                    toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
-                } else {
-                    // restore run-mode layout widths
-                    mainContent.classList.remove('sidebar_collapsed');
-                    if (runFeedBar) runFeedBar.classList.remove('sidebar_collapsed');
-                    if (startButtonContainer) startButtonContainer.classList.remove('sidebar_collapsed');
-                    if (sidebarToggleContainer) sidebarToggleContainer.classList.remove('sidebar_collapsed');
-                    toggleSidebarBtn.title = 'hide properties';
-                    toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
-                }
-            }, { passive: true });
+                // use centralized sidebar api to handle all the toggling
+                this.sidebar.setCollapsed(!isCurrentlyCollapsed);
+            };
+            
+            // attach the listener
+            toggleSidebarBtn.addEventListener('click', toggleSidebarBtn._clickHandler, { passive: true });
             toggleSidebarBtn._wired = true;
-
         }
-        
-        // history removed
     }
 
     setupStatusBar() {
@@ -873,12 +812,10 @@ this.setupNavigationButtons();
         }
 
         // hide node count when viewing a past execution (history view in run mode via executionId)
-        try {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('executionId') && this.nodeCount) {
-                this.nodeCount.style.display = 'none';
-            }
-        } catch (_) {}
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('executionId') && this.nodeCount) {
+            this.nodeCount.style.display = 'none';
+        }
         
         // get coordinate input elements
         this.nodeXInput = document.getElementById('node_x');
@@ -1171,11 +1108,9 @@ this.setupNavigationButtons();
 
         // choose target node: first in flow order, fallback to id 1
         let targetNode = null;
-        try {
-            const order = this.calculateNodeOrder();
-            targetNode = (order && order.length > 0) ? order[0] : null;
-        } catch (_) {}
-        if (!targetNode && this.state && typeof this.state.getNode === 'function') {
+        const order = this.calculateNodeOrder();
+        targetNode = (order && order.length > 0) ? order[0] : null;
+        if (!targetNode) {
             targetNode = this.state.getNode(1) || null;
         }
 
@@ -1188,15 +1123,15 @@ this.setupNavigationButtons();
         // this preserves run-mode preference and avoids snapping away immediately
         this.isAutoTrackEnabled = prevAutoTrack;
         this.userDisabledTracking = true;
-        if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
+        this._refreshTrackBtnUI();
     }
 
     // smoothly center a node in both axes at a specific zoom level
     centerOnNodeCentered(nodeId, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
         const node = this.state.getNode(nodeId);
         if (!node) return;
-        const currentScale = this.state.transform && typeof this.state.transform.k === 'number' ? this.state.transform.k : 1;
-        const scale = (typeof scaleOverride === 'number') ? scaleOverride : currentScale;
+        const currentScale = this.state.transform && this.state.transform.k ? this.state.transform.k : 1;
+        const scale = scaleOverride || currentScale;
 
         const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
         const containerEl = document.querySelector('.canvas_container');
@@ -1214,7 +1149,7 @@ this.setupNavigationButtons();
         this.svg
             .transition()
             .duration(Math.max(0, duration | 0))
-            .ease(typeof easeFn === 'function' ? easeFn : d3.easeCubicOut)
+            .ease(easeFn || d3.easeCubicOut)
             .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
     }
 
@@ -1222,8 +1157,8 @@ this.setupNavigationButtons();
     centerOnNodeWithTopOffset(nodeId, offsetTopPx = 400, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
         const node = this.state.getNode(nodeId);
         if (!node) return;
-        const currentScale = this.state.transform && typeof this.state.transform.k === 'number' ? this.state.transform.k : 1;
-        const scale = (typeof scaleOverride === 'number') ? scaleOverride : currentScale;
+        const currentScale = this.state.transform && this.state.transform.k ? this.state.transform.k : 1;
+        const scale = scaleOverride || currentScale;
 
         const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
         const containerEl = document.querySelector('.canvas_container');
@@ -1242,16 +1177,18 @@ this.setupNavigationButtons();
         this.svg
             .transition()
             .duration(Math.max(0, duration | 0))
-            .ease(typeof easeFn === 'function' ? easeFn : d3.easeCubicOut)
+            .ease(easeFn || d3.easeCubicOut)
             .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
     }
 
     // ui updates
-    updateStatusBar(message) {
-        // suppress mode/view toggle notifications in status bar
-        try {
-        const lower = String(message || '').toLowerCase();
-        const suppressPhrases = [
+    updateStatus(type, message, options = {}) {
+        const { suppressModeNotifications = true, autoClear = true, clearDelay = 3000 } = options;
+        
+        // suppress mode/view toggle notifications if enabled
+        if (suppressModeNotifications) {
+            const lower = String(message || '').toLowerCase();
+            const suppressPhrases = [
                 'build mode',
                 'run view enabled',
                 'run view disabled',
@@ -1260,45 +1197,65 @@ this.setupNavigationButtons();
                 'error view enabled',
                 'error view disabled',
                 'group select mode enabled',
-            'group select mode disabled',
-            'ready - click to add nodes, drag to connect',
-            'run mode - interface locked for execution',
-            's: 1 run mode - interface locked for execution',
-            'settings'
+                'group select mode disabled',
+                'ready - click to add nodes, drag to connect',
+                'run mode - interface locked for execution',
+                's: 1 run mode - interface locked for execution',
+                'settings'
             ];
             if (suppressPhrases.some(p => lower.includes(p))) {
                 return;
             }
-        } catch (_) {}
-
-        if (!this.statusText || !this.statusBar) {
-            if (this.statusText) this.statusText.textContent = message;
-            return;
         }
 
-        // set message
-        this.statusText.textContent = message;
+        // update status bar text
+        if (this.statusText) {
+            this.statusText.textContent = message || '';
+        }
 
-        // choose subtle background: only errors should color the bar
-        const originalBg = this._statusOriginalBg || this.statusBar.style.backgroundColor;
-        this._statusOriginalBg = originalBg;
+        // update status bar background color based on type
+        if (this.statusBar) {
+            const originalBg = this._statusOriginalBg || this.statusBar.style.backgroundColor;
+            this._statusOriginalBg = originalBg;
+            
+            let bgColor = 'var(--surface-color)';
+            if (type === 'error' || type === 'failed') {
+                bgColor = '#2A0E0E';
+            } else if (type === 'success') {
+                bgColor = '#0E2A0E';
+            } else if (type === 'warning') {
+                bgColor = '#2A2A0E';
+            }
+            
+            this.statusBar.style.backgroundColor = bgColor;
+
+            // auto-clear after delay if enabled
+            if (autoClear && clearDelay > 0) {
+                if (this._statusResetTimeout) {
+                    clearTimeout(this._statusResetTimeout);
+                }
+                this._statusResetTimeout = setTimeout(() => {
+                    this.statusBar.style.backgroundColor = this._statusOriginalBg || 'var(--surface-color)';
+                    if (this.statusText) this.statusText.textContent = '';
+                    this._statusResetTimeout = null;
+                }, clearDelay);
+            }
+        }
+    }
+
+    updateStatusBar(message) {
+        // legacy method - determine type from message content
         const lower = String(message || '').toLowerCase();
-        let bgColor = 'var(--surface-color)';
+        let type = 'info';
         if (lower.startsWith('error') || lower.includes('failed')) {
-            bgColor = '#2A0E0E';
+            type = 'error';
+        } else if (lower.includes('success') || lower.includes('completed')) {
+            type = 'success';
+        } else if (lower.includes('warning')) {
+            type = 'warning';
         }
-        this.statusBar.style.backgroundColor = bgColor;
-
-        // reset after a short delay
-        if (this._statusResetTimeout) {
-            clearTimeout(this._statusResetTimeout);
-        }
-        this._statusResetTimeout = setTimeout(() => {
-            this.statusBar.style.backgroundColor = this._statusOriginalBg || 'var(--surface-color)';
-            // clear message instead of restoring verbose default
-            this.statusText.textContent = '';
-            this._statusResetTimeout = null;
-        }, 3000);
+        
+        this.updateStatus(type, message);
     }
 
     // temporary progress utils for status bar
@@ -1496,9 +1453,14 @@ this.setupNavigationButtons();
             // ensure coordinates are properly hidden/shown based on initial mode
             this.updateNodeCoordinates();
         } catch (error) {
-            console.error('failed to initialize app:', error);
-            this.updateStatusBar('failed to initialize application');
+            this.handleError('failed to initialize application', error);
         }
+    }
+
+    // error handling helper
+    handleError(message, error) {
+        console.error(message, error);
+        this.updateStatusBar(message);
     }
 
     // data operations
@@ -1506,8 +1468,7 @@ this.setupNavigationButtons();
         try {
             await this.state.load();
         } catch (error) {
-            console.error('failed to load initial data:', error);
-            this.updateStatusBar('failed to load saved data');
+            this.handleError('failed to load saved data', error);
         }
     }
 
@@ -1520,8 +1481,7 @@ this.setupNavigationButtons();
                 this.updateStatusBar('failed to save flowchart');
             }
         } catch (error) {
-            console.error('save error:', error);
-            this.updateStatusBar('save error occurred');
+            this.handleError('save error occurred', error);
         }
     }
 
@@ -1564,8 +1524,7 @@ this.setupNavigationButtons();
             this.state.importData(data);
             this.updateStatusBar('flowchart imported successfully');
         } catch (error) {
-            console.error('import error:', error);
-            this.updateStatusBar('failed to import flowchart');
+            this.handleError('failed to import flowchart', error);
         }
     }
 
@@ -1760,10 +1719,10 @@ this.setupNavigationButtons();
         // enable auto tracking by default when entering run mode
         this.isAutoTrackEnabled = true;
         this.userDisabledTracking = false;
-        if (typeof this._refreshTrackBtnUI === 'function') this._refreshTrackBtnUI();
+        this._refreshTrackBtnUI();
         // ensure any stale runtime indicators are cleared when entering run (unless restoring from history)
         if (clearRuntimeIndicators) {
-            try { this.clearIfRuntimeIndicators(); } catch (_) {}
+            this.clearIfRuntimeIndicators();
         }
     }
 
@@ -1947,7 +1906,6 @@ this.setupNavigationButtons();
     }
 
     renderErrorCircles() {
-        console.log('[error_view] renderErrorCircles start');
         // remove previous error indicators
         this.nodeRenderer.nodeGroup.selectAll('.error_circle, .error_text').remove();
         // draw an error marker for nodes in error state
@@ -2047,7 +2005,7 @@ this.setupNavigationButtons();
             // hide auto track button in build mode
             if (trackBtn) trackBtn.style.display = 'none';
             // ensure build toolbar starts collapsed in build mode
-            try { if (typeof this._collapseBuildToolbar === 'function') this._collapseBuildToolbar(); } catch (_) {}
+            this._collapseBuildToolbar();
             
             // enable add node section in build mode
             if (addNodeSection) {
@@ -2060,7 +2018,6 @@ this.setupNavigationButtons();
             // hide live feed bar
             const runFeedBar = document.getElementById('run_feed_bar');
             if (runFeedBar) {
-                console.log('[debug] hiding run feed bar in build mode');
                 this.setRunFeedBarDisplay('none');
                 // clear run mode attribute when leaving run mode
                 runFeedBar.removeAttribute('data-run-mode');
@@ -2082,13 +2039,12 @@ this.setupNavigationButtons();
                 // hide all play buttons when leaving run mode
                 this.nodeRenderer.hideAllPlayButtons();
                 // clear runtime condition indicators when exiting run
-                try { this.clearIfRuntimeIndicators(); } catch (_) {}
+                this.clearIfRuntimeIndicators();
             }
             
             // suppressed: build mode notification
             
         } else if (mode === 'run') {
-            console.log('[debug] entering run mode in updateModeUI');
             // hide multiselect button in run mode
             const groupSelectBtn = document.getElementById('group_select_btn');
             if (groupSelectBtn) {
@@ -2122,44 +2078,12 @@ this.setupNavigationButtons();
             // show start button and toggle bar
             startButtonContainer.style.display = 'flex';
             if (sidebarToggleContainer) sidebarToggleContainer.style.display = 'flex';
+            // ensure sidebar toggle button is wired when it becomes visible
+            this.setupSidebarToggle();
             // ensure toggle button ui matches collapsed sidebar state on entry (default closed)
             if (toggleSidebarBtn) {
                 toggleSidebarBtn.title = 'show properties';
                 toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
-                if (!toggleSidebarBtn._wired) {
-                    toggleSidebarBtn.addEventListener('click', () => {
-                        const propertiesSidebarEl = document.getElementById('properties_sidebar');
-                        const isCollapsed = propertiesSidebarEl && propertiesSidebarEl.classList.contains('collapsed');
-                        // if sidebar instance method exists, use it
-                        if (this.sidebar && typeof this.sidebar.setCollapsed === 'function') {
-                            this.sidebar.setCollapsed(!isCollapsed);
-                        } else if (window.Sidebar && window.Sidebar.prototype && typeof window.Sidebar.prototype.setCollapsed === 'function') {
-                            // fallback: call prototype with this.sidebar context
-                            try { window.Sidebar.prototype.setCollapsed.call(this.sidebar, !isCollapsed); } catch (e) { try { console.warn('[run_ui] prototype setCollapsed call failed:', e); } catch(_) {} }
-                        } else {
-                            // final fallback: toggle classes directly
-                            const mainContentEl = document.querySelector('.main_content');
-                            const runFeedBarEl = document.getElementById('run_feed_bar');
-                            const toggleBarEl = document.getElementById('sidebar_toggle_container');
-                            if (!isCollapsed) {
-                                propertiesSidebarEl.classList.add('collapsed');
-                                if (mainContentEl) mainContentEl.classList.add('sidebar_collapsed');
-                                if (runFeedBarEl) runFeedBarEl.classList.add('sidebar_collapsed');
-                                if (toggleBarEl) toggleBarEl.classList.add('sidebar_collapsed');
-                                toggleSidebarBtn.title = 'show properties';
-                                toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_left</span>';
-                            } else {
-                                propertiesSidebarEl.classList.remove('collapsed');
-                                if (mainContentEl) mainContentEl.classList.remove('sidebar_collapsed');
-                                if (runFeedBarEl) runFeedBarEl.classList.remove('sidebar_collapsed');
-                                if (toggleBarEl) toggleBarEl.classList.remove('sidebar_collapsed');
-                                toggleSidebarBtn.title = 'hide properties';
-                                toggleSidebarBtn.innerHTML = '<span class="material-icons">chevron_right</span>';
-                            }
-                        }
-                    }, { passive: true });
-                    toggleSidebarBtn._wired = true;
-                }
             }
             // show live feed bar
             const runFeedBar = document.getElementById('run_feed_bar');
@@ -2173,8 +2097,6 @@ this.setupNavigationButtons();
                 runFeedBar.style.right = 'auto';
                 // ensure run feed bar stays visible in run mode regardless of sidebar state
                 runFeedBar.setAttribute('data-run-mode', 'true');
-            } else {
-                console.warn('[debug] run feed bar element not found!');
             }
             
             // expand properties sidebar to run view width (but start collapsed)
@@ -2198,19 +2120,17 @@ this.setupNavigationButtons();
             // suppressed: run mode interface locked message
 
             // check if a specific executionId is requested (from data matrix view button)
-            try {
-                const params = new URLSearchParams(window.location.search);
-                const execId = params.get('executionId');
-                if (execId) {
-                    // clear the param from url to avoid repeated loads on refresh
-                    params.delete('executionId');
-                    const newSearch = params.toString();
-                    const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
-                    window.history.replaceState(null, '', newURL);
-                    // load and display this execution
-                    this.viewExecutionHistory(execId);
-                }
-            } catch (_) {}
+            const params = new URLSearchParams(window.location.search);
+            const execId = params.get('executionId');
+            if (execId) {
+                // clear the param from url to avoid repeated loads on refresh
+                params.delete('executionId');
+                const newSearch = params.toString();
+                const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
+                window.history.replaceState(null, '', newURL);
+                // load and display this execution
+                this.viewExecutionHistory(execId);
+            }
             
         } else if (mode === 'run') {
             // run mode handling is already done above
@@ -2231,7 +2151,6 @@ this.setupNavigationButtons();
         if (runFeedBar) {
             // if in run mode, only allow flex display
             if (runFeedBar.getAttribute('data-run-mode') === 'true' && display === 'none') {
-                console.log('[debug] preventing run feed bar from being hidden in run mode');
                 return;
             }
             runFeedBar.style.display = display;
@@ -2250,9 +2169,7 @@ this.setupNavigationButtons();
                 }
             });
             // re-render if-to-python nodes to reflect cleared state
-            if (this.linkRenderer && typeof this.linkRenderer.renderIfToPythonNodes === 'function') {
-                this.linkRenderer.renderIfToPythonNodes();
-            }
+            this.linkRenderer.renderIfToPythonNodes();
         } catch (_) {}
     }
 
@@ -2320,12 +2237,10 @@ this.setupNavigationButtons();
             this.showExecutionPanel();
             this.state.emit('updateSidebar');
             // when in run mode and nothing is selected, ensure global status reflects the last run outcome
-            try {
-                const s = String(this.lastExecutionStatus || 'idle');
-                if (['completed', 'stopped', 'failed', 'error'].includes(s)) {
-                    this.updateExecutionStatus(s, '');
-                }
-            } catch (_) {}
+            const s = String(this.lastExecutionStatus || 'idle');
+            if (['completed', 'stopped', 'failed', 'error'].includes(s)) {
+                this.updateExecutionStatus(s, '');
+            }
         } else {
             this.sidebar.showDefaultPanel();
         }
@@ -2526,15 +2441,11 @@ this.setupNavigationButtons();
     
     getCurrentFlowchartName() {
         // prefer the canonical filename from storage to avoid ui sync issues
-        try {
-            const filename = this.state && this.state.storage && typeof this.state.storage.getCurrentFlowchart === 'function'
-                ? this.state.storage.getCurrentFlowchart()
-                : '';
-            if (filename) {
-                // strip .json extension for history api which expects folder name
-                return filename.endsWith('.json') ? filename.slice(0, -5) : filename;
-            }
-        } catch (_) {}
+        const filename = this.state.storage.getCurrentFlowchart() || '';
+        if (filename) {
+            // strip .json extension for history api which expects folder name
+            return filename.endsWith('.json') ? filename.slice(0, -5) : filename;
+        }
 
         // fallback to the selector's display name
         const selector = document.getElementById('flowchart_selector');
@@ -2567,113 +2478,99 @@ this.setupNavigationButtons();
             }
 
                 // also include synthesized results for data_save nodes (not part of executionOrder)
-            try {
-                const dataSaveNodes = this.state.nodes.filter(n => n.type === 'data_save');
-                for (const ds of dataSaveNodes) {
-                    const dsResult = this.nodeExecutionResults.get(ds.id);
-                    if (!dsResult) continue;
-                    results.push({
-                        node_id: ds.id,
-                        node_name: ds.name,
-                        python_file: (dsResult.python_file || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
-                        success: dsResult.success,
-                        output: dsResult.output,
-                        error: dsResult.error,
-                        runtime: dsResult.runtime,
-                        timestamp: dsResult.timestamp,
-                        return_value: dsResult.return_value,
-                        function_name: dsResult.function_name || 'data_save',
-                        input_args: dsResult.input_args,
-                        // carry metadata to help ui show the python variable name
-                        data_save: dsResult.data_save || {
-                            data_name: (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || (ds && ds.name) || 'data',
-                            variable_name: (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null
-                        }
-                    });
-                }
-            } catch (_) {}
+            const dataSaveNodes = this.state.nodes.filter(n => n.type === 'data_save');
+            for (const ds of dataSaveNodes) {
+                const dsResult = this.nodeExecutionResults.get(ds.id);
+                if (!dsResult) continue;
+                results.push({
+                    node_id: ds.id,
+                    node_name: ds.name,
+                    python_file: (dsResult.python_file || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
+                    success: dsResult.success,
+                    output: dsResult.output,
+                    error: dsResult.error,
+                    runtime: dsResult.runtime,
+                    timestamp: dsResult.timestamp,
+                    return_value: dsResult.return_value,
+                    function_name: dsResult.function_name || 'data_save',
+                    input_args: dsResult.input_args,
+                    // carry metadata to help ui show the python variable name
+                    data_save: dsResult.data_save || {
+                        data_name: (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || (ds && ds.name) || 'data',
+                        variable_name: (ds && ds.dataSource && ds.dataSource.variable && ds.dataSource.variable.name) || null
+                    }
+                });
+            }
 
             // build a normalized data_saves array for easy consumption in the data matrix
             const dataSaves = [];
-            try {
-                const dataSaveNodes = this.state.nodes.filter(n => n.type === 'data_save');
-                for (const ds of dataSaveNodes) {
-                    const dsResult = this.nodeExecutionResults.get(ds.id);
-                    if (!dsResult || !dsResult.return_value || typeof dsResult.return_value !== 'object') continue;
-                    const keys = Object.keys(dsResult.return_value);
-                    if (keys.length === 0) continue;
-                    const varName = (dsResult.data_save && dsResult.data_save.variable_name) || keys[0];
-                    const value = dsResult.return_value[varName] ?? dsResult.return_value[keys[0]];
-                    const typeOf = (val) => {
-                        if (val === null) return 'null';
-                        if (Array.isArray(val)) return 'array';
-                        if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'float';
-                        if (typeof val === 'object') return 'object';
-                        if (typeof val === 'string') return 'string';
-                        if (typeof val === 'boolean') return 'boolean';
-                        return typeof val;
-                    };
-                    dataSaves.push({
-                        node_name: ds.name || 'data save',
-                        variable_name: varName || keys[0],
-                        variable_content: [ typeOf(value), value ]
-                    });
-                }
-            } catch (_) {}
+            const dataSaveNodesForMatrix = this.state.nodes.filter(n => n.type === 'data_save');
+            for (const ds of dataSaveNodesForMatrix) {
+                const dsResult = this.nodeExecutionResults.get(ds.id);
+                if (!dsResult || !dsResult.return_value || typeof dsResult.return_value !== 'object') continue;
+                const keys = Object.keys(dsResult.return_value);
+                if (keys.length === 0) continue;
+                const varName = (dsResult.data_save && dsResult.data_save.variable_name) || keys[0];
+                const value = dsResult.return_value[varName] ?? dsResult.return_value[keys[0]];
+                const typeOf = (val) => {
+                    if (val === null) return 'null';
+                    if (Array.isArray(val)) return 'array';
+                    if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'float';
+                    if (typeof val === 'object') return 'object';
+                    if (typeof val === 'string') return 'string';
+                    if (typeof val === 'boolean') return 'boolean';
+                    return typeof val;
+                };
+                dataSaves.push({
+                    node_name: ds.name || 'data save',
+                    variable_name: varName || keys[0],
+                    variable_content: [ typeOf(value), value ]
+                });
+            }
             
             // sanitize feed to ensure no duplicate entries or line texts per node before saving history
             const sanitizedFeed = Array.isArray(this.executionFeed) ? (() => {
-                try {
-                    // first, remove duplicate entries for the same node (keep the latest one)
-                    const nodeEntries = new Map();
-                    this.executionFeed.forEach(entry => {
-                        if (entry && entry.node_id) {
-                            const existing = nodeEntries.get(entry.node_id);
-                            if (!existing || (entry.finished_at && !existing.finished_at) || 
-                                (entry.finished_at && existing.finished_at && entry.finished_at > existing.finished_at)) {
-                                nodeEntries.set(entry.node_id, entry);
-                            }
+                // first, remove duplicate entries for the same node (keep the latest one)
+                const nodeEntries = new Map();
+                this.executionFeed.forEach(entry => {
+                    if (entry && entry.node_id) {
+                        const existing = nodeEntries.get(entry.node_id);
+                        if (!existing || (entry.finished_at && !existing.finished_at) || 
+                            (entry.finished_at && existing.finished_at && entry.finished_at > existing.finished_at)) {
+                            nodeEntries.set(entry.node_id, entry);
                         }
+                    }
+                });
+                
+                // then sanitize lines within each entry
+                return Array.from(nodeEntries.values()).map(entry => {
+                    const seen = new Set();
+                    const uniqueLines = [];
+                    (entry.lines || []).forEach(l => {
+                        const t = (l && typeof l.text === 'string') ? l.text.trim() : '';
+                        if (!t || seen.has(t)) return;
+                        seen.add(t);
+                        uniqueLines.push({ text: t, ts: l.ts || new Date().toISOString() });
                     });
-                    
-                    // then sanitize lines within each entry
-                    return Array.from(nodeEntries.values()).map(entry => {
-                        try {
-                            const seen = new Set();
-                            const uniqueLines = [];
-                            (entry.lines || []).forEach(l => {
-                                const t = (l && typeof l.text === 'string') ? l.text.trim() : '';
-                                if (!t || seen.has(t)) return;
-                                seen.add(t);
-                                uniqueLines.push({ text: t, ts: l.ts || new Date().toISOString() });
-                            });
-                            return { ...entry, lines: uniqueLines };
-                        } catch (_) {
-                            return entry;
-                        }
-                    });
-                } catch (_) {
-                    return this.executionFeed;
-                }
+                    return { ...entry, lines: uniqueLines };
+                });
             })() : [];
 
             // build variable state for resume functionality
             const variableState = {};
-            try {
-                // collect variables from all executed nodes in order
-                for (const node of executionOrder) {
-                    const result = this.nodeExecutionResults.get(node.id);
-                    if (result && result.success && result.return_value) {
-                        if (typeof result.return_value === 'object' && result.return_value !== null) {
-                            Object.assign(variableState, result.return_value);
-                        } else {
-                            // use node name as variable name for simple values
-                            const varName = node.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
-                            variableState[varName] = result.return_value;
-                        }
+            // collect variables from all executed nodes in order
+            for (const node of executionOrder) {
+                const result = this.nodeExecutionResults.get(node.id);
+                if (result && result.success && result.return_value) {
+                    if (typeof result.return_value === 'object' && result.return_value !== null) {
+                        Object.assign(variableState, result.return_value);
+                    } else {
+                        // use node name as variable name for simple values
+                        const varName = node.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
+                        variableState[varName] = result.return_value;
                     }
                 }
-            } catch (_) {}
+            }
 
             const executionData = {
                 status: status,
@@ -2855,13 +2752,9 @@ this.setupNavigationButtons();
                 // add a small delay to ensure link paths are fully rendered before positioning circles
                 setTimeout(() => {
                     // ensure link renderer is fully updated first
-                    if (this.linkRenderer && typeof this.linkRenderer.render === 'function') {
-                        this.linkRenderer.render();
-                    }
+                    this.linkRenderer.render();
                     // then render if condition circles
-                    if (this.linkRenderer && typeof this.linkRenderer.renderIfToPythonNodes === 'function') {
-                        this.linkRenderer.renderIfToPythonNodes();
-                    }
+                    this.linkRenderer.renderIfToPythonNodes();
                 }, 50);
                 
                 // update sidebar content to reflect restored state
@@ -3072,7 +2965,7 @@ this.setupNavigationButtons();
         this.updateStatusBar(`resuming execution from ${node.name} with ${Object.keys(previousVariables).length} variables`);
         
         // use the new resume endpoint for better variable handling
-        await this.startResumeExecutionWithAPI(nodesToExecute, previousVariables, nodeId);
+                        await this.startResumeExecution(nodesToExecute, previousVariables, nodeId, true);
     }
 
     getPreviousExecutionVariables(resumeNodeId, executionOrder) {
@@ -3154,86 +3047,7 @@ this.setupNavigationButtons();
         return variables;
     }
 
-    async startResumeExecutionWithAPI(nodesToExecute, initialVariables, startNodeId) {
-        // create abort controller for this execution session
-        this.currentExecutionController = new AbortController();
 
-        // set execution state
-        this.isExecuting = true;
-        this.executionAborted = false;
-        
-        // update ui to show stop button and loading wheel
-        this.updateExecutionUI(true);
-
-        // clear output for new execution
-        this.clearOutput();
-        
-        // update execution status
-        this.updateExecutionStatus('running', `resuming execution: ${nodesToExecute.length} nodes`);
-        
-        try {
-            // reset blocked branches at resume start
-            this.blockedNodeIds.clear();
-            // clear any previous runtime condition indicators on if→python links
-            try {
-                const links = Array.isArray(this.state.links) ? this.state.links : [];
-                links.forEach(l => {
-                    const s = this.state.getNode(l.source);
-                    const t = this.state.getNode(l.target);
-                    if (s && t && s.type === 'if_node' && t.type === 'python_file') {
-                        this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
-                    }
-                });
-            } catch (_) {}
-
-            // get full execution order for the api call
-            const fullExecutionOrder = this.calculateNodeOrder().map(n => n.id);
-            
-            // call the new resume endpoint
-            const response = await fetch('/api/resume-execution', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    flowchart_name: this.getCurrentFlowchartName(),
-                    start_node_id: startNodeId,
-                    execution_order: fullExecutionOrder,
-                    previous_variables: initialVariables
-                }),
-                signal: this.currentExecutionController.signal
-            });
-
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                // process results and update ui
-                this.processResumeResults(result.results, nodesToExecute);
-                this.updateExecutionStatus('completed', 'resumed execution completed successfully');
-                await this.saveExecutionHistory('success', nodesToExecute);
-            } else if (result.status === 'failed') {
-                // process partial results
-                this.processResumeResults(result.results, nodesToExecute);
-                this.updateExecutionStatus('failed', result.message);
-                await this.saveExecutionHistory('failed', nodesToExecute, result.message);
-            } else {
-                throw new Error(result.message || 'resume execution failed');
-            }
-            
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                this.updateExecutionStatus('stopped', 'execution stopped by user');
-                await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
-            } else {
-                this.updateExecutionStatus('error', `execution failed: ${error.message}`);
-                await this.saveExecutionHistory('error', nodesToExecute, error.message);
-            }
-        } finally {
-            // reset execution state
-            this.isExecuting = false;
-            this.updateExecutionUI(false);
-        }
-    }
 
     processResumeResults(results, nodesToExecute) {
         // process each result and update the ui
@@ -3281,7 +3095,7 @@ this.setupNavigationButtons();
         });
     }
 
-    async startResumeExecution(nodesToExecute, initialVariables) {
+    async startResumeExecution(nodesToExecute, initialVariables, startNodeId = null, useAPI = false) {
         // create abort controller for this execution session
         this.currentExecutionController = new AbortController();
 
@@ -3312,50 +3126,91 @@ this.setupNavigationButtons();
                     }
                 });
             } catch (_) {}
-            // execute nodes one by one with live feedback, starting with initial variables
-            let currentVariables = { ...initialVariables };
-            
-            for (let i = 0; i < nodesToExecute.length; i++) {
-                // check if execution was stopped
-                if (this.executionAborted) {
-                    this.updateExecutionStatus('stopped', 'execution stopped by user');
-                    await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
-                    return;
-                }
+
+            if (useAPI && startNodeId) {
+                // use api-first approach for resume execution
+                const fullExecutionOrder = this.calculateNodeOrder().map(n => n.id);
                 
-                const node = nodesToExecute[i];
-                const success = await this.executeNodeLiveWithVariables(node, i + 1, nodesToExecute.length, currentVariables);
+                const response = await fetch('/api/resume-execution', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        flowchart_name: this.getCurrentFlowchartName(),
+                        start_node_id: startNodeId,
+                        execution_order: fullExecutionOrder,
+                        previous_variables: initialVariables
+                    }),
+                    signal: this.currentExecutionController.signal
+                });
+
+                const result = await response.json();
                 
-                // if node succeeded, update variables for next node
-                if (success) {
-                    const result = this.nodeExecutionResults.get(node.id);
-                    if (result && result.return_value && typeof result.return_value === 'object') {
-                        Object.assign(currentVariables, result.return_value);
-                    }
-                    if (node.type === 'python_file') {
-                        try { await this.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
-                    }
+                if (result.status === 'success') {
+                    // process results and update ui
+                    this.processResumeResults(result.results, nodesToExecute);
+                    this.updateExecutionStatus('completed', 'resumed execution completed successfully');
+                    await this.saveExecutionHistory('success', nodesToExecute);
+                } else if (result.status === 'failed') {
+                    // process partial results
+                    this.processResumeResults(result.results, nodesToExecute);
+                    this.updateExecutionStatus('failed', result.message);
+                    await this.saveExecutionHistory('failed', nodesToExecute, result.message);
                 } else {
-                    // if node failed or execution was aborted, stop execution immediately
+                    throw new Error(result.message || 'resume execution failed');
+                }
+            } else {
+                // execute nodes one by one with live feedback, starting with initial variables
+                let currentVariables = { ...initialVariables };
+                
+                for (let i = 0; i < nodesToExecute.length; i++) {
+                    // check if execution was stopped
                     if (this.executionAborted) {
                         this.updateExecutionStatus('stopped', 'execution stopped by user');
                         await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
-                    } else {
-                        this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
-                        this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
-                        await this.saveExecutionHistory('failed', nodesToExecute, `execution stopped at node: ${node.name}`);
+                        return;
                     }
-                    return;
+                    
+                    const node = nodesToExecute[i];
+                    const success = await this.executeNodeLive(node, i + 1, nodesToExecute.length, currentVariables);
+                    
+                    // if node succeeded, update variables for next node
+                    if (success) {
+                        const result = this.nodeExecutionResults.get(node.id);
+                        if (result && result.return_value && typeof result.return_value === 'object') {
+                            Object.assign(currentVariables, result.return_value);
+                        }
+                        if (node.type === 'python_file') {
+                            try { await this.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
+                        }
+                    } else {
+                        // if node failed or execution was aborted, stop execution immediately
+                        if (this.executionAborted) {
+                            this.updateExecutionStatus('stopped', 'execution stopped by user');
+                            await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
+                        } else {
+                            this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
+                            this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
+                            await this.saveExecutionHistory('failed', nodesToExecute, `execution stopped at node: ${node.name}`);
+                        }
+                        return;
+                    }
                 }
+                
+                // all nodes completed successfully
+                this.updateExecutionStatus('completed', 'resumed execution completed successfully');
+                await this.saveExecutionHistory('success', nodesToExecute);
             }
             
-            // all nodes completed successfully
-            this.updateExecutionStatus('completed', 'resumed execution completed successfully');
-            await this.saveExecutionHistory('success', nodesToExecute);
-            
         } catch (error) {
-            this.updateExecutionStatus('error', `execution failed: ${error.message}`);
-            await this.saveExecutionHistory('error', nodesToExecute, error.message);
+            if (error.name === 'AbortError') {
+                this.updateExecutionStatus('stopped', 'execution stopped by user');
+                await this.saveExecutionHistory('stopped', nodesToExecute, 'execution stopped by user');
+            } else {
+                this.updateExecutionStatus('error', `execution failed: ${error.message}`);
+                await this.saveExecutionHistory('error', nodesToExecute, error.message);
+            }
         } finally {
             // reset execution state
             this.isExecuting = false;
@@ -3363,12 +3218,14 @@ this.setupNavigationButtons();
         }
     }
 
-    async executeNodeLiveWithVariables(node, currentIndex, totalNodes, accumulatedVariables) {
-        // this is similar to executeNodeLive but with accumulated variables from previous execution
+
+
+    async executeNodeLive(node, nodeIndex, totalNodes, accumulatedVariables = null) {
         // skip blocked nodes silently
         if (this.blockedNodeIds && this.blockedNodeIds.has(node.id)) {
             return true;
         }
+        
         // handle if splitter nodes without executing python
         if (node && node.type === 'if_node') {
             await this.evaluateIfNodeAndBlockBranches(node);
@@ -3377,174 +3234,37 @@ this.setupNavigationButtons();
             this.updateNodeDetails(node, 'completed', 0);
             return true;
         }
+        
+        // remember current executing node for immediate tracking when toggled on mid-run
+        this.currentExecutingNodeId = node && node.id;
+        
+        // set node to running state with loading animation
         this.setNodeState(node.id, 'running');
         this.addNodeLoadingAnimation(node.id);
-        this.updateExecutionStatus('running', `executing node ${currentIndex}/${totalNodes}: ${node.name}`);
+        this.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
+        
+        // auto-follow currently running python nodes if tracking is enabled and not user-disabled
+        if (
+            node && node.type === 'python_file' &&
+            this.isAutoTrackEnabled && !this.userDisabledTracking
+        ) {
+            this.centerOnNode(node.id);
+        }
         
         // show node details in sidebar
         this.updateNodeDetails(node, 'running', Date.now());
         
+        const startTime = Date.now();
+        
         try {
-            // gather input variables properly, but merge with accumulated variables for function args
-            const gatheredVariables = await this.gatherInputVariables(node);
-            
-            // merge accumulated variables from previous nodes into function args
-            const finalFunctionArgs = { ...gatheredVariables.functionArgs, ...accumulatedVariables };
-            const finalInputValues = gatheredVariables.inputValues;
-            
-
-            
-            const response = await fetch('/api/execute-node', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    node_id: node.id,
-                    python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
-                    node_name: node.name,
-                    function_args: finalFunctionArgs,
-                    input_values: finalInputValues
-                }),
-                signal: this.currentExecutionController.signal
-            });
-            
-            const result = await response.json();
-            
-            // store execution result
-            this.nodeExecutionResults.set(node.id, {
-                node: node,
-                success: result.success,
-                output: result.output || '',
-                error: result.error || null,
-                runtime: result.runtime || 0,
-                timestamp: new Date().toLocaleTimeString(),
-                return_value: result.return_value,
-                function_name: result.function_name,
-                function_args: result.function_args,
-                input_values: result.input_values,
-                input_used: !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)))
-            });
-            
-            // remove loading animation
-            this.removeNodeLoadingAnimation(node.id);
-            
-            // update node visual state and details
-            if (result.success) {
-                this.setNodeState(node.id, 'completed');
-                
-                // store variables for next nodes
-                if (result.return_value !== null && result.return_value !== undefined) {
-                    this.nodeVariables.set(node.id, result.return_value);
-                    
-                    // update input nodes of connected target nodes with this return value
-                    await this.updateConnectedInputNodes(node.id, result.return_value);
-                }
-                
-                // append to execution log
-                this.appendToExecutionLog(`[${node.name}] executed successfully`);
-                if (result.output) {
-                    this.appendToExecutionLog(result.output);
-                }
-                
-                // update node details in sidebar
-                this.updateNodeDetails(node, 'completed', result.runtime);
-
-                // auto-highlight associated input node in green when inputs were used successfully
-                try {
-                    const usedInputs = !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)));
-                    if (node.type === 'python_file' && usedInputs) {
-                        let inputNode = (this.state.nodes || []).find(n => n && n.type === 'input_node' && n.targetNodeId === node.id);
-                        if (!inputNode) {
-                            const linkFromInput = (this.state.links || []).find(l => {
-                                if (!l) return false;
-                                const src = this.state.getNode(l.source);
-                                return !!(src && src.type === 'input_node' && l.target === node.id);
-                            });
-                            if (linkFromInput) inputNode = this.state.getNode(linkFromInput.source);
-                        }
-                        if (inputNode) {
-                            inputNode.runtimeStatus = 'success';
-                            this.setNodeState(inputNode.id, 'completed');
-                            if (this.nodeRenderer && typeof this.nodeRenderer.updateNodeStyles === 'function') {
-                                this.nodeRenderer.updateNodeStyles();
-                            }
-                        }
-                    }
-                } catch (_) {}
-                
-                return true;
-            } else {
-                this.setNodeState(node.id, 'error');
-                this.appendToExecutionLog(`[${node.name}] execution failed: ${result.error}`);
-                this.updateNodeDetails(node, 'error', result.runtime);
-                return false;
-            }
-            
-        } catch (error) {
-            this.removeNodeLoadingAnimation(node.id);
-            
-            if (error.name === 'AbortError') {
-                this.setNodeState(node.id, 'error');
-                this.nodeExecutionResults.set(node.id, {
-                    node: node,
-                    success: false,
-                    output: '',
-                    error: 'execution was cancelled by user',
-                    runtime: 0,
-                    timestamp: new Date().toLocaleTimeString(),
-                    return_value: null
-                });
-                this.appendToExecutionLog(`[${node.name}] execution cancelled`);
-                this.updateNodeDetails(node, 'cancelled', 0);
-                return false;
-            }
-            
-            this.setNodeState(node.id, 'error');
-            this.appendToExecutionLog(`[${node.name}] execution error: ${error.message}`);
-            this.updateNodeDetails(node, 'error', 0);
-            return false;
-        }
-    }
-
-    async executeNodeLive(node, nodeIndex, totalNodes) {
-        try {
-            // skip blocked nodes silently
-            if (this.blockedNodeIds && this.blockedNodeIds.has(node.id)) {
-                return true;
-            }
-            // handle if splitter nodes without executing python
-            if (node && node.type === 'if_node') {
-                await this.evaluateIfNodeAndBlockBranches(node);
-                // mark as completed for visual feedback without running
-                this.setNodeState(node.id, 'completed');
-                this.updateNodeDetails(node, 'completed', 0);
-                return true;
-            }
-            // remember current executing node for immediate tracking when toggled on mid-run
-            this.currentExecutingNodeId = node && node.id;
-            // set node to running state with loading animation
-            this.setNodeState(node.id, 'running');
-            this.addNodeLoadingAnimation(node.id);
-            this.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
-            // auto-follow currently running python nodes if tracking is enabled and not user-disabled
-            if (
-                node && node.type === 'python_file' &&
-                typeof this.centerOnNode === 'function' &&
-                this.isAutoTrackEnabled && !this.userDisabledTracking
-            ) {
-                this.centerOnNode(node.id);
-            }
-            
-            // show node details in sidebar
-            this.updateNodeDetails(node, 'running', Date.now());
-            
-            const startTime = Date.now();
-            
             // gather input variables from previous nodes
             const inputVariables = await this.gatherInputVariables(node);
             
-
+            // merge accumulated variables if provided (for resume execution)
+            const finalFunctionArgs = accumulatedVariables 
+                ? { ...inputVariables.functionArgs, ...accumulatedVariables }
+                : inputVariables.functionArgs;
+            const finalInputValues = inputVariables.inputValues;
             
             // create a feed entry upfront so the title appears even if no output lines
             try {
@@ -3562,7 +3282,10 @@ this.setupNavigationButtons();
             } catch (_) {}
             
             // execute the node via API with input variables
-            const result = await this.callNodeExecution(node, inputVariables);
+            const result = await this.callNodeExecution(node, {
+                functionArgs: finalFunctionArgs,
+                inputValues: finalInputValues
+            });
 
             // append a neat feed item for each node upon completion
             try {
@@ -3712,9 +3435,7 @@ this.setupNavigationButtons();
                         if (inputNode) {
                             inputNode.runtimeStatus = 'success';
                             this.setNodeState(inputNode.id, 'completed');
-                            if (this.nodeRenderer && typeof this.nodeRenderer.updateNodeStyles === 'function') {
-                                this.nodeRenderer.updateNodeStyles();
-                            }
+                            this.nodeRenderer.updateNodeStyles();
                         }
                     }
                 } catch (_) {}
@@ -3913,7 +3634,7 @@ this.setupNavigationButtons();
                     // no conditions means this arm is not taken by default
                     falseTargets.push(link.target);
                     // mark link as false in runtime
-                    try { this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: [], final: false } }); } catch (_) {}
+                    this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: [], final: false } });
                     continue;
                 }
                 // evaluate left-to-right with optional combiner on subsequent conditions (default 'and')
@@ -3942,10 +3663,10 @@ this.setupNavigationButtons();
                 }
                 if (result) {
                     trueTargets.push(link.target);
-                    try { this.state.updateLink(link.source, link.target, { runtime_condition: 'true', runtime_details: { variables: { ...vars }, conditions: details, final: true } }); } catch (_) {}
+                    this.state.updateLink(link.source, link.target, { runtime_condition: 'true', runtime_details: { variables: { ...vars }, conditions: details, final: true } });
                 } else {
                     falseTargets.push(link.target);
-                    try { this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: details, final: false } }); } catch (_) {}
+                    this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: details, final: false } });
                 }
             }
 
@@ -4010,20 +3731,12 @@ this.setupNavigationButtons();
                 signal: controller.signal
             });
 
-            if (!response.ok || !response.body) {
-                // fallback to non-streaming if server doesn't support it
-                const fallback = await fetch('/api/execute-node', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        node_id: node.id,
-                        python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
-                        node_name: node.name,
-                        function_args: inputVariables.functionArgs || {},
-                        input_values: inputVariables.inputValues || {}
-                    })
-                });
-                return await fallback.json();
+            if (!response.ok) {
+                throw new Error(`server error: ${response.status} ${response.statusText}`);
+            }
+            
+            if (!response.body) {
+                throw new Error('streaming not supported by server');
             }
 
             const reader = response.body.getReader();
@@ -4503,11 +4216,13 @@ this.setupNavigationButtons();
                     // push into current map so saveExecutionHistory includes it
                     this.nodeExecutionResults.set(ds.id, synthetic);
                     // mark the data_save node as success and refresh style in run mode
-                    try { ds.runtimeStatus = 'success'; this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
+                    ds.runtimeStatus = 'success'; 
+                    if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
 
                 } catch (e) {
                     console.warn('failed to synthesize data_save result', e);
-                    try { ds.runtimeStatus = 'error'; this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
+                    ds.runtimeStatus = 'error'; 
+                    if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
                 }
             });
         } catch (e) {
@@ -4576,7 +4291,7 @@ this.setupNavigationButtons();
             const result = await response.json();
             return result;
         } catch (error) {
-            console.error('error analyzing python function:', error);
+            this.handleError('error analyzing python function', error);
             return { parameters: [] };
         }
     }
@@ -4670,7 +4385,26 @@ this.setupNavigationButtons();
         nodeGroup.select('.node_loading_circle').remove();
     }
 
+    // node state enum for better type safety and consistency
+    static get NODE_STATES() {
+        return {
+            IDLE: 'idle',
+            RUNNING: 'running', 
+            COMPLETED: 'completed',
+            ERROR: 'error',
+            CANCELLED: 'cancelled',
+            SUCCESS: 'success'
+        };
+    }
+
     setNodeState(nodeId, state) {
+        // validate state against enum
+        const validStates = Object.values(FlowchartBuilder.NODE_STATES);
+        if (!validStates.includes(state)) {
+            console.warn(`invalid node state: ${state}. valid states: ${validStates.join(', ')}`);
+            return;
+        }
+
         // find the node element and update its class
         const nodeElement = this.nodeRenderer.nodeGroup
             .selectAll('.node-group')
@@ -4737,16 +4471,14 @@ this.setupNavigationButtons();
         } catch (_) {}
 
         // remove loading icons
-        try { this.nodeRenderer.nodeGroup.selectAll('.node_loading_icon').remove(); } catch (_) {}
+        this.nodeRenderer.nodeGroup.selectAll('.node_loading_icon').remove();
 
         // clear any runtimeStatus flags (e.g., data_save success/error)
-        try {
-            const nodes = Array.isArray(this.state.nodes) ? this.state.nodes : [];
-            nodes.forEach(n => { if (n && n.runtimeStatus) delete n.runtimeStatus; });
-        } catch (_) {}
+        const nodes = Array.isArray(this.state.nodes) ? this.state.nodes : [];
+        nodes.forEach(n => { if (n && n.runtimeStatus) delete n.runtimeStatus; });
 
         // refresh renderer to restore base styles for special node types
-        try { this.nodeRenderer && this.nodeRenderer.updateNodeStyles(); } catch (_) {}
+        if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
     }
 
     updateExecutionStatus(type, message) {
@@ -4967,6 +4699,11 @@ this.setupNavigationButtons();
                 : 0;
             progressText.textContent = `${executed} of ${total}`;
         }
+
+        // also update the main status bar for important execution messages
+        if (type === 'error' || type === 'failed' || type === 'completed') {
+            this.updateStatus(type, message, { autoClear: false });
+        }
     }
 
     // smooth center on a node by id
@@ -5011,7 +4748,7 @@ this.setupNavigationButtons();
         if (selectedNodes.length === 1 && selectedNodes[0] === node.id) {
             this.state.emit('updateSidebar');
             // also ensure the live feed is scrolled to this node's output after it updates
-            try { this.scrollRunFeedToNode(node.id); } catch (_) {}
+            this.scrollRunFeedToNode(node.id);
         }
     }
 
@@ -5030,7 +4767,7 @@ this.setupNavigationButtons();
                 return node && title.textContent === node.name;
             } catch (_) { return false; }
         });
-        if (match && typeof match.scrollIntoView === 'function') {
+        if (match) {
             match.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else if (list && list.lastElementChild) {
             // fallback: scroll to bottom
@@ -5331,33 +5068,21 @@ this.setupNavigationButtons();
         // clear internal execution feed data
         this.executionFeed = [];
         // clear bottom live feed ui
-        try {
-            const list = document.getElementById('run_feed_list');
-            if (list) {
-                list.innerHTML = '';
-                // add placeholder when list is empty
-                const placeholder = document.createElement('div');
-                placeholder.id = 'run_feed_placeholder';
-                placeholder.className = 'run_feed_placeholder';
-                placeholder.textContent = 'waiting for execution';
-                list.appendChild(placeholder);
-            }
-        } catch (_) {}
+        const list = document.getElementById('run_feed_list');
+        if (list) {
+            list.innerHTML = '';
+            // add placeholder when list is empty
+            const placeholder = document.createElement('div');
+            placeholder.id = 'run_feed_placeholder';
+            placeholder.className = 'run_feed_placeholder';
+            placeholder.textContent = 'waiting for execution';
+            list.appendChild(placeholder);
+        }
     }
 
     // debug methods
     logState() {
-        console.log('flowchart state:', {
-            nodes: this.state.nodes,
-            links: this.state.links,
-            groups: this.state.groups,
-            selection: {
-                nodes: Array.from(this.state.selectedNodes),
-                link: this.state.selectedLink,
-                group: this.state.selectedGroup
-            },
-            stats: this.getStats()
-        });
+        // debug method - removed console.log for cleaner output
     }
 
     // cleanup
@@ -5373,7 +5098,7 @@ this.setupNavigationButtons();
         window.removeEventListener('resize', this.handleResize);
         document.removeEventListener('dragstart', this.preventDefaultDrag);
         
-        console.log('flowchart builder destroyed');
+        // flowchart builder destroyed
     }
 }
 
@@ -5383,12 +5108,13 @@ window.FlowchartBuilder = FlowchartBuilder;
 // extend prototype with a centralized clear for leaving run mode
 // this mirrors the clear button behavior so navigation away from run fully resets ui
 FlowchartBuilder.prototype.clearRunModeState = function() {
-    try { this.resetNodeStates(); } catch (_) {}
-    try { this.clearOutput(); } catch (_) {}
-    try { this.clearExecutionFeed(); } catch (_) {}
-    try { this.updateExecutionStatus('info', 'cleared'); } catch (_) {}
-    try { this.clearIfRuntimeIndicators(); } catch (_) {}
-    try { this.clearAllNodeColorState(); } catch (_) {}
+    this.resetNodeStates();
+    this.clearOutput();
+    this.clearExecutionFeed();
+    this.updateExecutionStatus('info', 'cleared');
+    this.clearIfRuntimeIndicators();
+    this.clearAllNodeColorState();
     // clear selection and ensure default run panel when coming back later
-    try { this.state.clearSelection(); this.state.emit('updateSidebar'); } catch (_) {}
+    this.state.clearSelection(); 
+    this.state.emit('updateSidebar');
 };

@@ -268,6 +268,28 @@
       "width": 120,
       "x": -590.27001953125,
       "y": -514.92626953125
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755651806872.7075,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1085.942138671875,
+      "y": 589.3128662109375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755651807405.156,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1068.974609375,
+      "y": 865.6419677734375
     }
   ],
   "links": [
@@ -352,5 +374,22 @@
   ],
   "groups": [],
   "annotations": [],
-  "force": false
+  "force": false,
+  "executions": [
+    {
+      "execution_id": "4426d616-f747-4c73-bb5c-14459bb1a386",
+      "timestamp": "2025-08-20T11:13:11.913446",
+      "flowchart_name": "curso",
+      "status": "failed",
+      "total_nodes": 6,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 16.7,
+      "failed_node": "node 1",
+      "elapsed_ms": 37,
+      "execution_time": "0.037s",
+      "error_snippet": "python file not found: linear_test/node1.py"
+    }
+  ]
 }
