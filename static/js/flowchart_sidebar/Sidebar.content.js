@@ -213,6 +213,34 @@
         apply(selection) {
             const mode = this.sidebar.state.isRunMode ? 'run' : 'build';
             const context = this.getContext(selection);
+            
+            // use new controller registry if available
+            if (window.ControllerRegistry && this.sidebar.controllerRegistry) {
+                this.useNewControllerSystem(mode, context, selection);
+            } else {
+                // fallback to old system
+                this.useLegacyControllerSystem(mode, context, selection);
+            }
+        }
+
+        useNewControllerSystem(mode, context, selection) {
+            // activate appropriate panel
+            this.activatePanel(context === 'single' ? 'single' : context);
+
+            if (context === 'single') {
+                const nodeId = selection.nodes[0];
+                const node = this.sidebar.state.getNode(nodeId);
+                if (!node) return;
+                
+                // use node type controller
+                this.sidebar.controllerRegistry.render(mode, node.type, node);
+            } else {
+                // use selection type controller
+                this.sidebar.controllerRegistry.render(mode, context, selection);
+            }
+        }
+
+        useLegacyControllerSystem(mode, context, selection) {
             const conf = this.getConfig(mode, context);
             if (!conf) return;
 
@@ -240,7 +268,6 @@
                     }
                     if (typeof typeConf.after === 'function') typeConf.after(node);
                 }
-                // removed recursive single panel controller render to avoid re-entering content engine
             } else {
                 // non-single contexts rely on existing specialized methods
                 if (context === 'link' && selection && selection.link) {

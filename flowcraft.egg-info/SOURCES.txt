@@ -75,10 +75,10 @@ static/js/interactions/DragHandler.js
 static/js/interactions/SelectionHandler.js
 static/js/pages/DataMatrix.js
 static/js/pages/ScriptsExplorer.js
-static/js/rendering/AnnotationRenderer.js
-static/js/rendering/GroupRenderer.js
-static/js/rendering/LinkRenderer.js
-static/js/rendering/NodeRenderer.js
+static/js/flowchart/RendererAnnotation.js
+static/js/flowchart/RendererGroup.js
+static/js/flowchart/RendererLink.js
+static/js/flowchart/RendererNode.js
 static/js/utils/EventEmitter.js
 static/js/utils/Geometry.js
 static/js/utils/Storage.js

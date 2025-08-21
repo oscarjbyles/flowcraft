@@ -4,7 +4,6 @@
 
     // ensure all dependencies are loaded
     function checkDependencies() {
-
         const requiredClasses = [
             'StateManager', 
             'DragHandler', 
@@ -14,17 +13,22 @@
             'LinkRenderer', 
             'GroupRenderer',
             'CreateNode',
-            'FlowchartBuilder'
+            'FlowchartBuilder',
+            'Sidebar'
         ];
 
         const missing = requiredClasses.filter(className => !window[className]);
+        
+        if (missing.length > 0) {
+            console.warn('missing dependencies:', missing);
+            return false;
+        }
         
         return true;
     }
 
     // initialize application
-    function initializeApp() {
-
+    async function initializeApp() {
         // guard against double initialization (e.g., script included twice or rapid re-exec)
         if (window.flowchartApp && window.__flowcraft_initialized) {
             console.warn('flowchart app already initialized; skipping duplicate init');
@@ -50,9 +54,24 @@
                 return;
             }
             
+            // check dependencies
+            if (!checkDependencies()) {
+                console.error('missing required dependencies');
+                return;
+            }
+            
             // create global app instance (single instance)
             if (!window.flowchartApp) {
-                window.flowchartApp = new FlowchartBuilder();
+                // create FlowchartBuilder without auto-initialization
+                window.flowchartApp = new FlowchartBuilder(false); // pass false to prevent auto-init
+                
+                // manually initialize all systems in logical order
+                await window.flowchartApp.initializeCore();
+                await window.flowchartApp.initializeComponents();
+                await window.flowchartApp.initializeCanvas();
+                await window.flowchartApp.initializeInteractions();
+                await window.flowchartApp.initializeUI();
+                await window.flowchartApp.initializeApp();
             }
             window.__flowcraft_initialized = true;
 
@@ -68,10 +87,7 @@
             console.log('flowchart application initialized');
             console.log('debug helpers available at window.debugFlowchart');
             
-
-            
         } catch (error) {
-            
             console.error('failed to initialize flowchart application:', error);
             
             // show error to user

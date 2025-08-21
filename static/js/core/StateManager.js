@@ -41,11 +41,11 @@ class StateManager extends BaseEmitter {
         // annotations (text labels, braces, etc.)
         this.annotations = [];
         
-        // selection state
-        this.selectedNodes = new Set();
-        this.selectedLink = null;
-        this.selectedGroup = null;
-        this.selectedAnnotation = null;
+        // selection state - now handled by SelectionHandler
+        // this.selectedNodes = new Set();
+        // this.selectedLink = null;
+        // this.selectedGroup = null;
+        // this.selectedAnnotation = null;
         
         // interaction state
         this.isDragging = false;
@@ -85,6 +85,9 @@ class StateManager extends BaseEmitter {
         // magnetized node pairing (if<->python)
         // we store partner ids directly on nodes; this map is a helper for quick checks
         this.magnetPairs = new Map(); // key: nodeId -> partnerId
+        
+        // selection handler reference
+        this.selectionHandler = null;
     }
 
     /**
@@ -395,8 +398,10 @@ class StateManager extends BaseEmitter {
         // remove associated links
         this.links = this.links.filter(l => l.source !== nodeId && l.target !== nodeId);
         
-        // remove from selection
-        this.selectedNodes.delete(nodeId);
+        // remove from selection - delegate to SelectionHandler
+        if (this.selectionHandler) {
+            this.selectionHandler.removeNodeFromSelection(nodeId);
+        }
         
         // remove from groups
         this.groups.forEach(group => {
@@ -490,10 +495,9 @@ class StateManager extends BaseEmitter {
         const link = this.links[linkIndex];
         this.links.splice(linkIndex, 1);
         
-        if (this.selectedLink && 
-            this.selectedLink.source === link.source && 
-            this.selectedLink.target === link.target) {
-            this.selectedLink = null;
+        // clear link selection - delegate to SelectionHandler
+        if (this.selectionHandler) {
+            this.selectionHandler.clearLinkSelection();
         }
 
         this.emit('linkRemoved', link);
@@ -567,8 +571,9 @@ class StateManager extends BaseEmitter {
 
         this.groups.splice(groupIndex, 1);
         
-        if (this.selectedGroup && this.selectedGroup.id === groupId) {
-            this.selectedGroup = null;
+        // clear group selection - delegate to SelectionHandler
+        if (this.selectionHandler) {
+            this.selectionHandler.clearGroupSelection(groupId);
         }
 
         this.emit('groupRemoved', group);
@@ -590,95 +595,61 @@ class StateManager extends BaseEmitter {
         return this.nodes.filter(n => n.groupId === groupId);
     }
 
-    // selection management
+
+
+    // getter methods for backward compatibility
+    get selectedNodes() {
+        return this.selectionHandler ? this.selectionHandler.selectedNodes : new Set();
+    }
+
+    get selectedLink() {
+        return this.selectionHandler ? this.selectionHandler.selectedLink : null;
+    }
+
+    get selectedGroup() {
+        return this.selectionHandler ? this.selectionHandler.selectedGroup : null;
+    }
+
+    get selectedAnnotation() {
+        return this.selectionHandler ? this.selectionHandler.selectedAnnotation : null;
+    }
+
+    // selection management delegation methods
     selectNode(nodeId, multiSelect = false) {
-        if (multiSelect) {
-            if (this.selectedNodes.has(nodeId)) {
-                this.selectedNodes.delete(nodeId);
-            } else {
-                this.selectedNodes.add(nodeId);
-            }
-        } else {
-            this.selectedNodes.clear();
-            this.selectedNodes.add(nodeId);
+        if (this.selectionHandler) {
+            this.selectionHandler.selectNode(nodeId, multiSelect);
         }
-        
-        this.selectedLink = null;
-        this.selectedGroup = null;
-        // also clear any selected annotation when selecting nodes
-        this.selectedAnnotation = null;
-        
-        this.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup,
-            annotation: null
-        });
     }
 
     selectLink(link) {
-        this.selectedNodes.clear();
-        this.selectedLink = link;
-        this.selectedGroup = null;
-        // also clear any selected annotation when selecting a link
-        this.selectedAnnotation = null;
-        
-        this.emit('selectionChanged', {
-            nodes: [],
-            link: this.selectedLink,
-            group: this.selectedGroup,
-            annotation: null
-        });
+        if (this.selectionHandler) {
+            this.selectionHandler.selectLink(link);
+        }
     }
 
     selectGroup(groupId) {
-        this.selectedNodes.clear();
-        this.selectedLink = null;
-        this.selectedGroup = this.getGroup(groupId);
-        // also clear any selected annotation when selecting a group
-        this.selectedAnnotation = null;
-        
-        this.emit('selectionChanged', {
-            nodes: [],
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
+        if (this.selectionHandler) {
+            this.selectionHandler.selectGroup(groupId);
+        }
     }
 
     clearSelection() {
-        this.selectedNodes.clear();
-        this.selectedLink = null;
-        this.selectedGroup = null;
-        this.currentEditingNode = null;
-        this.selectedAnnotation = null;
-        
-        this.emit('selectionChanged', {
-            nodes: [],
-            link: null,
-            group: null,
-            annotation: null
-        });
-
+        if (this.selectionHandler) {
+            this.selectionHandler.clearSelection();
+        }
     }
 
-    // annotation selection management
     selectAnnotation(annotationId) {
-        this.selectedNodes.clear();
-        this.selectedLink = null;
-        this.selectedGroup = null;
-        this.selectedAnnotation = this.annotations.find(a => a.id === annotationId) || null;
-        this.emit('selectionChanged', {
-            nodes: [],
-            link: null,
-            group: null,
-            annotation: this.selectedAnnotation
-        });
-        // ensure sidebar refreshes immediately on text selection
-        this.emit('updateSidebar');
+        if (this.selectionHandler) {
+            this.selectionHandler.selectAnnotation(annotationId);
+        }
     }
 
     getSelectedNodes() {
-        return this.nodes.filter(n => this.selectedNodes.has(n.id));
+        if (this.selectionHandler) {
+            return this.selectionHandler.getSelectedNodes();
+        }
+        return [];
     }
 
     // interaction state
@@ -880,7 +851,7 @@ class StateManager extends BaseEmitter {
             nodeCount: this.nodes.length,
             linkCount: this.links.length,
             groupCount: this.groups.length,
-            selectedNodeCount: this.selectedNodes.size
+            selectedNodeCount: this.selectionHandler ? this.selectionHandler.getSelectedNodeCount() : 0
         };
     }
 
@@ -923,7 +894,10 @@ class StateManager extends BaseEmitter {
         // hydrate magnet pairs after import
         this.rebuildMagnetPairsFromNodes();
         
-        this.clearSelection();
+        // clear selection - delegate to SelectionHandler
+        if (this.selectionHandler) {
+            this.selectionHandler.clearSelection();
+        }
         this.emit('dataImported', data);
         this.emit('stateChanged');
     }

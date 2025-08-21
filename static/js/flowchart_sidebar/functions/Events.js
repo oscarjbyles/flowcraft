@@ -42,5 +42,3 @@
         this.contentPanels.default.classList.add('active');
     };
 })();
-
-

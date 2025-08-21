@@ -98,5 +98,3 @@
 
     // flashStatusBar deprecated in favor of updateStatus in Sidebar.status.js
 })();
-
-

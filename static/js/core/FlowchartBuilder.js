@@ -4,26 +4,34 @@
     if (window.FlowchartBuilder) { return; }
 
 class FlowchartBuilder {
-    constructor() {
-        // initialize all systems in logical order
-        this.initializeCore();
-        this.initializeComponents();
-        this.initializeCanvas();
-        this.initializeInteractions();
-        this.initializeUI();
-        this.initializeApp();
-        
+    constructor(autoInit = true) {
         // viewport persistence
         this.viewportSaveTimer = null;
         this.viewportSaveDelay = 250; // ms
+        
+        // only auto-initialize if requested (default behavior for backward compatibility)
+        if (autoInit) {
+            this.initializeAll();
+        }
     }
 
-    initializeCore() {
+    // main initialization method that can be called externally
+    async initializeAll() {
+        // initialize all systems in logical order
+        await this.initializeCore();
+        await this.initializeComponents();
+        await this.initializeCanvas();
+        await this.initializeInteractions();
+        await this.initializeUI();
+        await this.initializeApp();
+    }
+
+    async initializeCore() {
         // create state manager
         this.state = new StateManager();
         
         // initialize node creation service
-        this.createNode = new CreateNode(this.state, this.updateStatusBar.bind(this));
+        this.createNode = new CreateNode(this.state, (message) => this.updateStatusBar(message));
         
         // set createNode reference in state manager for methods that need it
         this.state.createNode = this.createNode;
@@ -51,8 +59,7 @@ class FlowchartBuilder {
         this.isGroupSelectMode = false;
         this.justFinishedDragSelection = false;
         
-        // coordinate update frame for smooth updates
-        this.coordinateUpdateFrame = null;
+
         
         // store execution results for individual nodes
         this.nodeExecutionResults = new Map(); // nodeId -> execution result
@@ -74,12 +81,12 @@ class FlowchartBuilder {
         this.state.on('resumeExecutionFromNode', (data) => this.handleResumeExecution(data));
     }
 
-    initializeComponents() {
+    async initializeComponents() {
         // initialize sidebar
         this.sidebar = new Sidebar(this.state, this.createNode);
     }
 
-    initializeCanvas() {
+    async initializeCanvas() {
         // get canvas dimensions
         this.updateCanvasDimensions();
         
@@ -98,10 +105,10 @@ class FlowchartBuilder {
         this.setupSvgDefinitions();
 
         // initialize renderers
-        this.initializeRenderers();
+        await this.initializeRenderers();
     }
 
-    initializeRenderers() {
+    async initializeRenderers() {
         // create renderers in correct order (groups behind nodes)
         this.groupRenderer = new GroupRenderer(this.state, this.zoomGroup);
         this.linkRenderer = new LinkRenderer(this.state, this.zoomGroup);
@@ -110,10 +117,14 @@ class FlowchartBuilder {
         this.annotationRenderer = new AnnotationRenderer(this.state, this.zoomGroup);
     }
 
-    initializeInteractions() {
+    async initializeInteractions() {
         // create interaction handlers
         this.dragHandler = new DragHandler(this.state, this.events);
         this.selectionHandler = new SelectionHandler(this.state, this.events);
+        
+        // store selection handler reference in state manager
+        this.state.selectionHandler = this.selectionHandler;
+        
         this.connectionHandler = new ConnectionHandler(this.state, this.events);
         
         // setup canvas interactions
@@ -123,12 +134,16 @@ class FlowchartBuilder {
         this.setupNodeInteractions();
     }
 
-    initializeUI() {
+    async initializeUI() {
         // setup navigation buttons
 this.setupNavigationButtons();
         
-        // setup status bar
-        this.setupStatusBar();
+        // setup status bar component
+        if (window.StatusBar) {
+            this.statusBar = new StatusBar(this);
+        } else {
+            console.error('StatusBar component not available');
+        }
         
         // setup context menu
         this.setupContextMenu();
@@ -156,7 +171,6 @@ this.setupNavigationButtons();
     setupStateEvents() {
         // core state changes
         this.state.on('stateChanged', () => {
-            this.updateStats();
             // update order when state changes if in flow view
             if (this.state.isFlowView) {
                 this.renderNodeOrder();
@@ -184,7 +198,6 @@ this.setupNavigationButtons();
         });
         
         this.state.on('dataLoaded', (data) => {
-            this.updateStats();
             this.restoreViewportFromStorage();
             if (this.state.isHistoryMode) {
                 this.loadExecutionHistory();
@@ -214,7 +227,6 @@ this.setupNavigationButtons();
         // mode change events
         this.state.on('modeChanged', (data) => {
             this.updateModeUI(data.mode, data.previousMode);
-            this.updateNodeCoordinates();
         });
         
         this.state.on('flowViewChanged', (data) => {
@@ -238,7 +250,6 @@ this.setupNavigationButtons();
     setupSelectionEvents() {
         // selection changes
         this.state.on('selectionChanged', () => {
-            this.updateNodeCoordinates();
             if (this.annotationRenderer && this.annotationRenderer.render) {
                 this.annotationRenderer.render();
             }
@@ -265,20 +276,6 @@ this.setupNavigationButtons();
     }
 
     setupCoordinateEvents() {
-        // coordinate updates
-        this.state.on('nodeUpdated', () => {
-            this.updateNodeCoordinates();
-        });
-        
-        this.state.on('updateNodePosition', () => {
-            if (this.coordinateUpdateFrame) {
-                cancelAnimationFrame(this.coordinateUpdateFrame);
-            }
-            this.coordinateUpdateFrame = requestAnimationFrame(() => {
-                this.updateNodeCoordinates();
-            });
-        });
-        
         // selection rectangle events
         this.state.on('showSelectionRect', (rect) => {
             this.showSelectionRect(rect);
@@ -424,7 +421,7 @@ this.setupNavigationButtons();
             }
             // clear annotation selection when clicking empty canvas
             if (clickedOnCanvas && this.state.selectedAnnotation) {
-                this.state.clearSelection();
+                this.selectionHandler.clearSelection();
                 this.state.emit('updateSidebar');
             }
         });
@@ -438,11 +435,11 @@ this.setupNavigationButtons();
                 if (this.isGroupSelectMode) {
                     // only clear if this wasn't part of a drag operation
                     if (!this.selectionHandler.isAreaSelecting && !this.justFinishedDragSelection) {
-                        if (!event.ctrlKey && !event.shiftKey) {
-                            this.state.clearSelection();
-                            this.state.emit('updateNodeStyles');
-                            this.state.emit('updateSidebar');
-                        }
+                                            if (!event.ctrlKey && !event.shiftKey) {
+                        this.selectionHandler.clearSelection();
+                        this.state.emit('updateNodeStyles');
+                        this.state.emit('updateSidebar');
+                    }
                     }
                 } else {
                     // if a drag operation or annotation drag just occurred, suppress node creation
@@ -804,39 +801,7 @@ this.setupNavigationButtons();
         }
     }
 
-    setupStatusBar() {
-        this.statusText = document.getElementById('status_text');
-        this.nodeCount = document.getElementById('node_count');
-        this.nodeCoordinates = document.getElementById('node_coordinates');
-        this.statusProgress = document.getElementById('status_progress');
-        this.statusProgressBar = document.getElementById('status_progress_bar');
-        this.statusBar = document.querySelector('.status_bar');
 
-        // capture default status text once
-        if (this.statusText && !this._defaultStatusText) {
-            this._defaultStatusText = this.statusText.textContent || 'ready';
-        }
-
-        // hide node count when viewing a past execution (history view in run mode via executionId)
-        const params = new URLSearchParams(window.location.search);
-        if (params.has('executionId') && this.nodeCount) {
-            this.nodeCount.style.display = 'none';
-        }
-        
-        // get coordinate input elements
-        this.nodeXInput = document.getElementById('node_x');
-        this.nodeYInput = document.getElementById('node_y');
-        this.nodeWidthInput = document.getElementById('node_width');
-        this.nodeHeightInput = document.getElementById('node_height');
-        
-        // setup coordinate input event listeners
-        this.setupCoordinateInputs();
-        
-        // initial status (suppress verbose hint)
-        this.updateStatusBar('');
-        this.updateStats();
-        this.updateNodeCoordinates();
-    }
 
     setupContextMenu() {
         this.contextMenu = document.getElementById('context_menu');
@@ -1086,239 +1051,7 @@ this.setupNavigationButtons();
             .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
     }
 
-    // ui updates
-    updateStatus(type, message, options = {}) {
-        const { suppressModeNotifications = true, autoClear = true, clearDelay = 3000 } = options;
-        
-        // suppress mode/view toggle notifications if enabled
-        if (suppressModeNotifications) {
-            const lower = String(message || '').toLowerCase();
-            const suppressPhrases = [
-                'build mode',
-                'run view enabled',
-                'run view disabled',
-                'flow view enabled',
-                'flow view disabled',
-                'error view enabled',
-                'error view disabled',
-                'group select mode enabled',
-                'group select mode disabled',
-                'ready - click to add nodes, drag to connect',
-                'run mode - interface locked for execution',
-                's: 1 run mode - interface locked for execution',
-                'settings'
-            ];
-            if (suppressPhrases.some(p => lower.includes(p))) {
-                return;
-            }
-        }
 
-        // update status bar text
-        if (this.statusText) {
-            this.statusText.textContent = message || '';
-        }
-
-        // update status bar background color based on type
-        if (this.statusBar) {
-            const originalBg = this._statusOriginalBg || this.statusBar.style.backgroundColor;
-            this._statusOriginalBg = originalBg;
-            
-            let bgColor = 'var(--surface-color)';
-            if (type === 'error' || type === 'failed') {
-                bgColor = '#2A0E0E';
-            } else if (type === 'success') {
-                bgColor = '#0E2A0E';
-            } else if (type === 'warning') {
-                bgColor = '#2A2A0E';
-            }
-            
-            this.statusBar.style.backgroundColor = bgColor;
-
-            // auto-clear after delay if enabled
-            if (autoClear && clearDelay > 0) {
-                if (this._statusResetTimeout) {
-                    clearTimeout(this._statusResetTimeout);
-                }
-                this._statusResetTimeout = setTimeout(() => {
-                    this.statusBar.style.backgroundColor = this._statusOriginalBg || 'var(--surface-color)';
-                    if (this.statusText) this.statusText.textContent = '';
-                    this._statusResetTimeout = null;
-                }, clearDelay);
-            }
-        }
-    }
-
-    updateStatusBar(message) {
-        // legacy method - determine type from message content
-        const lower = String(message || '').toLowerCase();
-        let type = 'info';
-        if (lower.startsWith('error') || lower.includes('failed')) {
-            type = 'error';
-        } else if (lower.includes('success') || lower.includes('completed')) {
-            type = 'success';
-        } else if (lower.includes('warning')) {
-            type = 'warning';
-        }
-        
-        this.updateStatus(type, message);
-    }
-
-    // temporary progress utils for status bar
-    showStatusProgress(percent = 10) {
-        if (!this.statusProgress || !this.statusProgressBar) return;
-        this.statusProgress.style.display = 'block';
-        this.setStatusProgress(percent);
-    }
-
-    setStatusProgress(percent) {
-        if (!this.statusProgressBar) return;
-        const clamped = Math.max(0, Math.min(100, percent));
-        this.statusProgressBar.style.width = clamped + '%';
-    }
-
-    hideStatusProgress() {
-        if (!this.statusProgress || !this.statusProgressBar) return;
-        this.statusProgressBar.style.width = '0%';
-        this.statusProgress.style.display = 'none';
-    }
-
-    updateStats() {
-        const stats = this.state.getStats();
-        if (this.nodeCount) {
-            // use interpunct with extra spacing around it
-            this.nodeCount.textContent = `nodes: ${stats.nodeCount}  ·  groups: ${stats.groupCount}`;
-        }
-    }
-
-    updateNodeCoordinates() {
-        if (!this.nodeCoordinates) return;
-        
-        // hide coordinates if not in build mode
-        if (!this.state.isBuildMode) {
-            this.nodeCoordinates.style.display = 'none';
-            return;
-        }
-        
-        // show coordinates in build mode
-        this.nodeCoordinates.style.display = 'flex';
-        
-        const selectedNodes = Array.from(this.state.selectedNodes);
-        
-        if (selectedNodes.length === 1) {
-            // single node selected - show editable inputs
-            const node = this.state.getNode(selectedNodes[0]);
-            if (node) {
-                const x = Math.round(node.x);
-                const y = Math.round(node.y);
-                const width = Math.round(node.width || 120);
-                const height = this.calculateNodeHeight(node);
-                
-                // update input values
-                this.nodeXInput.value = x;
-                this.nodeYInput.value = y;
-                this.nodeWidthInput.value = width;
-                this.nodeHeightInput.value = height;
-                
-                // show inputs
-                this.nodeXInput.style.display = 'inline-block';
-                this.nodeYInput.style.display = 'inline-block';
-                this.nodeWidthInput.style.display = 'inline-block';
-                this.nodeHeightInput.style.display = 'inline-block';
-                
-                this.nodeCoordinates.style.opacity = '1';
-                this.nodeCoordinates.title = `node: ${node.name}`;
-            }
-        } else if (selectedNodes.length > 1) {
-            // multiple nodes selected - hide inputs and show count
-            this.hideCoordinateInputs();
-            const nodes = selectedNodes.map(id => this.state.getNode(id)).filter(Boolean);
-            if (nodes.length > 0) {
-                const avgX = Math.round(nodes.reduce((sum, node) => sum + node.x, 0) / nodes.length);
-                const avgY = Math.round(nodes.reduce((sum, node) => sum + node.y, 0) / nodes.length);
-                this.nodeCoordinates.style.opacity = '0.7';
-                this.nodeCoordinates.title = `selected nodes: ${nodes.map(n => n.name).join(', ')}`;
-            }
-        } else {
-            // no nodes selected - hide inputs
-            this.hideCoordinateInputs();
-            this.nodeCoordinates.style.opacity = '0.3';
-            this.nodeCoordinates.title = 'no node selected';
-        }
-    }
-
-    hideCoordinateInputs() {
-        this.nodeXInput.style.display = 'none';
-        this.nodeYInput.style.display = 'none';
-        this.nodeWidthInput.style.display = 'none';
-        this.nodeHeightInput.style.display = 'none';
-    }
-
-    setupCoordinateInputs() {
-        // setup input change handlers
-        this.nodeXInput.addEventListener('change', (e) => this.handleCoordinateChange('x', e.target.value));
-        this.nodeYInput.addEventListener('change', (e) => this.handleCoordinateChange('y', e.target.value));
-        this.nodeWidthInput.addEventListener('change', (e) => this.handleCoordinateChange('width', e.target.value));
-        this.nodeHeightInput.addEventListener('change', (e) => this.handleCoordinateChange('height', e.target.value));
-        
-        // setup input key handlers for immediate updates
-        this.nodeXInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                this.handleCoordinateChange('x', e.target.value);
-            }
-        });
-        this.nodeYInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                this.handleCoordinateChange('y', e.target.value);
-            }
-        });
-        this.nodeWidthInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                this.handleCoordinateChange('width', e.target.value);
-            }
-        });
-        this.nodeHeightInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                this.handleCoordinateChange('height', e.target.value);
-            }
-        });
-    }
-
-    async handleCoordinateChange(property, value) {
-        const selectedNodes = Array.from(this.state.selectedNodes);
-        if (selectedNodes.length !== 1) return;
-        
-        const nodeId = selectedNodes[0];
-        const node = this.state.getNode(nodeId);
-        if (!node) return;
-        
-        const numValue = parseFloat(value);
-        if (isNaN(numValue)) return;
-        
-        // validate minimum values
-        if (property === 'width' && numValue < 80) return;
-        if (property === 'height' && numValue < 40) return;
-        
-        // update node property
-        const updates = {};
-        
-        if (property === 'height') {
-            // for height, we need to handle it specially since it's calculated dynamically
-            // store the custom height in the node data
-            updates.customHeight = numValue;
-        } else {
-            updates[property] = numValue;
-        }
-        
-        // update the node
-        await this.state.updateNode(nodeId, updates);
-        
-        // trigger immediate save
-        this.state.scheduleAutosave();
-    }
-
-    calculateNodeHeight(node) {
-        return Geometry.getNodeHeight(node);
-    }
 
     updateCanvasDimensions() {
         const width = window.innerWidth - 600; // both sidebars
@@ -1355,8 +1088,7 @@ this.setupNavigationButtons();
                 this.updateModeUI('build', null);
             }
             
-            // ensure coordinates are properly hidden/shown based on initial mode
-            this.updateNodeCoordinates();
+            // coordinates are handled by StatusBar component
         } catch (error) {
             this.handleError('failed to initialize application', error);
         }
@@ -1368,12 +1100,19 @@ this.setupNavigationButtons();
         this.updateStatusBar(message);
     }
 
+    // helper method for safe status bar updates
+    updateStatusBar(message) {
+        if (this.statusBar) {
+            this.statusBar.updateStatusBar(message);
+        }
+    }
+
     // data operations
     async loadInitialData() {
         try {
             await this.state.load();
         } catch (error) {
-            this.handleError('failed to load saved data', error);
+            this.updateStatusBar('failed to load saved data');
         }
     }
 
@@ -1386,7 +1125,7 @@ this.setupNavigationButtons();
                 this.updateStatusBar('failed to save flowchart');
             }
         } catch (error) {
-            this.handleError('save error occurred', error);
+            this.updateStatusBar('save error occurred');
         }
     }
 
@@ -1404,7 +1143,7 @@ this.setupNavigationButtons();
             this.state.importData(data);
             this.updateStatusBar('flowchart imported successfully');
         } catch (error) {
-            this.handleError('failed to import flowchart', error);
+            this.updateStatusBar('failed to import flowchart');
         }
     }
 
@@ -1557,7 +1296,7 @@ this.setupNavigationButtons();
     }
 
     renderNodeOrder() {
-        NodeOrder.renderNodeOrder(this.nodeRenderer, this.updateStatusBar.bind(this), this.state.nodes, this.state.links, this.state.groups);
+        NodeOrder.renderNodeOrder(this.nodeRenderer, (message) => this.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
     }
 
     hideNodeOrder() {
@@ -1836,7 +1575,7 @@ this.setupNavigationButtons();
         }
         
         // clear all selections
-        this.state.clearSelection();
+        this.selectionHandler.clearSelection();
         
         // update visual state
         this.nodeRenderer.updateNodeStyles();
@@ -1873,7 +1612,7 @@ this.setupNavigationButtons();
             executionPanel.classList.add('active');
 
             // force sidebar to render default run view (status + progress only)
-            this.state.clearSelection();
+            this.selectionHandler.clearSelection();
             this.state.emit('updateSidebar');
         }
     }
@@ -4313,7 +4052,9 @@ this.setupNavigationButtons();
 
         // also update the main status bar for important execution messages
         if (type === 'error' || type === 'failed' || type === 'completed') {
-            this.updateStatus(type, message, { autoClear: false });
+            if (this.statusBar) {
+                this.statusBar.updateStatus(type, message, { autoClear: false });
+            }
         }
     }
 
@@ -4704,6 +4445,7 @@ this.setupNavigationButtons();
         if (this.groupRenderer) this.groupRenderer.destroy();
         if (this.sidebar) this.sidebar.destroy();
         if (this.events) this.events.destroy();
+        if (this.statusBar) this.statusBar.destroy();
         
         // remove event listeners
         window.removeEventListener('resize', this.handleResize);
@@ -4726,6 +4468,6 @@ FlowchartBuilder.prototype.clearRunModeState = function() {
     this.clearIfRuntimeIndicators();
     this.clearAllNodeColorState();
     // clear selection and ensure default run panel when coming back later
-    this.state.clearSelection(); 
+    this.selectionHandler.clearSelection(); 
     this.state.emit('updateSidebar');
 };

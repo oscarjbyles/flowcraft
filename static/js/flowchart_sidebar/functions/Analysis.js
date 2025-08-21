@@ -191,5 +191,3 @@
         return details.join(' • ');
     };
 })();
-
-

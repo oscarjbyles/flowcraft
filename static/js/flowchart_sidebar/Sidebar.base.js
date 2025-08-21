@@ -57,6 +57,13 @@ class Sidebar {
         } catch (_) {
             this.contentEngine = null;
         }
+
+        // controller registry for node type and mode specific controllers
+        try {
+            this.controllerRegistry = new ControllerRegistry(this);
+        } catch (_) {
+            this.controllerRegistry = null;
+        }
     }
 
 }

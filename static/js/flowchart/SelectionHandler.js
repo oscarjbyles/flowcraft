@@ -12,6 +12,12 @@ class SelectionHandler {
         this.selectionRect = null;
         this.isAreaSelecting = false;
         this.selectionStart = null;
+        
+        // selection state (migrated from StateManager)
+        this.selectedNodes = new Set();
+        this.selectedLink = null;
+        this.selectedGroup = null;
+        this.selectedAnnotation = null;
     }
 
     handleNodeClick(event, node) {
@@ -22,19 +28,19 @@ class SelectionHandler {
         
         if (isGroupSelectMode) {
             // in group select mode, clicking toggles node selection
-            if (this.state.selectedNodes.has(node.id)) {
+            if (this.selectedNodes.has(node.id)) {
                 // deselect if already selected
-                this.state.selectedNodes.delete(node.id);
+                this.selectedNodes.delete(node.id);
             } else {
                 // select if not selected
-                this.state.selectedNodes.add(node.id);
+                this.selectedNodes.add(node.id);
             }
             
             // update ui
             this.state.emit('selectionChanged', {
-                nodes: Array.from(this.state.selectedNodes),
-                link: null,
-                group: null
+                nodes: Array.from(this.selectedNodes),
+                link: this.selectedLink,
+                group: this.selectedGroup
             });
         } else {
             // normal selection behavior
@@ -177,11 +183,11 @@ class SelectionHandler {
         const selectedNodes = this.getNodesInRectangle(this.selectionRect);
         
         if (!event.ctrlKey) {
-            this.state.selectedNodes.clear();
+            this.selectedNodes.clear();
         }
         
         selectedNodes.forEach(node => {
-            this.state.selectedNodes.add(node.id);
+            this.selectedNodes.add(node.id);
         });
         
         // cleanup
@@ -200,9 +206,9 @@ class SelectionHandler {
         this.state.emit('hideSelectionRect');
         this.state.emit('previewSelection', []); // clear preview
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.state.selectedNodes),
-            link: null,
-            group: null
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup
         });
         this.state.emit('updateNodeStyles');
         this.state.emit('updateSidebar');
@@ -238,60 +244,60 @@ class SelectionHandler {
     // selection utilities
     selectAll() {
         this.state.nodes.forEach(node => {
-            this.state.selectedNodes.add(node.id);
+            this.selectedNodes.add(node.id);
         });
         
-        this.state.selectedLink = null;
-        this.state.selectedGroup = null;
+        this.selectedLink = null;
+        this.selectedGroup = null;
         
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.state.selectedNodes),
-            link: null,
-            group: null
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup
         });
         this.state.emit('updateNodeStyles');
         this.state.emit('updateSidebar');
     }
 
     selectNone() {
-        this.state.clearSelection();
+        this.clearSelection();
         this.state.emit('updateNodeStyles');
         this.state.emit('updateLinkStyles');
         this.state.emit('updateSidebar');
     }
 
     invertSelection() {
-        const currentSelection = new Set(this.state.selectedNodes);
-        this.state.selectedNodes.clear();
+        const currentSelection = new Set(this.selectedNodes);
+        this.selectedNodes.clear();
         
         this.state.nodes.forEach(node => {
             if (!currentSelection.has(node.id)) {
-                this.state.selectedNodes.add(node.id);
+                this.selectedNodes.add(node.id);
             }
         });
         
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.state.selectedNodes),
-            link: null,
-            group: null
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup
         });
         this.state.emit('updateNodeStyles');
         this.state.emit('updateSidebar');
     }
 
     selectByType(nodeType) {
-        this.state.selectedNodes.clear();
+        this.selectedNodes.clear();
         
         this.state.nodes
             .filter(node => node.type === nodeType)
             .forEach(node => {
-                this.state.selectedNodes.add(node.id);
+                this.selectedNodes.add(node.id);
             });
         
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.state.selectedNodes),
-            link: null,
-            group: null
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup
         });
         this.state.emit('updateNodeStyles');
         this.state.emit('updateSidebar');
@@ -306,7 +312,7 @@ class SelectionHandler {
             if (visited.has(nodeId)) continue;
             
             visited.add(nodeId);
-            this.state.selectedNodes.add(nodeId);
+            this.selectedNodes.add(nodeId);
             
             // find connected nodes
             this.state.links.forEach(link => {
@@ -319,9 +325,9 @@ class SelectionHandler {
         }
         
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.state.selectedNodes),
-            link: null,
-            group: null
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup
         });
         this.state.emit('updateNodeStyles');
         this.state.emit('updateSidebar');
@@ -331,21 +337,125 @@ class SelectionHandler {
     selectGroupNodes(groupId) {
         const groupNodes = this.state.getGroupNodes(groupId);
         
-        this.state.selectedNodes.clear();
+        this.selectedNodes.clear();
         groupNodes.forEach(node => {
-            this.state.selectedNodes.add(node.id);
+            this.selectedNodes.add(node.id);
         });
         
-        this.state.selectedLink = null;
-        this.state.selectedGroup = null;
+        this.selectedLink = null;
+        this.selectedGroup = null;
         
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.state.selectedNodes),
-            link: null,
-            group: null
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup
         });
         this.state.emit('updateNodeStyles');
         this.state.emit('updateSidebar');
+    }
+
+    // migrated selection management methods
+    selectNode(nodeId, multiSelect = false) {
+        if (multiSelect) {
+            if (this.selectedNodes.has(nodeId)) {
+                this.selectedNodes.delete(nodeId);
+            } else {
+                this.selectedNodes.add(nodeId);
+            }
+        } else {
+            this.selectedNodes.clear();
+            this.selectedNodes.add(nodeId);
+        }
+        
+        this.selectedLink = null;
+        this.selectedGroup = null;
+        this.selectedAnnotation = null;
+        
+        this.state.emit('selectionChanged', {
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup,
+            annotation: null
+        });
+    }
+
+    selectLink(link) {
+        this.selectedNodes.clear();
+        this.selectedLink = link;
+        this.selectedGroup = null;
+        this.selectedAnnotation = null;
+        
+        this.state.emit('selectionChanged', {
+            nodes: [],
+            link: this.selectedLink,
+            group: this.selectedGroup,
+            annotation: null
+        });
+    }
+
+    selectGroup(groupId) {
+        this.selectedNodes.clear();
+        this.selectedLink = null;
+        this.selectedGroup = this.state.getGroup(groupId);
+        this.selectedAnnotation = null;
+        
+        this.state.emit('selectionChanged', {
+            nodes: [],
+            link: this.selectedLink,
+            group: this.selectedGroup
+        });
+    }
+
+    clearSelection() {
+        this.selectedNodes.clear();
+        this.selectedLink = null;
+        this.selectedGroup = null;
+        this.state.currentEditingNode = null;
+        this.selectedAnnotation = null;
+        
+        this.state.emit('selectionChanged', {
+            nodes: [],
+            link: null,
+            group: null,
+            annotation: null
+        });
+    }
+
+    selectAnnotation(annotationId) {
+        this.selectedNodes.clear();
+        this.selectedLink = null;
+        this.selectedGroup = null;
+        this.selectedAnnotation = this.state.annotations.find(a => a.id === annotationId) || null;
+        this.state.emit('selectionChanged', {
+            nodes: [],
+            link: null,
+            group: null,
+            annotation: this.selectedAnnotation
+        });
+        this.state.emit('updateSidebar');
+    }
+
+    getSelectedNodes() {
+        return this.state.nodes.filter(n => this.selectedNodes.has(n.id));
+    }
+
+    // selection cleanup methods for use by StateManager
+    removeNodeFromSelection(nodeId) {
+        this.selectedNodes.delete(nodeId);
+    }
+
+    clearLinkSelection() {
+        this.selectedLink = null;
+    }
+
+    clearGroupSelection(groupId) {
+        if (this.selectedGroup && this.selectedGroup.id === groupId) {
+            this.selectedGroup = null;
+        }
+    }
+
+    getSelectedNodeCount() {
+        return this.selectedNodes.size;
     }
 }
 

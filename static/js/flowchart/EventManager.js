@@ -154,7 +154,7 @@ class EventManager {
         }
         
         // clear selections
-        this.state.clearSelection();
+        this.state.selectionHandler.clearSelection();
         this.state.emit('statusUpdate', 'selection cleared');
     }
 
@@ -219,7 +219,7 @@ class EventManager {
             }
             
             // clear selections
-            this.state.clearSelection();
+            this.state.selectionHandler.clearSelection();
         }
     }
 
@@ -227,7 +227,7 @@ class EventManager {
         const isMultiSelect = event.shiftKey;
         
         try {
-            this.state.selectNode(node.id, isMultiSelect);
+            this.state.selectionHandler.selectNode(node.id, isMultiSelect);
             
             const selectedCount = this.state.selectedNodes.size;
             if (selectedCount === 1) {
@@ -242,7 +242,7 @@ class EventManager {
 
     handleLinkClick(event, link) {
         try {
-            this.state.selectLink(link);
+            this.state.selectionHandler.selectLink(link);
             this.state.emit('statusUpdate', 'link selected - press delete to remove');
         } catch (error) {
             this.state.emit('statusUpdate', `error selecting link: ${error.message}`);
@@ -251,7 +251,7 @@ class EventManager {
 
     handleGroupClick(event, group) {
         try {
-            this.state.selectGroup(group.id);
+            this.state.selectionHandler.selectGroup(group.id);
             this.state.emit('statusUpdate', `selected group: ${group.name}`);
         } catch (error) {
             this.state.emit('statusUpdate', `error selecting group: ${error.message}`);
@@ -302,7 +302,7 @@ class EventManager {
         event.preventDefault();
         
         if (item.type === 'node') {
-            this.state.selectNode(item.id, false);
+            this.state.selectionHandler.selectNode(item.id, false);
             this.state.emit('showContextMenu', {
                 x: event.pageX,
                 y: event.pageY,
