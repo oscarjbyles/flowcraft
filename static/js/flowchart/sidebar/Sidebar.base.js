@@ -100,9 +100,9 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
             runFeedBar.classList.add((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
             // ensure run feed bar stays visible in run mode even when sidebar is collapsed
             if (runFeedBar.getAttribute('data-run-mode') === 'true') {
-                // use helper function if available, otherwise set directly
-                if (window.flowchartApp && typeof window.flowchartApp.setRunFeedBarDisplay === 'function') {
-                    window.flowchartApp.setRunFeedBarDisplay('flex');
+                // use toolbars module if available, otherwise set directly
+                if (window.flowchartApp && window.flowchartApp.toolbars && window.flowchartApp.toolbars.setRunFeedBarDisplay) {
+                    window.flowchartApp.toolbars.setRunFeedBarDisplay('flex');
                 } else {
                     runFeedBar.style.display = 'flex';
                 }
@@ -123,9 +123,9 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
             runFeedBar.classList.remove((C && C.classes && C.classes.sidebarCollapsed) || 'sidebar_collapsed');
             // ensure run feed bar stays visible in run mode
             if (runFeedBar.getAttribute('data-run-mode') === 'true') {
-                // use helper function if available, otherwise set directly
-                if (window.flowchartApp && typeof window.flowchartApp.setRunFeedBarDisplay === 'function') {
-                    window.flowchartApp.setRunFeedBarDisplay('flex');
+                // use toolbars module if available, otherwise set directly
+                if (window.flowchartApp && window.flowchartApp.toolbars && window.flowchartApp.toolbars.setRunFeedBarDisplay) {
+                    window.flowchartApp.toolbars.setRunFeedBarDisplay('flex');
                 } else {
                     runFeedBar.style.display = 'flex';
                 }

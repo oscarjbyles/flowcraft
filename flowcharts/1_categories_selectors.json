@@ -36,25 +36,25 @@
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168324002.294,
+      "magnet_partner_id": 1755168329342.0771,
       "name": "1.1.1.1 - use nav tag",
       "pythonFile": "1_categories_selectors/1_1_1_1_use_nav_tag.py",
       "type": "python_file",
       "width": 164.71666717529297,
       "x": 1125.8800048828125,
-      "y": 527.0776062011719,
-      "magnet_partner_id": 1755168329342.0771
+      "y": 527.0776062011719
     },
     {
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168329342.0771,
+      "magnet_partner_id": 1755168324002.294,
       "name": "empty?",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
       "x": 1125.8800048828125,
-      "y": 607.0776062011719,
-      "magnet_partner_id": 1755168324002.294
+      "y": 607.0776062011719
     },
     {
       "description": "",
@@ -511,6 +511,23 @@
       "type": "text",
       "x": 854.4585790066471,
       "y": 1024.4108963170856
+    }
+  ],
+  "executions": [
+    {
+      "execution_id": "25d9e10f-f5a6-4d3b-b617-0d0c98152982",
+      "timestamp": "2025-08-21T21:13:58.522128",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 16.7,
+      "completed_percentage": 22.2,
+      "failed_node": "get web page content",
+      "elapsed_ms": 1853,
+      "execution_time": "1.853s",
+      "error_snippet": "execution was cancelled by user"
     }
   ]
 }
