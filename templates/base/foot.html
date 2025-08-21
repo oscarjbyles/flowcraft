@@ -8,8 +8,21 @@
 <!-- dropdown manager (centralized dropdown system) -->
 <script src="/static/js/utils/DropdownManager.js"></script>
 
-<!-- left navigation (centralized, safe for all pages) -->
-<script src="/static/js/components/navigation/Navigation.base.js"></script>
-<script src="/static/js/components/navigation/Navigation.flowcharts.js"></script>
+<!-- left navigation (consolidated, safe for all pages) -->
+<script src="/static/js/components/navigation/Navigation.js"></script>
+
+<!-- initialize navigation on all pages -->
+<script>
+// consolidated navigation initialization
+document.addEventListener('DOMContentLoaded', function() {
+    try { 
+        if (window.Navigation && typeof window.Navigation.init === 'function') {
+            window.Navigation.init(null);
+        }
+    } catch (error) {
+        console.error('Error initializing Navigation:', error);
+    }
+});
+</script>
 
 

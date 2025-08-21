@@ -137,21 +137,6 @@
     
     <!-- dashboard page functionality -->
     <script src="/static/js/pages/Dashboard.js"></script>
-    <script>
-        // initialize dashboard when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof Dashboard !== 'undefined') {
-                try {
-                    new Dashboard();
-                    console.log('Dashboard initialized successfully');
-                } catch (error) {
-                    console.error('Error initializing Dashboard:', error);
-                }
-            } else {
-                console.error('Dashboard class not found');
-            }
-        });
-    </script>
 </body>
 </html>
 

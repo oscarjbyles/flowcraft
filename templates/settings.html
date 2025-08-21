@@ -184,29 +184,4 @@
 {% block scripts %}
 <!-- settings page functionality -->
 <script src="/static/js/pages/Settings.js"></script>
-<script>
-// initialize navigation and settings when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // initialize navigation
-    try { 
-        if (window.Navigation && typeof window.Navigation.init === 'function') {
-            window.Navigation.init(null);
-        }
-    } catch (error) {
-        console.error('Error initializing Navigation:', error);
-    }
-    
-    // initialize settings
-    if (typeof Settings !== 'undefined') {
-        try {
-            new Settings();
-            console.log('Settings initialized successfully');
-        } catch (error) {
-            console.error('Error initializing Settings:', error);
-        }
-    } else {
-        console.error('Settings class not found');
-    }
-});
-</script>
 {% endblock %}
