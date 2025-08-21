@@ -491,6 +491,62 @@ class Settings {
                 .replace(/'/g, '&#039;');
         } catch (_) { return ''; }
     }
+
+    // api action handlers moved from EventManager.js
+    handleApiAction(action, data = {}) {
+        switch (action) {
+            case 'build':
+                this.handleBuildAction(data);
+                break;
+                
+            case 'run':
+                this.handleRunAction(data);
+                break;
+                
+            default:
+                console.warn(`unknown api action: ${action}`);
+        }
+    }
+
+    async handleBuildAction(data) {
+        try {
+            const response = await fetch('/api/build', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.showSuccess(`build: ${result.message}`);
+            } else {
+                this.showError('build failed');
+            }
+        } catch (error) {
+            console.error('build error:', error);
+            this.showError('build error');
+        }
+    }
+
+    async handleRunAction(data) {
+        try {
+            const response = await fetch('/api/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.showSuccess(`run: ${result.message}`);
+            } else {
+                this.showError('run failed');
+            }
+        } catch (error) {
+            console.error('run error:', error);
+            this.showError('run error');
+        }
+    }
 }
 
 // export for use in other modules

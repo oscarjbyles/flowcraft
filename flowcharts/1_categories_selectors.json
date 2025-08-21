@@ -288,35 +288,13 @@
     {
       "description": "",
       "groupId": null,
-      "id": 1755782246186.1155,
+      "id": 1755782207394.947,
       "name": "python node",
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1931.3590087890625,
-      "y": 890.13671875
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1755782246766.3088,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 1850.2183837890625,
-      "y": 993.55126953125
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1755782247236.5493,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 2065.0025634765625,
-      "y": 996.7332763671875
+      "x": 758.4329223632812,
+      "y": 1448.8529052734375
     }
   ],
   "links": [

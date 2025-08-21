@@ -312,61 +312,7 @@ class EventManager {
         }
     }
 
-    // api event handlers
-    handleApiAction(action, data = {}) {
-        switch (action) {
-            case 'build':
-                this.handleBuildAction(data);
-                break;
-                
-            case 'run':
-                this.handleRunAction(data);
-                break;
-                
-            default:
-                console.warn(`unknown api action: ${action}`);
-        }
-    }
 
-    async handleBuildAction(data) {
-        try {
-            const response = await fetch('/api/build', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                this.state.emit('statusUpdate', `build: ${result.message}`);
-            } else {
-                this.state.emit('statusUpdate', 'build failed');
-            }
-        } catch (error) {
-            console.error('build error:', error);
-            this.state.emit('statusUpdate', 'build error');
-        }
-    }
-
-    async handleRunAction(data) {
-        try {
-            const response = await fetch('/api/run', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                this.state.emit('statusUpdate', `run: ${result.message}`);
-            } else {
-                this.state.emit('statusUpdate', 'run failed');
-            }
-        } catch (error) {
-            console.error('run error:', error);
-            this.state.emit('statusUpdate', 'run error');
-        }
-    }
 
     // cleanup
     destroy() {
