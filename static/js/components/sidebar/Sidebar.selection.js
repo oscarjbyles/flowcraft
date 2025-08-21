@@ -74,7 +74,7 @@
         const pyHeight = 60;
         const ifHeight = 60;
         const gap = 20;
-        const ifNode = this.state.addNode({
+        const ifNode = this.createNode.addNode({
             x: py.x,
             y: py.y + pyHeight / 2 + gap + ifHeight / 2,
             name: 'if condition',

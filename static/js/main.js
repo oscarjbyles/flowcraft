@@ -14,6 +14,7 @@
             'NodeRenderer', 
             'LinkRenderer', 
             'GroupRenderer',
+            'CreateNode',
             'FlowchartBuilder'
         ];
 

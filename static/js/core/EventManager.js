@@ -4,8 +4,9 @@
     if (window.EventManager) { return; }
 
 class EventManager {
-    constructor(stateManager) {
+    constructor(stateManager, createNode) {
         this.state = stateManager;
+        this.createNode = createNode;
         this.setupKeyboardShortcuts();
     }
 
@@ -163,7 +164,7 @@ class EventManager {
         if (this.state.selectedNodes.size >= 2) {
             const nodeIds = Array.from(this.state.selectedNodes);
             try {
-                const group = this.state.createGroup(nodeIds);
+                const group = this.createNode.createGroup(nodeIds);
                 this.state.emit('statusUpdate', `created group: ${group.name}`);
             } catch (error) {
                 this.state.emit('statusUpdate', `error creating group: ${error.message}`);
@@ -207,7 +208,7 @@ class EventManager {
             if (this.state.isBuildMode) {
                 // clicked on empty space - add new node
                 try {
-                    const node = this.state.addNode({
+                    const node = this.createNode.addNode({
                         x: coordinates.x,
                         y: coordinates.y
                     });

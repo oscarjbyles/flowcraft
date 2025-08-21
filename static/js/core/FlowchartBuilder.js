@@ -22,8 +22,14 @@ class FlowchartBuilder {
         // create state manager
         this.state = new StateManager();
         
+        // initialize node creation service
+        this.createNode = new CreateNode(this.state, this.updateStatusBar.bind(this));
+        
+        // set createNode reference in state manager for methods that need it
+        this.state.createNode = this.createNode;
+        
         // create event manager
-        this.events = new EventManager(this.state);
+        this.events = new EventManager(this.state, this.createNode);
         
         // execution control
         this.currentExecutionController = null;
@@ -70,7 +76,7 @@ class FlowchartBuilder {
 
     initializeComponents() {
         // initialize sidebar
-        this.sidebar = new Sidebar(this.state);
+        this.sidebar = new Sidebar(this.state, this.createNode);
     }
 
     initializeCanvas() {
@@ -99,7 +105,7 @@ class FlowchartBuilder {
         // create renderers in correct order (groups behind nodes)
         this.groupRenderer = new GroupRenderer(this.state, this.zoomGroup);
         this.linkRenderer = new LinkRenderer(this.state, this.zoomGroup);
-        this.nodeRenderer = new NodeRenderer(this.state, this.zoomGroup);
+        this.nodeRenderer = new NodeRenderer(this.state, this.zoomGroup, this.createNode);
         // annotations above nodes
         this.annotationRenderer = new AnnotationRenderer(this.state, this.zoomGroup);
     }
@@ -444,7 +450,7 @@ this.setupNavigationButtons();
                         this.state.suppressNextCanvasClick = false;
                         return;
                     }
-                    this.events.handleCanvasClick(event, { x: coordinates[0], y: coordinates[1] });
+                    this.createNode.addNodeAtCenter(coordinates);
                 }
             }
         });
@@ -593,9 +599,9 @@ this.setupNavigationButtons();
         };
 
         // add node buttons
-        attachClick('python_node_btn', () => this.addPythonNode());
-        attachClick('if_condition_btn', () => this.addIfNode());
-        attachClick('ai_btn', () => this.addCallAiNode && this.addCallAiNode());
+        attachClick('python_node_btn', () => this.createNode.addPythonNode());
+        attachClick('if_condition_btn', () => this.createNode.addIfNode());
+        attachClick('ai_btn', () => this.createNode.addCallAiNode());
 
         // build toolbar toggle
         const buildToolbar = document.getElementById('build_toolbar');
@@ -640,8 +646,8 @@ this.setupNavigationButtons();
             if (el) el.addEventListener('click', handler);
         };
 
-        attachClick('add_text_btn', () => this.addTextAnnotation());
-        attachClick('add_arrow_btn', () => this.addArrowAnnotation());
+        attachClick('add_text_btn', () => this.createNode.addTextAnnotation());
+        attachClick('add_arrow_btn', () => this.createNode.addArrowAnnotation());
     }
 
     setupExecutionButtons() {
@@ -870,108 +876,7 @@ this.setupNavigationButtons();
         });
     }
 
-    // canvas operations
-    addNodeAtCenter() {
-        const centerX = this.state.canvasWidth / 2;
-        const centerY = this.state.canvasHeight / 2;
-        
-        // transform screen coordinates to world coordinates
-        const worldCoords = this.state.transform.invert([centerX, centerY]);
-        
-        try {
-            const node = this.state.addNode({
-                x: worldCoords[0],
-                y: worldCoords[1]
-            });
-            this.updateStatusBar(`added node: ${node.name}`);
-        } catch (error) {
-            this.updateStatusBar(`error adding node: ${error.message}`);
-        }
-    }
-
-    addPythonNode() {
-        const centerX = this.state.canvasWidth / 2;
-        const centerY = this.state.canvasHeight / 2;
-        
-        // transform screen coordinates to world coordinates
-        const worldCoords = this.state.transform.invert([centerX, centerY]);
-        
-        try {
-            const node = this.state.addNode({
-                x: worldCoords[0],
-                y: worldCoords[1],
-                name: 'python node',
-                type: 'python_file'
-            });
-            this.updateStatusBar(`added python node: ${node.name}`);
-        } catch (error) {
-            this.updateStatusBar(`error adding python node: ${error.message}`);
-        }
-    }
-
-    addIfNode() {
-        const centerX = this.state.canvasWidth / 2;
-        const centerY = this.state.canvasHeight / 2;
-        
-        // transform screen coordinates to world coordinates
-        const worldCoords = this.state.transform.invert([centerX, centerY]);
-        
-        try {
-            const node = this.state.addNode({
-                x: worldCoords[0],
-                y: worldCoords[1],
-                name: 'if condition',
-                type: 'if_node'
-            });
-            this.updateStatusBar(`added if node: ${node.name}`);
-        } catch (error) {
-            this.updateStatusBar(`error adding if node: ${error.message}`);
-        }
-    }
-
-    addTextAnnotation() {
-        // only in build mode
-        if (!this.state.isBuildMode) {
-            this.updateStatusBar('text annotation only available in build mode');
-            return;
-        }
-        const centerX = this.state.canvasWidth / 2;
-        const centerY = this.state.canvasHeight / 2;
-        const [wx, wy] = this.state.transform.invert([centerX, centerY]);
-        try {
-            const ann = this.state.addAnnotation({ x: wx, y: wy, text: 'text' });
-            this.updateStatusBar('added text');
-        } catch (e) {
-            this.updateStatusBar('error adding text');
-        }
-    }
-
-    addArrowAnnotation() {
-        // only in build mode
-        if (!this.state.isBuildMode) {
-            this.updateStatusBar('arrow annotation only available in build mode');
-            return;
-        }
-        const centerX = this.state.canvasWidth / 2;
-        const centerY = this.state.canvasHeight / 2;
-        const [wx, wy] = this.state.transform.invert([centerX, centerY]);
-        try {
-            const ann = this.state.addAnnotation({ 
-                x: wx, 
-                y: wy, 
-                type: 'arrow',
-                startX: wx - 50,
-                startY: wy,
-                endX: wx + 50,
-                endY: wy,
-                strokeWidth: 2,
-                strokeColor: 'var(--on-surface)'
-            });
-            this.updateStatusBar('added arrow');
-        } catch (e) {
-            this.updateStatusBar('error adding arrow');
-        }
-    }
+    // node creation delegated to CreateNode class
 
     // context menu operations
     showContextMenu(x, y, item) {
@@ -1491,32 +1396,7 @@ this.setupNavigationButtons();
         this.updateStatusBar('flowchart exported');
     }
 
-    addCallAiNode() {
-        try {
-            let position = { x: 200, y: 200 };
-            try {
-                // center-ish default if helper not present
-                const canvas = document.getElementById('flowchart_canvas');
-                if (canvas && this.state && this.state.transform) {
-                    const rect = canvas.getBoundingClientRect();
-                    const cx = rect.left + rect.width * 0.5;
-                    const cy = rect.top + rect.height * 0.35;
-                    const world = this.state.transform.invert([cx, cy]);
-                    position = { x: world[0], y: world[1] };
-                }
-            } catch (_) {}
-            const node = this.state.addNode({
-                x: position.x,
-                y: position.y,
-                name: 'ai node',
-                type: 'call_ai'
-            });
-            this.state.selectNode(node.id, false);
-            this.updateStatusBar('added ai');
-        } catch (error) {
-            this.updateStatusBar('error adding ai');
-        }
-    }
+
 
     async importData(file) {
         try {

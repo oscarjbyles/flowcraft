@@ -4,8 +4,9 @@
     if (window.Sidebar) { return; }
 
 class Sidebar {
-    constructor(stateManager) {
+    constructor(stateManager, createNode) {
         this.state = stateManager;
+        this.createNode = createNode;
         this.currentView = 'default';
         this.pythonFiles = [];
         this.filteredFiles = [];

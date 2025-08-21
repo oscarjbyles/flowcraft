@@ -4,9 +4,10 @@
     if (window.NodeRenderer) { return; }
 
 class NodeRenderer {
-    constructor(stateManager, container) {
+    constructor(stateManager, container, createNode) {
         this.state = stateManager;
         this.container = container;
+        this.createNode = createNode;
         
         // create node group
         this.nodeGroup = this.container.append('g').attr('class', 'nodes');
@@ -1171,7 +1172,7 @@ class NodeRenderer {
         if (inputNodes.length === 0) {
             // if no input node exists yet, try to create one via the standard check
             try {
-                await this.state.checkAndCreateInputNode(node);
+                await this.createNode.checkAndCreateInputNode(node);
             } catch (e) {
                 console.error('failed to create input node on refresh:', e);
             }

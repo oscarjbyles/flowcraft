@@ -121,49 +121,7 @@ class StateManager extends BaseEmitter {
         } catch (_) {}
     }
 
-    // node management
-    addNode(nodeData) {
-        const node = {
-            id: Date.now() + Math.random(),
-            x: nodeData.x || 0,
-            y: nodeData.y || 0,
-            name: nodeData.name || 'python node',
-            type: nodeData.type || 'python_file',
-            // normalize any incoming pythonFile to remove leading nodes/ for persistence
-            pythonFile: (function(p){
-                const s = (p || '').toString().replace(/\\/g, '/');
-                if (!s) return '';
-                const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
-                return noPrefix;
-            })(nodeData.pythonFile),
-            description: nodeData.description || '',
-            groupId: nodeData.groupId || null,
-            width: (nodeData.type === 'data_save')
-                ? Geometry.getDataSaveNodeWidth(nodeData.name || 'data save')
-                : Geometry.getNodeWidth(nodeData.name || 'python node'),
-            ...nodeData
-        };
 
-        // validate node
-        const validation = Validation.validateNode(node);
-        if (!validation.isValid) {
-            throw new Error(`invalid node: ${validation.errors.join(', ')}`);
-        }
-
-        // console.log(`[StateManager] Adding node: ${node.name} at (${node.x}, ${node.y})`);
-        this.nodes.push(node);
-        this.emit('nodeAdded', node);
-        
-        // check if this node needs an input node
-        if (node.type === 'python_file' && !nodeData.skipInputCheck) {
-            this.checkAndCreateInputNode(node);
-        }
-        
-        this.emit('stateChanged');
-        this.scheduleAutosave();
-        
-        return node;
-    }
 
     async updateNode(nodeId, updates) {
         const node = this.getNode(nodeId);
@@ -204,7 +162,7 @@ class StateManager extends BaseEmitter {
             // create a new input node only if the new python file is non-empty
             if (updates.pythonFile && updates.pythonFile.trim() !== '') {
                 // create the new input node
-                const newInputNode = await this.checkAndCreateInputNode(node);
+                const newInputNode = await this.createNode.checkAndCreateInputNode(node);
                 
                 // if a new input node was created and we had existing values, try to restore them
                 if (newInputNode && Object.keys(existingInputValues).length > 0) {
@@ -573,53 +531,7 @@ class StateManager extends BaseEmitter {
         return dependencies;
     }
 
-    // group management
-    createGroup(nodeIds, groupData = {}) {
-        if (nodeIds.length < 2) {
-            throw new Error('group must contain at least 2 nodes');
-        }
 
-        const groupId = Date.now() + Math.random();
-        const group = {
-            id: groupId,
-            name: groupData.name || 'group name',
-            description: groupData.description || '',
-            nodeIds: [...nodeIds],
-            ...groupData
-        };
-
-        // validate group
-        const validation = Validation.validateGroup(group, this.nodes);
-        if (!validation.isValid) {
-            throw new Error(`invalid group: ${validation.errors.join(', ')}`);
-        }
-
-        // assign group id to nodes
-        nodeIds.forEach(nodeId => {
-            const node = this.getNode(nodeId);
-            if (node) {
-                node.groupId = groupId;
-            }
-        });
-
-        this.groups.push(group);
-        
-        // clear node selection and select the new group
-        this.selectedNodes.clear();
-        this.selectedLink = null;
-        this.selectedGroup = group;
-        
-        this.emit('groupCreated', group);
-        this.emit('selectionChanged', {
-            nodes: [],
-            link: null,
-            group: group
-        });
-        this.emit('stateChanged');
-        this.scheduleAutosave();
-        
-        return group;
-    }
 
     updateGroup(groupId, updates) {
         const group = this.getGroup(groupId);
@@ -883,7 +795,7 @@ class StateManager extends BaseEmitter {
             this.rebuildMagnetPairsFromNodes();
             
             // check and create input nodes for loaded python_file nodes
-            await this.checkLoadedNodesForInputs();
+            await this.createNode.checkLoadedNodesForInputs();
             
             this.emit('dataLoaded', { data: result.data, message: result.message });
             this.emit('stateChanged');
@@ -894,35 +806,7 @@ class StateManager extends BaseEmitter {
         return result;
     }
 
-    // annotation management
-    addAnnotation(annotationData) {
-        const annotation = {
-            id: Date.now() + Math.random(),
-            x: annotationData.x || 0,
-            y: annotationData.y || 0,
-            type: annotationData.type || 'text',
-            ...annotationData
-        };
 
-        // handle different annotation types
-        if (annotation.type === 'text') {
-            annotation.text = Validation.sanitizeString(annotationData.text || 'text', 200);
-            annotation.fontSize = Math.max(8, Math.min(72, parseInt(annotationData.fontSize || 14, 10))) || 14;
-        } else if (annotation.type === 'arrow') {
-            annotation.startX = annotationData.startX || annotation.x - 50;
-            annotation.startY = annotationData.startY || annotation.y;
-            annotation.endX = annotationData.endX || annotation.x + 50;
-            annotation.endY = annotationData.endY || annotation.y;
-            annotation.strokeWidth = Math.max(1, Math.min(10, parseInt(annotationData.strokeWidth || 2, 10))) || 2;
-            annotation.strokeColor = annotationData.strokeColor || 'var(--on-surface)';
-        }
-
-        this.annotations.push(annotation);
-        this.emit('annotationAdded', annotation);
-        this.emit('stateChanged');
-        this.scheduleAutosave();
-        return annotation;
-    }
 
     updateAnnotation(annotationId, updates) {
         const ann = this.annotations.find(a => a.id === annotationId);
@@ -1044,138 +928,9 @@ class StateManager extends BaseEmitter {
         this.emit('stateChanged');
     }
 
-    // check loaded nodes for input requirements (called after loading from JSON)
-    async checkLoadedNodesForInputs() {
-        // skip input node creation if we're restoring from execution history
-        if (this.isRestoringFromHistory) {
-            console.log('skipping input node creation during history restoration');
-            return;
-        }
-        
-        // find all python_file nodes that don't have existing input nodes
-        const pythonFileNodes = this.nodes.filter(node => 
-            node.type === 'python_file' && 
-            !node.skipInputCheck &&
-            node.pythonFile
-        );
-        
-        // check each python file node for input requirements
-        for (const node of pythonFileNodes) {
-            // check if this node already has an input node (more robust check)
-            const existingInputNodes = this.nodes.filter(n => 
-                n.type === 'input_node' && n.targetNodeId === node.id
-            );
-            
-            // if no input nodes exist, create one
-            if (existingInputNodes.length === 0) {
-                await this.checkAndCreateInputNode(node);
-            } else if (existingInputNodes.length > 1) {
-                // if multiple input nodes exist, keep only the first and remove duplicates
-                console.warn(`multiple input nodes found for python node ${node.id}, removing duplicates`);
-                for (let i = 1; i < existingInputNodes.length; i++) {
-                    this.removeNode(existingInputNodes[i].id, true);
-                }
-            }
-        }
-    }
+
     
-    // check if a node needs an input node and create it
-    async checkAndCreateInputNode(mainNode) {
-        if (!mainNode.pythonFile) return null;
-        
-        try {
-            // enforce at most one input node
-            const existingInputs = this.nodes.filter(n => n.type === 'input_node' && n.targetNodeId === mainNode.id);
-            if (existingInputs.length >= 1) {
-                // keep only the first if multiple exist
-                for (let i = 1; i < existingInputs.length; i++) {
-                    this.removeNode(existingInputs[i].id, true);
-                }
-                return existingInputs[0]; // return the existing input node
-            }
-            
-            // analyze the python file to check for function parameters
-            const response = await fetch('/api/analyze-python-function', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    python_file: mainNode.pythonFile
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success && result.parameters && result.parameters.length > 0) {
-                // create input node for this main node
-                const inputNode = this.createInputNode(mainNode, result.parameters);
-                
-                // create connection from input node to main node
-                this.createInputConnection(inputNode, mainNode);
-                
-                return inputNode;
-            }
-            
-            return null;
-        } catch (error) {
-            console.error('error checking node inputs:', error);
-            return null;
-        }
-    }
-    
-    // create an input node for a main node
-    createInputNode(mainNode, parameters) {
-        // fixed width for input nodes
-        const dynamicWidth = 300;
-        
-        const inputNode = {
-            id: Date.now() + Math.random() + 0.1, // slightly different to avoid conflicts
-            x: mainNode.x - 200, // position to the left of main node
-            y: mainNode.y,
-            name: `Input Node`,
-            type: 'input_node',
-            pythonFile: mainNode.pythonFile,
-            description: 'input parameters',
-            groupId: mainNode.groupId,
-            width: dynamicWidth,
-            parameters: parameters,
-            targetNodeId: mainNode.id, // reference to the main node
-            inputValues: {}, // store user input values
-            skipInputCheck: true // don't check this node for inputs again
-        };
-        
-        // initialize default values for each parameter
-        parameters.forEach(param => {
-            inputNode.inputValues[param] = '';
-        });
-        
-        // validate and add the input node
-        const validation = Validation.validateNode(inputNode);
-        if (!validation.isValid) {
-            console.error('invalid input node:', validation.errors);
-            return null;
-        }
-        
-        this.nodes.push(inputNode);
-        this.emit('nodeAdded', inputNode);
-        
-        return inputNode;
-    }
-    
-    // create connection from input node to main node
-    createInputConnection(inputNode, mainNode) {
-        const link = {
-            source: inputNode.id,
-            target: mainNode.id,
-            type: 'input_connection',
-            selectable: false, // make input connections non-selectable
-            style: 'dashed' // dashed line style
-        };
-        
-        this.links.push(link);
-        this.emit('linkAdded', link);
-    }
+
 
     // temporary function to clear input nodes without associated python nodes
     clearOrphanedInputNodes() {

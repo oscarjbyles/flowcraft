@@ -137,7 +137,7 @@
         const selectedNodes = Array.from(this.state.selectedNodes);
         if (selectedNodes.length < 2) { this.showError('select at least 2 nodes to create a group'); return; }
         try {
-            const group = this.state.createGroup(selectedNodes);
+            const group = this.createNode.createGroup(selectedNodes);
             this.showSuccess(`created group: ${group.name}`);
         } catch (error) {
             this.showError(error.message);
@@ -648,7 +648,7 @@
 
             try {
                 const nodeName = payload.displayText || 'data save';
-                const node = this.state.addNode({
+                const node = this.createNode.addNode({
                     x: wx,
                     y: wy,
                     name: nodeName,
