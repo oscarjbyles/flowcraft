@@ -118,7 +118,9 @@
                                 const inputNode = node; // current node is the input node
                                 inputNode.runtimeStatus = 'success';
                                 // also apply the standard completed class like python nodes
-                                if (window.flowchartApp && typeof window.flowchartApp.setNodeState === 'function') {
+                                if (window.flowchartApp && window.flowchartApp.nodeStateManager && typeof window.flowchartApp.nodeStateManager.setNodeState === 'function') {
+                                    window.flowchartApp.nodeStateManager.setNodeState(inputNode.id, 'completed');
+                                } else if (window.flowchartApp && typeof window.flowchartApp.setNodeState === 'function') {
                                     window.flowchartApp.setNodeState(inputNode.id, 'completed');
                                 } else if (this.setNodeState) {
                                     this.setNodeState(inputNode.id, 'completed');

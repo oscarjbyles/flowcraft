@@ -42,10 +42,8 @@ class FlowchartBuilder {
         // execution control
         this.currentExecutionController = null;
         
-        // execution state
-        this.isExecuting = false;
-        this.executionAborted = false;
-		// guard to prevent double-start on rapid clicks
+        // execution state - these will be managed by executionLogic
+        // guard to prevent double-start on rapid clicks
 		this.executionStarting = false;
         // auto-track state: when true, viewport follows the active node during execution
         this.isAutoTrackEnabled = false;
@@ -62,15 +60,21 @@ class FlowchartBuilder {
 
         
         // store execution results for individual nodes
-        this.nodeExecutionResults = new Map(); // nodeId -> execution result
+        this.nodeExecutionResults = new Map(); // nodeId -> execution result (legacy reference)
         this.globalExecutionLog = ''; // overall execution log
-        this.nodeVariables = new Map(); // nodeId -> returned variables from function
+        this.nodeVariables = new Map(); // nodeId -> returned variables from function (legacy reference)
         // restored variable state from history (for resume functionality)
         this.restoredVariableState = null;
 
         // runtime branch control: nodes blocked by false if arms in the current run
         // all comments in lower case
         this.blockedNodeIds = new Set();
+        
+                        // initialize execution logic module
+                this.executionLogic = new ExecutionLogic(this);
+                
+                // initialize node state manager module
+                this.nodeStateManager = new NodeStateManager(this);
         
         // setup core event listeners
         this.setupCoreEvents();
@@ -82,9 +86,6 @@ class FlowchartBuilder {
     async initializeComponents() {
         // initialize sidebar
         this.sidebar = new Sidebar(this.state, this.createNode);
-        
-        // initialize execution feed
-        this.executionFeed = new ExecutionFeed(this.state);
     }
 
     async initializeCanvas() {
@@ -703,7 +704,7 @@ class FlowchartBuilder {
             this.toolbars.refreshTrackBtnUI();
         }
         // ensure any stale runtime indicators are cleared when entering run (unless restoring from history)
-        if (clearRuntimeIndicators) {
+        if (clearRuntimeIndicators && this.executionLogic) {
             this.clearIfRuntimeIndicators();
         }
     }
@@ -830,21 +831,7 @@ class FlowchartBuilder {
 
 
 
-    // clear all runtime condition flags on if→python links (used when clearing run or leaving run mode)
-    clearIfRuntimeIndicators() {
-        try {
-            const links = Array.isArray(this.state.links) ? this.state.links : [];
-            links.forEach(l => {
-                const s = this.state.getNode(l.source);
-                const t = this.state.getNode(l.target);
-                if (s && t && s.type === 'if_node' && t.type === 'python_file') {
-                    this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
-                }
-            });
-            // re-render if-to-python nodes to reflect cleared state
-            this.linkRenderer.renderIfToPythonNodes();
-        } catch (_) {}
-    }
+
 
     updateFlowViewUI(isFlowView) {
         const flowToggleBtn = document.getElementById('flow_toggle_btn');
@@ -945,156 +932,89 @@ class FlowchartBuilder {
 
     // history panel removed
 
+    // execution methods - delegate to execution logic module
     async startExecution() {
-        // clear all selections when starting execution (same as deselect button)
-        this.deselectAll();
-
-        // get execution order
-        const executionOrder = this.calculateNodeOrder();
-        
-        if (executionOrder.length === 0) {
-            this.updateExecutionStatus('error', 'no connected nodes to execute');
-            return;
-        }
-
-        // create abort controller for this execution session
-        this.currentExecutionController = new AbortController();
-
-        // set execution state
-        this.isExecuting = true;
-        this.executionAborted = false;
-		// clear the starting guard as soon as execution officially begins
-		this.executionStarting = false;
-        
-        // update ui to show stop button and loading wheel
-        this.updateExecutionUI(true);
-
-        // reset all node states and clear previous execution results
-        this.resetNodeStates();
-        this.nodeExecutionResults.clear();
-        this.nodeVariables.clear();
-        this.globalExecutionLog = '';
-        this.clearOutput();
-
-        // reset blocked branches
-        this.blockedNodeIds.clear();
-        // clear restored variable state when starting new execution
-        this.restoredVariableState = null;
-        // clear any previous runtime condition indicators on if→python links
-        try {
-            const links = Array.isArray(this.state.links) ? this.state.links : [];
-            links.forEach(l => {
-                const s = this.state.getNode(l.source);
-                const t = this.state.getNode(l.target);
-                if (s && t && s.type === 'if_node' && t.type === 'python_file') {
-                    this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
-                }
-            });
-        } catch (_) {}
-        
-        // update execution status
-        this.updateExecutionStatus('running', `executing ${executionOrder.length} nodes`);
-        
-        try {
-            // execute nodes one by one with live feedback
-        for (let i = 0; i < executionOrder.length; i++) {
-                // check if execution was stopped
-                if (this.executionAborted) {
-                    this.updateExecutionStatus('stopped', 'execution stopped by user');
-                    await this.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
-                    return;
-                }
-                
-            const node = executionOrder[i];
-                const success = await this.executeNodeLive(node, i + 1, executionOrder.length);
-                // after a successful python node, persist any connected data_save values
-                if (success && node.type === 'python_file') {
-                    try { await this.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
-                }
-                // update sidebar progress each step
-                this.updateExecutionStatus('running', `executing ${i + 1} of ${executionOrder.length}`);
-                
-                // if node failed or execution was aborted, stop execution immediately
-                if (!success) {
-                    if (this.executionAborted) {
-                        this.updateExecutionStatus('stopped', 'execution stopped by user');
-                        await this.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
-                    } else {
-                        this.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
-                        // ensure sidebar refresh picks up failure info in no-selection view
-                        this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
-                        await this.saveExecutionHistory('failed', executionOrder, `execution stopped at node: ${node.name}`);
-                    }
-                    return;
-                }
-            }
-            
-            // all nodes completed successfully
-            this.updateExecutionStatus('completed', 'execution completed successfully');
-            await this.saveExecutionHistory('success', executionOrder);
-            
-        } catch (error) {
-            this.updateExecutionStatus('error', `execution failed: ${error.message}`);
-            await this.saveExecutionHistory('error', executionOrder, error.message);
-        } finally {
-            // reset execution state
-            this.isExecuting = false;
-            this.updateExecutionUI(false);
-        }
+        await this.executionLogic.startExecution();
     }
     
     async stopExecution() {
-        if (this.isExecuting) {
-            this.executionAborted = true;
-            
-            // abort the current API request if one is in progress
-            if (this.currentExecutionController) {
-                this.currentExecutionController.abort();
-            }
-            
-            // call stop API to terminate any running Python processes
-            try {
-                await fetch('/api/stop-execution', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-            } catch (error) {
-                console.warn('failed to call stop API:', error);
-            }
-            
-            this.isExecuting = false;
-            this.updateExecutionUI(false);
-            this.updateExecutionStatus('stopped', 'execution stopped by user');
-            
-            // reset the abort controller
-            this.currentExecutionController = null;
-        }
+        await this.executionLogic.stopExecution();
     }
     
     updateExecutionUI(isExecuting) {
-        const button = document.getElementById('execute_start_btn');
-        const loadingWheel = document.getElementById('execution_loading_wheel');
-        const icon = button.querySelector('.material-icons');
-        const text = button.childNodes[button.childNodes.length - 1];
-        
-        if (isExecuting) {
-            // change to stop button
-            button.classList.remove('btn_primary');
-            button.classList.add('btn_stop');
-            icon.textContent = 'stop';
-            text.textContent = ' Stop';
-            loadingWheel.style.display = 'block';
-        } else {
-            // change back to start button
-            button.classList.remove('btn_stop');
-            button.classList.add('btn_primary');
-            icon.textContent = 'play_arrow';
-            text.textContent = ' Start';
-            loadingWheel.style.display = 'none';
+        this.executionLogic.updateExecutionUI(isExecuting);
+    }
+    
+    async executeNodeLive(node, nodeIndex, totalNodes, accumulatedVariables = null) {
+        return await this.executionLogic.executeNodeLive(node, nodeIndex, totalNodes, accumulatedVariables);
+    }
+    
+    clearIfRuntimeIndicators() {
+        if (this.executionLogic) {
+            this.executionLogic.clearIfRuntimeIndicators();
         }
     }
+    
+    resetNodeStates() {
+        if (this.executionLogic) {
+            this.executionLogic.resetNodeStates();
+        }
+    }
+
+    // getter methods to access execution logic data
+    get nodeExecutionResults() {
+        return this.executionLogic ? this.executionLogic.getExecutionResults() : new Map();
+    }
+
+    get nodeVariables() {
+        return this.executionLogic ? this.executionLogic.getNodeVariables() : new Map();
+    }
+
+    get blockedNodeIds() {
+        return this.executionLogic ? this.executionLogic.getBlockedNodeIds() : new Set();
+    }
+
+    get isExecuting() {
+        return this.executionLogic ? this.executionLogic.isCurrentlyExecuting() : false;
+    }
+
+    get executionAborted() {
+        return this.executionLogic ? this.executionLogic.isExecutionAborted() : false;
+    }
+
+    // setter methods to access execution logic data
+    set nodeExecutionResults(results) {
+        if (this.executionLogic) {
+            this.executionLogic.setExecutionResults(results);
+        }
+    }
+
+    set nodeVariables(variables) {
+        if (this.executionLogic) {
+            this.executionLogic.setNodeVariables(variables);
+        }
+    }
+
+    set blockedNodeIds(blockedIds) {
+        if (this.executionLogic) {
+            this.executionLogic.setBlockedNodeIds(blockedIds);
+        }
+    }
+
+    set isExecuting(value) {
+        if (this.executionLogic) {
+            this.executionLogic.setExecuting(value);
+        }
+    }
+
+    set executionAborted(value) {
+        if (this.executionLogic) {
+            this.executionLogic.setExecutionAborted(value);
+        }
+    }
+
+    
+
     
 
     
@@ -1188,7 +1108,7 @@ class FlowchartBuilder {
             }
             
             // sanitize feed to ensure no duplicate entries or line texts per node before saving history
-            const sanitizedFeed = this.executionFeed ? this.executionFeed.sanitizeFeed() : [];
+            const sanitizedFeed = [];
 
             // build variable state for resume functionality
             const variableState = {};
@@ -1422,9 +1342,9 @@ class FlowchartBuilder {
                 
                 // set visual node state
                 if (result.success) {
-                    this.setNodeState(result.node_id, 'completed');
+                    this.nodeStateManager.setNodeState(result.node_id, 'completed');
                 } else {
-                    this.setNodeState(result.node_id, 'error');
+                    this.nodeStateManager.setNodeState(result.node_id, 'error');
                 }
             }
         });
@@ -1446,9 +1366,9 @@ class FlowchartBuilder {
                     if (targetResult) {
                         // set input node visual state to match its target node
                         if (targetResult.success) {
-                            this.setNodeState(node.id, 'completed');
+                            this.nodeStateManager.setNodeState(node.id, 'completed');
                         } else {
-                            this.setNodeState(node.id, 'error');
+                            this.nodeStateManager.setNodeState(node.id, 'error');
                         }
                     }
                 }
@@ -1462,10 +1382,6 @@ class FlowchartBuilder {
     }
 
     displayHistoryExecutionResults(executionData) {
-        // restore the bottom live feed from saved history when viewing
-        if (this.executionFeed) {
-            this.executionFeed.displayHistoryExecutionResults(executionData);
-        }
 
         // update execution status and top time row with restored elapsed/timestamp
         try {
@@ -1656,7 +1572,7 @@ class FlowchartBuilder {
 
             // update visual state
             if (result.success) {
-                this.setNodeState(result.node_id, 'completed');
+                this.nodeStateManager.setNodeState(result.node_id, 'completed');
                 this.updateNodeDetails(node, 'completed', result.runtime || 0, result.output);
                 
                 // store variables for next nodes
@@ -1670,7 +1586,7 @@ class FlowchartBuilder {
                     this.appendToExecutionLog(result.output);
                 }
             } else {
-                this.setNodeState(result.node_id, 'error');
+                this.nodeStateManager.setNodeState(result.node_id, 'error');
                 this.updateNodeDetails(node, 'error', result.runtime || 0, result.error);
                 
                 // append error to execution log
@@ -1684,8 +1600,8 @@ class FlowchartBuilder {
         this.currentExecutionController = new AbortController();
 
         // set execution state
-        this.isExecuting = true;
-        this.executionAborted = false;
+        this.executionLogic.setExecuting(true);
+        this.executionLogic.setExecutionAborted(false);
         
         // update ui to show stop button and loading wheel
         this.updateExecutionUI(true);
@@ -1797,565 +1713,18 @@ class FlowchartBuilder {
             }
         } finally {
             // reset execution state
-            this.isExecuting = false;
+            this.executionLogic.setExecuting(false);
             this.updateExecutionUI(false);
         }
     }
 
 
 
-    async executeNodeLive(node, nodeIndex, totalNodes, accumulatedVariables = null) {
-        // skip blocked nodes silently
-        if (this.blockedNodeIds && this.blockedNodeIds.has(node.id)) {
-            return true;
-        }
-        
-        // handle if splitter nodes without executing python
-        if (node && node.type === 'if_node') {
-            await this.evaluateIfNodeAndBlockBranches(node);
-            // mark as completed for visual feedback without running
-            this.setNodeState(node.id, 'completed');
-            this.updateNodeDetails(node, 'completed', 0);
-            return true;
-        }
-        
-        // remember current executing node for immediate tracking when toggled on mid-run
-        this.currentExecutingNodeId = node && node.id;
-        
-        // set node to running state with loading animation
-        this.setNodeState(node.id, 'running');
-        this.addNodeLoadingAnimation(node.id);
-        this.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
-        
-        // auto-follow currently running python nodes if tracking is enabled and not user-disabled
-        if (
-            node && node.type === 'python_file' &&
-            this.isAutoTrackEnabled && !this.userDisabledTracking
-        ) {
-            this.centerOnNode(node.id);
-        }
-        
-        // show node details in sidebar
-        this.updateNodeDetails(node, 'running', Date.now());
-        
-        const startTime = Date.now();
-        
-        try {
-            // gather input variables from previous nodes
-            const inputVariables = await this.gatherInputVariables(node);
-            
-            // merge accumulated variables if provided (for resume execution)
-            const finalFunctionArgs = accumulatedVariables 
-                ? { ...inputVariables.functionArgs, ...accumulatedVariables }
-                : inputVariables.functionArgs;
-            const finalInputValues = inputVariables.inputValues;
-            
-            // create a feed entry upfront so the title appears even if no output lines
-            if (this.executionFeed) {
-                this.executionFeed.createNodeEntry(node);
-            }
-            
-            // execute the node via API with input variables
-            const result = await this.callNodeExecution(node, {
-                functionArgs: finalFunctionArgs,
-                inputValues: finalInputValues
-            });
-
-            // finalize the feed item for this node
-            if (this.executionFeed) {
-                this.executionFeed.finalizeNode(node, result, startTime);
-            }
 
 
-            
-            const endTime = Date.now();
-            const runtime = endTime - startTime;
-            
-            // remove loading animation
-            this.removeNodeLoadingAnimation(node.id);
-            
-            if (result.success) {
-                // store return value from function if any - do this FIRST
-                if (result.return_value !== null && result.return_value !== undefined) {
-                    this.nodeVariables.set(node.id, result.return_value);
-                }
-                
-                // store execution result
-                this.nodeExecutionResults.set(node.id, {
-                    node: node,
-                    success: true,
-                    output: result.output || '',
-                    error: null,
-                    runtime: runtime,
-                    timestamp: new Date().toLocaleTimeString(),
-                    return_value: result.return_value,
-                    function_name: result.function_name,
-                    input_args: result.input_args,
-                    input_values: result.input_values,
-                    input_used: !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)))
-                });
-                
-                // set node to completed state (green)
-                this.setNodeState(node.id, 'completed');
-                this.updateNodeDetails(node, 'completed', runtime, result.output);
 
-                // auto-highlight associated input node in green when inputs were used successfully
-                try {
-                    const usedInputs = !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)));
-                    if (node.type === 'python_file' && usedInputs) {
-                        let inputNode = (this.state.nodes || []).find(n => n && n.type === 'input_node' && n.targetNodeId === node.id);
-                        if (!inputNode) {
-                            const linkFromInput = (this.state.links || []).find(l => {
-                                if (!l) return false;
-                                const src = this.state.getNode(l.source);
-                                return !!(src && src.type === 'input_node' && l.target === node.id);
-                            });
-                            if (linkFromInput) inputNode = this.state.getNode(linkFromInput.source);
-                        }
-                        if (inputNode) {
-                            inputNode.runtimeStatus = 'success';
-                            this.setNodeState(inputNode.id, 'completed');
-                            this.nodeRenderer.updateNodeStyles();
-                        }
-                    }
-                } catch (_) {}
 
-                // if this was a data_save node (synthetic), theme it green as success
-                if (node.type === 'data_save') {
-                    node.runtimeStatus = 'success';
-                    if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
-                }
-                
-                const returnValueText = result.return_value !== null && result.return_value !== undefined 
-                    ? `\nReturned: ${JSON.stringify(result.return_value)}` 
-                    : '';
-                this.appendOutput(`[${node.name}] execution completed in ${(runtime/1000).toFixed(3)}s${returnValueText}\n${result.output || ''}\n`);
-                return true; // success
-            } else {
-                // store execution result and remember failed node for no-selection view
-                this.nodeExecutionResults.set(node.id, {
-                    node: node,
-                    success: false,
-                    output: result.output || '',
-                    error: result.error || 'unknown error',
-                    runtime: runtime,
-                    timestamp: new Date().toLocaleTimeString(),
-                    return_value: null,
-                    function_name: result.function_name,
-                    input_args: result.input_args,
-                    input_values: result.input_values,
-                    input_used: !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)))
-                });
-                this.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: result.error || 'unknown error' };
-                
-                // set node to error state (red)
-                this.setNodeState(node.id, 'error');
-                this.updateNodeDetails(node, 'error', runtime, result.error);
-                if (node.type === 'data_save') {
-                    node.runtimeStatus = 'error';
-                    if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
-                }
-                // format error message with line number if available
-                let errorDisplay = result.error || 'unknown error';
-                if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
-                    errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
-                }
-                this.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${errorDisplay}\n`);
-                return false; // failure - will stop execution
-            }
-            
-        } catch (error) {
-            // store execution result for error case
-            this.nodeExecutionResults.set(node.id, {
-                node: node,
-                success: false,
-                output: '',
-                error: error.message,
-                runtime: 0,
-                timestamp: new Date().toLocaleTimeString()
-            });
-            this.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: error.message };
-            
-            this.removeNodeLoadingAnimation(node.id);
-            this.setNodeState(node.id, 'error');
-            this.updateNodeDetails(node, 'error', 0, error.message);
-            this.appendOutput(`[${node.name}] execution error: ${error.message}\n`);
-            return false; // failure
-        }
-    }
 
-    // evaluate an if splitter's outgoing link conditions against available upstream variables
-    // and block branches whose conditions evaluate to false for the current run
-    async evaluateIfNodeAndBlockBranches(ifNode) {
-        try {
-            // gather variables from incoming python nodes
-            const incomingLinks = this.state.links.filter(l => l.target === ifNode.id);
-            const vars = {};
-			for (const link of incomingLinks) {
-				const sourceId = link.source;
-				if (!this.nodeVariables.has(sourceId)) continue;
-				const val = this.nodeVariables.get(sourceId);
-				if (val && typeof val === 'object' && val !== null) {
-					// if the return value is an array, treat it as a single variable (do not spread indices)
-					if (Array.isArray(val)) {
-						const src = this.state.getNode(sourceId);
-						let mapped = false;
-						try {
-							if (src && src.type === 'python_file' && src.pythonFile) {
-								const resp = await fetch('/api/analyze-python-function', {
-									method: 'POST', headers: { 'Content-Type': 'application/json' },
-									body: JSON.stringify({ python_file: (src.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*?/i,'') })
-								});
-								const data = await resp.json();
-								const returns = Array.isArray(data && data.returns) ? data.returns : [];
-								let varName = null;
-								if (returns.length === 1 && returns[0] && returns[0].name) {
-									varName = returns[0].name;
-								} else {
-									const variableItem = returns.find(r => r && (r.type === 'variable' || typeof r.name === 'string') && r.name);
-									if (variableItem && variableItem.name) varName = variableItem.name;
-								}
-								if (varName && typeof varName === 'string') {
-									vars[varName] = val;
-									mapped = true;
-								}
-							}
-						} catch (_) {}
-						if (!mapped) {
-							const key = (src && src.name) ? src.name.toLowerCase().replace(/[^a-z0-9_]/g, '_') : `node_${sourceId}`;
-							vars[key] = val;
-						}
-					} else {
-						Object.assign(vars, val);
-					}
-				} else if (typeof val !== 'undefined') {
-                    const src = this.state.getNode(sourceId);
-                    let mapped = false;
-                    // try to map primitive return value to the real return variable name via analysis
-                    try {
-                        if (src && src.type === 'python_file' && src.pythonFile) {
-                            const resp = await fetch('/api/analyze-python-function', {
-                                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ python_file: (src.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,'') })
-                            });
-                            const data = await resp.json();
-                            const returns = Array.isArray(data && data.returns) ? data.returns : [];
-                            // prefer single variable name; otherwise first variable-like name
-                            let varName = null;
-                            if (returns.length === 1 && returns[0] && returns[0].name) {
-                                varName = returns[0].name;
-                            } else {
-                                const variableItem = returns.find(r => r && (r.type === 'variable' || typeof r.name === 'string') && r.name);
-                                if (variableItem && variableItem.name) varName = variableItem.name;
-                            }
-                            if (varName && typeof varName === 'string') {
-                                vars[varName] = val;
-                                mapped = true;
-                            }
-                        }
-                    } catch (_) {}
-                    if (!mapped) {
-                        const key = (src && src.name) ? src.name.toLowerCase().replace(/[^a-z0-9_]/g, '_') : `node_${sourceId}`;
-                        vars[key] = val;
-                    }
-                }
-            }
-
-            // evaluate outgoing links
-            const outgoingLinks = this.state.links.filter(l => l.source === ifNode.id);
-            if (!outgoingLinks.length) return;
-
-            // helper to evaluate a single condition object { variable, operator, value, combiner? }
-            const evalSingle = (variableName, operator, compareRaw) => {
-                const left = vars.hasOwnProperty(variableName) ? vars[variableName] : undefined;
-                if (typeof left === 'undefined') return false;
-                let right = compareRaw;
-                // basic type coercion based on left type
-                if (typeof left === 'number') {
-                    const n = Number(right);
-                    right = Number.isNaN(n) ? right : n;
-                } else if (typeof left === 'boolean') {
-                    if (String(right).toLowerCase() === 'true') right = true;
-                    else if (String(right).toLowerCase() === 'false') right = false;
-                }
-				switch (operator) {
-					// array length comparisons
-					case 'len==': {
-						const leftLen = (left != null && typeof left === 'object' && 'length' in left) ? Number(left.length) : (typeof left === 'string' ? left.length : Number(left));
-						const rightNum = Number(compareRaw);
-						return Number.isNaN(leftLen) || Number.isNaN(rightNum) ? false : leftLen == rightNum; // eslint-disable-line eqeqeq
-					}
-					case 'len<': {
-						const leftLen = (left != null && typeof left === 'object' && 'length' in left) ? Number(left.length) : (typeof left === 'string' ? left.length : Number(left));
-						const rightNum = Number(compareRaw);
-						return Number.isNaN(leftLen) || Number.isNaN(rightNum) ? false : leftLen < rightNum;
-					}
-					case 'len>': {
-						const leftLen = (left != null && typeof left === 'object' && 'length' in left) ? Number(left.length) : (typeof left === 'string' ? left.length : Number(left));
-						const rightNum = Number(compareRaw);
-						return Number.isNaN(leftLen) || Number.isNaN(rightNum) ? false : leftLen > rightNum;
-					}
-                    case '===': return left === right;
-                    case '==': return left == right; // eslint-disable-line eqeqeq
-                    case '>': return Number(left) > Number(right);
-                    case '<': return Number(left) < Number(right);
-                    case '>=': return Number(left) >= Number(right);
-                    case '<=': return Number(left) <= Number(right);
-                    default: return false;
-                }
-            };
-
-            const trueTargets = [];
-            const falseTargets = [];
-            for (const link of outgoingLinks) {
-                const meta = this.state.getLink(link.source, link.target) || link;
-                const conditions = Array.isArray(meta.conditions) ? meta.conditions : [];
-                if (conditions.length === 0) {
-                    // no conditions means this arm is not taken by default
-                    falseTargets.push(link.target);
-                    // mark link as false in runtime
-                    this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: [], final: false } });
-                    continue;
-                }
-                // evaluate left-to-right with optional combiner on subsequent conditions (default 'and')
-                const details = [];
-                let result = evalSingle(conditions[0].variable, conditions[0].operator, conditions[0].value);
-                details.push({
-                    variable: conditions[0].variable,
-                    operator: conditions[0].operator,
-                    value: conditions[0].value,
-                    left: Object.prototype.hasOwnProperty.call(vars, conditions[0].variable) ? vars[conditions[0].variable] : undefined,
-                    result
-                });
-                for (let i = 1; i < conditions.length; i++) {
-                    const c = conditions[i];
-                    const next = evalSingle(c.variable, c.operator, c.value);
-                    const comb = (c.combiner || 'and').toLowerCase();
-                    details.push({
-                        variable: c.variable,
-                        operator: c.operator,
-                        value: c.value,
-                        combiner: comb,
-                        left: Object.prototype.hasOwnProperty.call(vars, c.variable) ? vars[c.variable] : undefined,
-                        result: next
-                    });
-                    if (comb === 'or') result = result || next; else result = result && next;
-                }
-                if (result) {
-                    trueTargets.push(link.target);
-                    this.state.updateLink(link.source, link.target, { runtime_condition: 'true', runtime_details: { variables: { ...vars }, conditions: details, final: true } });
-                } else {
-                    falseTargets.push(link.target);
-                    this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: details, final: false } });
-                }
-            }
-
-            // block all false arms (and their downstream nodes where appropriate)
-            for (const tgt of falseTargets) {
-                this.blockBranchFrom(tgt);
-            }
-            // ensure true arm immediate targets are unblocked if previously marked
-            for (const tgt of trueTargets) {
-                if (this.blockedNodeIds.has(tgt)) this.blockedNodeIds.delete(tgt);
-            }
-        } catch (e) {
-            console.warn('if evaluation error', e);
-        }
-    }
-
-    // block a branch starting from a node id, but stop at merge points that also have
-    // incoming links from nodes not in the blocked set (so other paths can still proceed)
-    blockBranchFrom(startNodeId) {
-        const queue = [startNodeId];
-        const localVisited = new Set();
-        while (queue.length) {
-            const currentId = queue.shift();
-            if (localVisited.has(currentId)) continue;
-            localVisited.add(currentId);
-
-            // add to global blocked set
-            this.blockedNodeIds.add(currentId);
-
-            // traverse outgoing links
-            const outgoing = this.state.links.filter(l => l.source === currentId);
-            for (const l of outgoing) {
-                const targetId = l.target;
-                if (localVisited.has(targetId)) continue;
-                // check if target has any incoming from outside blocked area
-                const incomers = this.state.links.filter(il => il.target === targetId);
-                const hasAlternative = incomers.some(il => !this.blockedNodeIds.has(il.source) && !localVisited.has(il.source));
-                if (!hasAlternative) {
-                    queue.push(targetId);
-                }
-            }
-        }
-    }
-
-    async callNodeExecution(node, inputVariables = {}) {
-        // call streaming endpoint to receive live stdout as events
-        try {
-            const callStartTime = Date.now();
-            const controller = this.currentExecutionController || new AbortController();
-            const response = await fetch('/api/execute-node-stream', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    node_id: node.id,
-                    python_file: (node.pythonFile || '').replace(/\\/g,'/').replace(/^(?:nodes\/)*/i,''),
-                    node_name: node.name,
-                    function_args: inputVariables.functionArgs || {},
-                    input_values: inputVariables.inputValues || {}
-                }),
-                signal: controller.signal
-            });
-
-            if (!response.ok) {
-                throw new Error(`server error: ${response.status} ${response.statusText}`);
-            }
-            
-            if (!response.body) {
-                throw new Error('streaming not supported by server');
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let finalResult = null;
-            let inResultBlock = false; // filter out embedded result payload from live feed
-
-            const appendConsole = (rawLine) => {
-                // filter out embedded result block markers and their contents
-                let line = String(rawLine || '');
-                if (line.includes('__RESULT_START__') && line.includes('__RESULT_END__')) {
-                    line = line.replace(/__RESULT_START__[\s\S]*?__RESULT_END__/g, '');
-                    inResultBlock = false;
-                } else if (line.includes('__RESULT_START__')) {
-                    // keep anything before the start marker, then enter skip mode
-                    line = line.split('__RESULT_START__')[0];
-                    inResultBlock = true;
-                } else if (line.includes('__RESULT_END__')) {
-                    // leave skip mode; keep anything after the end marker
-                    line = line.split('__RESULT_END__')[1] || '';
-                    inResultBlock = false;
-                } else if (inResultBlock) {
-                    // skip lines inside the result block
-                    return;
-                }
-                // normalize whitespace to improve duplicate detection
-                line = line.trim();
-                if (!line) return;
-                // append live output to the sidebar console if this node is selected
-                const selected = Array.from(this.state.selectedNodes);
-                if (selected.length === 1 && selected[0] === node.id) {
-                    const container = document.getElementById('console_output_log');
-                    if (container) {
-                        const current = container.textContent || '';
-                        container.textContent = current ? (current + '\n' + line) : line;
-                        container.scrollTop = container.scrollHeight;
-                    }
-                }
-                // also append a live line to the bottom feed for this node
-                if (this.executionFeed) {
-                    this.executionFeed.addLine(node, line);
-                }
-            };
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-
-                // process sse-like chunks
-                let idx;
-                while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                    const chunk = buffer.slice(0, idx).trimEnd();
-                    buffer = buffer.slice(idx + 2);
-                    if (!chunk) continue;
-                    const lines = chunk.split('\n');
-                    let eventType = 'message';
-                    let dataLines = [];
-                    for (const l of lines) {
-                        if (l.startsWith('event:')) {
-                            eventType = l.slice(6).trim();
-                        } else if (l.startsWith('data:')) {
-                            dataLines.push(l.slice(5).trim());
-                        }
-                    }
-                    const data = dataLines.join('\n');
-                    if (eventType === 'stdout') {
-                        appendConsole(data);
-                    } else if (eventType === 'result') {
-                        try {
-                            finalResult = JSON.parse(data);
-                        } catch (_) {
-                            finalResult = { success: false, error: 'invalid result payload' };
-                        }
-                        // finalize the running feed item state
-                        try {
-                            const runningId = `run_feed_running_${node.id}`;
-                            const item = document.getElementById(runningId);
-                            if (item) {
-                                item.classList.add(finalResult.success ? 'success' : 'error');
-                                // keep id so we can reuse if the same node is run again in the same session; but we want to start a new group next time
-                                // we will remove id right before creating a new running item for this node next time
-                                const metaCol = item.children[2];
-                                if (metaCol) {
-                                    const finishedAt = new Date();
-                                    const elapsedMs = Math.max(0, finishedAt.getTime() - callStartTime);
-                                    const elapsedSec = (elapsedMs / 1000).toFixed(3);
-                                    metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
-                                }
-                                // if failed, append error text lines to the live feed ui
-                                // all comments in lower case
-                                try {
-                                    if (!finalResult.success && finalResult && (finalResult.error || finalResult.error_line)) {
-                                        const outCol = item.children[1];
-                                        if (outCol) {
-                                            let errorDisplay = String(finalResult.error || '').trim();
-                                            if (finalResult.error_line && finalResult.error_line > 0) {
-                                                // prefix line number if not already present
-                                                if (!/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
-                                                    errorDisplay = `Line ${finalResult.error_line}: ${errorDisplay}`.trim();
-                                                }
-                                            }
-                                            errorDisplay
-                                                .split(/\r?\n/)
-                                                .filter(Boolean)
-                                                .forEach(tl => {
-                                                    const lineDiv = document.createElement('div');
-                                                    lineDiv.className = 'run_feed_line';
-                                                    lineDiv.textContent = tl;
-                                                    outCol.appendChild(lineDiv);
-                                                });
-                                            const list = document.getElementById('run_feed_list');
-                                            if (list) list.scrollTop = list.scrollHeight;
-                                        }
-                                    }
-                                } catch (_) {}
-                            }
-                            // finalize feed entry data
-                            if (this.executionFeed) {
-                                this.executionFeed.finalizeNode(node, finalResult, callStartTime);
-                            }
-                        } catch (_) {}
-                    }
-                }
-            }
-
-            // ensure we have a result
-            if (!finalResult) {
-                finalResult = { success: false, error: 'no result received' };
-            }
-            return finalResult;
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                return { success: false, error: 'execution was cancelled by user' };
-            }
-            return { success: false, error: `network error: ${error.message}` };
-        }
-    }
 
     async gatherInputVariables(targetNode) {
         // gather all variables from nodes that connect to this target node
@@ -2741,128 +2110,26 @@ class FlowchartBuilder {
         }
     }
 
-    addNodeLoadingAnimation(nodeId) {
-        // add spinning loading animation around the node
-        const nodeGroup = this.nodeRenderer.nodeGroup
-            .selectAll('.node-group')
-            .filter(d => d.id === nodeId);
-            
-        // add loading circle around the node
-        nodeGroup.append('circle')
-            .attr('class', 'node_loading_circle')
-            .attr('r', 45)
-            .attr('cx', 0)
-            .attr('cy', 0)
-            .style('fill', 'none')
-            .style('stroke', '#2196f3')
-            .style('stroke-width', '3')
-            .style('stroke-dasharray', '10,5')
-            .style('animation', 'spin 1s linear infinite');
-    }
-
-    removeNodeLoadingAnimation(nodeId) {
-        // remove the loading animation
-        const nodeGroup = this.nodeRenderer.nodeGroup
-            .selectAll('.node-group')
-            .filter(d => d.id === nodeId);
-            
-        nodeGroup.select('.node_loading_circle').remove();
-    }
-
-    // node state enum for better type safety and consistency
-    static get NODE_STATES() {
-        return {
-            IDLE: 'idle',
-            RUNNING: 'running', 
-            COMPLETED: 'completed',
-            ERROR: 'error',
-            CANCELLED: 'cancelled',
-            SUCCESS: 'success'
-        };
-    }
-
+    // node state management methods - delegate to node state manager module
     setNodeState(nodeId, state) {
-        // validate state against enum
-        const validStates = Object.values(FlowchartBuilder.NODE_STATES);
-        if (!validStates.includes(state)) {
-            console.warn(`invalid node state: ${state}. valid states: ${validStates.join(', ')}`);
-            return;
-        }
-
-        // find the node element and update its class
-        const nodeElement = this.nodeRenderer.nodeGroup
-            .selectAll('.node-group')
-            .filter(d => d.id === nodeId)
-            .select('.node');
-            
-        // remove all state classes
-        nodeElement.classed('running', false)
-                  .classed('completed', false)
-                  .classed('error', false);
-        
-        // add the new state class
-        nodeElement.classed(state, true);
-        
-        // add/remove loading icon for running state
-        const nodeGroup = this.nodeRenderer.nodeGroup
-            .selectAll('.node-group')
-            .filter(d => d.id === nodeId);
-            
-        if (state === 'running') {
-            // add loading icon
-            nodeGroup.append('text')
-                .attr('class', 'node_loading_icon material-icons')
-                .attr('x', (d) => (d.width || 120) / 2 + 25)
-                .attr('y', 5)
-                .style('font-size', '16px')
-                .style('fill', '#2196f3')
-                .text('hourglass_empty');
-        } else {
-            // remove loading icon
-            nodeGroup.select('.node_loading_icon').remove();
-        }
+        this.nodeStateManager.setNodeState(nodeId, state);
     }
-
-    resetNodeStates() {
-        // reset all nodes to default state
-        this.nodeRenderer.nodeGroup.selectAll('.node')
-            .classed('running', false)
-            .classed('completed', false)
-            .classed('error', false);
-            
-        // remove all loading icons
-        this.nodeRenderer.nodeGroup.selectAll('.node_loading_icon').remove();
-
-        // clear any runtimeStatus flags on nodes (e.g., data_save success coloring)
-        try {
-            this.state.nodes.forEach(n => { if (n && n.runtimeStatus) delete n.runtimeStatus; });
-            this.nodeRenderer && this.nodeRenderer.updateNodeStyles();
-        } catch (_) {}
+    
+    addNodeLoadingAnimation(nodeId) {
+        this.nodeStateManager.addNodeLoadingAnimation(nodeId);
     }
-
-    // clear all visual colour state for nodes (classes, inline fills, and runtime flags)
+    
+    removeNodeLoadingAnimation(nodeId) {
+        this.nodeStateManager.removeNodeLoadingAnimation(nodeId);
+    }
+    
     clearAllNodeColorState() {
-        // clear state classes
-        try {
-            this.nodeRenderer.nodeGroup.selectAll('.node')
-                .classed('running', false)
-                .classed('completed', false)
-                .classed('error', false)
-                // clear inline colours to allow base css/theme to apply
-                .style('fill', null)
-                .style('stroke', null)
-                .style('stroke-width', null);
-        } catch (_) {}
-
-        // remove loading icons
-        this.nodeRenderer.nodeGroup.selectAll('.node_loading_icon').remove();
-
-        // clear any runtimeStatus flags (e.g., data_save success/error)
-        const nodes = Array.isArray(this.state.nodes) ? this.state.nodes : [];
-        nodes.forEach(n => { if (n && n.runtimeStatus) delete n.runtimeStatus; });
-
-        // refresh renderer to restore base styles for special node types
-        if (this.nodeRenderer) this.nodeRenderer.updateNodeStyles();
+        this.nodeStateManager.clearAllNodeColorState();
+    }
+    
+    // node state enum - delegate to node state manager
+    static get NODE_STATES() {
+        return NodeStateManager.NODE_STATES;
     }
 
     updateExecutionStatus(type, message) {
@@ -3133,16 +2400,10 @@ class FlowchartBuilder {
         const selectedNodes = Array.from(this.state.selectedNodes);
         if (selectedNodes.length === 1 && selectedNodes[0] === node.id) {
             this.state.emit('updateSidebar');
-            // also ensure the live feed is scrolled to this node's output after it updates
-            this.scrollRunFeedToNode(node.id);
         }
     }
 
-    scrollRunFeedToNode(nodeId) {
-        if (this.executionFeed) {
-            this.executionFeed.scrollToNode(nodeId);
-        }
-    }
+
 
     formatNodeOutput(output) {
         if (!output || typeof output !== 'string') {
@@ -3428,16 +2689,17 @@ class FlowchartBuilder {
         if (this.nodeExecutionResults) {
             this.nodeExecutionResults.clear();
         }
+        // also clear execution logic data
+        if (this.executionLogic) {
+            this.executionLogic.nodeExecutionResults.clear();
+            this.executionLogic.nodeVariables.clear();
+        }
         
         // trigger sidebar update to reflect cleared state
         this.state.emit('updateSidebar');
     }
 
-    clearExecutionFeed() {
-        if (this.executionFeed) {
-            this.executionFeed.clear();
-        }
-    }
+
 
     // debug methods
     logState() {
@@ -3472,10 +2734,9 @@ window.FlowchartBuilder = FlowchartBuilder;
 FlowchartBuilder.prototype.clearRunModeState = function() {
     this.resetNodeStates();
     this.clearOutput();
-    this.clearExecutionFeed();
     this.updateExecutionStatus('info', 'cleared');
     this.clearIfRuntimeIndicators();
-    this.clearAllNodeColorState();
+    this.nodeStateManager.clearAllNodeColorState();
     // clear selection and ensure default run panel when coming back later
     this.selectionHandler.clearSelection(); 
     this.state.emit('updateSidebar');

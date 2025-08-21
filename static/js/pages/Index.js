@@ -132,7 +132,13 @@
                 app.state.flushPendingSavesOnExit();
             }
             // clear transient runtime visuals before teardown/navigation so no green/red persists
-            try { if (app && typeof app.clearAllNodeColorState === 'function') { app.clearAllNodeColorState(); } } catch (_) {}
+            try { 
+                if (app && app.nodeStateManager && typeof app.nodeStateManager.clearAllNodeColorState === 'function') { 
+                    app.nodeStateManager.clearAllNodeColorState(); 
+                } else if (app && typeof app.clearAllNodeColorState === 'function') { 
+                    app.clearAllNodeColorState(); 
+                } 
+            } catch (_) {}
         } catch (_) {}
         try {
             if (window.flowchartApp) {

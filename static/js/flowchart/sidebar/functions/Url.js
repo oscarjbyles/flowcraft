@@ -13,8 +13,6 @@
                     try {
                         if (window.flowchartApp && typeof window.flowchartApp.clearRunModeState === 'function') {
                             window.flowchartApp.clearRunModeState();
-                        } else if (window.flowchartApp && typeof window.flowchartApp.clearExecutionFeed === 'function') {
-                            window.flowchartApp.clearExecutionFeed();
                         }
                     } catch (clearError) {
                         console.warn('[sidebar-url] failed to clear execution state:', clearError);

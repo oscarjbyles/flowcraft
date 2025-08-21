@@ -228,8 +228,6 @@
                 try {
                     if (window.flowchartApp && typeof window.flowchartApp.clearRunModeState === 'function') {
                         window.flowchartApp.clearRunModeState();
-                    } else if (window.flowchartApp && typeof window.flowchartApp.clearExecutionFeed === 'function') {
-                        window.flowchartApp.clearExecutionFeed();
                     }
                 } catch (clearError) {
                     console.warn('[sidebar-flow] failed to clear execution state:', clearError);
@@ -282,6 +280,8 @@
             if (window.flowchartApp && window.flowchartApp.state && window.flowchartApp.state.isRunMode) {
                 if (typeof window.flowchartApp.clearRunModeState === 'function') {
                     window.flowchartApp.clearRunModeState();
+                } else if (window.flowchartApp.nodeStateManager && typeof window.flowchartApp.nodeStateManager.clearAllNodeColorState === 'function') {
+                    window.flowchartApp.nodeStateManager.clearAllNodeColorState();
                 } else if (typeof window.flowchartApp.clearAllNodeColorState === 'function') {
                     window.flowchartApp.clearAllNodeColorState();
                 }

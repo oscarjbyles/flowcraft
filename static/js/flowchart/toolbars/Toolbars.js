@@ -138,7 +138,7 @@ class Toolbars {
                     this.builder.stopExecution();
                 } else if (!this.builder.executionStarting) {
                     this.builder.executionStarting = true;
-                    this.builder.clearExecutionFeed();
+                    this.builder.clearRunModeState();
                     this.builder.startExecution();
                 }
             });
@@ -341,7 +341,7 @@ class Toolbars {
             // reset node colors when leaving run mode
             if (previousMode === 'run' || previousMode === 'history') {
                 // centralised clear to wipe all runtime colour state
-                this.builder.clearAllNodeColorState();
+                this.builder.nodeStateManager.clearAllNodeColorState();
                 // hide all play buttons when leaving run mode
                 this.builder.nodeRenderer.hideAllPlayButtons();
                 // clear runtime condition indicators when exiting run

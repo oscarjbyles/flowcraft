@@ -27,6 +27,7 @@
             if (!app || !app.state) return;
             if (app.state.isRunMode) {
                 if (typeof app.clearRunModeState === 'function') app.clearRunModeState();
+                else if (app.nodeStateManager && typeof app.nodeStateManager.clearAllNodeColorState === 'function') app.nodeStateManager.clearAllNodeColorState();
                 else if (typeof app.clearAllNodeColorState === 'function') app.clearAllNodeColorState();
             }
         } catch(_) {}
@@ -472,8 +473,6 @@
                                         try {
                                             if (typeof app.clearRunModeState === 'function') {
                                                 app.clearRunModeState();
-                                            } else if (typeof app.clearExecutionFeed === 'function') {
-                                                app.clearExecutionFeed();
                                             }
                                         } catch (clearError) {
                                             console.warn('[nav-flow] failed to clear execution state:', clearError);
@@ -570,6 +569,8 @@
                         if (window.flowchartApp && window.flowchartApp.state && window.flowchartApp.state.isRunMode) {
                             if (typeof window.flowchartApp.clearRunModeState === 'function') {
                                 window.flowchartApp.clearRunModeState();
+                            } else if (window.flowchartApp.nodeStateManager && typeof window.flowchartApp.nodeStateManager.clearAllNodeColorState === 'function') {
+                                window.flowchartApp.nodeStateManager.clearAllNodeColorState();
                             } else if (typeof window.flowchartApp.clearAllNodeColorState === 'function') {
                                 window.flowchartApp.clearAllNodeColorState();
                             }

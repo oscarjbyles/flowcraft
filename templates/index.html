@@ -159,9 +159,16 @@
     <!-- execution modules (only load in flowchart modes) -->
     <script>
         if (isFlowchartMode) {
-            const script = document.createElement('script');
-            script.src = '/static/js/flowchart/execution/Feed.js';
-            document.head.appendChild(script);
+            const executionModules = [
+                '/static/js/flowchart/execution/Feed.js',
+                '/static/js/flowchart/execution/ExecutionLogic.js',
+                '/static/js/flowchart/execution/NodeStateManager.js'
+            ];
+            executionModules.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                document.head.appendChild(script);
+            });
         }
     </script>
 

@@ -300,36 +300,36 @@
       "description": "",
       "groupId": null,
       "id": 1755809871203.8743,
+      "magnet_partner_id": 1755810089155.626,
       "name": "python node",
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
       "x": 1747.1064453125,
-      "y": 236.0921630859375,
-      "magnet_partner_id": 1755810089155.626
+      "y": 236.0921630859375
     },
     {
+      "description": "",
+      "groupId": null,
       "id": 1755810089155.626,
-      "x": 1747.1064453125,
-      "y": 316.0921630859375,
+      "magnet_partner_id": 1755809871203.8743,
       "name": "if condition",
-      "type": "if_node",
       "pythonFile": "",
-      "description": "",
-      "groupId": null,
+      "type": "if_node",
       "width": 120,
-      "magnet_partner_id": 1755809871203.8743
+      "x": 1747.1064453125,
+      "y": 316.0921630859375
     },
     {
-      "id": 1755810098562.551,
-      "x": 1816.6055908203125,
-      "y": 523.4798583984375,
-      "name": "python node",
-      "type": "python_file",
-      "pythonFile": "",
       "description": "",
       "groupId": null,
-      "width": 120
+      "id": 1755810098562.551,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1816.6055908203125,
+      "y": 523.4798583984375
     }
   ],
   "links": [
@@ -456,11 +456,13 @@
       "target": 1755809871203.8743
     },
     {
+      "selectable": false,
       "source": 1755809871203.8743,
-      "target": 1755810089155.626,
-      "selectable": false
+      "target": 1755810089155.626
     },
     {
+      "runtime_condition": null,
+      "runtime_details": null,
       "source": 1755810089155.626,
       "target": 1755810098562.551
     }
@@ -563,34 +565,64 @@
   ],
   "executions": [
     {
-      "execution_id": "050b3613-3c9c-41f9-ac70-f13bf31e8d9c",
-      "timestamp": "2025-08-21T21:43:11.933898",
+      "execution_id": "49437874-c3cf-443e-ba8e-6076df19637e",
+      "timestamp": "2025-08-21T23:55:08.474500",
       "flowchart_name": "1_categories_selectors",
-      "status": "stopped",
-      "total_nodes": 18,
-      "successful_nodes": 3,
-      "completed_nodes": 4,
-      "success_percentage": 16.7,
-      "completed_percentage": 22.2,
-      "failed_node": "get web page content",
-      "elapsed_ms": 2599,
-      "execution_time": "2.599s",
-      "error_snippet": "execution was cancelled by user"
+      "status": "failed",
+      "total_nodes": 22,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 9.1,
+      "completed_percentage": 13.6,
+      "failed_node": "python node",
+      "elapsed_ms": 1381,
+      "execution_time": "1.381s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
     },
     {
-      "execution_id": "25d9e10f-f5a6-4d3b-b617-0d0c98152982",
-      "timestamp": "2025-08-21T21:13:58.522128",
+      "execution_id": "a0e3d9f5-b63b-43cd-9192-22b3b01a9ee6",
+      "timestamp": "2025-08-21T23:35:58.160972",
       "flowchart_name": "1_categories_selectors",
-      "status": "stopped",
-      "total_nodes": 18,
-      "successful_nodes": 3,
-      "completed_nodes": 4,
-      "success_percentage": 16.7,
-      "completed_percentage": 22.2,
-      "failed_node": "get web page content",
-      "elapsed_ms": 1853,
-      "execution_time": "1.853s",
-      "error_snippet": "execution was cancelled by user"
+      "status": "failed",
+      "total_nodes": 22,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 9.1,
+      "completed_percentage": 13.6,
+      "failed_node": "python node",
+      "elapsed_ms": 1441,
+      "execution_time": "1.441s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
+    },
+    {
+      "execution_id": "83d39a62-2685-472a-9189-d76ef3b45c0f",
+      "timestamp": "2025-08-21T23:35:45.714760",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 22,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 9.1,
+      "completed_percentage": 13.6,
+      "failed_node": "python node",
+      "elapsed_ms": 1668,
+      "execution_time": "1.668s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
+    },
+    {
+      "execution_id": "870fd6d8-12fe-4a58-aca2-6f9c1a840e6e",
+      "timestamp": "2025-08-21T23:32:47.912708",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 22,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 9.1,
+      "completed_percentage": 13.6,
+      "failed_node": "python node",
+      "elapsed_ms": 1791,
+      "execution_time": "1.791s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
     }
   ]
 }
