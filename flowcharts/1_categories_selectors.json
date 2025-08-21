@@ -36,25 +36,25 @@
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168324002.294,
-      "magnet_partner_id": 1755168329342.0771,
       "name": "1.1.1.1 - use nav tag",
       "pythonFile": "1_categories_selectors/1_1_1_1_use_nav_tag.py",
       "type": "python_file",
       "width": 164.71666717529297,
       "x": 1125.8800048828125,
-      "y": 527.0776062011719
+      "y": 527.0776062011719,
+      "magnet_partner_id": 1755168329342.0771
     },
     {
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168329342.0771,
-      "magnet_partner_id": 1755168324002.294,
       "name": "empty?",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
       "x": 1125.8800048828125,
-      "y": 607.0776062011719
+      "y": 607.0776062011719,
+      "magnet_partner_id": 1755168324002.294
     },
     {
       "description": "",

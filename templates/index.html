@@ -160,54 +160,54 @@
     <script>
         if (isFlowchartMode) {
             const sidebarModules = [
-                '/static/js/flowchart_sidebar/Sidebar.base.js',
-                '/static/js/flowchart_sidebar/Sidebar.content.js',
-                '/static/js/flowchart_sidebar/Sidebar.constants.js',
-                '/static/js/flowchart_sidebar/ui/Dropdowns.js',
-                '/static/js/flowchart_sidebar/ui/Visibility.js',
+                '/static/js/flowchart/sidebar/Sidebar.base.js',
+                '/static/js/flowchart/sidebar/Sidebar.content.js',
+                '/static/js/flowchart/sidebar/Sidebar.constants.js',
+                '/static/js/flowchart/sidebar/ui/Dropdowns.js',
+                '/static/js/flowchart/sidebar/ui/Visibility.js',
                 
                 // build mode node type controllers
-                '/static/js/flowchart_sidebar/panels/build/Python.js',
-                '/static/js/flowchart_sidebar/panels/build/InputNode.js',
-                '/static/js/flowchart_sidebar/panels/build/IfNode.js',
-                '/static/js/flowchart_sidebar/panels/build/DataSave.js',
-                '/static/js/flowchart_sidebar/panels/build/TextNode.js',
+                '/static/js/flowchart/sidebar/panels/build/Python.js',
+                '/static/js/flowchart/sidebar/panels/build/InputNode.js',
+                '/static/js/flowchart/sidebar/panels/build/IfNode.js',
+                '/static/js/flowchart/sidebar/panels/build/DataSave.js',
+                '/static/js/flowchart/sidebar/panels/build/TextNode.js',
                 
                 // build mode selection controllers
-                '/static/js/flowchart_sidebar/panels/build/MultiSelect.js',
-                '/static/js/flowchart_sidebar/panels/build/Group.js',
-                '/static/js/flowchart_sidebar/panels/build/Link.js',
-                '/static/js/flowchart_sidebar/panels/build/Annotation.js',
+                '/static/js/flowchart/sidebar/panels/build/MultiSelect.js',
+                '/static/js/flowchart/sidebar/panels/build/Group.js',
+                '/static/js/flowchart/sidebar/panels/build/Link.js',
+                '/static/js/flowchart/sidebar/panels/build/Annotation.js',
                 
                 // run mode node type controllers
-                '/static/js/flowchart_sidebar/panels/run/Python.js',
-                '/static/js/flowchart_sidebar/panels/run/InputNode.js',
-                '/static/js/flowchart_sidebar/panels/run/IfNode.js',
-                '/static/js/flowchart_sidebar/panels/run/DataSave.js',
-                '/static/js/flowchart_sidebar/panels/run/TextNode.js',
+                '/static/js/flowchart/sidebar/panels/run/Python.js',
+                '/static/js/flowchart/sidebar/panels/run/InputNode.js',
+                '/static/js/flowchart/sidebar/panels/run/IfNode.js',
+                '/static/js/flowchart/sidebar/panels/run/DataSave.js',
+                '/static/js/flowchart/sidebar/panels/run/TextNode.js',
                 
                 // run mode selection controllers
-                '/static/js/flowchart_sidebar/panels/run/MultiSelect.js',
-                '/static/js/flowchart_sidebar/panels/run/Group.js',
-                '/static/js/flowchart_sidebar/panels/run/Link.js',
-                '/static/js/flowchart_sidebar/panels/run/Annotation.js',
+                '/static/js/flowchart/sidebar/panels/run/MultiSelect.js',
+                '/static/js/flowchart/sidebar/panels/run/Group.js',
+                '/static/js/flowchart/sidebar/panels/run/Link.js',
+                '/static/js/flowchart/sidebar/panels/run/Annotation.js',
                 
                 // controller registry
-                '/static/js/flowchart_sidebar/panels/ControllerRegistry.js',
+                '/static/js/flowchart/sidebar/panels/ControllerRegistry.js',
                 
                 // feature modules
-                '/static/js/flowchart_sidebar/functions/Status.js',
-                '/static/js/flowchart_sidebar/Sidebar.selection.js',
-                '/static/js/flowchart_sidebar/Sidebar.nodes.js',
-                '/static/js/flowchart_sidebar/functions/Forms.js',
-                '/static/js/flowchart_sidebar/Sidebar.files.js',
-                '/static/js/flowchart_sidebar/Sidebar.links.js',
-                '/static/js/flowchart_sidebar/functions/Analysis.js',
-                '/static/js/flowchart_sidebar/Sidebar.iflogic.js',
-                '/static/js/flowchart_sidebar/Sidebar.flowcharts.js',
-                '/static/js/flowchart_sidebar/functions/Url.js',
-                '/static/js/flowchart_sidebar/functions/Events.js',
-                '/static/js/flowchart_sidebar/Sidebar.runview.js'
+                '/static/js/flowchart/sidebar/functions/Status.js',
+                '/static/js/flowchart/sidebar/Sidebar.selection.js',
+                '/static/js/flowchart/sidebar/Sidebar.nodes.js',
+                '/static/js/flowchart/sidebar/functions/Forms.js',
+                '/static/js/flowchart/sidebar/Sidebar.files.js',
+                '/static/js/flowchart/sidebar/Sidebar.links.js',
+                '/static/js/flowchart/sidebar/functions/Analysis.js',
+                '/static/js/flowchart/sidebar/Sidebar.iflogic.js',
+                '/static/js/flowchart/sidebar/Sidebar.flowcharts.js',
+                '/static/js/flowchart/sidebar/functions/Url.js',
+                '/static/js/flowchart/sidebar/functions/Events.js',
+                '/static/js/flowchart/sidebar/Sidebar.runview.js'
             ];
             sidebarModules.forEach(src => {
                 const script = document.createElement('script');
