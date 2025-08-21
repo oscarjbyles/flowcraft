@@ -295,6 +295,17 @@
       "width": 120,
       "x": 758.4329223632812,
       "y": 1448.8529052734375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755783498627.8691,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1344.2823486328125,
+      "y": 171.00758361816406
     }
   ],
   "links": [
@@ -511,6 +522,38 @@
       "type": "text",
       "x": 854.4585790066471,
       "y": 1024.4108963170856
+    }
+  ],
+  "executions": [
+    {
+      "execution_id": "6c46387c-efca-49b9-ae88-212949674803",
+      "timestamp": "2025-08-21T19:26:52.132520",
+      "flowchart_name": "1_categories_selectors",
+      "status": "failed",
+      "total_nodes": 17,
+      "successful_nodes": 0,
+      "completed_nodes": 1,
+      "success_percentage": 0.0,
+      "completed_percentage": 5.9,
+      "failed_node": "python node",
+      "elapsed_ms": 0,
+      "execution_time": "0.000s",
+      "error_snippet": "Line 47: cannot access local variable 'url' where "
+    },
+    {
+      "execution_id": "910e5e14-e2d6-464d-acb1-c5d68ce8515f",
+      "timestamp": "2025-08-21T19:26:46.999574",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 5552,
+      "execution_time": "5.552s",
+      "error_snippet": "execution was cancelled by user"
     }
   ]
 }

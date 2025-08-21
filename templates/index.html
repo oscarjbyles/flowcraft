@@ -103,54 +103,119 @@
 
     <!-- core modules -->
     <script src="/static/js/core/StateManager.js"></script>
-    <script src="/static/js/core/EventManager.js"></script>
+    
+    <!-- mode-based loading: only load EventManager in build and run modes -->
+    <script>
+        // check if we're in build or run mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'build';
+        const isFlowchartMode = mode === 'build' || mode === 'run';
+        
+        if (isFlowchartMode) {
+            // load EventManager only for build and run modes
+            const script = document.createElement('script');
+            script.src = '/static/js/flowchart/EventManager.js';
+            document.head.appendChild(script);
+        }
+    </script>
 
-    <!-- interaction modules -->
-    <script src="/static/js/flowchart/DragHandler.js"></script>
-    <script src="/static/js/flowchart/SelectionHandler.js"></script>
-    <script src="/static/js/flowchart/ConnectionHandler.js"></script>
+    <!-- interaction modules (only load in flowchart modes) -->
+    <script>
+        if (isFlowchartMode) {
+            const modules = [
+                '/static/js/flowchart/DragHandler.js',
+                '/static/js/flowchart/SelectionHandler.js',
+                '/static/js/flowchart/ConnectionHandler.js'
+            ];
+            modules.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                document.head.appendChild(script);
+            });
+        }
+    </script>
 
-    <!-- rendering modules -->
-    <script src="/static/js/flowchart/NodeRenderer.js"></script>
-    <script src="/static/js/flowchart/LinkRenderer.js"></script>
-    <script src="/static/js/flowchart/GroupRenderer.js"></script>
-    <script src="/static/js/flowchart/AnnotationRenderer.js"></script>
-    <script src="/static/js/flowchart/NodeOrder.js"></script>
-    <script src="/static/js/flowchart/ErrorCircles.js"></script>
+    <!-- rendering modules (only load in flowchart modes) -->
+    <script>
+        if (isFlowchartMode) {
+            const modules = [
+                '/static/js/flowchart/NodeRenderer.js',
+                '/static/js/flowchart/LinkRenderer.js',
+                '/static/js/flowchart/GroupRenderer.js',
+                '/static/js/flowchart/AnnotationRenderer.js',
+                '/static/js/flowchart/NodeOrder.js',
+                '/static/js/flowchart/ErrorCircles.js'
+            ];
+            modules.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                document.head.appendChild(script);
+            });
+        }
+    </script>
 
 
 
-    <!-- properties sidebar components -->
-    <script src="/static/js/components/sidebar/Sidebar.base.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.content.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.constants.js"></script>
-    <script src="/static/js/components/sidebar/ui/Dropdowns.js"></script>
-    <script src="/static/js/components/sidebar/ui/Visibility.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.execution.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.single.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.link.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.multi.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.group.js"></script>
-    <script src="/static/js/components/sidebar/panels/Panel.annotation.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.status.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.selection.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.nodes.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.forms.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.files.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.links.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.analysis.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.iflogic.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.flowcharts.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.url.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.events.js"></script>
-    <script src="/static/js/components/sidebar/Sidebar.runview.js"></script>
+    <!-- properties sidebar components (only load in flowchart modes) -->
+    <script>
+        if (isFlowchartMode) {
+            const sidebarModules = [
+                '/static/js/components/sidebar/Sidebar.base.js',
+                '/static/js/components/sidebar/Sidebar.content.js',
+                '/static/js/components/sidebar/Sidebar.constants.js',
+                '/static/js/components/sidebar/ui/Dropdowns.js',
+                '/static/js/components/sidebar/ui/Visibility.js',
+                '/static/js/components/sidebar/panels/Panel.execution.js',
+                '/static/js/components/sidebar/panels/Panel.single.js',
+                '/static/js/components/sidebar/panels/Panel.link.js',
+                '/static/js/components/sidebar/panels/Panel.multi.js',
+                '/static/js/components/sidebar/panels/Panel.group.js',
+                '/static/js/components/sidebar/panels/Panel.annotation.js',
+                '/static/js/components/sidebar/Sidebar.status.js',
+                '/static/js/components/sidebar/Sidebar.selection.js',
+                '/static/js/components/sidebar/Sidebar.nodes.js',
+                '/static/js/components/sidebar/Sidebar.forms.js',
+                '/static/js/components/sidebar/Sidebar.files.js',
+                '/static/js/components/sidebar/Sidebar.links.js',
+                '/static/js/components/sidebar/Sidebar.analysis.js',
+                '/static/js/components/sidebar/Sidebar.iflogic.js',
+                '/static/js/components/sidebar/Sidebar.flowcharts.js',
+                '/static/js/components/sidebar/Sidebar.url.js',
+                '/static/js/components/sidebar/Sidebar.events.js',
+                '/static/js/components/sidebar/Sidebar.runview.js'
+            ];
+            sidebarModules.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                document.head.appendChild(script);
+            });
+        }
+    </script>
 
-    <!-- node creation service -->
-    <script src="/static/js/flowchart/CreateNode.js"></script>
+    <!-- node creation service (only load in flowchart modes) -->
+    <script>
+        if (isFlowchartMode) {
+            const script = document.createElement('script');
+            script.src = '/static/js/flowchart/CreateNode.js';
+            document.head.appendChild(script);
+        }
+    </script>
 
-    <!-- main application entrypoint (builder) -->
-    <script src="/static/js/core/FlowchartBuilder.js"></script>
-    <script src="/static/js/main.js"></script>
+    <!-- main application entrypoint (builder) - only load in flowchart modes -->
+    <script>
+        if (isFlowchartMode) {
+            const script = document.createElement('script');
+            script.src = '/static/js/core/FlowchartBuilder.js';
+            document.head.appendChild(script);
+            
+            // load main.js after FlowchartBuilder
+            script.onload = function() {
+                const mainScript = document.createElement('script');
+                mainScript.src = '/static/js/main.js';
+                document.head.appendChild(mainScript);
+            };
+        }
+    </script>
 {% endblock %}
 
     <!-- context menu -->

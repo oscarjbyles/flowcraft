@@ -7,7 +7,6 @@
 
         const requiredClasses = [
             'StateManager', 
-            'EventManager',
             'DragHandler', 
             'SelectionHandler', 
             'ConnectionHandler',
@@ -45,6 +44,12 @@
         }
 
         try {
+            // check if EventManager is available (only loaded in build/run modes)
+            if (!window.EventManager) {
+                console.log('EventManager not available - not in flowchart mode');
+                return;
+            }
+            
             // create global app instance (single instance)
             if (!window.flowchartApp) {
                 window.flowchartApp = new FlowchartBuilder();
