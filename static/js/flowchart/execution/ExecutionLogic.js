@@ -23,7 +23,7 @@ class ExecutionLogic {
         
         // store execution results for individual nodes
         this.nodeExecutionResults = new Map(); // nodeId -> execution result
-        this.nodeVariables = new Map(); // nodeId -> returned variables from function
+
     }
 
     // clear all runtime condition flags on if→python links (used when clearing run or leaving run mode)
@@ -50,7 +50,7 @@ class ExecutionLogic {
         const executionOrder = this.builder.calculateNodeOrder();
         
         if (executionOrder.length === 0) {
-            this.builder.updateExecutionStatus('error', 'no connected nodes to execute');
+            this.builder.executionStatus.updateExecutionStatus('error', 'no connected nodes to execute');
             return;
         }
 
@@ -69,17 +69,16 @@ class ExecutionLogic {
         // reset all node states and clear previous execution results
         this.resetNodeStates();
         this.nodeExecutionResults.clear();
-        this.nodeVariables.clear();
+        this.builder.variableManager.clearVariables();
         // sync with builder for legacy compatibility
         this.builder.nodeExecutionResults = this.nodeExecutionResults;
-        this.builder.nodeVariables = this.nodeVariables;
-        this.builder.globalExecutionLog = '';
-        this.builder.clearOutput();
+        this.builder.outputManager.globalExecutionLog = '';
+        this.builder.outputManager.clearOutput();
 
         // reset blocked branches
         this.blockedNodeIds.clear();
         // clear restored variable state when starting new execution
-        this.builder.restoredVariableState = null;
+        this.builder.variableManager.setRestoredVariableState(null);
         // clear any previous runtime condition indicators on if→python links
         try {
             const links = Array.isArray(this.state.links) ? this.state.links : [];
@@ -93,15 +92,15 @@ class ExecutionLogic {
         } catch (_) {}
         
         // update execution status
-        this.builder.updateExecutionStatus('running', `executing ${executionOrder.length} nodes`);
+        this.builder.executionStatus.updateExecutionStatus('running', `executing ${executionOrder.length} nodes`);
         
         try {
             // execute nodes one by one with live feedback
             for (let i = 0; i < executionOrder.length; i++) {
                 // check if execution was stopped
                 if (this.executionAborted) {
-                    this.builder.updateExecutionStatus('stopped', 'execution stopped by user');
-                    await this.builder.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
+                    this.builder.executionStatus.updateExecutionStatus('stopped', 'execution stopped by user');
+                    await this.builder.executionStatus.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
                     return;
                 }
                 
@@ -112,30 +111,30 @@ class ExecutionLogic {
                     try { await this.builder.persistDataSaveForNode(node); } catch (e) { console.warn('data_save persist failed:', e); }
                 }
                 // update sidebar progress each step
-                this.builder.updateExecutionStatus('running', `executing ${i + 1} of ${executionOrder.length}`);
+                this.builder.executionStatus.updateExecutionStatus('running', `executing ${i + 1} of ${executionOrder.length}`);
                 
                 // if node failed or execution was aborted, stop execution immediately
                 if (!success) {
                     if (this.executionAborted) {
-                        this.builder.updateExecutionStatus('stopped', 'execution stopped by user');
-                        await this.builder.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
+                        this.builder.executionStatus.updateExecutionStatus('stopped', 'execution stopped by user');
+                        await this.builder.executionStatus.saveExecutionHistory('stopped', executionOrder, 'execution stopped by user');
                     } else {
-                        this.builder.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
+                        this.builder.executionStatus.updateExecutionStatus('failed', `execution stopped at node: ${node.name}`);
                         // ensure sidebar refresh picks up failure info in no-selection view
                         this.state.emit('selectionChanged', { nodes: [], link: null, group: null });
-                        await this.builder.saveExecutionHistory('failed', executionOrder, `execution stopped at node: ${node.name}`);
+                        await this.builder.executionStatus.saveExecutionHistory('failed', executionOrder, `execution stopped at node: ${node.name}`);
                     }
                     return;
                 }
             }
             
             // all nodes completed successfully
-            this.builder.updateExecutionStatus('completed', 'execution completed successfully');
-            await this.builder.saveExecutionHistory('success', executionOrder);
+            this.builder.executionStatus.updateExecutionStatus('completed', 'execution completed successfully');
+            await this.builder.executionStatus.saveExecutionHistory('success', executionOrder);
             
         } catch (error) {
-            this.builder.updateExecutionStatus('error', `execution failed: ${error.message}`);
-            await this.builder.saveExecutionHistory('error', executionOrder, error.message);
+            this.builder.executionStatus.updateExecutionStatus('error', `execution failed: ${error.message}`);
+            await this.builder.executionStatus.saveExecutionHistory('error', executionOrder, error.message);
         } finally {
             // reset execution state
             this.isExecuting = false;
@@ -166,7 +165,7 @@ class ExecutionLogic {
             
             this.isExecuting = false;
             this.updateExecutionUI(false);
-            this.builder.updateExecutionStatus('stopped', 'execution stopped by user');
+            this.builder.executionStatus.updateExecutionStatus('stopped', 'execution stopped by user');
             
             // reset the abort controller
             this.currentExecutionController = null;
@@ -207,7 +206,7 @@ class ExecutionLogic {
             await this.evaluateIfNodeAndBlockBranches(node);
             // mark as completed for visual feedback without running
             this.builder.nodeStateManager.setNodeState(node.id, 'completed');
-            this.builder.updateNodeDetails(node, 'completed', 0);
+            this.builder.executionStatus.updateNodeDetails(node, 'completed', 0);
             return true;
         }
         
@@ -217,7 +216,7 @@ class ExecutionLogic {
         // set node to running state with loading animation
         this.builder.nodeStateManager.setNodeState(node.id, 'running');
         this.builder.nodeStateManager.addNodeLoadingAnimation(node.id);
-        this.builder.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
+        this.builder.executionStatus.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
         
         // auto-follow currently running python nodes if tracking is enabled and not user-disabled
         if (
@@ -228,7 +227,7 @@ class ExecutionLogic {
         }
         
         // show node details in sidebar
-        this.builder.updateNodeDetails(node, 'running', Date.now());
+        this.builder.executionStatus.updateNodeDetails(node, 'running', Date.now());
         
         const startTime = Date.now();
         
@@ -257,7 +256,7 @@ class ExecutionLogic {
             if (result.success) {
                 // store return value from function if any - do this FIRST
                 if (result.return_value !== null && result.return_value !== undefined) {
-                    this.nodeVariables.set(node.id, result.return_value);
+                    this.builder.variableManager.setNodeVariable(node.id, result.return_value);
                 }
                 
                 // store execution result
@@ -277,11 +276,10 @@ class ExecutionLogic {
                 
                 // sync with builder for legacy compatibility
                 this.builder.nodeExecutionResults = this.nodeExecutionResults;
-                this.builder.nodeVariables = this.nodeVariables;
                 
                 // set node to completed state (green)
                 this.builder.nodeStateManager.setNodeState(node.id, 'completed');
-                this.builder.updateNodeDetails(node, 'completed', runtime, result.output);
+                this.builder.executionStatus.updateNodeDetails(node, 'completed', runtime, result.output);
 
                 // auto-highlight associated input node in green when inputs were used successfully
                 try {
@@ -313,7 +311,7 @@ class ExecutionLogic {
                 const returnValueText = result.return_value !== null && result.return_value !== undefined 
                     ? `\nReturned: ${JSON.stringify(result.return_value)}` 
                     : '';
-                this.builder.appendOutput(`[${node.name}] execution completed in ${(runtime/1000).toFixed(3)}s${returnValueText}\n${result.output || ''}\n`);
+                this.builder.outputManager.appendOutput(`[${node.name}] execution completed in ${(runtime/1000).toFixed(3)}s${returnValueText}\n${result.output || ''}\n`);
                 return true; // success
             } else {
                 // store execution result and remember failed node for no-selection view
@@ -333,13 +331,12 @@ class ExecutionLogic {
                 
                 // sync with builder for legacy compatibility
                 this.builder.nodeExecutionResults = this.nodeExecutionResults;
-                this.builder.nodeVariables = this.nodeVariables;
                 
                 this.builder.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: result.error || 'unknown error' };
                 
                 // set node to error state (red)
                 this.builder.nodeStateManager.setNodeState(node.id, 'error');
-                this.builder.updateNodeDetails(node, 'error', runtime, result.error);
+                this.builder.executionStatus.updateNodeDetails(node, 'error', runtime, result.error);
                 if (node.type === 'data_save') {
                     node.runtimeStatus = 'error';
                     if (this.builder.nodeRenderer) this.builder.nodeRenderer.updateNodeStyles();
@@ -349,7 +346,7 @@ class ExecutionLogic {
                 if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
                     errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
                 }
-                this.builder.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${errorDisplay}\n`);
+                this.builder.outputManager.appendOutput(`[${node.name}] execution failed after ${(runtime/1000).toFixed(3)}s\n${errorDisplay}\n`);
                 return false; // failure - will stop execution
             }
             
@@ -366,14 +363,13 @@ class ExecutionLogic {
             
             // sync with builder for legacy compatibility
             this.builder.nodeExecutionResults = this.nodeExecutionResults;
-            this.builder.nodeVariables = this.nodeVariables;
             
             this.builder.lastFailedNode = { id: node.id, name: node.name, pythonFile: node.pythonFile, error: error.message };
             
             this.builder.nodeStateManager.removeNodeLoadingAnimation(node.id);
             this.builder.nodeStateManager.setNodeState(node.id, 'error');
-            this.builder.updateNodeDetails(node, 'error', 0, error.message);
-            this.builder.appendOutput(`[${node.name}] execution error: ${error.message}\n`);
+            this.builder.executionStatus.updateNodeDetails(node, 'error', 0, error.message);
+            this.builder.outputManager.appendOutput(`[${node.name}] execution error: ${error.message}\n`);
             return false; // failure
         }
     }
@@ -387,8 +383,8 @@ class ExecutionLogic {
             const vars = {};
             for (const link of incomingLinks) {
                 const sourceId = link.source;
-                if (!this.nodeVariables.has(sourceId)) continue;
-                const val = this.nodeVariables.get(sourceId);
+                            if (!this.builder.variableManager.hasNodeVariable(sourceId)) continue;
+            const val = this.builder.variableManager.getNodeVariable(sourceId);
                 if (val && typeof val === 'object' && val !== null) {
                     // if the return value is an array, treat it as a single variable (do not spread indices)
                     if (Array.isArray(val)) {
@@ -754,7 +750,7 @@ class ExecutionLogic {
     }
 
     getNodeVariables() {
-        return this.nodeVariables;
+        return this.builder.variableManager.getNodeVariables();
     }
 
     getBlockedNodeIds() {
@@ -775,7 +771,7 @@ class ExecutionLogic {
     }
 
     setNodeVariables(variables) {
-        this.nodeVariables = variables;
+        this.builder.variableManager.setNodeVariables(variables);
     }
 
     setBlockedNodeIds(blockedIds) {

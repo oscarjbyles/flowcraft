@@ -160,9 +160,13 @@
     <script>
         if (isFlowchartMode) {
             const executionModules = [
-                '/static/js/flowchart/execution/Feed.js',
+                '/static/js/flowchart/execution/ExecutionStatus.js',
                 '/static/js/flowchart/execution/ExecutionLogic.js',
-                '/static/js/flowchart/execution/NodeStateManager.js'
+                '/static/js/flowchart/execution/Feed.js',
+                '/static/js/flowchart/execution/NodeStateManager.js',
+                '/static/js/flowchart/execution/VariableManager.js',
+                '/static/js/flowchart/execution/OutputManager.js',
+                '/static/js/flowchart/execution/ResumeExecution.js'
             ];
             executionModules.forEach(src => {
                 const script = document.createElement('script');

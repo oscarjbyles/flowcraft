@@ -431,7 +431,7 @@ class Toolbars {
                 const newURL = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`;
                 window.history.replaceState(null, '', newURL);
                 // load and display this execution
-                this.builder.viewExecutionHistory(execId);
+                this.builder.executionStatus.viewExecutionHistory(execId);
             }
         }
         
