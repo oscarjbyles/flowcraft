@@ -293,8 +293,43 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1344.2823486328125,
-      "y": 171.00758361816406
+      "x": 1474.6072998046875,
+      "y": 196.81312561035156
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755809871203.8743,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1747.1064453125,
+      "y": 236.0921630859375,
+      "magnet_partner_id": 1755810089155.626
+    },
+    {
+      "id": 1755810089155.626,
+      "x": 1747.1064453125,
+      "y": 316.0921630859375,
+      "name": "if condition",
+      "type": "if_node",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120,
+      "magnet_partner_id": 1755809871203.8743
+    },
+    {
+      "id": 1755810098562.551,
+      "x": 1816.6055908203125,
+      "y": 523.4798583984375,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
     }
   ],
   "links": [
@@ -415,6 +450,19 @@
       "runtime_details": null,
       "source": 1755430409098.3079,
       "target": 1755430271638.6248
+    },
+    {
+      "source": 1755783498627.8691,
+      "target": 1755809871203.8743
+    },
+    {
+      "source": 1755809871203.8743,
+      "target": 1755810089155.626,
+      "selectable": false
+    },
+    {
+      "source": 1755810089155.626,
+      "target": 1755810098562.551
     }
   ],
   "groups": [
@@ -514,6 +562,21 @@
     }
   ],
   "executions": [
+    {
+      "execution_id": "050b3613-3c9c-41f9-ac70-f13bf31e8d9c",
+      "timestamp": "2025-08-21T21:43:11.933898",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 16.7,
+      "completed_percentage": 22.2,
+      "failed_node": "get web page content",
+      "elapsed_ms": 2599,
+      "execution_time": "2.599s",
+      "error_snippet": "execution was cancelled by user"
+    },
     {
       "execution_id": "25d9e10f-f5a6-4d3b-b617-0d0c98152982",
       "timestamp": "2025-08-21T21:13:58.522128",

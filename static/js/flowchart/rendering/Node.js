@@ -1398,6 +1398,77 @@ class NodeRenderer {
     destroy() {
         this.nodeGroup.remove();
     }
+
+    // node interaction setup (moved from FlowchartBuilder.js)
+    setupNodeInteractions() {
+        // these will be setup by the node renderer when nodes are created
+        this.state.on('nodeAdded', (node) => {
+            this.setupSingleNodeInteractions(node);
+        });
+        
+        // reapply interactions when nodes are updated/re-rendered
+        this.state.on('nodeInteractionNeeded', (node) => {
+            this.setupSingleNodeInteractions(node);
+        });
+    }
+
+    setupSingleNodeInteractions(node) {
+        // get node element
+        const nodeElement = this.nodeGroup
+            .selectAll('.node-group')
+            .filter(d => d.id === node.id);
+
+        // setup node click
+        nodeElement.select('.node')
+            .on('click', (event, d) => {
+                if (window.flowchartApp && window.flowchartApp.selectionHandler) {
+                    window.flowchartApp.selectionHandler.handleNodeClick(event, d);
+                }
+            })
+            .on('contextmenu', (event, d) => {
+                if (window.flowchartApp && window.flowchartApp.events) {
+                    window.flowchartApp.events.handleContextMenu(event, { type: 'node', ...d });
+                }
+            })
+            .call(this.createDragBehavior());
+
+        // setup connection dots (none exist for data_save nodes)
+        nodeElement.selectAll('.connection_dot')
+            .on('mousedown', (event, d) => {
+                event.stopPropagation();
+                const dotSide = d3.select(event.target).attr('data-side');
+                if (window.flowchartApp && window.flowchartApp.connectionHandler) {
+                    window.flowchartApp.connectionHandler.startConnection(event, d, dotSide);
+                }
+            })
+            .call(d3.drag()
+                .on('start', (event, d) => {
+                    const dotSide = d3.select(event.sourceEvent.target).attr('data-side');
+                    if (window.flowchartApp && window.flowchartApp.connectionHandler) {
+                        window.flowchartApp.connectionHandler.handleDotDragStart(event, d, dotSide);
+                    }
+                })
+                .on('drag', (event, d) => {
+                    const coords = d3.pointer(event, this.container.node());
+                    if (window.flowchartApp && window.flowchartApp.connectionHandler) {
+                        window.flowchartApp.connectionHandler.handleDotDrag(event, { x: coords[0], y: coords[1] });
+                    }
+                })
+                .on('end', (event, d) => {
+                    const coords = d3.pointer(event, this.container.node());
+                    if (window.flowchartApp && window.flowchartApp.connectionHandler) {
+                        window.flowchartApp.connectionHandler.handleDotDragEnd(event, { x: coords[0], y: coords[1] });
+                    }
+                })
+            );
+    }
+
+    createDragBehavior() {
+        if (window.flowchartApp && window.flowchartApp.dragHandler) {
+            return window.flowchartApp.dragHandler.createDragBehavior(this.container.node());
+        }
+        return d3.drag(); // fallback
+    }
 }
 
 window.NodeRenderer = NodeRenderer;

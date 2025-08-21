@@ -9,10 +9,13 @@
             'DragHandler', 
             'SelectionHandler', 
             'ConnectionHandler',
-            'NodeRenderer', 
-            'LinkRenderer', 
+            'CanvasHandler',
+            'NodeRenderer',
+            'LinkRenderer',
             'GroupRenderer',
+            'AnnotationRenderer',
             'CreateNode',
+            'ExecutionFeed',
             'FlowchartBuilder',
             'Sidebar'
         ];

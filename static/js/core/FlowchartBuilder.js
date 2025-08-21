@@ -65,8 +65,6 @@ class FlowchartBuilder {
         this.nodeExecutionResults = new Map(); // nodeId -> execution result
         this.globalExecutionLog = ''; // overall execution log
         this.nodeVariables = new Map(); // nodeId -> returned variables from function
-        // live feed for persistence: array of { node_id, node_name, started_at, finished_at, success, lines: [{text, ts}] }
-        this.executionFeed = [];
         // restored variable state from history (for resume functionality)
         this.restoredVariableState = null;
 
@@ -84,6 +82,9 @@ class FlowchartBuilder {
     async initializeComponents() {
         // initialize sidebar
         this.sidebar = new Sidebar(this.state, this.createNode);
+        
+        // initialize execution feed
+        this.executionFeed = new ExecutionFeed(this.state);
     }
 
     async initializeCanvas() {
@@ -127,16 +128,17 @@ class FlowchartBuilder {
         
         this.connectionHandler = new ConnectionHandler(this.state, this.events);
         
-        // setup canvas interactions
-        this.setupCanvasInteractions();
+        // setup canvas interactions directly
+        this.canvasHandler = new CanvasHandler(this.state, this.selectionHandler, this.connectionHandler, this.createNode);
+        this.canvasHandler.setupCanvasInteractions(this.svg, this.zoomGroup);
         
-        // setup node interactions
-        this.setupNodeInteractions();
+        // setup node interactions directly
+        this.nodeRenderer.setupNodeInteractions();
     }
 
     async initializeUI() {
         // setup navigation buttons
-this.setupNavigationButtons();
+        this.setupNavigationButtons();
         
         // setup status bar component
         if (window.StatusBar) {
@@ -145,11 +147,9 @@ this.setupNavigationButtons();
             console.error('StatusBar component not available');
         }
         
-        // setup context menu
-        this.setupContextMenu();
-        
-        // setup window events
-        this.setupWindowEvents();
+        // setup context menu and window events directly
+        this.canvasHandler.setupContextMenu();
+        this.canvasHandler.setupWindowEvents(this.events);
 
         // wire modal close for massive change modal if present
         const overlay = document.getElementById('massive_change_modal');
@@ -173,10 +173,10 @@ this.setupNavigationButtons();
         this.state.on('stateChanged', () => {
             // update order when state changes if in flow view
             if (this.state.isFlowView) {
-                this.renderNodeOrder();
+                NodeOrder.renderNodeOrder(this.nodeRenderer, (message) => this.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
             }
             if (this.state.isErrorView) {
-                this.renderErrorCircles();
+                ErrorCircles.renderErrorCircles(this.nodeRenderer);
                 if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
                     this.nodeRenderer.updateCoverageAlerts();
                 }
@@ -226,7 +226,9 @@ this.setupNavigationButtons();
         
         // mode change events
         this.state.on('modeChanged', (data) => {
-            this.updateModeUI(data.mode, data.previousMode);
+            if (this.toolbars) {
+                this.toolbars.updateModeUI(data.mode, data.previousMode);
+            }
         });
         
         this.state.on('flowViewChanged', (data) => {
@@ -234,7 +236,7 @@ this.setupNavigationButtons();
         });
         
         this.state.on('errorViewChanged', (data) => {
-            this.updateErrorViewUI(data.isErrorView);
+            ErrorCircles.updateErrorViewUI(data.isErrorView);
         });
         
         // link events for error view
@@ -405,133 +407,7 @@ this.setupNavigationButtons();
         // removed arrowhead marker since we use custom middle arrows instead
     }
 
-    setupCanvasInteractions() {
-        // canvas mouse down handler for group selection and annotation deselect
-        this.svg.on('mousedown', (event) => {
-            // check if clicking on empty canvas area (not on nodes, links, etc.)
-            const clickedOnCanvas = event.target === this.svg.node() || 
-                                  event.target.tagName === 'g' || 
-                                  event.target.id === 'zoom_group';
-            
-            if (clickedOnCanvas && this.isGroupSelectMode) {
-                const coordinates = d3.pointer(event, this.zoomGroup.node());
-                const started = this.selectionHandler.startAreaSelection(event, { x: coordinates[0], y: coordinates[1] });
-                if (started) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-            }
-            // clear annotation selection when clicking empty canvas
-            if (clickedOnCanvas && this.state.selectedAnnotation) {
-                this.selectionHandler.clearSelection();
-                this.state.emit('updateSidebar');
-            }
-        });
 
-        // canvas click handler
-        this.svg.on('click', (event) => {
-            if (event.target === this.svg.node()) {
-                const coordinates = d3.pointer(event, this.zoomGroup.node());
-                
-                // in group select mode, only clear selection on intentional clicks (not after drag)
-                if (this.isGroupSelectMode) {
-                    // only clear if this wasn't part of a drag operation
-                    if (!this.selectionHandler.isAreaSelecting && !this.justFinishedDragSelection) {
-                                            if (!event.ctrlKey && !event.shiftKey) {
-                        this.selectionHandler.clearSelection();
-                        this.state.emit('updateNodeStyles');
-                        this.state.emit('updateSidebar');
-                    }
-                    }
-                } else {
-                    // if a drag operation or annotation drag just occurred, suppress node creation
-                    if (this.state.suppressNextCanvasClick) {
-                        this.state.suppressNextCanvasClick = false;
-                        return;
-                    }
-                    this.createNode.addNodeAtCenter(coordinates);
-                }
-            }
-        });
-
-        // canvas context menu
-        this.svg.on('contextmenu', (event) => {
-            event.preventDefault();
-            this.hideContextMenu();
-        });
-
-        // canvas mouse move for connection dragging and group selection
-        this.svg.on('mousemove', (event) => {
-            if (this.state.isConnecting) {
-                const coordinates = d3.pointer(event, this.zoomGroup.node());
-                this.connectionHandler.updateConnection(event, { x: coordinates[0], y: coordinates[1] });
-            } else if (this.isGroupSelectMode && this.selectionHandler.isAreaSelecting) {
-                const coordinates = d3.pointer(event, this.zoomGroup.node());
-                this.selectionHandler.updateAreaSelection(event, { x: coordinates[0], y: coordinates[1] });
-            }
-        });
-
-        // canvas mouse up for connection ending and group selection
-        this.svg.on('mouseup', (event) => {
-            if (this.state.isConnecting) {
-                const coordinates = d3.pointer(event, this.zoomGroup.node());
-                this.connectionHandler.endConnection(event, null, { x: coordinates[0], y: coordinates[1] });
-            } else if (this.isGroupSelectMode && this.selectionHandler.isAreaSelecting) {
-                this.selectionHandler.endAreaSelection(event);
-            }
-        });
-    }
-
-    setupNodeInteractions() {
-        // these will be setup by the node renderer when nodes are created
-        this.state.on('nodeAdded', (node) => {
-            this.setupSingleNodeInteractions(node);
-        });
-        
-        // reapply interactions when nodes are updated/re-rendered
-        this.state.on('nodeInteractionNeeded', (node) => {
-            this.setupSingleNodeInteractions(node);
-        });
-    }
-
-    setupSingleNodeInteractions(node) {
-        // get node element
-        const nodeElement = this.nodeRenderer.nodeGroup
-            .selectAll('.node-group')
-            .filter(d => d.id === node.id);
-
-        // setup node click
-        nodeElement.select('.node')
-            .on('click', (event, d) => {
-                this.selectionHandler.handleNodeClick(event, d);
-            })
-            .on('contextmenu', (event, d) => {
-                this.events.handleContextMenu(event, { type: 'node', ...d });
-            })
-            .call(this.dragHandler.createDragBehavior(this.zoomGroup.node()));
-
-        // setup connection dots (none exist for data_save nodes)
-        nodeElement.selectAll('.connection_dot')
-            .on('mousedown', (event, d) => {
-                event.stopPropagation();
-                const dotSide = d3.select(event.target).attr('data-side');
-                this.connectionHandler.startConnection(event, d, dotSide);
-            })
-            .call(d3.drag()
-                .on('start', (event, d) => {
-                    const dotSide = d3.select(event.sourceEvent.target).attr('data-side');
-                    this.connectionHandler.handleDotDragStart(event, d, dotSide);
-                })
-                .on('drag', (event, d) => {
-                    const coords = d3.pointer(event, this.zoomGroup.node());
-                    this.connectionHandler.handleDotDrag(event, { x: coords[0], y: coords[1] });
-                })
-                .on('end', (event, d) => {
-                    const coords = d3.pointer(event, this.zoomGroup.node());
-                    this.connectionHandler.handleDotDragEnd(event, { x: coords[0], y: coords[1] });
-                })
-            );
-    }
 
     setupNavigationButtons() {
         // delegate to centralized navigation module for left navigation
@@ -579,136 +455,11 @@ this.setupNavigationButtons();
 
 
 
-    setupContextMenu() {
-        this.contextMenu = document.getElementById('context_menu');
-        
-        // context menu handlers
-        document.getElementById('edit_node').addEventListener('click', () => {
-            this.editSelectedNode();
-            this.hideContextMenu();
-        });
-        
-        document.getElementById('delete_node').addEventListener('click', () => {
-            this.deleteSelectedNode();
-            this.hideContextMenu();
-        });
 
-        // hide context menu on click elsewhere
-        document.addEventListener('click', () => this.hideContextMenu());
-
-        // context menu display handler
-        this.state.on('showContextMenu', (data) => {
-            this.showContextMenu(data.x, data.y, data.item);
-        });
-    }
-
-    setupWindowEvents() {
-        // window resize
-        window.addEventListener('resize', () => this.handleResize());
-        
-        // prevent default drag behavior on images/links
-        document.addEventListener('dragstart', (e) => e.preventDefault());
-        
-        // keyboard delete functionality
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Delete' || event.key === 'Backspace') {
-                this.handleDeleteKey(event);
-            }
-        });
-    }
 
     // node creation delegated to CreateNode class
 
-    // context menu operations
-    showContextMenu(x, y, item) {
-        this.contextMenu.style.display = 'block';
-        this.contextMenu.style.left = x + 'px';
-        this.contextMenu.style.top = y + 'px';
-    }
 
-    hideContextMenu() {
-        this.contextMenu.style.display = 'none';
-    }
-
-    editSelectedNode() {
-        if (this.state.selectedNodes.size === 1) {
-            const nodeId = Array.from(this.state.selectedNodes)[0];
-            this.state.currentEditingNode = this.state.getNode(nodeId);
-            this.sidebar.updateFromState();
-        }
-    }
-
-    deleteSelectedNode() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
-        let deletedCount = 0;
-        let inputNodeAttempts = 0;
-        
-        selectedNodes.forEach(nodeId => {
-            const node = this.state.getNode(nodeId);
-            if (node && node.type === 'input_node') {
-                inputNodeAttempts++;
-            } else {
-                const success = this.state.removeNode(nodeId);
-                if (success) deletedCount++;
-            }
-        });
-        
-        // provide appropriate feedback
-        if (inputNodeAttempts > 0 && deletedCount === 0) {
-            this.updateStatusBar('input nodes cannot be deleted directly');
-        } else if (inputNodeAttempts > 0 && deletedCount > 0) {
-            this.updateStatusBar(`deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
-        } else if (deletedCount > 0) {
-            this.updateStatusBar(`deleted ${deletedCount} node(s)`);
-        }
-    }
-
-    handleDeleteKey(event) {
-        // prevent default behavior if we're in an input field
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-            return;
-        }
-        
-        event.preventDefault();
-        
-        // delete selected nodes
-        if (this.state.selectedNodes.size > 0) {
-            const selectedNodes = Array.from(this.state.selectedNodes);
-            let deletedCount = 0;
-            let inputNodeAttempts = 0;
-            
-            selectedNodes.forEach(nodeId => {
-                const node = this.state.getNode(nodeId);
-                if (node && node.type === 'input_node') {
-                    inputNodeAttempts++;
-                } else {
-                    const success = this.state.removeNode(nodeId);
-                    if (success) deletedCount++;
-                }
-            });
-            
-            // provide appropriate feedback
-            if (inputNodeAttempts > 0 && deletedCount === 0) {
-                this.updateStatusBar('input nodes cannot be deleted directly');
-            } else if (inputNodeAttempts > 0 && deletedCount > 0) {
-                this.updateStatusBar(`deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
-            } else if (deletedCount > 0) {
-                this.updateStatusBar(`deleted ${deletedCount} node(s)`);
-            }
-        }
-        
-        // delete selected link
-        if (this.state.selectedLink) {
-            this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
-            this.updateStatusBar('deleted link');
-        }
-        
-        // delete selected group
-        if (this.state.selectedGroup) {
-            this.state.removeGroup(this.state.selectedGroup.id);
-            this.updateStatusBar('deleted group');
-        }
-    }
 
     // zoom operations
     disableZoom() {
@@ -863,7 +614,9 @@ this.setupNavigationButtons();
             if (mode === 'run') {
                 this.switchToRunMode();
             } else {
-                this.updateModeUI('build', null);
+                if (this.toolbars) {
+            this.toolbars.updateModeUI('build', null);
+        }
             }
             
             // coordinates are handled by StatusBar component
@@ -939,9 +692,7 @@ this.setupNavigationButtons();
         return NodeOrder.calculateNodeOrder(this.state.nodes, this.state.links, this.state.groups);
     }
 
-    switchToBuildMode() {
-        this.state.setMode('build');
-    }
+
 
     switchToRunMode(clearRuntimeIndicators = true) {
         this.state.setMode('run');
@@ -963,10 +714,10 @@ this.setupNavigationButtons();
         // allow flow view toggle in both build and run modes
         this.state.setFlowView(!this.state.isFlowView);
         if (this.state.isFlowView) {
-            this.renderNodeOrder();
+            NodeOrder.renderNodeOrder(this.nodeRenderer, (message) => this.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
             this.updateStatusBar('flow view enabled - showing execution order');
         } else {
-            this.hideNodeOrder();
+            NodeOrder.hideNodeOrder(this.nodeRenderer);
             this.updateStatusBar('flow view disabled');
         }
     }
@@ -976,7 +727,7 @@ this.setupNavigationButtons();
         const next = !this.state.isErrorView;
         this.state.setErrorView(next);
         if (this.state.isErrorView) {
-            this.renderErrorCircles();
+            ErrorCircles.renderErrorCircles(this.nodeRenderer);
             // also show coverage alerts if any
             if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
                 this.nodeRenderer.updateCoverageAlerts();
@@ -990,7 +741,7 @@ this.setupNavigationButtons();
             }
             this.updateStatusBar('error view enabled - showing errors');
         } else {
-            this.hideErrorCircles();
+            ErrorCircles.hideErrorCircles(this.nodeRenderer, this.linkRenderer);
             // ensure legacy coverage alerts are removed while disabled
             if (this.nodeRenderer && this.nodeRenderer.updateCoverageAlerts) {
                 this.nodeRenderer.updateCoverageAlerts();
@@ -1075,28 +826,7 @@ this.setupNavigationButtons();
         }
     }
 
-    renderNodeOrder() {
-        NodeOrder.renderNodeOrder(this.nodeRenderer, (message) => this.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
-    }
 
-    hideNodeOrder() {
-        NodeOrder.hideNodeOrder(this.nodeRenderer);
-    }
-
-    renderErrorCircles() {
-        ErrorCircles.renderErrorCircles(this.nodeRenderer);
-    }
-
-    hideErrorCircles() {
-        ErrorCircles.hideErrorCircles(this.nodeRenderer, this.linkRenderer);
-    }
-
-    updateModeUI(mode, previousMode) {
-        // delegate to toolbars module
-        if (this.toolbars) {
-            this.toolbars.updateModeUI(mode, previousMode);
-        }
-    }
 
 
 
@@ -1129,9 +859,7 @@ this.setupNavigationButtons();
         }
     }
 
-    updateErrorViewUI(isErrorView) {
-        ErrorCircles.updateErrorViewUI(isErrorView);
-    }
+
 
     deselectAll() {
         // if group select mode is active, turn it off and enable pan tool
@@ -1247,8 +975,7 @@ this.setupNavigationButtons();
         this.nodeVariables.clear();
         this.globalExecutionLog = '';
         this.clearOutput();
-        // reset live feed for this run
-        this.executionFeed = [];
+
         // reset blocked branches
         this.blockedNodeIds.clear();
         // clear restored variable state when starting new execution
@@ -1461,32 +1188,7 @@ this.setupNavigationButtons();
             }
             
             // sanitize feed to ensure no duplicate entries or line texts per node before saving history
-            const sanitizedFeed = Array.isArray(this.executionFeed) ? (() => {
-                // first, remove duplicate entries for the same node (keep the latest one)
-                const nodeEntries = new Map();
-                this.executionFeed.forEach(entry => {
-                    if (entry && entry.node_id) {
-                        const existing = nodeEntries.get(entry.node_id);
-                        if (!existing || (entry.finished_at && !existing.finished_at) || 
-                            (entry.finished_at && existing.finished_at && entry.finished_at > existing.finished_at)) {
-                            nodeEntries.set(entry.node_id, entry);
-                        }
-                    }
-                });
-                
-                // then sanitize lines within each entry
-                return Array.from(nodeEntries.values()).map(entry => {
-                    const seen = new Set();
-                    const uniqueLines = [];
-                    (entry.lines || []).forEach(l => {
-                        const t = (l && typeof l.text === 'string') ? l.text.trim() : '';
-                        if (!t || seen.has(t)) return;
-                        seen.add(t);
-                        uniqueLines.push({ text: t, ts: l.ts || new Date().toISOString() });
-                    });
-                    return { ...entry, lines: uniqueLines };
-                });
-            })() : [];
+            const sanitizedFeed = this.executionFeed ? this.executionFeed.sanitizeFeed() : [];
 
             // build variable state for resume functionality
             const variableState = {};
@@ -1761,59 +1463,9 @@ this.setupNavigationButtons();
 
     displayHistoryExecutionResults(executionData) {
         // restore the bottom live feed from saved history when viewing
-        try {
-            const list = document.getElementById('run_feed_list');
-            if (list) {
-                list.innerHTML = '';
-                const feed = Array.isArray(executionData.feed) ? executionData.feed : [];
-                // prefer per-node runtimes saved in results; fallback to elapsed_ms from feed
-                const resultsArr = Array.isArray(executionData.results) ? executionData.results : [];
-                const runtimeById = new Map();
-                try {
-                    resultsArr.forEach(r => {
-                        const ms = parseInt(r && r.runtime != null ? r.runtime : 0, 10);
-                        if (!isNaN(ms)) runtimeById.set(r.node_id, ms);
-                    });
-                } catch (_) {}
-                feed.forEach(entry => {
-                    const item = document.createElement('div');
-                    item.className = 'run_feed_item ' + (entry.success ? 'success' : (entry.success === false ? 'error' : ''));
-                    const title = document.createElement('div');
-                    title.className = 'run_feed_item_title';
-                    title.textContent = entry.node_name;
-                    const outCol = document.createElement('div');
-                    outCol.className = 'run_feed_output';
-                    (entry.lines || []).forEach(line => {
-                        const lineDiv = document.createElement('div');
-                        lineDiv.className = 'run_feed_line';
-                        lineDiv.textContent = line.text;
-                        outCol.appendChild(lineDiv);
-                    });
-                    const metaCol = document.createElement('div');
-                    metaCol.className = 'run_feed_meta';
-                    // restore both time and duration; prefer saved node runtime, fallback to elapsed from feed
-                    try {
-                        const tsIso = entry.finished_at || entry.started_at || '';
-                        const dt = tsIso ? new Date(tsIso) : null;
-                        const timeStr = (dt && !isNaN(dt.getTime())) ? dt.toLocaleTimeString() : ((tsIso || '').replace('T',' ').split('.')[0]);
-                        const rtMs = runtimeById.has(entry.node_id) ? runtimeById.get(entry.node_id) : null;
-                        let secText = '';
-                        if (typeof rtMs === 'number' && !isNaN(rtMs) && rtMs >= 0) {
-                            secText = `${(rtMs / 1000).toFixed(3)}s`;
-                        } else if (typeof entry.elapsed_ms === 'number') {
-                            secText = `${(entry.elapsed_ms / 1000).toFixed(3)}s`;
-                        }
-                        metaCol.textContent = secText ? `${timeStr}  ·  ${secText}` : timeStr;
-                    } catch (_) {
-                        metaCol.textContent = (entry.finished_at || entry.started_at || '').replace('T', ' ').split('.')[0];
-                    }
-                    item.appendChild(title);
-                    item.appendChild(outCol);
-                    item.appendChild(metaCol);
-                    list.appendChild(item);
-                });
-            }
-        } catch (_) {}
+        if (this.executionFeed) {
+            this.executionFeed.displayHistoryExecutionResults(executionData);
+        }
 
         // update execution status and top time row with restored elapsed/timestamp
         try {
@@ -2199,19 +1851,9 @@ this.setupNavigationButtons();
             const finalInputValues = inputVariables.inputValues;
             
             // create a feed entry upfront so the title appears even if no output lines
-            try {
-                const existing = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
-                if (!existing) {
-                    this.executionFeed.push({
-                        node_id: node.id,
-                        node_name: node.name,
-                        started_at: new Date().toISOString(),
-                        finished_at: null,
-                        success: null,
-                        lines: []
-                    });
-                }
-            } catch (_) {}
+            if (this.executionFeed) {
+                this.executionFeed.createNodeEntry(node);
+            }
             
             // execute the node via API with input variables
             const result = await this.callNodeExecution(node, {
@@ -2219,106 +1861,12 @@ this.setupNavigationButtons();
                 inputValues: finalInputValues
             });
 
-            // append a neat feed item for each node upon completion
-            try {
-                const list = document.getElementById('run_feed_list');
-                if (list) {
-                    const runningId = `run_feed_running_${node.id}`;
-                    // if a running item exists, finalize it; otherwise create a new completed item
-                    let item = document.getElementById(runningId);
-                    if (item) {
-                        item.classList.add(result.success ? 'success' : 'error');
-                        const metaCol = item.children[2];
-                        if (metaCol) {
-                            const finishedAt = new Date();
-                            const elapsedMs = Math.max(0, finishedAt.getTime() - startTime);
-                            const elapsedSec = (elapsedMs / 1000).toFixed(3);
-                            metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
-                        }
-                        item.removeAttribute('id');
-                    } else {
-                        item = document.createElement('div');
-                        item.className = 'run_feed_item ' + (result.success ? 'success' : 'error');
-                        const title = document.createElement('div');
-                        title.className = 'run_feed_item_title';
-                        title.textContent = node.name;
-                        const outCol = document.createElement('div');
-                        outCol.className = 'run_feed_output';
-                        // strip embedded result blocks from non-streamed output
-                        let errorDisplay = result.error || '';
-                        if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
-                            errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
-                        }
-                        const sanitized = ((result.output || '') + (errorDisplay ? `\n${errorDisplay}` : ''))
-                            .replace(/__RESULT_START__[\s\S]*?__RESULT_END__/g, '')
-                            .trim();
-                        const lines = sanitized.split(/\r?\n/);
-                        lines.filter(Boolean).forEach(l => {
-                            const lineDiv = document.createElement('div');
-                            lineDiv.className = 'run_feed_line';
-                            lineDiv.textContent = l;
-                            outCol.appendChild(lineDiv);
-                        });
-                        const metaCol = document.createElement('div');
-                        metaCol.className = 'run_feed_meta';
-                        const finishedAt = new Date();
-                        const elapsedMs = Math.max(0, finishedAt.getTime() - startTime);
-                        const elapsedSec = (elapsedMs / 1000).toFixed(3);
-                        metaCol.textContent = `${finishedAt.toLocaleTimeString()}  ·  ${elapsedSec}s`;
-                        // also persist these values into the corresponding feed entry for restoration
-                        try {
-                            let entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
-                            if (entry) {
-                                entry.finished_at = finishedAt.toISOString();
-                                entry.success = !!result.success;
-                                entry.elapsed_ms = elapsedMs;
-                            }
-                        } catch (_) {}
-                        item.appendChild(title);
-                        item.appendChild(outCol);
-                        item.appendChild(metaCol);
-                        list.appendChild(item);
-                    }
-                    const bar = document.getElementById('run_feed_bar');
-                    if (bar) bar.scrollTop = bar.scrollHeight;
-                    // if we created a completed item, ensure placeholder is removed
-                    try {
-                        const listEl = document.getElementById('run_feed_list');
-                        const placeholder = document.getElementById('run_feed_placeholder');
-                        if (listEl && placeholder && placeholder.parentElement === listEl) {
-                            placeholder.remove();
-                        }
-                    } catch (_) {}
-                }
-            } catch (_) {}
+            // finalize the feed item for this node
+            if (this.executionFeed) {
+                this.executionFeed.finalizeNode(node, result, startTime);
+            }
 
-            // finalize feed entry and ensure lines present (non-streaming fallback)
-            try {
-                const entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
-                if (entry) {
-                    entry.finished_at = new Date().toISOString();
-                    entry.success = !!result.success;
-                    // compute and persist elapsed so it can be restored later from data matrix
-                    try {
-                        const start = entry.started_at ? new Date(entry.started_at).getTime() : NaN;
-                        const end = new Date(entry.finished_at).getTime();
-                        const elapsedMs = (!isNaN(start) && !isNaN(end) && end >= start)
-                            ? (end - start)
-                            : (typeof result.runtime === 'number' ? result.runtime : undefined);
-                        if (typeof elapsedMs === 'number') entry.elapsed_ms = elapsedMs;
-                    } catch (_) {}
-                    let errorDisplay = result.error || '';
-                    if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
-                        errorDisplay = `Line ${result.error_line}: ${errorDisplay}`;
-                    }
-                    const combined = ((result.output || '') + (errorDisplay ? `\n${errorDisplay}` : '')).trim();
-                    if (combined && entry.lines.length === 0) {
-                        combined.split(/\r?\n/).filter(Boolean).forEach(l => {
-                            entry.lines.push({ text: l, ts: new Date().toISOString() });
-                        });
-                    }
-                }
-            } catch (_) {}
+
             
             const endTime = Date.now();
             const runtime = endTime - startTime;
@@ -2709,65 +2257,9 @@ this.setupNavigationButtons();
                     }
                 }
                 // also append a live line to the bottom feed for this node
-                try {
-                        // persist line into execution feed
-                    try {
-                        let entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
-                        if (!entry) {
-                            entry = {
-                                node_id: node.id,
-                                node_name: node.name,
-                                started_at: new Date().toISOString(),
-                                finished_at: null,
-                                success: null,
-                                lines: []
-                            };
-                            this.executionFeed.push(entry);
-                        }
-                        // avoid duplicating any identical line text already present in this entry
-                        const hasTextAlready = entry.lines.some(l => (l && typeof l.text === 'string') ? l.text === line : false);
-                        if (!hasTextAlready) {
-                            entry.lines.push({ text: line, ts: new Date().toISOString() });
-                        }
-                    } catch (_) {}
-
-                    const list = document.getElementById('run_feed_list');
-                    if (list) {
-                        // reuse or create a current running item for this node
-                        const runningId = `run_feed_running_${node.id}`;
-                    let item = document.getElementById(runningId);
-                        if (!item) {
-                            item = document.createElement('div');
-                            item.id = runningId;
-                            item.className = 'run_feed_item';
-                            const title = document.createElement('div');
-                            title.className = 'run_feed_item_title';
-                            title.textContent = node.name;
-                            const outCol = document.createElement('div');
-                            outCol.className = 'run_feed_output';
-                            const metaCol = document.createElement('div');
-                            metaCol.className = 'run_feed_meta';
-                            metaCol.textContent = 'running...';
-                            item.appendChild(title);
-                            item.appendChild(outCol);
-                            item.appendChild(metaCol);
-                            list.appendChild(item);
-                        // remove placeholder if present since we now have content
-                        const placeholder = document.getElementById('run_feed_placeholder');
-                        if (placeholder && placeholder.parentElement === list) {
-                            placeholder.remove();
-                        }
-                        }
-                        const outCol = item.children[1];
-                        if (outCol) {
-                            const lineDiv = document.createElement('div');
-                            lineDiv.className = 'run_feed_line';
-                            lineDiv.textContent = line;
-                            outCol.appendChild(lineDiv);
-                            list.scrollTop = list.scrollHeight;
-                        }
-                    }
-                } catch (_) {}
+                if (this.executionFeed) {
+                    this.executionFeed.addLine(node, line);
+                }
             };
 
             while (true) {
@@ -2844,49 +2336,9 @@ this.setupNavigationButtons();
                                 } catch (_) {}
                             }
                             // finalize feed entry data
-                            try {
-                                const entry = this.executionFeed.find(e => e.node_id === node.id && !e.finished_at);
-                                if (entry) {
-                                    entry.finished_at = new Date().toISOString();
-                                    entry.success = !!finalResult.success;
-                                    try {
-                                        // persist elapsed time for restoration in history view
-                                        const start = entry.started_at ? new Date(entry.started_at).getTime() : callStartTime;
-                                        const end = Date.now();
-                                        const elapsedMs = (typeof start === 'number' && start > 0) ? Math.max(0, end - start) : Math.max(0, end - callStartTime);
-                                        entry.elapsed_ms = elapsedMs;
-                                    } catch (_) {}
-                                    // if there was non-streamed output appended at the end by the wrapper, ensure it's included
-                                    const tail = (finalResult && finalResult.output) ? String(finalResult.output) : '';
-                                    if (tail) {
-                                        const tailLines = tail.split(/\r?\n/).filter(Boolean);
-                                        // build a set of existing texts to avoid any duplicates, not just the last line
-                                        const existingTexts = new Set(entry.lines.map(l => l && typeof l.text === 'string' ? l.text : ''));
-                                        tailLines.forEach(tl => {
-                                            if (!existingTexts.has(tl)) {
-                                                entry.lines.push({ text: tl, ts: new Date().toISOString() });
-                                                existingTexts.add(tl);
-                                            }
-                                        });
-                                    }
-                                    // if failed, persist error lines into execution feed
-                                    try {
-                                        if (!finalResult.success && finalResult && finalResult.error) {
-                                            const existingTexts = new Set(entry.lines.map(l => l && typeof l.text === 'string' ? l.text : ''));
-                                            String(finalResult.error)
-                                                .split(/\r?\n/)
-                                                .map(s => s.trim())
-                                                .filter(Boolean)
-                                                .forEach(tl => {
-                                                    if (!existingTexts.has(tl)) {
-                                                        entry.lines.push({ text: tl, ts: new Date().toISOString() });
-                                                        existingTexts.add(tl);
-                                                    }
-                                                });
-                                        }
-                                    } catch (_) {}
-                                }
-                            } catch (_) {}
+                            if (this.executionFeed) {
+                                this.executionFeed.finalizeNode(node, finalResult, callStartTime);
+                            }
                         } catch (_) {}
                     }
                 }
@@ -3687,25 +3139,8 @@ this.setupNavigationButtons();
     }
 
     scrollRunFeedToNode(nodeId) {
-        // find a running or completed feed item for this node and scroll it into view
-        const list = document.getElementById('run_feed_list');
-        if (!list) return;
-        // prefer the running item id if present
-        const running = document.getElementById(`run_feed_running_${nodeId}`);
-        const match = running || Array.from(list.children).find(el => {
-            try {
-                const title = el.querySelector('.run_feed_item_title');
-                if (!title) return false;
-                // compare by name from state to avoid relying on node_name text differences
-                const node = this.state.getNode(nodeId);
-                return node && title.textContent === node.name;
-            } catch (_) { return false; }
-        });
-        if (match) {
-            match.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (list && list.lastElementChild) {
-            // fallback: scroll to bottom
-            list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        if (this.executionFeed) {
+            this.executionFeed.scrollToNode(nodeId);
         }
     }
 
@@ -3999,18 +3434,8 @@ this.setupNavigationButtons();
     }
 
     clearExecutionFeed() {
-        // clear internal execution feed data
-        this.executionFeed = [];
-        // clear bottom live feed ui
-        const list = document.getElementById('run_feed_list');
-        if (list) {
-            list.innerHTML = '';
-            // add placeholder when list is empty
-            const placeholder = document.createElement('div');
-            placeholder.id = 'run_feed_placeholder';
-            placeholder.className = 'run_feed_placeholder';
-            placeholder.textContent = 'waiting for execution';
-            list.appendChild(placeholder);
+        if (this.executionFeed) {
+            this.executionFeed.clear();
         }
     }
 
@@ -4029,6 +3454,7 @@ this.setupNavigationButtons();
         if (this.events) this.events.destroy();
         if (this.statusBar) this.statusBar.destroy();
         if (this.toolbars) this.toolbars.destroy();
+        if (this.canvasHandler) this.canvasHandler.destroy();
         
         // remove event listeners
         window.removeEventListener('resize', this.handleResize);

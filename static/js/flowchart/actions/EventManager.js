@@ -312,7 +312,82 @@ class EventManager {
         }
     }
 
+    // context menu operations (moved from FlowchartBuilder.js)
+    showContextMenu(x, y, item) {
+        const contextMenu = document.getElementById('context_menu');
+        if (contextMenu) {
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = x + 'px';
+            contextMenu.style.top = y + 'px';
+        }
+    }
 
+    hideContextMenu() {
+        const contextMenu = document.getElementById('context_menu');
+        if (contextMenu) {
+            contextMenu.style.display = 'none';
+        }
+    }
+
+    editSelectedNode() {
+        if (this.state.selectedNodes.size === 1) {
+            const nodeId = Array.from(this.state.selectedNodes)[0];
+            this.state.currentEditingNode = this.state.getNode(nodeId);
+            // trigger sidebar update
+            this.state.emit('updateSidebar');
+        }
+    }
+
+    deleteSelectedNode() {
+        const selectedNodes = Array.from(this.state.selectedNodes);
+        let deletedCount = 0;
+        let inputNodeAttempts = 0;
+        
+        selectedNodes.forEach(nodeId => {
+            const node = this.state.getNode(nodeId);
+            if (node && node.type === 'input_node') {
+                inputNodeAttempts++;
+            } else {
+                const success = this.state.removeNode(nodeId);
+                if (success) deletedCount++;
+            }
+        });
+        
+        // provide appropriate feedback
+        if (inputNodeAttempts > 0 && deletedCount === 0) {
+            this.state.emit('statusUpdate', 'input nodes cannot be deleted directly');
+        } else if (inputNodeAttempts > 0 && deletedCount > 0) {
+            this.state.emit('statusUpdate', `deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
+        } else if (deletedCount > 0) {
+            this.state.emit('statusUpdate', `deleted ${deletedCount} node(s)`);
+        }
+    }
+
+    handleDeleteKey(event) {
+        // prevent default behavior if we're in an input field
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        event.preventDefault();
+        
+        // delete selected nodes
+        if (this.state.selectedNodes.size > 0) {
+            this.deleteSelectedNode();
+        }
+        
+        // delete selected link
+        if (this.state.selectedLink) {
+            this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
+            this.state.emit('statusUpdate', 'deleted link');
+        }
+        
+        // delete selected group
+        if (this.state.selectedGroup) {
+            this.state.removeGroup(this.state.selectedGroup.id);
+            this.state.emit('statusUpdate', 'deleted group');
+        }
+    }
 
     // cleanup
     destroy() {

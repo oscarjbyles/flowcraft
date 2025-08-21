@@ -67,12 +67,13 @@ static/js/components/sidebar/panels/Panel.multi.js
 static/js/components/sidebar/panels/Panel.single.js
 static/js/components/sidebar/ui/Dropdowns.js
 static/js/components/sidebar/ui/Visibility.js
-static/js/core/EventManager.js
 static/js/core/FlowchartBuilder.js
 static/js/core/StateManager.js
-static/js/interactions/ConnectionHandler.js
-static/js/interactions/DragHandler.js
-static/js/interactions/SelectionHandler.js
+static/js/flowchart/actions/ConnectionHandler.js
+static/js/flowchart/actions/CreateNode.js
+static/js/flowchart/actions/DragHandler.js
+static/js/flowchart/actions/EventManager.js
+static/js/flowchart/actions/SelectionHandler.js
 static/js/pages/DataMatrix.js
 static/js/pages/ScriptsExplorer.js
 static/js/flowchart/RendererAnnotation.js

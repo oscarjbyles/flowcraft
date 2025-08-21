@@ -114,7 +114,7 @@
         if (isFlowchartMode) {
             // load EventManager only for build and run modes
             const script = document.createElement('script');
-            script.src = '/static/js/flowchart/EventManager.js';
+            script.src = '/static/js/flowchart/actions/EventManager.js';
             document.head.appendChild(script);
         }
     </script>
@@ -123,9 +123,10 @@
     <script>
         if (isFlowchartMode) {
             const modules = [
-                '/static/js/flowchart/DragHandler.js',
-                '/static/js/flowchart/SelectionHandler.js',
-                '/static/js/flowchart/ConnectionHandler.js',
+                '/static/js/flowchart/actions/DragHandler.js',
+                '/static/js/flowchart/actions/SelectionHandler.js',
+                '/static/js/flowchart/actions/ConnectionHandler.js',
+                '/static/js/flowchart/actions/CanvasHandler.js',
                 '/static/js/flowchart/toolbars/Toolbars.js'
             ];
             modules.forEach(src => {
@@ -140,18 +141,27 @@
     <script>
         if (isFlowchartMode) {
             const modules = [
-                '/static/js/flowchart/RendererNode.js',
-                '/static/js/flowchart/RendererLink.js',
-                '/static/js/flowchart/RendererGroup.js',
-                '/static/js/flowchart/RendererAnnotation.js',
-                '/static/js/flowchart/NodeOrder.js',
-                '/static/js/flowchart/ErrorCircles.js'
+                '/static/js/flowchart/rendering/Node.js',
+                '/static/js/flowchart/rendering/Link.js',
+                '/static/js/flowchart/rendering/Group.js',
+                '/static/js/flowchart/rendering/Annotation.js',
+                '/static/js/flowchart/toolbars/NodeOrder.js',
+                '/static/js/flowchart/toolbars/ErrorCircles.js'
             ];
             modules.forEach(src => {
                 const script = document.createElement('script');
                 script.src = src;
                 document.head.appendChild(script);
             });
+        }
+    </script>
+
+    <!-- execution modules (only load in flowchart modes) -->
+    <script>
+        if (isFlowchartMode) {
+            const script = document.createElement('script');
+            script.src = '/static/js/flowchart/execution/Feed.js';
+            document.head.appendChild(script);
         }
     </script>
 
@@ -222,7 +232,7 @@
     <script>
         if (isFlowchartMode) {
             const script = document.createElement('script');
-            script.src = '/static/js/flowchart/CreateNode.js';
+            script.src = '/static/js/flowchart/actions/CreateNode.js';
             document.head.appendChild(script);
         }
     </script>
@@ -234,10 +244,10 @@
             script.src = '/static/js/core/FlowchartBuilder.js';
             document.head.appendChild(script);
             
-            // load main.js after FlowchartBuilder
+            // load Index.js after FlowchartBuilder
             script.onload = function() {
                 const mainScript = document.createElement('script');
-                mainScript.src = '/static/js/main.js';
+                mainScript.src = '/static/js/pages/Index.js';
                 document.head.appendChild(mainScript);
             };
         }
