@@ -1,6 +1,5 @@
 // scripts explorer page logic moved from template (comments kept in lower case)
 (function(){
-    try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
     // simple file explorer
     const tbody = document.getElementById('explorer_tbody');
     const breadcrumbEl = document.getElementById('breadcrumb');

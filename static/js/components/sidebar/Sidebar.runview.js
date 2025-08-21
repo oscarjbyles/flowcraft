@@ -654,7 +654,7 @@
             // hide execution time row when a link (e.g., if condition) is selected
             if (executionTimeRow) executionTimeRow.style.display = isAnyLinkSelected ? 'none' : ((isRunning || hasLast) ? 'flex' : 'none');
             if (progressText && window.flowchartApp) {
-                const order = window.flowchartApp.calculateNodeOrder ? window.flowchartApp.calculateNodeOrder() : [];
+                const order = window.NodeOrder ? NodeOrder.calculateNodeOrder(window.flowchartApp.state.nodes, window.flowchartApp.state.links, window.flowchartApp.state.groups) : [];
                 const total = order.length;
                 // only count executed nodes that are part of the execution order (exclude data_save etc.)
                 const executed = window.flowchartApp.nodeExecutionResults

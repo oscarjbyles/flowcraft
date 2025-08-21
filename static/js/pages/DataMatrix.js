@@ -1,6 +1,5 @@
 // data matrix page logic moved from template (comments kept in lower case)
 (async function(){
-    try { if (window.Navigation && typeof window.Navigation.init === 'function') window.Navigation.init(null); } catch(_) {}
     // small helpers (keep comments in lower case to match project convention)
     const $ = (sel) => document.querySelector(sel);
     const container = document.getElementById('dm_content');

@@ -1,28 +1,15 @@
-<!-- shared script includes (kept minimal so non-builder pages don't initialize the canvas or sidebar) -->
+<!-- common utilities (used by all pages) -->
 <script src="/static/js/utils/EventEmitter.js"></script>
 <script src="/static/js/utils/Geometry.js"></script>
 <script src="/static/js/utils/Storage.js"></script>
 <script src="/static/js/utils/Validation.js"></script>
 <script src="/static/js/utils/URLManager.js"></script>
-
-<!-- dropdown manager (centralized dropdown system) -->
 <script src="/static/js/utils/DropdownManager.js"></script>
 
-<!-- left navigation (consolidated, safe for all pages) -->
-<script src="/static/js/components/navigation/Navigation.js"></script>
+<!-- navigation (consolidated, safe for all pages) -->
+<script src="/static/js/utils/Navigation.js"></script>
 
-<!-- initialize navigation on all pages -->
-<script>
-// consolidated navigation initialization
-document.addEventListener('DOMContentLoaded', function() {
-    try { 
-        if (window.Navigation && typeof window.Navigation.init === 'function') {
-            window.Navigation.init(null);
-        }
-    } catch (error) {
-        console.error('Error initializing Navigation:', error);
-    }
-});
-</script>
+<!-- common initialization -->
+<script src="/static/js/Common.js"></script>
 
 

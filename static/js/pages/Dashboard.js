@@ -2,18 +2,8 @@
 class Dashboard {
     constructor() {
         this.urlManager = null;
-        this.initializeNavigation();
         this.initializeUrlManager();
         this.initializeDashboard();
-    }
-
-    // initialize navigation
-    initializeNavigation() {
-        try { 
-            if (window.Navigation && typeof window.Navigation.init === 'function') {
-                window.Navigation.init(null); 
-            } 
-        } catch(_) {}
     }
 
     // initialize url manager

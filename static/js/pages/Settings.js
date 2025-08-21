@@ -6,7 +6,6 @@ class Settings {
         this.initializeFormHandlers();
         this.loadSettingsData();
         this.initializeBackupsTable();
-        this.setupNavigation();
     }
 
     // initialize settings sidebar navigation
@@ -462,18 +461,7 @@ class Settings {
         this.loadAndRenderBackups();
     }
 
-    // setup navigation to preserve flowchart context
-    setupNavigation() {
-        // wire back navigation to preserve flowchart context
-        const backBtn = document.querySelector('.back_link') || document.querySelector('[data-back-link]');
-        if (backBtn) {
-            backBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const backUrl = this.urlManager.buildUrlPreserveContext('/');
-                window.location.href = backUrl;
-            });
-        }
-    }
+
 
     // get current flowchart name
     getCurrentFlowchart() {

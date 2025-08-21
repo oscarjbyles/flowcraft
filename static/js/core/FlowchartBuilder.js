@@ -1539,175 +1539,7 @@ this.setupNavigationButtons();
     }
 
     calculateNodeOrder() {
-        const nodes = this.state.nodes;
-        const links = this.state.links;
-        const groups = this.state.groups;
-        
-        // step 1: identify connected nodes only (nodes that are part of execution flow)
-        // first filter out input nodes and data_save nodes and their connections
-        const nonInputNodes = nodes.filter(node => node.type !== 'input_node' && node.type !== 'data_save');
-        const nonInputLinks = links.filter(link => {
-            const sourceNode = nodes.find(n => n.id === link.source);
-            const targetNode = nodes.find(n => n.id === link.target);
-            // exclude links that involve input nodes or data_save nodes or input connections
-            return sourceNode?.type !== 'input_node' && 
-                   targetNode?.type !== 'input_node' &&
-                   sourceNode?.type !== 'data_save' &&
-                   targetNode?.type !== 'data_save' &&
-                   link.type !== 'input_connection';
-        });
-        
-
-        
-        const connectedNodeIds = new Set();
-        nonInputLinks.forEach(link => {
-            connectedNodeIds.add(link.source);
-            connectedNodeIds.add(link.target);
-        });
-        
-        // filter to only connected nodes (already excluding input nodes)
-        const connectedNodes = nonInputNodes.filter(node => 
-            connectedNodeIds.has(node.id)
-        );
-        
-        if (connectedNodes.length === 0) {
-            return []; // no connected nodes, no execution order
-        }
-        
-        // step 2: build dependency graph
-        const incomingLinks = new Map(); // node -> list of source nodes
-        const outgoingLinks = new Map(); // node -> list of target nodes
-        
-        // initialize maps
-        connectedNodes.forEach(node => {
-            incomingLinks.set(node.id, []);
-            outgoingLinks.set(node.id, []);
-        });
-        
-        // populate dependency relationships using filtered links
-        nonInputLinks.forEach(link => {
-            if (connectedNodeIds.has(link.source) && connectedNodeIds.has(link.target)) {
-                incomingLinks.get(link.target).push(link.source);
-                outgoingLinks.get(link.source).push(link.target);
-            }
-        });
-        
-        // step 3: group nodes by their group membership
-        const nodeToGroup = new Map(); // nodeId -> group
-        const groupToNodes = new Map(); // groupId -> Set of nodeIds
-        
-        // initialize group mappings
-        connectedNodes.forEach(node => {
-            if (node.groupId) {
-                nodeToGroup.set(node.id, node.groupId);
-                if (!groupToNodes.has(node.groupId)) {
-                    groupToNodes.set(node.groupId, new Set());
-                }
-                groupToNodes.get(node.groupId).add(node.id);
-            }
-        });
-        
-        // step 4: find execution order using group-aware topological sort
-        const result = [];
-        const processed = new Set();
-        const processing = new Set();
-        
-        // helper function to check if all dependencies are satisfied
-        const canExecute = (nodeId) => {
-            const dependencies = incomingLinks.get(nodeId) || [];
-            return dependencies.every(depId => processed.has(depId));
-        };
-        
-        // helper function to get ready nodes (all dependencies satisfied)
-        const getReadyNodes = () => {
-            return connectedNodes.filter(node => 
-                !processed.has(node.id) && 
-                !processing.has(node.id) && 
-                canExecute(node.id)
-            );
-        };
-        
-        // helper function to check if all nodes in a group are ready
-        const isGroupReady = (groupId) => {
-            const groupNodeIds = groupToNodes.get(groupId);
-            if (!groupNodeIds) return false;
-            
-            const groupNodes = connectedNodes.filter(node => groupNodeIds.has(node.id));
-            return groupNodes.every(node => 
-                !processed.has(node.id) && 
-                !processing.has(node.id) && 
-                canExecute(node.id)
-            );
-        };
-        
-        // helper function to get all nodes in a group that are ready
-        const getReadyNodesInGroup = (groupId) => {
-            const groupNodeIds = groupToNodes.get(groupId);
-            if (!groupNodeIds) return [];
-            
-            return connectedNodes.filter(node => 
-                groupNodeIds.has(node.id) &&
-                !processed.has(node.id) && 
-                !processing.has(node.id) && 
-                canExecute(node.id)
-            );
-        };
-        
-        // step 5: process nodes in group-aware execution order
-        while (processed.size < connectedNodes.length) {
-            const readyNodes = getReadyNodes();
-            
-            if (readyNodes.length === 0) {
-                // this shouldn't happen in a valid dag, but handle it gracefully
-                console.warn('circular dependency detected or disconnected components');
-                break;
-            }
-            
-            // prioritize nodes that belong to groups that are ready to be processed
-            const readyGroups = new Set();
-            readyNodes.forEach(node => {
-                if (node.groupId && isGroupReady(node.groupId)) {
-                    readyGroups.add(node.groupId);
-                }
-            });
-            
-            let nodesToProcess = [];
-            
-            if (readyGroups.size > 0) {
-                // process entire groups that are ready
-                readyGroups.forEach(groupId => {
-                    const groupReadyNodes = getReadyNodesInGroup(groupId);
-                    nodesToProcess.push(...groupReadyNodes);
-                });
-            } else {
-                // fallback to original logic for ungrouped nodes or when no groups are ready
-                // sort ready nodes by y-position (top to bottom) then x-position (left to right)
-                readyNodes.sort((a, b) => {
-                    if (Math.abs(a.y - b.y) < 10) { // if roughly same height
-                        return a.x - b.x; // sort left to right
-                    }
-                    return a.y - b.y; // sort top to bottom
-                });
-                
-                // process the topmost ready node(s)
-                const currentY = readyNodes[0].y;
-                const currentLevelNodes = readyNodes.filter(node => 
-                    Math.abs(node.y - currentY) < 10 // nodes at roughly same level
-                );
-                nodesToProcess = currentLevelNodes;
-            }
-            
-            // add nodes to result in left-to-right order within their group or level
-            nodesToProcess.sort((a, b) => a.x - b.x);
-            nodesToProcess.forEach(node => {
-                processing.add(node.id);
-                result.push(node);
-                processed.add(node.id);
-                processing.delete(node.id);
-            });
-        }
-        
-        return result;
+        return NodeOrder.calculateNodeOrder(this.state.nodes, this.state.links, this.state.groups);
     }
 
     switchToBuildMode() {
@@ -1845,109 +1677,19 @@ this.setupNavigationButtons();
     }
 
     renderNodeOrder() {
-        const order = this.calculateNodeOrder();
-        
-        // first, remove all existing order elements
-        this.nodeRenderer.nodeGroup.selectAll('.node_order_circle, .node_order_text').remove();
-        
-        if (order.length === 0) {
-            this.updateStatusBar('run view enabled - no connected nodes to execute');
-            return;
-        }
-        
-        // render order numbers only for nodes in the execution order
-        this.nodeRenderer.nodeGroup.selectAll('.node-group').each(function(d) {
-            const nodeGroup = d3.select(this);
-            
-            // find this node's position in the execution order
-            const orderIndex = order.findIndex(node => node.id === d.id);
-            
-            // only show numbers for nodes that are part of the execution flow
-            if (orderIndex !== -1) {
-                // determine node width based on type
-                let nodeWidth = 120; // default width
-                if (d.type === 'input_node') {
-                    // fixed width for input nodes
-                    nodeWidth = d.width || 300;
-                } else if (d.width) {
-                    nodeWidth = d.width;
-                }
-                
-                // add circle background (no border, orange, radius 12)
-                nodeGroup.append('circle')
-                    .attr('class', 'node_order_circle')
-                    .attr('cx', nodeWidth / 2 + 18)
-                    .attr('cy', -18) // moved down slightly for spacing
-                    .attr('r', 12)
-                    .style('fill', '#ff9800')
-                    .style('stroke', 'none')
-                    .style('stroke-width', '0');
-                
-                // add order number text
-                nodeGroup.append('text')
-                    .attr('class', 'node_order_text')
-                    .attr('x', nodeWidth / 2 + 18)
-                    .attr('y', -18)
-                    .attr('text-anchor', 'middle')
-                    .attr('dominant-baseline', 'central')
-                    .style('fill', '#000000')
-                    .style('font-size', '12px')
-                    .style('font-weight', 'bold')
-                    .style('pointer-events', 'none')
-                    .text(orderIndex + 1);
-            }
-        });
-        
-        this.updateStatusBar(`run view enabled - ${order.length} nodes in execution order`);
+        NodeOrder.renderNodeOrder(this.nodeRenderer, this.updateStatusBar.bind(this), this.state.nodes, this.state.links, this.state.groups);
     }
 
     hideNodeOrder() {
-        this.nodeRenderer.nodeGroup.selectAll('.node_order_circle, .node_order_text').remove();
+        NodeOrder.hideNodeOrder(this.nodeRenderer);
     }
 
     renderErrorCircles() {
-        // remove previous error indicators
-        this.nodeRenderer.nodeGroup.selectAll('.error_circle, .error_text').remove();
-        // draw an error marker for nodes in error state
-        this.nodeRenderer.nodeGroup.selectAll('.node-group').each(function(d) {
-            const group = d3.select(this);
-            const rect = group.select('.node');
-            const isErr = rect.classed('error');
-            // also flag python nodes with no associated python file
-            const isPythonMissingFile = d && d.type === 'python_file' && (!d.pythonFile || String(d.pythonFile).trim() === '');
-            const shouldMark = isErr || isPythonMissingFile;
-            if (!shouldMark) return;
-            const width = d.width || 120;
-            const height = Geometry.getNodeHeight(d);
-            // place the badge left of the node and align its top with the node's top edge
-            const topLeftX = -width / 2;
-            const topLeftY = -height / 2;
-            const offsetX = -18; // moved 4px further left
-            const x = topLeftX + offsetX;
-            const y = topLeftY + 12; // circle radius is 12, so top aligns with node top
-            group.append('circle')
-                .attr('class', 'error_circle')
-                .attr('cx', x)
-                .attr('cy', y)
-                .attr('r', 12);
-            group.append('text')
-                .attr('class', 'error_text')
-                .attr('x', x)
-                .attr('y', y)
-                .text('!');
-        });
+        ErrorCircles.renderErrorCircles(this.nodeRenderer);
     }
 
     hideErrorCircles() {
-        try {
-            this.nodeRenderer.nodeGroup.selectAll('.error_circle, .error_text').remove();
-            // also remove link coverage alerts when hiding error view
-            if (this.linkRenderer && this.linkRenderer.linkGroup) {
-                this.linkRenderer.linkGroup.selectAll('.link-coverage-alert').remove();
-            }
-        } catch (e) {
-            console.warn('[error_view] hideErrorCircles error', e);
-        }
+        ErrorCircles.hideErrorCircles(this.nodeRenderer, this.linkRenderer);
     }
 
     updateModeUI(mode, previousMode) {
@@ -2187,18 +1929,7 @@ this.setupNavigationButtons();
     }
 
     updateErrorViewUI(isErrorView) {
-        const errorToggleBtn = document.getElementById('error_toggle_btn');
-        if (!errorToggleBtn) return;
-        if (isErrorView) {
-            errorToggleBtn.classList.add('active');
-            errorToggleBtn.innerHTML = '<span class="material-icons">stop</span>';
-            errorToggleBtn.title = 'stop error view';
-        } else {
-            errorToggleBtn.classList.remove('active');
-            errorToggleBtn.innerHTML = '<span class="material-icons">priority_high</span>';
-            errorToggleBtn.title = 'show error circles';
-        }
-
+        ErrorCircles.updateErrorViewUI(isErrorView);
     }
 
     deselectAll() {

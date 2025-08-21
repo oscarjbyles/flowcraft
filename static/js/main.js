@@ -6,12 +6,6 @@
     function checkDependencies() {
 
         const requiredClasses = [
-            'EventEmitter', 
-            'Geometry', 
-            'Storage', 
-            'Validation', 
-            'URLManager',
-            'DropdownManager',
             'StateManager', 
             'EventManager',
             'DragHandler', 
@@ -20,7 +14,6 @@
             'NodeRenderer', 
             'LinkRenderer', 
             'GroupRenderer',
-            'Navigation', 
             'FlowchartBuilder'
         ];
 
@@ -59,8 +52,8 @@
 
             // wire left navigation (flowchart dropdown, nav buttons) for builder view
             try { 
-                if (window.Navigation && typeof window.Navigation.init === 'function') { 
-                    window.Navigation.init(window.flowchartApp); 
+                if (window.Navigation && typeof window.Navigation.setupNavButtons === 'function') { 
+                    window.Navigation.setupNavButtons(window.flowchartApp); 
                 } 
             } catch (error) {
                 console.error('error initializing navigation:', error);
@@ -69,12 +62,7 @@
             console.log('flowchart application initialized');
             console.log('debug helpers available at window.debugFlowchart');
             
-            // verify DropdownManager is loaded
-            if (window.DropdownManager) {
-                console.log('✅ DropdownManager loaded successfully');
-            } else {
-                console.warn('⚠️ DropdownManager not found - dropdown functionality may not work');
-            }
+
             
         } catch (error) {
             
