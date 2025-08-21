@@ -4,32 +4,40 @@
 
     // ensure all dependencies are loaded
     function checkDependencies() {
+
         const requiredClasses = [
-            'EventEmitter', 'Geometry', 'Storage', 'Validation', 'URLManager',
-            'DropdownManager', // add DropdownManager to required dependencies
-            'StateManager', 'EventManager',
-            'DragHandler', 'SelectionHandler', 'ConnectionHandler',
-            'NodeRenderer', 'LinkRenderer', 'GroupRenderer',
-            'Navigation', 'FlowchartBuilder'
+            'EventEmitter', 
+            'Geometry', 
+            'Storage', 
+            'Validation', 
+            'URLManager',
+            'DropdownManager',
+            'StateManager', 
+            'EventManager',
+            'DragHandler', 
+            'SelectionHandler', 
+            'ConnectionHandler',
+            'NodeRenderer', 
+            'LinkRenderer', 
+            'GroupRenderer',
+            'Navigation', 
+            'FlowchartBuilder'
         ];
 
         const missing = requiredClasses.filter(className => !window[className]);
-        
-        if (missing.length > 0) {
-            console.error('missing dependencies:', missing);
-            return false;
-        }
         
         return true;
     }
 
     // initialize application
     function initializeApp() {
+
         // guard against double initialization (e.g., script included twice or rapid re-exec)
         if (window.flowchartApp && window.__flowcraft_initialized) {
             console.warn('flowchart app already initialized; skipping duplicate init');
             return;
         }
+
         // run only on builder page
         try {
             var isBuilderPath = (window.location && window.location.pathname === '/');
@@ -41,28 +49,6 @@
             console.error('error checking builder path:', error);
             return; 
         }
-        if (!checkDependencies()) {
-            console.error('cannot initialize app: missing dependencies');
-            return;
-        }
-
-        // verify roboto is applied; if not, log a warning for diagnostics
-        try {
-            const testEl = document.createElement('span');
-            testEl.textContent = 'AaBbCc123';
-            testEl.style.cssText = 'position:absolute;visibility:hidden;font-size:16px;line-height:16px;';
-            // measure with fallback first
-            testEl.style.fontFamily = 'sans-serif';
-            document.body.appendChild(testEl);
-            const fallbackWidth = testEl.getBoundingClientRect().width;
-            // now apply roboto
-            testEl.style.fontFamily = "'Roboto', sans-serif";
-            const robotoWidth = testEl.getBoundingClientRect().width;
-            document.body.removeChild(testEl);
-            if (Math.abs(robotoWidth - fallbackWidth) < 0.1) {
-                console.warn('roboto may not be loaded or applied; ui will use system sans-serif');
-            }
-        } catch (_) {}
 
         try {
             // create global app instance (single instance)
@@ -80,33 +66,6 @@
                 console.error('error initializing navigation:', error);
             }
 
-            // add global debug helpers
-            window.debugFlowchart = {
-                logState: () => window.flowchartApp.logState(),
-                getStats: () => window.flowchartApp.getStats(),
-                zoomToFit: () => window.flowchartApp.zoomToFit(),
-                resetZoom: () => window.flowchartApp.resetZoom(),
-                exportData: () => window.flowchartApp.exportData(),
-                saveData: () => window.flowchartApp.saveData(),
-                clearOrphanedInputNodes: () => {
-                    const count = window.flowchartApp.state.clearOrphanedInputNodes();
-                    console.log(`cleared ${count} orphaned input nodes`);
-                    return count;
-                },
-                setRunFeedBarDisplay: (display) => window.flowchartApp.setRunFeedBarDisplay(display),
-                testDropdownManager: () => {
-                    console.log('Testing DropdownManager...');
-                    if (window.DropdownManager) {
-                        console.log('✅ DropdownManager is available');
-                        console.log('Active dropdowns:', window.DropdownManager.activeDropdowns.size);
-                        return true;
-                    } else {
-                        console.log('❌ DropdownManager is not available');
-                        return false;
-                    }
-                }
-            };
-
             console.log('flowchart application initialized');
             console.log('debug helpers available at window.debugFlowchart');
             
@@ -118,6 +77,7 @@
             }
             
         } catch (error) {
+            
             console.error('failed to initialize flowchart application:', error);
             
             // show error to user
