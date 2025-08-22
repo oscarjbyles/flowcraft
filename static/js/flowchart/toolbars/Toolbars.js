@@ -41,7 +41,7 @@ class Toolbars {
         attachClick('flow_toggle_btn', () => this.builder.toggleFlowView());
         attachClick('error_toggle_btn', () => this.builder.toggleErrorView());
         attachClick('group_select_btn', () => this.builder.toggleGroupSelectMode());
-        attachClick('deselect_btn', () => this.builder.deselectAll());
+        attachClick('deselect_btn', () => this.builder.state.selectionHandler.deselectAll());
         attachClick('reset_view_btn', () => {
             if (this.state && this.builder.svg && this.builder.zoom) {
                 this.builder.resetViewToFirstNode();
@@ -336,7 +336,7 @@ class Toolbars {
             if (propertiesSidebar) propertiesSidebar.style.display = 'flex';
             
             // switch back to default panel
-            this.builder.hideExecutionPanel();
+            this.builder.state.selectionHandler.hideExecutionPanel();
             
             // reset node colors when leaving run mode
             if (previousMode === 'run' || previousMode === 'history') {
@@ -376,7 +376,7 @@ class Toolbars {
                 groupSelectBtn.classList.remove('active');
                 const canvas = document.getElementById('flowchart_canvas');
                 canvas.style.cursor = '';
-                this.builder.hideSelectionRect();
+                this.builder.state.selectionHandler.hideSelectionRect();
             }
             
             // show start button and toggle bar
@@ -416,7 +416,7 @@ class Toolbars {
             if (propertiesSidebar) propertiesSidebar.style.display = 'none';
             
             // switch to execution panel
-            this.builder.showExecutionPanel();
+            this.builder.state.selectionHandler.showExecutionPanel();
             
             // update play button visibility for current selection
             this.builder.nodeRenderer.updatePlayButtonVisibility();

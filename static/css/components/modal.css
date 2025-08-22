@@ -114,3 +114,9 @@
     display: flex;
   }
 }
+
+/* ensure both show and modal_overlay_is_open work for backward compatibility */
+.modal_overlay.show,
+.modal_overlay.modal_overlay_is_open {
+    display: flex;
+}

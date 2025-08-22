@@ -66,7 +66,7 @@
       "type": "python_file",
       "width": 256.78334045410156,
       "x": 1444.8553466796875,
-      "y": 533.5359191894531
+      "y": 531.0646667480469
     },
     {
       "description": "",
@@ -100,7 +100,7 @@
       "type": "if_node",
       "width": 120,
       "x": 1444.8553466796875,
-      "y": 613.5359191894531
+      "y": 611.0646667480469
     },
     {
       "dataSource": {
@@ -295,6 +295,17 @@
       "width": 120,
       "x": 2333.582275390625,
       "y": 141.3406982421875
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755861137475.1267,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1889.5511474609375,
+      "y": 125.99575805664062
     }
   ],
   "links": [
@@ -514,6 +525,51 @@
     }
   ],
   "executions": [
+    {
+      "execution_id": "abbd0886-965b-4fa9-b922-910b8948228f",
+      "timestamp": "2025-08-22T12:03:47.124046",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 535,
+      "execution_time": "0.535s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "f71a4222-06c5-43de-8633-f55008775bc4",
+      "timestamp": "2025-08-22T11:48:17.516337",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 998,
+      "execution_time": "0.998s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "6f68f66e-3374-4d9d-ad7d-b1232e90896d",
+      "timestamp": "2025-08-22T11:45:53.696001",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 2901,
+      "execution_time": "2.901s",
+      "error_snippet": "execution was cancelled by user"
+    },
     {
       "execution_id": "62f5dc1a-feda-4d82-9532-ac4c3fbf4c68",
       "timestamp": "2025-08-22T00:54:51.440698",

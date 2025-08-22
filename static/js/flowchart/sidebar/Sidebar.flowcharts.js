@@ -12,9 +12,7 @@
 
 
 
-        document.getElementById('close_create_modal').addEventListener('click', () => {
-            this.hideCreateFlowchartModal();
-        });
+        // close button is now handled automatically by ModalManager
 
         document.getElementById('cancel_create_flowchart').addEventListener('click', () => {
             this.hideCreateFlowchartModal();
@@ -259,13 +257,12 @@
     };
 
     Sidebar.prototype.showCreateFlowchartModal = function() {
-        this.createFlowchartModal.classList.add('show');
         document.getElementById('new_flowchart_name').value = '';
-        document.getElementById('new_flowchart_name').focus();
+        ModalManager.open('create_flowchart_modal');
     };
 
     Sidebar.prototype.hideCreateFlowchartModal = function() {
-        this.createFlowchartModal.classList.remove('show');
+        ModalManager.close('create_flowchart_modal');
     };
 
     Sidebar.prototype.createNewFlowchart = async function() {

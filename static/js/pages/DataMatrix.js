@@ -91,8 +91,7 @@
     const selector = document.getElementById('flowchart_selector');
     const dropdown = document.getElementById('flowchart_dropdown');
     const createBtn = document.getElementById('create_flowchart_btn');
-    const createModal = document.getElementById('create_flowchart_modal');
-    const closeCreateModal = document.getElementById('close_create_modal');
+            const createModal = document.getElementById('create_flowchart_modal');
     const cancelCreate = document.getElementById('cancel_create_flowchart');
     const confirmCreate = document.getElementById('confirm_create_flowchart');
     const newFlowchartNameInput = document.getElementById('new_flowchart_name');

@@ -252,16 +252,58 @@
     <!-- main application entrypoint (builder) - only load in flowchart modes -->
     <script>
         if (isFlowchartMode) {
-            const script = document.createElement('script');
-            script.src = '/static/js/core/FlowchartBuilder.js';
-            document.head.appendChild(script);
-            
-            // load Index.js after FlowchartBuilder
-            script.onload = function() {
-                const mainScript = document.createElement('script');
-                mainScript.src = '/static/js/pages/Index.js';
-                document.head.appendChild(mainScript);
-            };
+            // wait for all dependencies to be loaded before initializing
+            function waitForDependencies() {
+                const requiredClasses = [
+                    'StateManager', 
+                    'DragHandler', 
+                    'SelectionHandler', 
+                    'ConnectionHandler',
+                    'CanvasHandler',
+                    'NodeRenderer',
+                    'LinkRenderer',
+                    'GroupRenderer',
+                    'AnnotationRenderer',
+                    'CreateNode',
+                    'ExecutionFeed',
+                    'EventManager',
+                    'Sidebar',
+                    'Toolbars',
+                    'StatusBar',
+                    'ExecutionLogic',
+                    'NodeStateManager',
+                    'VariableManager',
+                    'ResumeExecution',
+                    'ExecutionStatus',
+                    'OutputManager',
+                    'ViewportTracker'
+                ];
+
+                const missing = requiredClasses.filter(className => !window[className]);
+                
+                if (missing.length > 0) {
+                    console.log('waiting for dependencies:', missing);
+                    setTimeout(waitForDependencies, 100);
+                    return;
+                }
+
+                console.log('all dependencies loaded, initializing app');
+                
+                // load FlowchartBuilder first
+                const script = document.createElement('script');
+                script.src = '/static/js/core/FlowchartBuilder.js';
+                document.head.appendChild(script);
+                
+                // load Index.js after FlowchartBuilder
+                script.onload = function() {
+                    const mainScript = document.createElement('script');
+                    mainScript.src = '/static/js/pages/Index.js';
+                    document.head.appendChild(mainScript);
+                };
+            }
+
+            // start waiting for dependencies
+            waitForDependencies();
         }
     </script>
 {% endblock %}
@@ -777,9 +819,9 @@
         <div class="modal_content">
             <div class="modal_header">
                 <h2 class="modal_title">SELECT PYTHON FILE</h2>
-                <button class="modal_close" id="fe_close_btn">
-                    <span class="material-icons">close</span>
-                </button>
+                        <button class="modal_close" data-modal-close="select_python_modal">
+          <span class="material-icons">close</span>
+        </button>
             </div>
             <div class="form_group">
                 <label class="form_label">browse under nodes/</label>
@@ -816,9 +858,9 @@
         <div class="modal_content">
             <div class="modal_header">
                 <h2 class="modal_title">massive change detected</h2>
-                <button class="modal_close" id="massive_change_close">
-                    <span class="material-icons">close</span>
-                </button>
+                        <button class="modal_close" data-modal-close="massive_change_modal">
+          <span class="material-icons">close</span>
+        </button>
             </div>
             <div class="form_group">
                 <div class="form_text_md">massive change detected, revert to backup?</div>

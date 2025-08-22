@@ -44,7 +44,7 @@ class ExecutionLogic {
 
     async startExecution() {
         // clear all selections when starting execution (same as deselect button)
-        this.builder.deselectAll();
+        this.builder.state.selectionHandler.deselectAll();
 
         // get execution order
         const executionOrder = this.builder.calculateNodeOrder();

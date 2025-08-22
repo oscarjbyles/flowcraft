@@ -49,7 +49,7 @@ class Sidebar {
         this.setupURLHandlers();
         this.setupLinkEventHandlers();
         this.initializePythonFileDropdown();
-        // note: initializeFlowchartDropdown is called from FlowchartBuilder.initializeApp()
+        // note: initializeFlowchartDropdown is called from Index.js initializeApp()
 
         // centralized content engine
         try {

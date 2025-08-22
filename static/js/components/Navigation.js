@@ -396,7 +396,6 @@
             const arrow = selector ? selector.parentElement && selector.parentElement.querySelector('.dropdown_arrow') : null;
             const createBtn = document.getElementById('create_flowchart_btn');
             const createModal = document.getElementById('create_flowchart_modal');
-            const closeCreateModal = document.getElementById('close_create_modal');
             const cancelCreate = document.getElementById('cancel_create_flowchart');
             const confirmCreate = document.getElementById('confirm_create_flowchart');
             const nameInput = document.getElementById('new_flowchart_name');
@@ -499,11 +498,17 @@
                 }
             } catch(_) {}
 
-            // create modal wiring
-            if (createBtn) createBtn.addEventListener('click', (e) => { e.preventDefault(); if (createModal) createModal.classList.add('show'); if (nameInput){ nameInput.value=''; nameInput.focus(); } });
-            if (closeCreateModal) closeCreateModal.addEventListener('click', () => { if (createModal) createModal.classList.remove('show'); });
-            if (cancelCreate) cancelCreate.addEventListener('click', () => { if (createModal) createModal.classList.remove('show'); });
-            if (createModal) createModal.addEventListener('click', (e) => { if (e.target === createModal) createModal.classList.remove('show'); });
+            // create modal wiring using centralized modal manager
+            if (createBtn) createBtn.addEventListener('click', (e) => { 
+                e.preventDefault(); 
+                if (nameInput) {
+                    nameInput.value = '';
+                }
+                ModalManager.open('create_flowchart_modal');
+            });
+            if (cancelCreate) cancelCreate.addEventListener('click', () => { 
+                ModalManager.close('create_flowchart_modal'); 
+            });
             if (confirmCreate) {
                 confirmCreate.addEventListener('click', async () => {
                     const raw = (nameInput && nameInput.value ? nameInput.value : '').trim();
@@ -512,7 +517,7 @@
                         const resp = await fetch('/api/flowcharts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: raw }) });
                         const data = await resp.json();
                         if (data && data.status === 'success' && data.flowchart) {
-                            if (createModal) createModal.classList.remove('show');
+                            ModalManager.close('create_flowchart_modal');
                             const list = await fetchFlowcharts();
                             renderDropdown(dropdown, Array.isArray(list.flowcharts) ? list.flowcharts : []);
                             if (selector) selector.value = data.flowchart.name;

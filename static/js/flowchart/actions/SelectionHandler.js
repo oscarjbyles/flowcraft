@@ -457,6 +457,141 @@ class SelectionHandler {
     getSelectedNodeCount() {
         return this.selectedNodes.size;
     }
+
+    // selection rectangle methods (moved from FlowchartBuilder.js)
+    showSelectionRect(rect) {
+        // remove any existing selection rectangle
+        if (window.flowchartApp && window.flowchartApp.zoomGroup) {
+            window.flowchartApp.zoomGroup.select('.selection_rect').remove();
+            
+            // create new selection rectangle
+            this.selectionRect = window.flowchartApp.zoomGroup.append('rect')
+                .attr('class', 'selection_rect')
+                .attr('x', Math.min(rect.startX, rect.endX))
+                .attr('y', Math.min(rect.startY, rect.endY))
+                .attr('width', Math.abs(rect.endX - rect.startX))
+                .attr('height', Math.abs(rect.endY - rect.startY))
+                .style('fill', 'rgba(74, 165, 245, 0.1)')
+                .style('stroke', '#4aa5f5')
+                .style('stroke-width', '1px')
+                .style('stroke-dasharray', '5,5')
+                .style('pointer-events', 'none');
+        }
+    }
+
+    updateSelectionRect(rect) {
+        if (this.selectionRect) {
+            this.selectionRect
+                .attr('x', Math.min(rect.startX, rect.endX))
+                .attr('y', Math.min(rect.startY, rect.endY))
+                .attr('width', Math.abs(rect.endX - rect.startX))
+                .attr('height', Math.abs(rect.endY - rect.startY));
+        }
+    }
+
+    hideSelectionRect() {
+        if (this.selectionRect) {
+            this.selectionRect.remove();
+            this.selectionRect = null;
+        }
+    }
+
+    // comprehensive deselect all method (moved from FlowchartBuilder.js)
+    deselectAll() {
+        // if group select mode is active, turn it off and enable pan tool
+        if (window.flowchartApp && window.flowchartApp.isGroupSelectMode) {
+            window.flowchartApp.isGroupSelectMode = false;
+            
+            // update group select button appearance
+            const groupSelectButton = document.getElementById('group_select_btn');
+            if (groupSelectButton) {
+                groupSelectButton.classList.remove('active');
+            }
+            
+            // hide any existing selection rectangle
+            this.hideSelectionRect();
+            
+            // update cursor style
+            const canvas = document.getElementById('flowchart_canvas');
+            if (canvas) {
+                canvas.style.cursor = '';
+            }
+            
+            if (window.flowchartApp && window.flowchartApp.updateStatusBar) {
+                window.flowchartApp.updateStatusBar('pan tool enabled');
+            }
+        }
+        
+        // clear all selections
+        this.clearSelection();
+        
+        // update visual state
+        if (window.flowchartApp && window.flowchartApp.nodeRenderer) {
+            window.flowchartApp.nodeRenderer.updateNodeStyles();
+        }
+        if (window.flowchartApp && window.flowchartApp.linkRenderer) {
+            window.flowchartApp.linkRenderer.updateLinkStyles();
+        }
+        
+        // update properties sidebar depending on mode
+        if (this.state.isRunMode) {
+            // keep execution panel visible and show run-mode default (status + progress)
+            this.showExecutionPanel();
+            this.state.emit('updateSidebar');
+            // when in run mode and nothing is selected, ensure global status reflects the last run outcome
+            if (window.flowchartApp && window.flowchartApp.lastExecutionStatus) {
+                const s = String(window.flowchartApp.lastExecutionStatus || 'idle');
+                if (['completed', 'stopped', 'failed', 'error'].includes(s)) {
+                    if (window.flowchartApp.executionStatus) {
+                        window.flowchartApp.executionStatus.updateExecutionStatus(s, '');
+                    }
+                }
+            }
+        } else {
+            if (window.flowchartApp && window.flowchartApp.sidebar) {
+                window.flowchartApp.sidebar.showDefaultPanel();
+            }
+        }
+        
+        if (window.flowchartApp && window.flowchartApp.updateStatusBar) {
+            window.flowchartApp.updateStatusBar('all selections cleared');
+        }
+    }
+
+    // execution panel helper method
+    showExecutionPanel() {
+        // only show execution panel in run mode
+        if (this.state.isRunMode) {
+            // hide all other panels
+            document.querySelectorAll('.properties_content').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // show execution panel
+            const executionPanel = document.getElementById('run_execution_properties');
+            if (executionPanel) {
+                executionPanel.classList.add('active');
+            }
+
+            // force sidebar to render default run view (status + progress only)
+            this.clearSelection();
+            this.state.emit('updateSidebar');
+        }
+    }
+
+    hideExecutionPanel() {
+        // hide execution panel
+        const executionPanel = document.getElementById('run_execution_properties');
+        if (executionPanel) {
+            executionPanel.classList.remove('active');
+        }
+        
+        // let sidebar handle showing the appropriate panel
+        if (this.state.isBuildMode) {
+            // trigger sidebar update to show correct panel for current selection
+            this.state.emit('updateSidebar');
+        }
+    }
 }
 
 window.SelectionHandler = SelectionHandler;

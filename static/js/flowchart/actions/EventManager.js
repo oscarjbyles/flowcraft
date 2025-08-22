@@ -4,10 +4,179 @@
     if (window.EventManager) { return; }
 
 class EventManager {
-    constructor(stateManager, createNode) {
+    constructor(stateManager, createNode, flowchartBuilder) {
         this.state = stateManager;
         this.createNode = createNode;
+        this.flowchartBuilder = flowchartBuilder;
         this.setupKeyboardShortcuts();
+        this.setupCoreEvents();
+    }
+
+    setupCoreEvents() {
+        // group related events for better organization
+        this.setupStateEvents();
+        this.setupDataEvents();
+        this.setupModeEvents();
+        this.setupSelectionEvents();
+        this.setupCoordinateEvents();
+    }
+
+    setupStateEvents() {
+        // core state changes
+        this.state.on('stateChanged', () => {
+            // update order when state changes if in flow view
+            if (this.state.isFlowView) {
+                NodeOrder.renderNodeOrder(this.flowchartBuilder.nodeRenderer, (message) => this.flowchartBuilder.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
+            }
+            if (this.state.isErrorView) {
+                ErrorCircles.renderErrorCircles(this.flowchartBuilder.nodeRenderer);
+                if (this.flowchartBuilder.nodeRenderer && this.flowchartBuilder.nodeRenderer.updateCoverageAlerts) {
+                    this.flowchartBuilder.nodeRenderer.updateCoverageAlerts();
+                }
+            }
+        });
+        
+        // status updates
+        this.state.on('statusUpdate', (message) => {
+            this.flowchartBuilder.updateStatusBar(message);
+        });
+    }
+
+    setupDataEvents() {
+        // data events
+        this.state.on('dataSaved', (data) => {
+            if (data.message) {
+                this.flowchartBuilder.updateStatusBar(data.message);
+            }
+        });
+        
+        this.state.on('dataLoaded', (data) => {
+            this.flowchartBuilder.restoreViewportFromStorage();
+        });
+        
+        // error events
+        this.state.on('saveError', (data) => {
+            this.flowchartBuilder.updateStatusBar(data.message);
+        });
+        
+        this.state.on('loadError', (data) => {
+            this.flowchartBuilder.updateStatusBar(data.message);
+        });
+        
+        // destructive change guard
+        this.state.on('destructiveChangeDetected', (info) => {
+            this.showMassiveChangeModal(info);
+        });
+    }
+
+    setupModeEvents() {
+        // zoom events
+        this.state.on('disableZoom', () => this.flowchartBuilder.disableZoom());
+        this.state.on('enableZoom', () => this.flowchartBuilder.enableZoom());
+        
+        // mode change events
+        this.state.on('modeChanged', (data) => {
+            if (this.flowchartBuilder.toolbars) {
+                this.flowchartBuilder.toolbars.updateModeUI(data.mode, data.previousMode);
+            }
+        });
+        
+        this.state.on('flowViewChanged', (data) => {
+            this.flowchartBuilder.updateFlowViewUI(data.isFlowView);
+        });
+        
+        this.state.on('errorViewChanged', (data) => {
+            ErrorCircles.updateErrorViewUI(data.isErrorView);
+        });
+        
+        // link events for error view
+        ['linkAdded','linkUpdated','linkRemoved'].forEach(evt => {
+            this.state.on(evt, () => {
+                if (this.state.isErrorView && this.flowchartBuilder.linkRenderer && this.flowchartBuilder.linkRenderer.renderCoverageAlerts) {
+                    this.flowchartBuilder.linkRenderer.renderCoverageAlerts();
+                }
+            });
+        });
+    }
+
+    setupSelectionEvents() {
+        // selection changes
+        this.state.on('selectionChanged', () => {
+            if (this.flowchartBuilder.annotationRenderer && this.flowchartBuilder.annotationRenderer.render) {
+                this.flowchartBuilder.annotationRenderer.render();
+            }
+            // scroll to selected node in run mode
+            if (this.state.isRunMode && this.state.selectedNodes.size === 1) {
+                const nodeId = Array.from(this.state.selectedNodes)[0];
+                // todo: implement scroll to node functionality
+            }
+        });
+
+        // node removal in build mode
+        this.state.on('nodeRemoved', () => {
+            if (this.state.isBuildMode) {
+                this.state.selectionHandler.deselectAll();
+            }
+        });
+        
+        // link clicks
+        this.state.on('linkClicked', (data) => {
+            this.state.selectionHandler.handleLinkClick(data.event, data.link);
+        });
+    }
+
+    setupCoordinateEvents() {
+        // selection rectangle events
+        this.state.on('showSelectionRect', (rect) => {
+            this.state.selectionHandler.showSelectionRect(rect);
+        });
+        
+        this.state.on('updateSelectionRect', (rect) => {
+            this.state.selectionHandler.updateSelectionRect(rect);
+        });
+        
+        this.state.on('hideSelectionRect', () => {
+            this.state.selectionHandler.hideSelectionRect();
+        });
+    }
+
+    // modal for massive change detection
+    showMassiveChangeModal(info) {
+        const yesBtn = document.getElementById('massive_change_yes');
+        const noBtn = document.getElementById('massive_change_no');
+        if (!yesBtn || !noBtn) return;
+        
+        const modal = ModalManager.get('massive_change_modal');
+        modal.open();
+        
+        const close = () => modal.close();
+        const onYes = async () => {
+            try {
+                const res = await this.state.storage.restoreLatestBackup();
+                if (res && res.success) {
+                    await this.state.load();
+                    this.flowchartBuilder.updateStatusBar('restored latest backup');
+                } else {
+                    this.flowchartBuilder.updateStatusBar((res && res.message) || 'failed to restore backup');
+                }
+            } catch (_) {}
+            cleanup();
+        };
+        const onNo = async () => {
+            try {
+                // force the save to accept the destructive change
+                await this.state.save(false, true);
+                this.flowchartBuilder.updateStatusBar('changes saved');
+            } catch (_) {}
+            cleanup();
+        };
+        const cleanup = () => {
+            yesBtn.removeEventListener('click', onYes);
+            noBtn.removeEventListener('click', onNo);
+            close();
+        };
+        yesBtn.addEventListener('click', onYes);
+        noBtn.addEventListener('click', onNo);
     }
 
     setupKeyboardShortcuts() {
