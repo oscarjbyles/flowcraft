@@ -743,6 +743,11 @@ class NodeRenderer {
     }
 
     updateNodeStyles() {
+        // guard against undefined selectedNodes
+        if (!this.state.selectedNodes) {
+            return;
+        }
+        
         // update selection styles for all node types including text nodes
         this.nodeGroup.selectAll('.node, .node_text')
             .classed('selection_preview', false) // clear preview styling
@@ -833,6 +838,11 @@ class NodeRenderer {
     updatePlayButtonVisibility() {
         // hide all play buttons first
         this.hideAllPlayButtons();
+
+        // guard against undefined selectedNodes
+        if (!this.state.selectedNodes) {
+            return;
+        }
 
         // show play button only in run mode for selected nodes
         if (this.state.currentMode === 'run' && this.state.selectedNodes.size === 1) {

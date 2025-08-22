@@ -19,7 +19,7 @@
                 body: JSON.stringify({
                     source_node_id: link.source,
                     target_node_id: link.target,
-                    flowchart_name: this.state.storage.getCurrentFlowchart()
+                    flowchart_name: (this.state.saving && this.state.saving.storage) ? this.state.saving.storage.getCurrentFlowchart() : 'default.json'
                 })
             });
             const data = await response.json();

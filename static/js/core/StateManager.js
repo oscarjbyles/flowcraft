@@ -4,32 +4,29 @@
     // avoid re-defining in case this file is accidentally loaded twice
     if (window.StateManager) { return; }
 
-    // safe base emitter to prevent early-load race with EventEmitter
-    const BaseEmitter = window.EventEmitter || class {
-        constructor() { this.events = {}; }
-        on(event, callback) {
-            if (!this.events[event]) this.events[event] = [];
-            this.events[event].push(callback);
-        }
-        off(event, callback) {
-            if (!this.events[event]) return;
-            const idx = this.events[event].indexOf(callback);
-            if (idx > -1) this.events[event].splice(idx, 1);
-        }
-        emit(event, ...args) {
-            if (!this.events[event]) return;
-            this.events[event].forEach(cb => { try { cb(...args); } catch(e) { try { console.error(e); } catch(_) {} } });
-        }
-        once(event, callback) {
-            const onceCb = (...args) => { try { callback(...args); } finally { this.off(event, onceCb); } };
-            this.on(event, onceCb);
-        }
-        removeAllListeners(event) {
-            if (event) { delete this.events[event]; } else { this.events = {}; }
-        }
-    };
-
-class StateManager extends BaseEmitter {
+class StateManager extends (window.EventEmitter || class {
+    constructor() { this.events = {}; }
+    on(event, callback) {
+        if (!this.events[event]) this.events[event] = [];
+        this.events[event].push(callback);
+    }
+    off(event, callback) {
+        if (!this.events[event]) return;
+        const idx = this.events[event].indexOf(callback);
+        if (idx > -1) this.events[event].splice(idx, 1);
+    }
+    emit(event, ...args) {
+        if (!this.events[event]) return;
+        this.events[event].forEach(cb => { try { cb(...args); } catch(e) { try { console.error(e); } catch(_) {} } });
+    }
+    once(event, callback) {
+        const onceCb = (...args) => { try { callback(...args); } finally { this.off(event, onceCb); } };
+        this.on(event, onceCb);
+    }
+    removeAllListeners(event) {
+        if (event) { delete this.events[event]; } else { this.events = {}; }
+    }
+}) {
     constructor() {
         super();
         
@@ -75,12 +72,8 @@ class StateManager extends BaseEmitter {
         this.canvasWidth = 0;
         this.canvasHeight = 0;
         
-        // autosave
-        this.autosaveTimer = null;
-        this.autosaveDelay = 2000;
-        
-        // storage
-        this.storage = new Storage();
+        // saving functionality - delegated to Saving class
+        this.saving = null;
 
         // magnetized node pairing (if<->python)
         // we store partner ids directly on nodes; this map is a helper for quick checks
@@ -88,24 +81,20 @@ class StateManager extends BaseEmitter {
         
         // selection handler reference
         this.selectionHandler = null;
+        
+        // create node handler reference
+        this.createNode = null;
     }
 
     /**
      * return a plain object representing current flowchart state for persistence
      */
     getSerializableData() {
-        // strip transient runtime-only fields before persisting (e.g., data_save runtimeStatus)
-        const sanitizedNodes = (this.nodes || []).map((node) => {
-            if (!node || typeof node !== 'object') return node;
-            const { runtimeStatus, ...rest } = node;
-            return rest;
-        });
-
-        return {
-            nodes: sanitizedNodes,
-            links: this.links,
-            groups: this.groups,
-            annotations: this.annotations
+        return this.saving ? this.saving.getSerializableData() : {
+            nodes: this.nodes || [],
+            links: this.links || [],
+            groups: this.groups || [],
+            annotations: this.annotations || []
         };
     }
 
@@ -113,15 +102,9 @@ class StateManager extends BaseEmitter {
      * flush any pending autosave immediately and try to persist using exit-safe transport
      */
     flushPendingSavesOnExit() {
-        try {
-            if (this.autosaveTimer) {
-                clearTimeout(this.autosaveTimer);
-                this.autosaveTimer = null;
-            }
-            const data = this.getSerializableData();
-            // best-effort; do not await
-            this.storage.saveOnExit(data);
-        } catch (_) {}
+        if (this.saving) {
+            this.saving.flushPendingSavesOnExit();
+        }
     }
 
 
@@ -144,7 +127,7 @@ class StateManager extends BaseEmitter {
             const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
             updates.pythonFile = noPrefix;
         }
-        // console.log(`[StateManager] Updating node ${nodeId}:`, updates);
+        
         Object.assign(node, updates);
         
         // validate updated node
@@ -204,7 +187,7 @@ class StateManager extends BaseEmitter {
 
         this.emit('nodeUpdated', node);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         
         return true;
     }
@@ -418,7 +401,7 @@ class StateManager extends BaseEmitter {
         
         this.emit('nodeRemoved', node);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         
         return true;
     }
@@ -456,11 +439,10 @@ class StateManager extends BaseEmitter {
             throw new Error(`invalid link: ${validation.errors.join(', ')}`);
         }
 
-        // console.log(`[StateManager] Adding link: ${sourceId} -> ${targetId}`);
         this.links.push(link);
         this.emit('linkAdded', link);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         
         return link;
     }
@@ -480,7 +462,7 @@ class StateManager extends BaseEmitter {
         Object.assign(link, updates);
         this.emit('linkUpdated', link);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         return true;
     }
 
@@ -502,7 +484,7 @@ class StateManager extends BaseEmitter {
 
         this.emit('linkRemoved', link);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         
         return true;
     }
@@ -551,7 +533,7 @@ class StateManager extends BaseEmitter {
 
         this.emit('groupUpdated', group);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         
         return true;
     }
@@ -578,7 +560,7 @@ class StateManager extends BaseEmitter {
 
         this.emit('groupRemoved', group);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         
         return true;
     }
@@ -597,60 +579,7 @@ class StateManager extends BaseEmitter {
 
 
 
-    // getter methods for backward compatibility
-    get selectedNodes() {
-        return this.selectionHandler ? this.selectionHandler.selectedNodes : new Set();
-    }
 
-    get selectedLink() {
-        return this.selectionHandler ? this.selectionHandler.selectedLink : null;
-    }
-
-    get selectedGroup() {
-        return this.selectionHandler ? this.selectionHandler.selectedGroup : null;
-    }
-
-    get selectedAnnotation() {
-        return this.selectionHandler ? this.selectionHandler.selectedAnnotation : null;
-    }
-
-    // selection management delegation methods
-    selectNode(nodeId, multiSelect = false) {
-        if (this.selectionHandler) {
-            this.selectionHandler.selectNode(nodeId, multiSelect);
-        }
-    }
-
-    selectLink(link) {
-        if (this.selectionHandler) {
-            this.selectionHandler.selectLink(link);
-        }
-    }
-
-    selectGroup(groupId) {
-        if (this.selectionHandler) {
-            this.selectionHandler.selectGroup(groupId);
-        }
-    }
-
-    clearSelection() {
-        if (this.selectionHandler) {
-            this.selectionHandler.clearSelection();
-        }
-    }
-
-    selectAnnotation(annotationId) {
-        if (this.selectionHandler) {
-            this.selectionHandler.selectAnnotation(annotationId);
-        }
-    }
-
-    getSelectedNodes() {
-        if (this.selectionHandler) {
-            return this.selectionHandler.getSelectedNodes();
-        }
-        return [];
-    }
 
     // interaction state
     setDragging(isDragging, draggedNode = null) {
@@ -704,77 +633,17 @@ class StateManager extends BaseEmitter {
         this.emit('canvasSizeChanged', { width, height });
     }
 
-    // data persistence
+    // data persistence - delegated to Saving class
     scheduleAutosave() {
-        // console.log(`[StateManager] Scheduling autosave in ${this.autosaveDelay}ms`);
-        
-        if (this.autosaveTimer) {
-            clearTimeout(this.autosaveTimer);
-        }
-        
-        this.autosaveTimer = setTimeout(() => {
-            // console.log('[StateManager] Executing scheduled autosave');
-            this.save(true);
-        }, this.autosaveDelay);
+        if (this.saving) this.saving.scheduleAutosave();
     }
 
     async save(isAutosave = false, force = false) {
-        const data = this.getSerializableData();
-
-        const result = await this.storage.save(data, isAutosave, force);
-        
-        if (result.success) {
-            this.emit('dataSaved', { isAutosave, message: result.message });
-        } else {
-            if (result.code === 'destructive_change') {
-                // notify ui to prompt the user
-                this.emit('destructiveChangeDetected', { 
-                    existingNodes: result.payload && result.payload.existing_nodes, 
-                    incomingNodes: result.payload && result.payload.incoming_nodes,
-                    threshold: result.payload && result.payload.threshold
-                });
-                return result;
-            }
-            this.emit('saveError', { message: result.message });
-        }
-        
-        return result;
+        return this.saving ? this.saving.save(isAutosave, force) : { success: false, message: 'saving not initialized' };
     }
 
     async load() {
-        const result = await this.storage.load();
-        
-        if (result.success) {
-            this.nodes = result.data.nodes || [];
-            this.links = result.data.links || [];
-            this.groups = result.data.groups || [];
-            this.annotations = result.data.annotations || [];
-            // normalize any pythonFile paths to remove leading 'nodes/' on load
-            try {
-                this.nodes.forEach(n => {
-                    if (n && typeof n.pythonFile === 'string' && n.pythonFile) {
-                        const s = n.pythonFile.replace(/\\/g, '/');
-                        const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
-                        n.pythonFile = noPrefix;
-                    }
-                });
-            } catch(_) {}
-            
-            // update counters
-            this.updateCounters();
-            // hydrate magnet pairs after load
-            this.rebuildMagnetPairsFromNodes();
-            
-            // check and create input nodes for loaded python_file nodes
-            await this.createNode.checkLoadedNodesForInputs();
-            
-            this.emit('dataLoaded', { data: result.data, message: result.message });
-            this.emit('stateChanged');
-        } else {
-            this.emit('loadError', { message: result.message });
-        }
-        
-        return result;
+        return this.saving ? this.saving.load() : { success: false, message: 'saving not initialized' };
     }
 
 
@@ -797,7 +666,7 @@ class StateManager extends BaseEmitter {
         Object.assign(ann, updates);
         this.emit('annotationUpdated', ann);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         return true;
     }
 
@@ -808,7 +677,7 @@ class StateManager extends BaseEmitter {
         this.annotations.splice(idx, 1);
         this.emit('annotationRemoved', ann);
         this.emit('stateChanged');
-        this.scheduleAutosave();
+        if (this.saving) this.saving.scheduleAutosave();
         return true;
     }
 
@@ -855,83 +724,95 @@ class StateManager extends BaseEmitter {
         };
     }
 
-    // debug methods
+    // selection getter methods - delegate to SelectionHandler
+    getSelectedNodes() {
+        if (!this.selectionHandler) {
+            return [];
+        }
+        return this.selectionHandler.getSelectedNodes() || [];
+    }
+
+    get selectedNodes() {
+        if (!this.selectionHandler) {
+            return new Set();
+        }
+        return this.selectionHandler.selectedNodes || new Set();
+    }
+
+    get selectedLink() {
+        if (!this.selectionHandler) {
+            return null;
+        }
+        return this.selectionHandler.selectedLink || null;
+    }
+
+    get selectedGroup() {
+        if (!this.selectionHandler) {
+            return null;
+        }
+        return this.selectionHandler.selectedGroup || null;
+    }
+
+    get selectedAnnotation() {
+        if (!this.selectionHandler) {
+            return null;
+        }
+        return this.selectionHandler.selectedAnnotation || null;
+    }
+
+    // selection modification methods - delegate to SelectionHandler
+    clearSelection() {
+        if (this.selectionHandler && typeof this.selectionHandler.clearSelection === 'function') {
+            this.selectionHandler.clearSelection();
+        }
+    }
+
+    selectNode(nodeId) {
+        if (this.selectionHandler && this.selectionHandler.selectedNodes) {
+            this.selectionHandler.selectedNodes.add(nodeId);
+        }
+    }
+
+    deselectNode(nodeId) {
+        if (this.selectionHandler && this.selectionHandler.selectedNodes) {
+            this.selectionHandler.selectedNodes.delete(nodeId);
+        }
+    }
+
+    selectLink(link) {
+        if (this.selectionHandler) {
+            this.selectionHandler.selectedLink = link;
+        }
+    }
+
+    selectGroup(group) {
+        if (this.selectionHandler) {
+            this.selectionHandler.selectedGroup = group;
+        }
+    }
+
+    selectAnnotation(annotationId) {
+        if (this.selectionHandler && typeof this.selectionHandler.selectAnnotation === 'function') {
+            this.selectionHandler.selectAnnotation(annotationId);
+        }
+    }
+
+    // debug methods - delegated to Saving class
     exportData() {
-        return {
-            nodes: this.nodes,
-            links: this.links,
-            groups: this.groups,
-            metadata: {
-                nodeCounter: this.nodeCounter,
-                groupCounter: this.groupCounter,
-                timestamp: new Date().toISOString()
-            }
-        };
+        return this.saving ? this.saving.exportData() : { nodes: [], links: [], groups: [], metadata: {} };
     }
 
     importData(data) {
-        this.nodes = data.nodes || [];
-        this.links = data.links || [];
-        this.groups = data.groups || [];
-        
-        // normalize pythonFile paths on import as well
-        try {
-            this.nodes.forEach(n => {
-                if (n && typeof n.pythonFile === 'string' && n.pythonFile) {
-                    const s = n.pythonFile.replace(/\\/g, '/');
-                    const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
-                    n.pythonFile = noPrefix ? `nodes/${noPrefix}` : '';
-                }
-            });
-        } catch(_) {}
-
-        if (data.metadata) {
-            this.nodeCounter = data.metadata.nodeCounter || 0;
-            this.groupCounter = data.metadata.groupCounter || 0;
-        } else {
-            this.updateCounters();
+        if (this.saving) {
+            this.saving.importData(data);
         }
-        // hydrate magnet pairs after import
-        this.rebuildMagnetPairsFromNodes();
-        
-        // clear selection - delegate to SelectionHandler
-        if (this.selectionHandler) {
-            this.selectionHandler.clearSelection();
-        }
-        this.emit('dataImported', data);
-        this.emit('stateChanged');
     }
 
 
     
 
 
-    // temporary function to clear input nodes without associated python nodes
-    clearOrphanedInputNodes() {
-        const orphanedInputNodes = this.nodes.filter(node => {
-            if (node.type !== 'input_node') return false;
-            
-            // check if the target node exists
-            if (!node.targetNodeId) return true; // no target specified
-            
-            const targetNode = this.nodes.find(n => n.id === node.targetNodeId);
-            if (!targetNode) return true; // target node doesn't exist
-            
-            if (targetNode.type !== 'python_file') return true; // target is not a python node
-            
-            return false; // this input node is valid
-        });
-        
-        if (orphanedInputNodes.length > 0) {
-            console.log(`clearing ${orphanedInputNodes.length} orphaned input nodes:`, orphanedInputNodes.map(n => n.id));
-            orphanedInputNodes.forEach(node => {
-                this.removeNode(node.id, true);
-            });
-            return orphanedInputNodes.length;
-        }
-        
-        return 0;
-    }
+
 }
 
 window.StateManager = StateManager;

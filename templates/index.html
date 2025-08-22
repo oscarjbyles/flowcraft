@@ -103,8 +103,9 @@
 
     <!-- core modules -->
     <script src="/static/js/core/StateManager.js"></script>
+    <script src="/static/js/flowchart/events/Saving.js"></script>
     
-    <!-- mode-based loading: only load EventManager in build and run modes -->
+    <!-- mode-based loading: only load modules in build and run modes -->
     <script>
         // check if we're in build or run mode
         const urlParams = new URLSearchParams(window.location.search);
@@ -114,33 +115,25 @@
         if (isFlowchartMode) {
             // load EventManager only for build and run modes
             const script = document.createElement('script');
-            script.src = '/static/js/flowchart/actions/EventManager.js';
+            script.src = '/static/js/flowchart/events/EventManager.js';
             document.head.appendChild(script);
-        }
-    </script>
-
-    <!-- interaction modules (only load in flowchart modes) -->
-    <script>
-        if (isFlowchartMode) {
-            const modules = [
-                '/static/js/flowchart/actions/DragHandler.js',
-                '/static/js/flowchart/actions/SelectionHandler.js',
-                '/static/js/flowchart/actions/ConnectionHandler.js',
-                '/static/js/flowchart/actions/CanvasHandler.js',
+            
+            // interaction modules
+            const interactionModules = [
+                '/static/js/flowchart/events/DragHandler.js',
+                '/static/js/flowchart/events/SelectionHandler.js',
+                '/static/js/flowchart/events/ConnectionHandler.js',
+                '/static/js/flowchart/events/CanvasHandler.js',
                 '/static/js/flowchart/toolbars/Toolbars.js'
             ];
-            modules.forEach(src => {
+            interactionModules.forEach(src => {
                 const script = document.createElement('script');
                 script.src = src;
                 document.head.appendChild(script);
             });
-        }
-    </script>
-
-    <!-- rendering modules (only load in flowchart modes) -->
-    <script>
-        if (isFlowchartMode) {
-            const modules = [
+            
+            // rendering modules
+            const renderingModules = [
                 '/static/js/flowchart/rendering/Node.js',
                 '/static/js/flowchart/rendering/Link.js',
                 '/static/js/flowchart/rendering/Group.js',
@@ -148,17 +141,13 @@
                 '/static/js/flowchart/toolbars/NodeOrder.js',
                 '/static/js/flowchart/toolbars/ErrorCircles.js'
             ];
-            modules.forEach(src => {
+            renderingModules.forEach(src => {
                 const script = document.createElement('script');
                 script.src = src;
                 document.head.appendChild(script);
             });
-        }
-    </script>
-
-    <!-- execution modules (only load in flowchart modes) -->
-    <script>
-        if (isFlowchartMode) {
+            
+            // execution modules
             const executionModules = [
                 '/static/js/flowchart/execution/ExecutionStatus.js',
                 '/static/js/flowchart/execution/ExecutionLogic.js',
@@ -174,14 +163,8 @@
                 script.src = src;
                 document.head.appendChild(script);
             });
-        }
-    </script>
-
-
-
-    <!-- properties sidebar components (only load in flowchart modes) -->
-    <script>
-        if (isFlowchartMode) {
+            
+            // properties sidebar components
             const sidebarModules = [
                 '/static/js/flowchart/sidebar/Sidebar.base.js',
                 '/static/js/flowchart/sidebar/Sidebar.content.js',
@@ -237,25 +220,18 @@
                 script.src = src;
                 document.head.appendChild(script);
             });
-        }
-    </script>
-
-    <!-- node creation service (only load in flowchart modes) -->
-    <script>
-        if (isFlowchartMode) {
-            const script = document.createElement('script');
-            script.src = '/static/js/flowchart/actions/CreateNode.js';
-            document.head.appendChild(script);
-        }
-    </script>
-
-    <!-- main application entrypoint (builder) - only load in flowchart modes -->
-    <script>
-        if (isFlowchartMode) {
+            
+            // node creation service
+            const createNodeScript = document.createElement('script');
+            createNodeScript.src = '/static/js/flowchart/events/CreateNode.js';
+            document.head.appendChild(createNodeScript);
+            
             // wait for all dependencies to be loaded before initializing
             function waitForDependencies() {
                 const requiredClasses = [
                     'StateManager', 
+                    'Storage',
+                    'Saving',
                     'DragHandler', 
                     'SelectionHandler', 
                     'ConnectionHandler',

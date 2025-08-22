@@ -113,10 +113,12 @@
             }
         }
 
-        if (initialFilename) {
-            this.state.storage.setCurrentFlowchart(initialFilename);
-            this.setCurrentFlowchart(initialDisplay);
-            this.urlManager.setLastAccessedFlowchart(initialFilename);
+                    if (initialFilename) {
+                if (this.state.saving && this.state.saving.storage) {
+                    this.state.saving.storage.setCurrentFlowchart(initialFilename);
+                }
+                this.setCurrentFlowchart(initialDisplay);
+                this.urlManager.setLastAccessedFlowchart(initialFilename);
             this.urlManager.updateFlowchartInURL(initialFilename);
         } else {
             // no flowcharts exist yet
@@ -127,7 +129,15 @@
 
     Sidebar.prototype.loadFlowcharts = async function() {
         try {
-            const result = await this.state.storage.listFlowcharts();
+            // check if saving module is available
+            if (!this.state.saving || !this.state.saving.storage) {
+                console.error('saving module not available, retrying in 100ms');
+                setTimeout(() => this.loadFlowcharts(), 100);
+                return;
+            }
+            
+            // access storage through the saving module
+            const result = await this.state.saving.storage.listFlowcharts();
             try { console.log('[sidebar-flow] loadFlowcharts', { success: result.success, count: (result.flowcharts && result.flowcharts.length) || 0 }); } catch(_) {}
             if (result.success) {
                 this.flowcharts = result.flowcharts;
@@ -233,7 +243,9 @@
             }
             
             await this.state.save(true);
-            this.state.storage.setCurrentFlowchart(filename);
+            if (this.state.saving && this.state.saving.storage) {
+                this.state.saving.storage.setCurrentFlowchart(filename);
+            }
             const result = await this.state.load();
             if (result.success) {
                 this.setCurrentFlowchart(name);
@@ -287,7 +299,12 @@
         
         try {
             console.log('[sidebar-flow] createNewFlowchart submit', { name });
-            const result = await this.state.storage.createFlowchart(name);
+            // check if saving module is available
+            if (!this.state.saving || !this.state.saving.storage) {
+                this.showError('saving module not available');
+                return;
+            }
+            const result = await this.state.saving.storage.createFlowchart(name);
             if (result.success) {
                 this.hideCreateFlowchartModal();
                 await this.loadFlowcharts();
@@ -308,16 +325,23 @@
         }
         try {
             console.log('[sidebar-flow] delete flowchart confirm', { filename, name });
-            const result = await this.state.storage.deleteFlowchart(filename);
+            // check if saving module is available
+            if (!this.state.saving || !this.state.saving.storage) {
+                this.showError('saving module not available');
+                return;
+            }
+            const result = await this.state.saving.storage.deleteFlowchart(filename);
             if (result.success) {
                 await this.loadFlowcharts();
-                if (this.state.storage.getCurrentFlowchart() === filename) {
+                if (this.state.saving && this.state.saving.storage && this.state.saving.storage.getCurrentFlowchart() === filename) {
                     // if we deleted the current one, switch to newest available or clear
                     if (this.flowcharts.length > 0) {
                         const newest = this.flowcharts[0];
                         await this.selectFlowchart(newest.filename, newest.name);
                     } else {
-                        this.state.storage.setCurrentFlowchart(null);
+                        if (this.state.saving && this.state.saving.storage) {
+                            this.state.saving.storage.setCurrentFlowchart(null);
+                        }
                         this.setCurrentFlowchart('');
                         // clear flowchart param
                         try {
@@ -340,8 +364,13 @@
 
     Sidebar.prototype.exportCurrentFlowchart = function() {
         try {
+            // check if saving module is available
+            if (!this.state.saving || !this.state.saving.storage) {
+                this.showError('saving module not available');
+                return;
+            }
             const data = this.state.exportData();
-            this.state.storage.exportAsJson(data);
+            this.state.saving.storage.exportAsJson(data);
             this.showSuccess('flowchart exported successfully');
         } catch (error) {
             this.showError(`error exporting flowchart: ${error.message}`);

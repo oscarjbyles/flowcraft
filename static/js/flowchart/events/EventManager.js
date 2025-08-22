@@ -106,7 +106,7 @@ class EventManager {
                 this.app.annotationRenderer.render();
             }
             // scroll to selected node in run mode
-            if (this.state.isRunMode && this.state.selectedNodes.size === 1) {
+            if (this.state.isRunMode && this.state.selectedNodes && this.state.selectedNodes.size === 1) {
                 const nodeId = Array.from(this.state.selectedNodes)[0];
                 // todo: implement scroll to node functionality
             }
@@ -152,7 +152,11 @@ class EventManager {
         const close = () => modal.close();
         const onYes = async () => {
             try {
-                const res = await this.state.saving.storage.restoreLatestBackup();
+                if (!this.state.saving || !this.state.saving.storage) {
+            console.error('saving module not available for backup restore');
+            return;
+        }
+        const res = await this.state.saving.storage.restoreLatestBackup();
                 if (res && res.success) {
                     await this.state.load();
                     this.app.updateStatusBar('restored latest backup');

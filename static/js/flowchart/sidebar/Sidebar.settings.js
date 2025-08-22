@@ -15,7 +15,11 @@
         if (clearBtn) {
             clearBtn.addEventListener('click', async () => {
                 try {
-                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
+                    const current = this.state?.saving?.storage?.getCurrentFlowchart ? this.state.saving.storage.getCurrentFlowchart() : 'default.json';
+                    if (!current) {
+                        this.showError('no flowchart selected');
+                        return;
+                    }
                     const resp = await fetch('/api/history/clear', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -38,7 +42,11 @@
         if (clearAllBtn) {
             clearAllBtn.addEventListener('click', async () => {
                 try {
-                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : 'default.json';
+                    const current = this.state?.saving?.storage?.getCurrentFlowchart ? this.state.saving.storage.getCurrentFlowchart() : 'default.json';
+                    if (!current) {
+                        this.showError('no flowchart selected');
+                        return;
+                    }
                     const resp = await fetch('/api/history/clear_all', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -94,9 +102,10 @@
         const refreshFlowPath = async () => {
             if (!flowPathEl) return;
             try {
-                const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
+                const current = this.state?.saving?.storage?.getCurrentFlowchart ? this.state.saving.storage.getCurrentFlowchart() : null;
                 if (!current) { flowPathEl.textContent = '-'; return; }
-                const list = await this.state.storage.listFlowcharts();
+                if (!this.state.saving || !this.state.saving.storage) { flowPathEl.textContent = 'saving not available'; return; }
+                const list = await this.state.saving.storage.listFlowcharts();
                 if (list && list.success && Array.isArray(list.flowcharts)) {
                     const match = list.flowcharts.find(f => f.filename === current);
                     flowPathEl.textContent = (match && match.path) ? match.path : '-';
@@ -163,9 +172,13 @@
                     return;
                 }
                 try {
-                    const current = this.state?.storage?.getCurrentFlowchart ? this.state.storage.getCurrentFlowchart() : null;
+                    const current = this.state?.saving?.storage?.getCurrentFlowchart ? this.state.saving.storage.getCurrentFlowchart() : null;
                     if (!current) {
                         this.showError('no flowchart selected');
+                        return;
+                    }
+                    if (!this.state.saving || !this.state.saving.storage) {
+                        this.showError('saving module not available');
                         return;
                     }
                     const resp = await fetch('/api/flowcharts/rename', {
@@ -181,8 +194,8 @@
                         this.showSuccess('flowchart renamed');
                         renameInput.value = '';
                         // refresh flowchart list if available
-                        if (this.state?.storage?.refreshFlowcharts) {
-                            this.state.storage.refreshFlowcharts();
+                        if (this.state?.saving?.storage?.refreshFlowcharts) {
+                            this.state.saving.storage.refreshFlowcharts();
                         }
                     } else {
                         this.showError(data.message || 'failed to rename flowchart');

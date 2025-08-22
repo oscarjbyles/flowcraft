@@ -69,6 +69,11 @@ class StatusBar {
     }
 
     setupEventListeners() {
+        // guard against undefined state or missing on method
+        if (!this.state || typeof this.state.on !== 'function') {
+            return;
+        }
+        
         // listen for state changes to update stats
         this.state.on('stateChanged', () => {
             this.updateStats();
@@ -131,6 +136,8 @@ class StatusBar {
     }
 
     async handleCoordinateChange(property, value) {
+        if (!this.state || !this.state.selectedNodes) return;
+        
         const selectedNodes = Array.from(this.state.selectedNodes);
         if (selectedNodes.length !== 1) return;
         
@@ -259,6 +266,13 @@ class StatusBar {
     }
 
     updateStats() {
+        if (!this.state || typeof this.state.getStats !== 'function') {
+            if (this.nodeCount) {
+                this.nodeCount.textContent = 'nodes: 0  ·  groups: 0';
+            }
+            return;
+        }
+        
         const stats = this.state.getStats();
         if (this.nodeCount) {
             // use interpunct with extra spacing around it
@@ -277,6 +291,14 @@ class StatusBar {
         
         // show coordinates in build mode
         this.nodeCoordinates.style.display = 'flex';
+        
+        // guard against undefined selectedNodes
+        if (!this.state.selectedNodes) {
+            this.hideCoordinateInputs();
+            this.nodeCoordinates.style.opacity = '0.3';
+            this.nodeCoordinates.title = 'no node selected';
+            return;
+        }
         
         const selectedNodes = Array.from(this.state.selectedNodes);
         

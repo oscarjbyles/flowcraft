@@ -175,7 +175,7 @@
             // viewport persistence helpers
             getViewportStorageKey: function() {
                 // use current flowchart name to scope viewport
-                const name = this.state.storage.getCurrentFlowchart() || 'default.json';
+                const name = (this.state.saving && this.state.saving.storage) ? this.state.saving.storage.getCurrentFlowchart() || 'default.json' : 'default.json';
                 return `flowchart_viewport:${name}`;
             },
 
@@ -320,13 +320,21 @@
 
             exportData() {
                 const data = this.state.exportData();
-                this.state.storage.exportAsJson(data);
-                this.updateStatusBar('flowchart exported');
+                if (this.state.saving && this.state.saving.storage) {
+                    this.state.saving.storage.exportAsJson(data);
+                    this.updateStatusBar('flowchart exported');
+                } else {
+                    this.updateStatusBar('saving module not available');
+                }
             },
 
             async importData(file) {
                 try {
-                    const data = await this.state.storage.importFromJson(file);
+                    if (!this.state.saving || !this.state.saving.storage) {
+                        this.updateStatusBar('saving module not available');
+                        return;
+                    }
+                    const data = await this.state.saving.storage.importFromJson(file);
                     this.state.importData(data);
                     this.updateStatusBar('flowchart imported successfully');
                 } catch (error) {
@@ -536,7 +544,7 @@
 
             getCurrentFlowchartName() {
                 // prefer the canonical filename from storage to avoid ui sync issues
-                const filename = this.state.storage.getCurrentFlowchart() || '';
+                const filename = (this.state.saving && this.state.saving.storage) ? this.state.saving.storage.getCurrentFlowchart() || '' : '';
                 if (filename) {
                     // strip .json extension for history api which expects folder name
                     return filename.endsWith('.json') ? filename.slice(0, -5) : filename;
@@ -669,6 +677,10 @@
         // create state manager
         app.state = new StateManager();
         
+        // initialize saving module
+        app.state.saving = new Saving(app.state);
+        console.log('saving module attached to state:', !!app.state.saving);
+        
         // initialize node creation service
         app.createNode = new CreateNode(app.state, (message) => app.updateStatusBar(message));
         
@@ -695,6 +707,9 @@
         
         // initialize output manager module
         app.outputManager = new OutputManager(app);
+        
+        // initialize saving module with builder reference for execution history
+        app.state.saving.initialize(app);
         
         // setup resume execution listener
         app.state.on('resumeExecutionFromNode', (data) => app.resumeExecution.handleResumeExecution(data));

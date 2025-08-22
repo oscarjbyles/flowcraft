@@ -85,9 +85,8 @@ class CreateNode {
         this.state.groups.push(group);
         
         // clear node selection and select the new group
-        this.state.selectedNodes.clear();
-        this.state.selectedLink = null;
-        this.state.selectedGroup = group;
+        this.state.clearSelection();
+        this.state.selectGroup(group);
         
         this.state.emit('groupCreated', group);
         this.state.emit('selectionChanged', {

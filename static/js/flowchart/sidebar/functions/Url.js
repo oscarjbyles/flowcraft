@@ -20,7 +20,9 @@
                 }
                 
                 await this.state.save(true);
-                this.state.storage.setCurrentFlowchart(flowchartName);
+                if (this.state.saving && this.state.saving.storage) {
+                    this.state.saving.storage.setCurrentFlowchart(flowchartName);
+                }
                 this.urlManager.setLastAccessedFlowchart(flowchartName);
                 const result = await this.state.load();
                 if (result.success) {

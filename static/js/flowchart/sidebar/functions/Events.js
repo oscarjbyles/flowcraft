@@ -3,16 +3,26 @@
     if (!window.Sidebar) return;
 
     Sidebar.prototype.setupEventListeners = function() {
-        this.state.on('selectionChanged', (selection) => this.updateContent(selection));
+        this.state.on('selectionChanged', (selection) => {
+            if (typeof this.updateContent === 'function') {
+                this.updateContent(selection);
+            }
+        });
         this.state.on('updateSidebar', () => this.updateFromState());
-        this.state.on('statusUpdate', (message) => this.updateStatus(message));
+        this.state.on('statusUpdate', (message) => {
+            if (typeof this.updateStatus === 'function') {
+                this.updateStatus(message);
+            }
+        });
         // ensure sidebar updates when mode changes (e.g., hide delete in run mode)
         this.state.on('modeChanged', () => this.updateFromState());
 
         // handle quick add if condition button click (delegated)
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('#add_if_condition_btn');
-            if (btn) this.handleAddIfCondition();
+            if (btn && typeof this.handleAddIfCondition === 'function') {
+                this.handleAddIfCondition();
+            }
         });
     };
 
@@ -23,9 +33,15 @@
             group: this.state.selectedGroup,
             annotation: this.state.selectedAnnotation
         };
-        this.updateContent(selection);
-        this.updateFooterDelete(selection);
-        this.updateFooterVisibility(selection);
+        if (typeof this.updateContent === 'function') {
+            this.updateContent(selection);
+        }
+        if (typeof this.updateFooterDelete === 'function') {
+            this.updateFooterDelete(selection);
+        }
+        if (typeof this.updateFooterVisibility === 'function') {
+            this.updateFooterVisibility(selection);
+        }
     };
 
     Sidebar.prototype.hideAllPanels = function() {

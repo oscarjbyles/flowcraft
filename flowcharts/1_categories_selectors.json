@@ -12,6 +12,8 @@
     },
     {
       "description": "",
+      "dragStartX": 863.5741577148438,
+      "dragStartY": 380.2646484375,
       "groupId": 1755428964943.605,
       "id": 1755167550651.0103,
       "name": "get base url",
@@ -23,6 +25,8 @@
     },
     {
       "description": "",
+      "dragStartX": 868.9776000976562,
+      "dragStartY": 527.2366027832031,
       "groupId": 1755428964943.605,
       "id": 1755167866611.7693,
       "name": "get web page content",
@@ -34,6 +38,8 @@
     },
     {
       "description": "",
+      "dragStartX": 1125.8800048828125,
+      "dragStartY": 527.0776062011719,
       "groupId": 1755256312361.3877,
       "id": 1755168324002.294,
       "magnet_partner_id": 1755168329342.0771,
@@ -58,6 +64,8 @@
     },
     {
       "description": "",
+      "dragStartX": 1444.8553466796875,
+      "dragStartY": 531.0646667480469,
       "groupId": 1755256312361.3877,
       "id": 1755168331256.1504,
       "magnet_partner_id": 1755168365383.739,
@@ -81,6 +89,8 @@
     },
     {
       "description": "",
+      "dragStartX": 1245.58251953125,
+      "dragStartY": 853.4836120605469,
       "groupId": 1755429283451.7354,
       "id": 1755168356509.9187,
       "name": "1.1.2 - add base URL if needed",
@@ -92,6 +102,8 @@
     },
     {
       "description": "",
+      "dragStartX": 1444.8553466796875,
+      "dragStartY": 611.0646667480469,
       "groupId": 1755256312361.3877,
       "id": 1755168365383.739,
       "magnet_partner_id": 1755168331256.1504,
@@ -282,11 +294,13 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 758.4329223632812,
-      "y": 1448.8529052734375
+      "x": 555.56103515625,
+      "y": 1351.173828125
     },
     {
       "description": "",
+      "dragStartX": 2333.582275390625,
+      "dragStartY": 141.3406982421875,
       "groupId": null,
       "id": 1755817671037.915,
       "name": "python node",
@@ -304,8 +318,74 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1889.5511474609375,
-      "y": 125.99575805664062
+      "x": 1910.115966796875,
+      "y": 192.8311004638672
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755863652164.6387,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 838.7977905273438,
+      "y": 551.7669677734375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755864394316.0652,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2934.5830078125,
+      "y": 359.8360900878906
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755864602969.7136,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1406.8817138671875,
+      "y": 485.9765319824219
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755864726214.5605,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1982.2362060546875,
+      "y": 587.4559020996094
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755864865344.0615,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1801.65478515625,
+      "y": 721.9059448242188
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755864995895.3867,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1839.7548828125,
+      "y": 1099.494873046875
     }
   ],
   "links": [
@@ -512,8 +592,8 @@
       "id": 1755430314308.6328,
       "text": "1.2 - assign genders",
       "type": "text",
-      "x": 748.5643919383394,
-      "y": 1243.6975349386773
+      "x": 543.0021360789644,
+      "y": 1210.9944099386773
     },
     {
       "fontSize": 14,
@@ -525,6 +605,66 @@
     }
   ],
   "executions": [
+    {
+      "execution_id": "c84de725-262b-4c43-b4cb-4ffe38fcda3d",
+      "timestamp": "2025-08-22T13:50:13.243056",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 976,
+      "execution_time": "0.976s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "a5400519-45e5-4581-a942-4518fd7eff20",
+      "timestamp": "2025-08-22T13:41:53.884342",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 1094,
+      "execution_time": "1.094s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "da3d44b6-bb51-4da0-9056-4fd3801be518",
+      "timestamp": "2025-08-22T13:22:24.947609",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 1067,
+      "execution_time": "1.067s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "d1b2eb93-6bf9-491c-a7cd-53faa0d249a6",
+      "timestamp": "2025-08-22T13:16:39.315145",
+      "flowchart_name": "1_categories_selectors",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.6,
+      "completed_percentage": 11.1,
+      "failed_node": "python node",
+      "elapsed_ms": 926,
+      "execution_time": "0.926s",
+      "error_snippet": "execution was cancelled by user"
+    },
     {
       "execution_id": "abbd0886-965b-4fa9-b922-910b8948228f",
       "timestamp": "2025-08-22T12:03:47.124046",

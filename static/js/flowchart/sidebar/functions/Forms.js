@@ -68,17 +68,15 @@
     };
 
     Sidebar.prototype.debounceNodeSave = function() {
-        clearTimeout(this.nodeSaveTimeout);
-        this.nodeSaveTimeout = setTimeout(() => {
-            this.saveNodeProperties();
-        }, 1000);
+        if (this.state.saving) {
+            this.state.saving.debounceNodeSave();
+        }
     };
 
     Sidebar.prototype.debounceGroupSave = function() {
-        clearTimeout(this.groupSaveTimeout);
-        this.groupSaveTimeout = setTimeout(() => {
-            this.saveGroupProperties();
-        }, 1000);
+        if (this.state.saving) {
+            this.state.saving.debounceGroupSave();
+        }
     };
 
     Sidebar.prototype.showSuccess = function(message) {

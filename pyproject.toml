@@ -81,8 +81,8 @@ include = ["flowcraft", "backend*"]
 "flowcraft/static/js/core" = [
   "static/js/core/*.js"
 ]
-"flowcraft/static/js/flowchart/actions" = [
-  "static/js/flowchart/actions/*.js"
+"flowcraft/static/js/flowchart/events" = [
+  "static/js/flowchart/events/*.js"
 ]
 "flowcraft/static/js/rendering" = [
   "static/js/rendering/*.js"

@@ -7,6 +7,7 @@ class Sidebar {
     constructor(stateManager, createNode) {
         this.state = stateManager;
         this.createNode = createNode;
+        console.log('sidebar created, saving module available:', !!(this.state && this.state.saving));
         this.currentView = 'default';
         this.pythonFiles = [];
         this.filteredFiles = [];
@@ -43,12 +44,24 @@ class Sidebar {
         this.createFlowchartModal = document.getElementById('create_flowchart_modal');
         
         // setup event listeners
-        this.setupEventListeners();
-        this.setupFormHandlers();
-        this.setupFlowchartManagement();
-        this.setupURLHandlers();
-        this.setupLinkEventHandlers();
-        this.initializePythonFileDropdown();
+        if (typeof this.setupEventListeners === 'function') {
+            this.setupEventListeners();
+        }
+        if (typeof this.setupFormHandlers === 'function') {
+            this.setupFormHandlers();
+        }
+        if (typeof this.setupFlowchartManagement === 'function') {
+            this.setupFlowchartManagement();
+        }
+        if (typeof this.setupURLHandlers === 'function') {
+            this.setupURLHandlers();
+        }
+        if (typeof this.setupLinkEventHandlers === 'function') {
+            this.setupLinkEventHandlers();
+        }
+        if (typeof this.initializePythonFileDropdown === 'function') {
+            this.initializePythonFileDropdown();
+        }
         // note: initializeFlowchartDropdown is called from Index.js initializeApp()
 
         // centralized content engine
@@ -64,9 +77,35 @@ class Sidebar {
         } catch (_) {
             this.controllerRegistry = null;
         }
+        
+        // ensure all setup methods are called once they become available
+        this.ensureSetupMethodsCalled();
+        
+        // schedule additional checks for setup methods that might load later
+        setTimeout(() => this.ensureSetupMethodsCalled(), 100);
+        setTimeout(() => this.ensureSetupMethodsCalled(), 500);
     }
 
 }
+
+// ensure all setup methods are called once they become available
+Sidebar.prototype.ensureSetupMethodsCalled = function() {
+    const setupMethods = [
+        'setupEventListeners',
+        'setupFormHandlers', 
+        'setupFlowchartManagement',
+        'setupURLHandlers',
+        'setupLinkEventHandlers',
+        'initializePythonFileDropdown'
+    ];
+    
+    setupMethods.forEach(methodName => {
+        if (typeof this[methodName] === 'function' && !this[`_${methodName}Called`]) {
+            this[methodName]();
+            this[`_${methodName}Called`] = true;
+        }
+    });
+};
 
 // cleanup
 Sidebar.prototype.destroy = function() {
