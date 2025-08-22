@@ -22,6 +22,11 @@ class LinkRenderer {
         this.linkAlerts = new Map(); // key: `${source}-${target}` -> boolean
     }
 
+    // helper method to delegate getNode calls to CreateNode
+    getNode(nodeId) {
+        return this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
+    }
+
     setupEventListeners() {
         this.state.on('linkAdded', (link) => this.renderSingleLink(link));
         this.state.on('linkRemoved', (link) => this.removeSingleLink(link));
@@ -99,8 +104,8 @@ class LinkRenderer {
     renderDoubleLines() {
         // find links that should render as double lines (if→python and python→if)
         const doubleLineLinks = this.state.links.filter(link => {
-            const sourceNode = this.state.getNode(link.source);
-            const targetNode = this.state.getNode(link.target);
+            const sourceNode = this.getNode(link.source);
+            const targetNode = this.getNode(link.target);
             if (!sourceNode || !targetNode) return false;
             const isIfToPython = sourceNode.type === 'if_node' && targetNode.type === 'python_file';
             const isPythonToIf = sourceNode.type === 'python_file' && targetNode.type === 'if_node';
@@ -112,8 +117,8 @@ class LinkRenderer {
 
         // create double lines for targeted connections
         doubleLineLinks.forEach(link => {
-            const sourceNode = this.state.getNode(link.source);
-            const targetNode = this.state.getNode(link.target);
+            const sourceNode = this.getNode(link.source);
+            const targetNode = this.getNode(link.target);
             
             if (!sourceNode || !targetNode) return;
 
@@ -249,16 +254,16 @@ class LinkRenderer {
                     classes += ' input_connection';
                 }
                 // add class for python to data save connections to prevent hover effects
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 if (src && tgt && src.type === 'python_file' && tgt.type === 'data_save') {
                     classes += ' python_to_data_save';
                 }
                 return classes;
             })
             .style('cursor', d => {
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 return (d.selectable === false || isPyToIf || isPyToDataSave) ? 'default' : 'pointer';
@@ -267,8 +272,8 @@ class LinkRenderer {
             .style('marker-end', d => d.type === 'input_connection' ? 'none' : null)
             .style('stroke', d => {
                 // hide original line for double-line connections
-                const sourceNode = this.state.getNode(d.source);
-                const targetNode = this.state.getNode(d.target);
+                const sourceNode = this.getNode(d.source);
+                const targetNode = this.getNode(d.target);
                 if (sourceNode && targetNode && (
                     (sourceNode.type === 'if_node' && targetNode.type === 'python_file') ||
                     (sourceNode.type === 'python_file' && targetNode.type === 'if_node')
@@ -279,8 +284,8 @@ class LinkRenderer {
             })
             .on('click', (event, d) => {
                 // only handle clicks for selectable links
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 if (d.selectable !== false && !isPyToIf && !isPyToDataSave) {
@@ -289,8 +294,8 @@ class LinkRenderer {
             })
             .on('mouseenter', (event, d) => {
                 // update arrow color on hover
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
@@ -299,8 +304,8 @@ class LinkRenderer {
             })
             .on('mouseleave', (event, d) => {
                 // reset arrow color when not hovering
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
@@ -310,8 +315,8 @@ class LinkRenderer {
     }
 
     calculateLinkPath(link) {
-        const sourceNode = this.state.getNode(link.source);
-        const targetNode = this.state.getNode(link.target);
+        const sourceNode = this.getNode(link.source);
+        const targetNode = this.getNode(link.target);
         
         if (!sourceNode || !targetNode) return '';
         
@@ -391,8 +396,8 @@ class LinkRenderer {
 
     renderSingleLink(link) {
         // determine if this link is from a python node to an if node or data save node
-        const sourceNodeForSelect = this.state.getNode(link.source);
-        const targetNodeForSelect = this.state.getNode(link.target);
+        const sourceNodeForSelect = this.getNode(link.source);
+        const targetNodeForSelect = this.getNode(link.target);
         const isPythonToIf = !!(sourceNodeForSelect && targetNodeForSelect &&
             sourceNodeForSelect.type === 'python_file' && targetNodeForSelect.type === 'if_node');
         const isPythonToDataSave = !!(sourceNodeForSelect && targetNodeForSelect &&
@@ -407,8 +412,8 @@ class LinkRenderer {
                     classes += ' input_connection';
                 }
                 // add class for python to data save connections to prevent hover effects
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 if (src && tgt && src.type === 'python_file' && tgt.type === 'data_save') {
                     classes += ' python_to_data_save';
                 }
@@ -420,8 +425,8 @@ class LinkRenderer {
             .style('marker-end', link.type === 'input_connection' ? 'none' : null)
             .style('stroke', () => {
                 // hide original line for double-line connections
-                const sourceNode = this.state.getNode(link.source);
-                const targetNode = this.state.getNode(link.target);
+                const sourceNode = this.getNode(link.source);
+                const targetNode = this.getNode(link.target);
                 if (sourceNode && targetNode && (
                     (sourceNode.type === 'if_node' && targetNode.type === 'python_file') ||
                     (sourceNode.type === 'python_file' && targetNode.type === 'if_node')
@@ -432,8 +437,8 @@ class LinkRenderer {
             })
             .on('click', (event, d) => {
                 // only handle clicks for selectable links
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 if (d.selectable !== false && !isPyToIf && !isPyToDataSave) {
@@ -442,8 +447,8 @@ class LinkRenderer {
             })
             .on('mouseenter', (event, d) => {
                 // update arrow color on hover
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
@@ -452,8 +457,8 @@ class LinkRenderer {
             })
             .on('mouseleave', (event, d) => {
                 // reset arrow color when not hovering
-                const src = this.state.getNode(d.source);
-                const tgt = this.state.getNode(d.target);
+                const src = this.getNode(d.source);
+                const tgt = this.getNode(d.target);
                 const isPyToIf = src && tgt && src.type === 'python_file' && tgt.type === 'if_node';
                 const isPyToDataSave = src && tgt && src.type === 'python_file' && tgt.type === 'data_save';
                 if (d.selectable !== false && d.type !== 'input_connection' && !isPyToIf && !isPyToDataSave) {
@@ -464,8 +469,8 @@ class LinkRenderer {
         this.animateLinkCreation(linkElement);
         
         // render double lines if this is a targeted connection
-        const sourceNode = this.state.getNode(link.source);
-        const targetNode = this.state.getNode(link.target);
+        const sourceNode = this.getNode(link.source);
+        const targetNode = this.getNode(link.target);
         if (sourceNode && targetNode && (
             (sourceNode.type === 'if_node' && targetNode.type === 'python_file') ||
             (sourceNode.type === 'python_file' && targetNode.type === 'if_node')
@@ -519,9 +524,9 @@ class LinkRenderer {
     updateLinkStyles() {
         this.linkGroup.selectAll('.link')
             .classed('selected', d => 
-                this.state.selectedLink && 
-                d.source === this.state.selectedLink.source && 
-                d.target === this.state.selectedLink.target)
+                            this.state.selectionHandler && this.state.selectionHandler.selectedLink &&
+            d.source === this.state.selectionHandler.selectedLink.source &&
+            d.target === this.state.selectionHandler.selectedLink.target)
             // ensure visual style like dashedness is applied dynamically
             .style('stroke-dasharray', d => d.style === 'dashed' ? '5,5' : null)
             .style('marker-end', d => d.type === 'input_connection' ? 'none' : null);
@@ -556,8 +561,8 @@ class LinkRenderer {
         // exclude: input connections and python→if connections (no triangle arrow requested)
         const linksWithArrows = this.state.links.filter(link => {
             if (link.type === 'input_connection') return false;
-            const sourceNode = this.state.getNode(link.source);
-            const targetNode = this.state.getNode(link.target);
+            const sourceNode = this.getNode(link.source);
+            const targetNode = this.getNode(link.target);
             // remove triangle arrowhead for python→if connections
             if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
                 return false;
@@ -664,7 +669,7 @@ class LinkRenderer {
             .style('pointer-events', 'all')
             .style('cursor', 'pointer')
             .on('click', (event, d) => {
-                const link = this.state.getLink(d.source, d.target);
+                const link = this.state.connectionHandler.getLink(d.source, d.target);
                 if (!link) return;
                 // if this is an input→python alert, swallow the click and do nothing
                 if (link.type === 'input_connection') {
@@ -692,11 +697,11 @@ class LinkRenderer {
         alertMerge
             .style('pointer-events', 'all')
             .style('cursor', (d) => {
-                const link = this.state.getLink(d.source, d.target);
+                const link = this.state.connectionHandler.getLink(d.source, d.target);
                 return (link && link.type === 'input_connection') ? 'default' : 'pointer';
             })
             .on('click', (event, d) => {
-                const link = this.state.getLink(d.source, d.target);
+                const link = this.state.connectionHandler.getLink(d.source, d.target);
                 if (!link) return;
                 if (link.type === 'input_connection') {
                     event.preventDefault();
@@ -708,9 +713,9 @@ class LinkRenderer {
         alertMerge.each((d, i, nodes) => {
             const g = d3.select(nodes[i]);
             const mid = this.getLinkMidpoint(d);
-            const sourceNode = this.state.getNode(d.source);
-            const targetNode = this.state.getNode(d.target);
-            const linkObj = this.state.getLink(d.source, d.target);
+            const sourceNode = this.getNode(d.source);
+            const targetNode = this.getNode(d.target);
+            const linkObj = this.state.connectionHandler.getLink(d.source, d.target);
             // allow alerts for python→python, input→python, and if→python links
             const isPyPy = sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'python_file';
             const isInputToPython = !!(linkObj && linkObj.type === 'input_connection');
@@ -737,20 +742,20 @@ class LinkRenderer {
         // compute coverage for all python→python links using available analysis endpoint
         // note: to keep ui responsive, only compute when both files exist
         const pyPyLinks = this.state.links.filter(l => {
-            const s = this.state.getNode(l.source);
-            const t = this.state.getNode(l.target);
+            const s = this.getNode(l.source);
+            const t = this.getNode(l.target);
             return s && t && s.type === 'python_file' && t.type === 'python_file' && s.pythonFile && t.pythonFile;
         });
         // clear alerts before recomputation
         this.linkAlerts.clear();
         // also compute alerts for input→python links when any input is missing
         const inputLinks = this.state.links.filter(l => {
-            const s = this.state.getNode(l.source);
-            const t = this.state.getNode(l.target);
+            const s = this.getNode(l.source);
+            const t = this.getNode(l.target);
             return l.type === 'input_connection' && s && t && s.type === 'input_node' && t.type === 'python_file';
         });
         inputLinks.forEach(l => {
-            const inputNode = this.state.getNode(l.source);
+            const inputNode = this.getNode(l.source);
             if (!inputNode) return;
             const params = Array.isArray(inputNode.parameters) ? inputNode.parameters : [];
             const values = inputNode.inputValues || {};
@@ -765,12 +770,12 @@ class LinkRenderer {
         });
         // compute alerts for if→python links with no conditions set
         const ifLinks = this.state.links.filter(l => {
-            const s = this.state.getNode(l.source);
-            const t = this.state.getNode(l.target);
+            const s = this.getNode(l.source);
+            const t = this.getNode(l.target);
             return s && t && s.type === 'if_node' && t.type === 'python_file';
         });
         ifLinks.forEach(l => {
-            const linkObj = this.state.getLink(l.source, l.target);
+            const linkObj = this.state.connectionHandler.getLink(l.source, l.target);
             const conditions = linkObj && Array.isArray(linkObj.conditions) ? linkObj.conditions : [];
             const hasMissing = conditions.length === 0;
             if (hasMissing) {
@@ -786,11 +791,11 @@ class LinkRenderer {
                 try {
                     const respSrc = await fetch('/api/analyze-python-function', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ python_file: this.state.getNode(link.source).pythonFile })
+                        body: JSON.stringify({ python_file: this.getNode(link.source).pythonFile })
                     });
                     const respTgt = await fetch('/api/analyze-python-function', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ python_file: this.state.getNode(link.target).pythonFile })
+                        body: JSON.stringify({ python_file: this.getNode(link.target).pythonFile })
                     });
                     const srcData = await respSrc.json();
                     const tgtData = await respTgt.json();
@@ -885,8 +890,8 @@ class LinkRenderer {
             const angle = this.getLinkAngle(d);
             
             // check if this is an if-to-python connection - if so, don't render arrow
-            const sourceNode = this.state.getNode(d.source);
-            const targetNode = this.state.getNode(d.target);
+            const sourceNode = this.getNode(d.source);
+            const targetNode = this.getNode(d.target);
             if (sourceNode && targetNode) {
                 // no triangle arrows for python→if
                 if (sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
@@ -924,9 +929,9 @@ class LinkRenderer {
                     ];
                     const pointsStr = points.map(p => p.join(',')).join(' ');
                     
-                    const isSelected = this.state.selectedLink && 
-                        d.source === this.state.selectedLink.source && 
-                        d.target === this.state.selectedLink.target;
+                    const isSelected = this.state.selectionHandler && this.state.selectionHandler.selectedLink && 
+                        d.source === this.state.selectionHandler.selectedLink.source && 
+                        d.target === this.state.selectionHandler.selectedLink.target;
                     const arrowColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
                     
                     // ensure any lingering background for this link is removed if not python→if
@@ -956,8 +961,8 @@ class LinkRenderer {
     renderIfToPythonNodes() {
         // find links that go from if nodes to python nodes
         const ifToPythonLinks = this.state.links.filter(link => {
-            const sourceNode = this.state.getNode(link.source);
-            const targetNode = this.state.getNode(link.target);
+            const sourceNode = this.getNode(link.source);
+            const targetNode = this.getNode(link.target);
             return sourceNode && targetNode && 
                    sourceNode.type === 'if_node' && 
                    targetNode.type === 'python_file';
@@ -972,11 +977,11 @@ class LinkRenderer {
             
             if (midPoint) {
                 // determine node color based on link selection state
-                const isSelected = this.state.selectedLink && 
-                    link.source === this.state.selectedLink.source && 
-                    link.target === this.state.selectedLink.target;
+                const isSelected = this.state.selectionHandler && this.state.selectionHandler.selectedLink && 
+                    link.source === this.state.selectionHandler.selectedLink.source && 
+                    link.target === this.state.selectionHandler.selectedLink.target;
                 // runtime condition result tinting
-                const linkObj = this.state.getLink(link.source, link.target) || link;
+                const linkObj = this.state.connectionHandler.getLink(link.source, link.target) || link;
                 const rcond = (linkObj && linkObj.runtime_condition) || null; // 'true' | 'false' | null
                 const runtimeStroke = rcond === 'true' ? '#4caf50' : (rcond === 'false' ? '#f44336' : null);
                 const runtimeFill = rcond === 'true' ? '#0e2a16' : (rcond === 'false' ? '#2A0E0E' : null);
@@ -1015,8 +1020,8 @@ class LinkRenderer {
     }
 
     getLinkMidpoint(link) {
-        const sourceNode = this.state.getNode(link.source);
-        const targetNode = this.state.getNode(link.target);
+        const sourceNode = this.getNode(link.source);
+        const targetNode = this.getNode(link.target);
         
         if (!sourceNode || !targetNode) return null;
         
@@ -1052,8 +1057,8 @@ class LinkRenderer {
     }
 
     getLinkAngle(link) {
-        const sourceNode = this.state.getNode(link.source);
-        const targetNode = this.state.getNode(link.target);
+        const sourceNode = this.getNode(link.source);
+        const targetNode = this.getNode(link.target);
         
         if (!sourceNode || !targetNode) return 0;
         
@@ -1074,11 +1079,11 @@ class LinkRenderer {
         
         if (!arrow.empty()) {
             // determine color based on selection and hover state
-            const isSelected = this.state.selectedLink && 
-                link.source === this.state.selectedLink.source && 
-                link.target === this.state.selectedLink.target;
-            const sourceNode = this.state.getNode(link.source);
-            const targetNode = this.state.getNode(link.target);
+            const isSelected = this.state.selectionHandler && this.state.selectionHandler.selectedLink && 
+                link.source === this.state.selectionHandler.selectedLink.source && 
+                link.target === this.state.selectionHandler.selectedLink.target;
+            const sourceNode = this.getNode(link.source);
+            const targetNode = this.getNode(link.target);
             const isPythonToIf = sourceNode && targetNode &&
                 sourceNode.type === 'python_file' && targetNode.type === 'if_node';
 
@@ -1102,11 +1107,11 @@ class LinkRenderer {
         // update colors of if-to-python nodes based on selection state
         this.linkGroup.selectAll('.if-to-python-node').each((d, i, nodes) => {
             const node = d3.select(nodes[i]);
-            const isSelected = this.state.selectedLink && 
-                d.source === this.state.selectedLink.source && 
-                d.target === this.state.selectedLink.target;
+            const isSelected = this.state.selectionHandler && this.state.selectionHandler.selectedLink && 
+                d.source === this.state.selectionHandler.selectedLink.source && 
+                d.target === this.state.selectionHandler.selectedLink.target;
             // use runtime condition if present; override selection tint
-            const linkObj = this.state.getLink(d.source, d.target) || d;
+            const linkObj = this.state.connectionHandler.getLink(d.source, d.target) || d;
             const rcond = (linkObj && linkObj.runtime_condition) || null;
             const runtimeStroke = rcond === 'true' ? '#4caf50' : (rcond === 'false' ? '#f44336' : null);
             const runtimeFill = rcond === 'true' ? '#0e2a16' : (rcond === 'false' ? '#2A0E0E' : null);

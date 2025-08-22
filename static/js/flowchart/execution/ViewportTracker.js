@@ -13,7 +13,7 @@ class ViewportTracker {
 
     // smoothly center a node in both axes at a specific zoom level
     centerOnNodeCentered(nodeId, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
-        const node = this.state.getNode(nodeId);
+        const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
         if (!node) return;
         const currentScale = this.state.transform && this.state.transform.k ? this.state.transform.k : 1;
         const scale = scaleOverride || currentScale;
@@ -40,7 +40,7 @@ class ViewportTracker {
 
     // smoothly center horizontally and position a node offset from top at a specific zoom level
     centerOnNodeWithTopOffset(nodeId, offsetTopPx = 400, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
-        const node = this.state.getNode(nodeId);
+        const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
         if (!node) return;
         const currentScale = this.state.transform && this.state.transform.k ? this.state.transform.k : 1;
         const scale = scaleOverride || currentScale;
@@ -69,7 +69,7 @@ class ViewportTracker {
     // smooth center on a node by id
     centerOnNode(nodeId) {
         console.log('[ViewportTracker] centerOnNode called with nodeId:', nodeId);
-        const node = this.state.getNode(nodeId);
+        const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
         if (!node) {
             console.log('[ViewportTracker] node not found for nodeId:', nodeId);
             return;

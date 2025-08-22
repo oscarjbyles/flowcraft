@@ -26,15 +26,20 @@ class ExecutionLogic {
 
     }
 
+    // helper method to delegate getNode calls to CreateNode
+    getNode(nodeId) {
+        return this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
+    }
+
     // clear all runtime condition flags on if→python links (used when clearing run or leaving run mode)
     clearIfRuntimeIndicators() {
         try {
             const links = Array.isArray(this.state.links) ? this.state.links : [];
             links.forEach(l => {
-                const s = this.state.getNode(l.source);
-                const t = this.state.getNode(l.target);
+                const s = this.getNode(l.source);
+                const t = this.getNode(l.target);
                 if (s && t && s.type === 'if_node' && t.type === 'python_file') {
-                    this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                    this.state.connectionHandler.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
                 }
             });
             // re-render if-to-python nodes to reflect cleared state
@@ -83,10 +88,10 @@ class ExecutionLogic {
         try {
             const links = Array.isArray(this.state.links) ? this.state.links : [];
             links.forEach(l => {
-                const s = this.state.getNode(l.source);
-                const t = this.state.getNode(l.target);
+                const s = this.getNode(l.source);
+                const t = this.getNode(l.target);
                 if (s && t && s.type === 'if_node' && t.type === 'python_file') {
-                    this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                    this.state.connectionHandler.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
                 }
             });
         } catch (_) {}
@@ -296,10 +301,10 @@ class ExecutionLogic {
                         if (!inputNode) {
                             const linkFromInput = (this.state.links || []).find(l => {
                                 if (!l) return false;
-                                const src = this.state.getNode(l.source);
+                                const src = this.getNode(l.source);
                                 return !!(src && src.type === 'input_node' && l.target === node.id);
                             });
-                            if (linkFromInput) inputNode = this.state.getNode(linkFromInput.source);
+                            if (linkFromInput) inputNode = this.getNode(linkFromInput.source);
                         }
                         if (inputNode) {
                             inputNode.runtimeStatus = 'success';
@@ -395,7 +400,7 @@ class ExecutionLogic {
                 if (val && typeof val === 'object' && val !== null) {
                     // if the return value is an array, treat it as a single variable (do not spread indices)
                     if (Array.isArray(val)) {
-                        const src = this.state.getNode(sourceId);
+                        const src = this.getNode(sourceId);
                         let mapped = false;
                         try {
                             if (src && src.type === 'python_file' && src.pythonFile) {
@@ -426,7 +431,7 @@ class ExecutionLogic {
                         Object.assign(vars, val);
                     }
                 } else if (typeof val !== 'undefined') {
-                    const src = this.state.getNode(sourceId);
+                    const src = this.getNode(sourceId);
                     let mapped = false;
                     // try to map primitive return value to the real return variable name via analysis
                     try {
@@ -505,13 +510,13 @@ class ExecutionLogic {
             const trueTargets = [];
             const falseTargets = [];
             for (const link of outgoingLinks) {
-                const meta = this.state.getLink(link.source, link.target) || link;
+                const meta = this.state.connectionHandler.getLink(link.source, link.target) || link;
                 const conditions = Array.isArray(meta.conditions) ? meta.conditions : [];
                 if (conditions.length === 0) {
                     // no conditions means this arm is not taken by default
                     falseTargets.push(link.target);
                     // mark link as false in runtime
-                    this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: [], final: false } });
+                    this.state.connectionHandler.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: [], final: false } });
                     continue;
                 }
                 // evaluate left-to-right with optional combiner on subsequent conditions (default 'and')
@@ -540,10 +545,10 @@ class ExecutionLogic {
                 }
                 if (result) {
                     trueTargets.push(link.target);
-                    this.state.updateLink(link.source, link.target, { runtime_condition: 'true', runtime_details: { variables: { ...vars }, conditions: details, final: true } });
+                    this.state.connectionHandler.updateLink(link.source, link.target, { runtime_condition: 'true', runtime_details: { variables: { ...vars }, conditions: details, final: true } });
                 } else {
                     falseTargets.push(link.target);
-                    this.state.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: details, final: false } });
+                    this.state.connectionHandler.updateLink(link.source, link.target, { runtime_condition: 'false', runtime_details: { variables: { ...vars }, conditions: details, final: false } });
                 }
             }
 
@@ -644,7 +649,7 @@ class ExecutionLogic {
                 line = line.trim();
                 if (!line) return;
                 // append live output to the sidebar console if this node is selected
-                const selected = Array.from(this.state.selectedNodes);
+                const selected = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
                 if (selected.length === 1 && selected[0] === node.id) {
                     const container = document.getElementById('console_output_log');
                     if (container) {

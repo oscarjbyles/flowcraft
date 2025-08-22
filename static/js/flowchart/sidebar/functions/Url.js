@@ -19,12 +19,12 @@
                     }
                 }
                 
-                await this.state.save(true);
+                if (this.state.saving) await this.state.saving.save(true);
                 if (this.state.saving && this.state.saving.storage) {
                     this.state.saving.storage.setCurrentFlowchart(flowchartName);
                 }
                 this.urlManager.setLastAccessedFlowchart(flowchartName);
-                const result = await this.state.load();
+                const result = this.state.saving ? await this.state.saving.load() : { success: false, message: 'saving not initialized' };
                 if (result.success) {
                     this.setCurrentFlowchart(displayName || flowchartName.replace('.json',''));
                     this.showSuccess(`switched to flowchart: ${displayName}`);

@@ -478,9 +478,9 @@
                                         }
                                     }
                                     
-                                    app.state.save(true).then(() => {
+                                    if (app.state.saving) app.state.saving.save(true).then(() => {
                                         app.state.storage.setCurrentFlowchart(filename);
-                                        return app.state.load();
+                                        return app.state.saving ? app.state.saving.load() : { success: false, message: 'saving not initialized' };
                                     }).then(() => {
                                         try { urlMgr && urlMgr.updateFlowchartInURL(filename); } catch(_) {}
                                     }).catch(() => {});

@@ -242,11 +242,11 @@
                 }
             }
             
-            await this.state.save(true);
+            if (this.state.saving) await this.state.saving.save(true);
             if (this.state.saving && this.state.saving.storage) {
                 this.state.saving.storage.setCurrentFlowchart(filename);
             }
-            const result = await this.state.load();
+            const result = this.state.saving ? await this.state.saving.load() : { success: false, message: 'saving not initialized' };
             if (result.success) {
                 this.setCurrentFlowchart(name);
                 this.urlManager.updateFlowchartInURL(filename);
@@ -369,7 +369,7 @@
                 this.showError('saving module not available');
                 return;
             }
-            const data = this.state.exportData();
+            const data = this.state.saving ? this.state.saving.exportData() : { nodes: [], links: [], groups: [], metadata: {} };
             this.state.saving.storage.exportAsJson(data);
             this.showSuccess('flowchart exported successfully');
         } catch (error) {

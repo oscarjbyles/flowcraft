@@ -418,7 +418,7 @@
                             // refresh in-place: reload flowchart data and re-render without page reload
                             try {
                                 console.log('[backups] reloading state after restore');
-                                await this.state.load();
+                                if (this.state.saving) await this.state.saving.load();
                                 console.log('[backups] reloaded state');
                             } catch (err) {
                                 console.error('[backups] error reloading state', err);

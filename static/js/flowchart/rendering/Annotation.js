@@ -233,7 +233,7 @@ class AnnotationRenderer {
                 d._dragStartY = d.y;
                 d._pointerStartX = event.x;
                 d._pointerStartY = event.y;
-                d._wasSelected = self.state.selectedAnnotation && self.state.selectedAnnotation.id === d.id;
+                d._wasSelected = self.state.selectionHandler && self.state.selectionHandler.selectedAnnotation && self.state.selectionHandler.selectedAnnotation.id === d.id;
                 self.state.setDragging(true);
                 self.state.emit('disableZoom');
                 self.state.suppressNextCanvasClick = true;
@@ -267,13 +267,19 @@ class AnnotationRenderer {
                 
                 if (wasClick && !positionChanged) {
                     if (d._wasSelected) {
-                        this.state.clearSelection();
+                        if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
+                            this.state.selectionHandler.clearSelection();
+                        }
                     } else {
-                        this.state.selectAnnotation(d.id);
+                        if (this.state.selectionHandler && typeof this.state.selectionHandler.selectAnnotation === 'function') {
+                            this.state.selectionHandler.selectAnnotation(d.id);
+                        }
                     }
                 } else if (positionChanged) {
                     if (!d._wasSelected) {
-                        this.state.selectAnnotation(d.id);
+                        if (this.state.selectionHandler && typeof this.state.selectionHandler.selectAnnotation === 'function') {
+                            this.state.selectionHandler.selectAnnotation(d.id);
+                        }
                     }
                 }
                 
@@ -465,7 +471,7 @@ class AnnotationRenderer {
     }
 
     updateAnnotationStyles() {
-        const selectedAnnotation = this.state.selectedAnnotation;
+        const selectedAnnotation = this.state.selectionHandler ? this.state.selectionHandler.selectedAnnotation : null;
         const isBuildMode = this.state.isBuildMode;
         
         this.annotationGroup.selectAll('.annotation_item')

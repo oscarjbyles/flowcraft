@@ -188,7 +188,7 @@ class GroupRenderer {
         // update visual styles based on selection state
         this.groupsGroup.selectAll('.group-container').each((d, i, nodes) => {
             const groupElement = d3.select(nodes[i]);
-            const isSelected = this.state.selectedGroup && this.state.selectedGroup.id === d.id;
+            const isSelected = this.state.selectionHandler && this.state.selectionHandler.selectedGroup && this.state.selectionHandler.selectedGroup.id === d.id;
             
             // update container styles using CSS classes
             const container = groupElement.select('.group_container')
@@ -237,7 +237,9 @@ class GroupRenderer {
         groupElement
             .on('click', (event, d) => {
                 event.stopPropagation();
-                this.state.selectGroup(d.id);
+                if (this.state.selectionHandler && typeof this.state.selectionHandler.selectGroup === 'function') {
+                    this.state.selectionHandler.selectGroup(d.id);
+                }
             })
             .on('mouseenter', (event, d) => {
                 // keep handles hidden per request
@@ -290,7 +292,9 @@ class GroupRenderer {
                 const upHandler = () => {
                     // finalize and persist
                     this.state.getGroupNodes(d.id).forEach(node => {
-                        this.state.updateNode(node.id, { x: node.x, y: node.y });
+                        if (this.state.createNode) {
+                            this.state.createNode.updateNode(node.id, { x: node.x, y: node.y });
+                        }
                     });
                     this.state.emit('updateGroupBounds', d.id);
                     // re-enable zoom and cleanup

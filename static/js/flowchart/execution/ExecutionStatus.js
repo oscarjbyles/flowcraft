@@ -30,7 +30,7 @@ class ExecutionStatus {
         // avoid overwriting that with global status updates.
         let isSingleNodeSelected = false;
         try {
-            const selected = Array.from(this.state.selectedNodes || []);
+            const selected = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes || []) : [];
             isSingleNodeSelected = (selected.length === 1);
         } catch(_) { isSingleNodeSelected = false; }
         
@@ -251,7 +251,7 @@ class ExecutionStatus {
         // the sidebar will be updated through the normal selection change events
         
         // trigger sidebar update if this node is currently selected
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
         if (selectedNodes.length === 1 && selectedNodes[0] === node.id) {
             this.state.emit('updateSidebar');
         }
@@ -378,7 +378,7 @@ class ExecutionStatus {
         // restore node states from execution results
         executionData.results.forEach(result => {
             // set node execution result
-            const node = this.state.getNode(result.node_id);
+            const node = this.state.createNode ? this.state.createNode.getNode(result.node_id) : null;
             if (node) {
                 this.builder.nodeExecutionResults.set(result.node_id, {
                     node: node,
@@ -417,7 +417,7 @@ class ExecutionStatus {
         // restore visual state for input nodes based on their target node's execution state
         this.state.nodes.forEach(node => {
             if (node.type === 'input_node' && node.targetNodeId) {
-                const targetNode = this.state.getNode(node.targetNodeId);
+                const targetNode = this.state.createNode ? this.state.createNode.getNode(node.targetNodeId) : null;
                 if (targetNode) {
                     const targetResult = this.builder.nodeExecutionResults.get(node.targetNodeId);
                     if (targetResult) {

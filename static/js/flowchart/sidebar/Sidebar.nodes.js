@@ -33,7 +33,7 @@
         const container = document.getElementById('selected_nodes_list');
         container.innerHTML = '';
         nodeIds.forEach(nodeId => {
-            const node = this.state.getNode(nodeId);
+            const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
             if (node) {
                 const item = this.createNodeListItem(node);
                 container.appendChild(item);
@@ -84,7 +84,9 @@
             this.state.emit('highlightNode', { nodeId: node.id, highlight: false });
         });
         item.addEventListener('click', () => {
-            this.state.selectNode(node.id, false);
+            if (this.state.selectionHandler && typeof this.state.selectionHandler.selectNode === 'function') {
+            this.state.selectionHandler.selectNode(node.id, false);
+        }
         });
         return item;
     };
@@ -100,7 +102,7 @@
     };
 
     Sidebar.prototype.saveNodeProperties = async function() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
         if (selectedNodes.length !== 1) return;
         const nodeId = selectedNodes[0];
         const pythonFileInput = document.getElementById('python_file');
@@ -118,7 +120,9 @@
         if (!updates.name) { this.showError('node name is required'); return; }
         if (updates.pythonFile && !Validation.validatePythonFilePath(updates.pythonFile)) { this.showError('invalid python file path'); return; }
         try {
-            await this.state.updateNode(nodeId, updates);
+            if (this.state.createNode) {
+                await this.state.createNode.updateNode(nodeId, updates);
+            }
             this.showSuccess(`updated node: ${updates.name}`);
         } catch (error) {
             this.showError(error.message);
@@ -126,15 +130,15 @@
     };
 
     Sidebar.prototype.deleteNodeFromSidebar = function() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
         if (selectedNodes.length !== 1) return;
         const node = this.state.getNode(selectedNodes[0]);
-        this.state.removeNode(selectedNodes[0]);
+        this.state.deleteNode.deleteNodeFromSidebar(selectedNodes[0]);
         this.showSuccess(`deleted node: ${node.name}`);
     };
 
     Sidebar.prototype.createGroup = function() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
         if (selectedNodes.length < 2) { this.showError('select at least 2 nodes to create a group'); return; }
         try {
             const group = this.createNode.createGroup(selectedNodes);
@@ -145,7 +149,7 @@
     };
 
     Sidebar.prototype.alignNodes = function() {
-        const selectedNodes = this.state.getSelectedNodes();
+        const selectedNodes = this.state.selectionHandler ? this.state.selectionHandler.getSelectedNodes() : [];
         if (selectedNodes.length < 2) { this.showError('select at least 2 nodes to align'); return; }
         Geometry.alignNodesHorizontally(selectedNodes);
         this.state.emit('stateChanged');
@@ -153,26 +157,8 @@
     };
 
     Sidebar.prototype.deleteSelectedNodes = function() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
-        if (selectedNodes.length === 0) return;
-        let deletedCount = 0;
-        let inputNodeAttempts = 0;
-        selectedNodes.forEach(nodeId => {
-            const node = this.state.getNode(nodeId);
-            if (node && node.type === 'input_node') {
-                inputNodeAttempts++;
-            } else {
-                const success = this.state.removeNode(nodeId);
-                if (success) deletedCount++;
-            }
-        });
-        if (inputNodeAttempts > 0 && deletedCount === 0) {
-            this.showError('input nodes cannot be deleted directly');
-        } else if (inputNodeAttempts > 0 && deletedCount > 0) {
-            this.showWarning(`deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
-        } else if (deletedCount > 0) {
-            this.showSuccess(`deleted ${deletedCount} node(s)`);
-        }
+        // delegate to NodeDelete.js to avoid duplication
+        this.state.deleteNode.deleteSelectedNodes();
     };
 
     Sidebar.prototype.populateGroupForm = function(group) {
@@ -186,7 +172,7 @@
                 '#ff5252', '#ff9800', '#ffeb3b', '#4caf50', '#00bcd4', '#2196f3',
                 '#3f51b5', '#9c27b0', '#e91e63', '#8bc34a', '#00e676', '#ff4081'
             ];
-            const currentGroupId = (this.state && this.state.selectedGroup ? this.state.selectedGroup.id : group.id);
+            const currentGroupId = (this.state && this.state.selectionHandler && this.state.selectionHandler.selectedGroup ? this.state.selectionHandler.selectedGroup.id : group.id);
             colors.forEach(color => {
                 const swatch = document.createElement('button');
                 swatch.type = 'button';
@@ -194,7 +180,7 @@
                 swatch.style.backgroundColor = color;
                 swatch.setAttribute('aria-label', `choose ${color}`);
                 swatch.addEventListener('click', () => {
-                    const gid = (this.state && this.state.selectedGroup ? this.state.selectedGroup.id : currentGroupId);
+                    const gid = (this.state && this.state.selectionHandler && this.state.selectionHandler.selectedGroup ? this.state.selectionHandler.selectedGroup.id : currentGroupId);
                     try {
                         this.state.updateGroup(gid, { color });
                         this.showSuccess('updated group colour');
@@ -214,14 +200,14 @@
     };
 
     Sidebar.prototype.saveGroupProperties = function() {
-        if (!this.state.selectedGroup) return;
+        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedGroup) return;
         const updates = {
             name: document.getElementById('group_name').value.trim(),
             // description removed from ui
         };
         if (!updates.name) { this.showError('group name is required'); return; }
         try {
-            this.state.updateGroup(this.state.selectedGroup.id, updates);
+            this.state.updateGroup(this.state.selectionHandler.selectedGroup.id, updates);
             this.showSuccess(`updated group: ${updates.name}`);
         } catch (error) {
             this.showError(error.message);
@@ -229,16 +215,16 @@
     };
 
     Sidebar.prototype.ungroupNodes = function() {
-        if (!this.state.selectedGroup) return;
-        const groupName = this.state.selectedGroup.name;
-        this.state.removeGroup(this.state.selectedGroup.id);
+        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedGroup) return;
+        const groupName = this.state.selectionHandler.selectedGroup.name;
+        this.state.deleteNode.deleteGroup(this.state.selectionHandler.selectedGroup.id);
         this.showSuccess(`ungrouped: ${groupName}`);
     };
 
     Sidebar.prototype.deleteGroup = function() {
-        if (!this.state.selectedGroup) return;
-        const groupName = this.state.selectedGroup.name;
-        this.state.removeGroup(this.state.selectedGroup.id);
+        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedGroup) return;
+        const groupName = this.state.selectionHandler.selectedGroup.name;
+        this.state.deleteNode.deleteGroup(this.state.selectionHandler.selectedGroup.id);
         this.showSuccess(`deleted group: ${groupName}`);
     };
 
@@ -556,7 +542,9 @@
                     const current = this.state.getNode(node.id);
                     const origin = (current && current.dataSource && current.dataSource.origin) || 'returns';
                     const newDataSource = { origin, variable: selectedName ? { name: selectedName } : null };
-                    await this.state.updateNode(node.id, { dataSource: newDataSource });
+                    if (this.state.createNode) {
+                        await this.state.createNode.updateNode(node.id, { dataSource: newDataSource });
+                    }
                 } catch (e) {
                     console.warn('failed to update data_save selection:', e);
                 }
@@ -658,7 +646,7 @@
                 // find the currently selected python node (source of returns) and connect
                 // prefer: selected node if it's python_file; fallback: none (skip)
                 let sourcePythonNode = null;
-                const selected = Array.from(this.state.selectedNodes);
+                const selected = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
                 if (selected.length === 1) {
                     const n = this.state.getNode(selected[0]);
                     if (n && n.type === 'python_file') sourcePythonNode = n;
@@ -666,7 +654,7 @@
                 // create a non-selectable link from python node to the new data_save node
                 if (sourcePythonNode) {
                     try {
-                        const link = this.state.addLink(sourcePythonNode.id, node.id);
+                        const link = this.state.connectionHandler.addLink(sourcePythonNode.id, node.id);
                         if (link) {
                             link.selectable = false; // enforce non-selectable
                             link.style = 'dashed';    // dotted/dashed style

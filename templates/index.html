@@ -223,8 +223,13 @@
             
             // node creation service
             const createNodeScript = document.createElement('script');
-            createNodeScript.src = '/static/js/flowchart/events/CreateNode.js';
+            createNodeScript.src = '/static/js/flowchart/events/NodeCreate.js';
             document.head.appendChild(createNodeScript);
+            
+            // node deletion service
+            const deleteNodeScript = document.createElement('script');
+            deleteNodeScript.src = '/static/js/flowchart/events/NodeDelete.js';
+            document.head.appendChild(deleteNodeScript);
             
             // wait for all dependencies to be loaded before initializing
             function waitForDependencies() {
@@ -241,6 +246,7 @@
                     'GroupRenderer',
                     'AnnotationRenderer',
                     'CreateNode',
+                    'DeleteNode',
                     'ExecutionFeed',
                     'EventManager',
                     'Sidebar',

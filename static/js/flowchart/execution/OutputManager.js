@@ -15,7 +15,7 @@ class OutputManager {
         
         // only update the console display if no specific node is selected
         // or if we're not in run mode with a node selection
-        const selectedNodes = Array.from(this.app.state.selectedNodes);
+        const selectedNodes = this.app.state.selectionHandler ? Array.from(this.app.state.selectionHandler.selectedNodes) : [];
         const isRunMode = this.app.state.currentMode === 'run';
         
         if (!isRunMode || selectedNodes.length !== 1) {

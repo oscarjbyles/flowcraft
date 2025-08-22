@@ -120,10 +120,10 @@ class ResumeExecution {
             try {
                 const links = Array.isArray(this.state.links) ? this.state.links : [];
                 links.forEach(l => {
-                    const s = this.state.getNode(l.source);
-                    const t = this.state.getNode(l.target);
+                                const s = this.state.createNode ? this.state.createNode.getNode(l.source) : null;
+            const t = this.state.createNode ? this.state.createNode.getNode(l.target) : null;
                     if (s && t && s.type === 'if_node' && t.type === 'python_file') {
-                        this.state.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
+                        this.state.connectionHandler.updateLink(l.source, l.target, { runtime_condition: null, runtime_details: null });
                     }
                 });
             } catch (_) {}

@@ -12,8 +12,8 @@
                     // if selecting an if→python circle, render the runtime explanation inside the run panel
                     try {
                         if (selection && selection.link) {
-                            const s = this.state.getNode(selection.link.source);
-                            const t = this.state.getNode(selection.link.target);
+                                    const s = this.state.createNode ? this.state.createNode.getNode(selection.link.source) : null;
+        const t = this.state.createNode ? this.state.createNode.getNode(selection.link.target) : null;
                             const isIfToPython = s && t && s.type === 'if_node' && t.type === 'python_file';
                             if (isIfToPython && typeof this.renderIfRuntimeExplainRun === 'function') {
                                 this.renderIfRuntimeExplainRun(selection.link);
@@ -30,8 +30,8 @@
                 // call existing population helpers for non-single contexts to keep behavior
                 if (ctx === 'multi') this.updateSelectedNodesList(selection.nodes);
                 if (ctx === 'link') {
-                    const sourceNode = selection.link && this.state.getNode(selection.link.source);
-                    const targetNode = selection.link && this.state.getNode(selection.link.target);
+                            const sourceNode = selection.link && (this.state.createNode ? this.state.createNode.getNode(selection.link.source) : null);
+        const targetNode = selection.link && (this.state.createNode ? this.state.createNode.getNode(selection.link.target) : null);
                     const isIfToPython = sourceNode && targetNode && sourceNode.type === 'if_node' && targetNode.type === 'python_file';
                     // update header for link context
                     try {
@@ -61,12 +61,12 @@
     };
 
     Sidebar.prototype.handleAddIfCondition = function() {
-        const selected = Array.from(this.state.selectedNodes);
+        const selected = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
         if (selected.length !== 1) return;
-        const py = this.state.getNode(selected[0]);
+        const py = this.state.createNode ? this.state.createNode.getNode(selected[0]) : null;
         if (!py || py.type !== 'python_file') return;
 
-        if (this.state.getAssociatedIfForPython(py.id)) {
+        if (this.state.createNode && this.state.createNode.getAssociatedIfForPython(py.id)) {
             this.state.emit('statusUpdate', 'warning: this python node already has an if condition');
             return;
         }
@@ -81,9 +81,13 @@
             type: 'if_node'
         });
 
-        try { this.state.addLink(py.id, ifNode.id); } catch (_) {}
-        this.state.setMagnetPair(ifNode.id, py.id);
-        this.state.selectNode(ifNode.id);
+        try { this.state.connectionHandler.addLink(py.id, ifNode.id); } catch (_) {}
+        if (this.state.createNode) {
+            this.state.createNode.setMagnetPair(ifNode.id, py.id);
+        }
+        if (this.state.selectionHandler && typeof this.state.selectionHandler.selectNode === 'function') {
+            this.state.selectionHandler.selectNode(ifNode.id);
+        }
         this.state.emit('statusUpdate', '+ if condition added');
     };
 
@@ -297,31 +301,31 @@
     };
 
     Sidebar.prototype.handleFooterDelete = function() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
         if (this.state.isRunMode && selectedNodes.length > 0) {
             this.showError('cannot delete nodes in run mode');
             return;
         }
-        if (this.state.selectedLink) {
-            this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedLink) {
+            this.state.deleteNode.deleteLink(this.state.selectionHandler.selectedLink.source, this.state.selectionHandler.selectedLink.target);
             this.showSuccess('connection deleted');
             return;
         }
-        if (this.state.selectedAnnotation) {
-            const id = this.state.selectedAnnotation.id;
-            this.state.removeAnnotation(id);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedAnnotation) {
+            const id = this.state.selectionHandler.selectedAnnotation.id;
+            this.state.deleteNode.removeAnnotation(id);
             this.showSuccess('deleted text');
             return;
         }
-        if (this.state.selectedGroup) {
-            const name = this.state.selectedGroup.name;
-            this.state.removeGroup(this.state.selectedGroup.id);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedGroup) {
+            const name = this.state.selectionHandler.selectedGroup.name;
+            this.state.deleteNode.deleteGroup(this.state.selectionHandler.selectedGroup.id);
             this.showSuccess(`deleted group: ${name}`);
             return;
         }
         if (selectedNodes.length === 1) {
             const node = this.state.getNode(selectedNodes[0]);
-            this.state.removeNode(selectedNodes[0]);
+            this.state.deleteNode.deleteNodeFromSidebar(selectedNodes[0]);
             this.showSuccess(`deleted node: ${node.name}`);
             return;
         }
@@ -333,7 +337,7 @@
                 if (n && n.type === 'input_node') {
                     inputNodeAttempts++;
                 } else {
-                    const success = this.state.removeNode(nodeId);
+                    const success = this.state.deleteNode.removeNode(nodeId);
                     if (success) deletedCount++;
                 }
             });

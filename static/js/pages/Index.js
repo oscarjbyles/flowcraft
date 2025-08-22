@@ -15,6 +15,7 @@
             'GroupRenderer',
             'AnnotationRenderer',
             'CreateNode',
+            'DeleteNode',
             'ExecutionFeed',
             'EventManager',
             'Sidebar',
@@ -262,7 +263,7 @@
                 const order = this.calculateNodeOrder();
                 targetNode = (order && order.length > 0) ? order[0] : null;
                 if (!targetNode) {
-                    targetNode = this.state.getNode(1) || null;
+                    targetNode = this.state.createNode ? this.state.createNode.getNode(1) : null;
                 }
 
                 // animate center to the chosen node at zoom 1
@@ -299,7 +300,7 @@
             // data operations
             async loadInitialData() {
                 try {
-                    await this.state.load();
+                    if (this.state.saving) await this.state.saving.load();
                 } catch (error) {
                     this.updateStatusBar('failed to load saved data');
                 }
@@ -307,7 +308,7 @@
 
             async saveData() {
                 try {
-                    const result = await this.state.save();
+                    const result = this.state.saving ? await this.state.saving.save() : { success: false, message: 'saving not initialized' };
                     if (result.success) {
                         this.updateStatusBar('flowchart saved successfully');
                     } else {
@@ -319,7 +320,7 @@
             },
 
             exportData() {
-                const data = this.state.exportData();
+                const data = this.state.saving ? this.state.saving.exportData() : { nodes: [], links: [], groups: [], metadata: {} };
                 if (this.state.saving && this.state.saving.storage) {
                     this.state.saving.storage.exportAsJson(data);
                     this.updateStatusBar('flowchart exported');
@@ -335,7 +336,7 @@
                         return;
                     }
                     const data = await this.state.saving.storage.importFromJson(file);
-                    this.state.importData(data);
+                    if (this.state.saving) this.state.saving.importData(data);
                     this.updateStatusBar('flowchart imported successfully');
                 } catch (error) {
                     this.updateStatusBar('failed to import flowchart');
@@ -687,6 +688,12 @@
         // set createNode reference in state manager for methods that need it
         app.state.createNode = app.createNode;
         
+        // initialize delete node service
+        app.deleteNode = new DeleteNode(app.state);
+        
+        // set deleteNode reference in state manager for methods that need it
+        app.state.deleteNode = app.deleteNode;
+        
         // create event manager
         app.events = new EventManager(app.state, app.createNode, app);
         
@@ -760,7 +767,7 @@
             .filter((event) => {
                 // allow wheel zoom always; block panning during drags/selections
                 if (event.type === 'wheel') return true;
-                return !app.state.isDragging && !app.state.isConnecting && !app.isGroupSelectMode && event.button !== 2;
+                return !app.state.isDragging && !app.state.connectionHandler.isConnecting && !app.isGroupSelectMode && event.button !== 2;
             })
             .on('zoom', (event) => {
                 app.state.setTransform(event.transform);
@@ -817,6 +824,9 @@
         app.state.selectionHandler = app.selectionHandler;
         
         app.connectionHandler = new ConnectionHandler(app.state, app.events);
+        
+        // store connection handler reference in state manager
+        app.state.connectionHandler = app.connectionHandler;
         
         // setup canvas interactions directly
         app.canvasHandler = new CanvasHandler(app.state, app.selectionHandler, app.connectionHandler, app.createNode);
@@ -898,7 +908,19 @@
         
         try {
             // wait for sidebar to initialize flowchart dropdown and set current flowchart
-            await app.sidebar.initializeFlowchartDropdown();
+            // ensure the method exists before calling it (sidebar modules load asynchronously)
+            if (typeof app.sidebar.initializeFlowchartDropdown === 'function') {
+                await app.sidebar.initializeFlowchartDropdown();
+            } else {
+                console.warn('initializeFlowchartDropdown not available, waiting for sidebar modules to load...');
+                // wait a bit for sidebar modules to load
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (typeof app.sidebar.initializeFlowchartDropdown === 'function') {
+                    await app.sidebar.initializeFlowchartDropdown();
+                } else {
+                    console.error('initializeFlowchartDropdown still not available after delay');
+                }
+            }
             
             // now load the initial data with correct flowchart
             await app.loadInitialData();
@@ -935,8 +957,8 @@
     function handleExit() {
         try {
             const app = window.flowchartApp;
-            if (app && app.state && typeof app.state.flushPendingSavesOnExit === 'function') {
-                app.state.flushPendingSavesOnExit();
+            if (app && app.state && app.state.saving) {
+                app.state.saving.flushPendingSavesOnExit();
             }
             // clear transient runtime visuals before teardown/navigation so no green/red persists
             try { 
@@ -958,8 +980,8 @@
     function handleBackgroundFlush() {
         try {
             const app = window.flowchartApp;
-            if (app && app.state && typeof app.state.flushPendingSavesOnExit === 'function') {
-                app.state.flushPendingSavesOnExit();
+            if (app && app.state && app.state.saving) {
+                app.state.saving.flushPendingSavesOnExit();
             }
         } catch (_) {}
     }

@@ -62,6 +62,21 @@ class Saving {
     }
 
     /**
+     * flush any pending autosave immediately and try to persist using exit-safe transport
+     */
+    flushPendingSavesOnExit() {
+        try {
+            if (this.autosaveTimer) {
+                clearTimeout(this.autosaveTimer);
+                this.autosaveTimer = null;
+            }
+            const data = this.getSerializableData();
+            // best-effort; do not await
+            this.storage.saveOnExit(data);
+        } catch (_) {}
+    }
+
+    /**
      * schedule autosave with debouncing
      */
     scheduleAutosave() {
@@ -126,7 +141,9 @@ class Saving {
             // update counters
             this.state.updateCounters();
             // hydrate magnet pairs after load
-            this.state.rebuildMagnetPairsFromNodes();
+            if (this.state.createNode) {
+                this.state.createNode.rebuildMagnetPairsFromNodes();
+            }
             
             // check and create input nodes for loaded python_file nodes
             if (this.state.createNode) {
@@ -140,21 +157,6 @@ class Saving {
         }
         
         return result;
-    }
-
-    /**
-     * flush any pending autosave immediately and try to persist using exit-safe transport
-     */
-    flushPendingSavesOnExit() {
-        try {
-            if (this.autosaveTimer) {
-                clearTimeout(this.autosaveTimer);
-                this.autosaveTimer = null;
-            }
-            const data = this.getSerializableData();
-            // best-effort; do not await
-            this.storage.saveOnExit(data);
-        } catch (_) {}
     }
 
     /**
@@ -181,7 +183,7 @@ class Saving {
      * save node properties from form
      */
     saveNodeProperties() {
-        const selectedNodes = this.state.getSelectedNodes();
+        const selectedNodes = this.state.selectionHandler ? this.state.selectionHandler.getSelectedNodes() : [];
         if (selectedNodes.length !== 1) return;
 
         const node = selectedNodes[0];
@@ -203,7 +205,9 @@ class Saving {
 
         // apply updates if any
         if (Object.keys(updates).length > 0) {
-            this.state.updateNode(node.id, updates);
+            if (this.state.createNode) {
+                this.state.createNode.updateNode(node.id, updates);
+            }
         }
     }
 
@@ -211,7 +215,7 @@ class Saving {
      * save group properties from form
      */
     saveGroupProperties() {
-        const selectedGroup = this.state.selectedGroup;
+        const selectedGroup = this.state.selectionHandler ? this.state.selectionHandler.selectedGroup : null;
         if (!selectedGroup) return;
 
         const updates = {};
@@ -277,7 +281,9 @@ class Saving {
         }
         
         // hydrate magnet pairs after import
-        this.state.rebuildMagnetPairsFromNodes();
+        if (this.state.createNode) {
+            this.state.createNode.rebuildMagnetPairsFromNodes();
+        }
         
         // clear selection
         if (this.state.selectionHandler) {

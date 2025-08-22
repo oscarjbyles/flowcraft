@@ -28,10 +28,10 @@
 
     Sidebar.prototype.updateFromState = function() {
         const selection = {
-            nodes: Array.from(this.state.selectedNodes),
-            link: this.state.selectedLink,
-            group: this.state.selectedGroup,
-            annotation: this.state.selectedAnnotation
+            nodes: this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [],
+            link: this.state.selectionHandler ? this.state.selectionHandler.selectedLink : null,
+            group: this.state.selectionHandler ? this.state.selectionHandler.selectedGroup : null,
+            annotation: this.state.selectionHandler ? this.state.selectionHandler.selectedAnnotation : null
         };
         if (typeof this.updateContent === 'function') {
             this.updateContent(selection);

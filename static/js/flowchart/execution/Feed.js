@@ -204,7 +204,7 @@ class ExecutionFeed {
                 const title = el.querySelector('.run_feed_item_title');
                 if (!title) return false;
                 // compare by name from state to avoid relying on node_name text differences
-                const node = this.state.getNode(nodeId);
+                const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
                 return node && title.textContent === node.name;
             } catch (_) { return false; }
         });

@@ -154,7 +154,7 @@ class VariableManager {
         
         incomingLinks.forEach(link => {
             const sourceNodeId = link.source;
-            const sourceNode = this.state.getNode(sourceNodeId);
+            const sourceNode = this.state.createNode ? this.state.createNode.getNode(sourceNodeId) : null;
             
             if (sourceNode && sourceNode.type === 'input_node') {
                 inputNodes.push(sourceNode);
@@ -162,7 +162,7 @@ class VariableManager {
                 // bridge variables across an if splitter: pull from upstream python nodes
                 const upstreamLinks = this.state.links.filter(l => l.target === sourceNode.id);
                 upstreamLinks.forEach(ul => {
-                    const upNode = this.state.getNode(ul.source);
+                    const upNode = this.state.createNode ? this.state.createNode.getNode(ul.source) : null;
                     if (!upNode) return;
                     if (upNode.type === 'input_node') {
                         inputNodes.push(upNode);
@@ -240,7 +240,7 @@ class VariableManager {
         const outgoingLinks = this.state.links.filter(link => link.source === sourceNodeId);
         
         for (const link of outgoingLinks) {
-            const targetNode = this.state.getNode(link.target);
+            const targetNode = this.state.createNode ? this.state.createNode.getNode(link.target) : null;
             if (!targetNode || targetNode.type !== 'python_file') continue;
             
             // find the input node for this target node
@@ -255,7 +255,7 @@ class VariableManager {
                 
                 // match the return value to the expected parameters
                 const variableName = this.matchVariableToParameter(
-                    this.state.getNode(sourceNodeId), 
+                    this.state.createNode ? this.state.createNode.getNode(sourceNodeId) : null, 
                     returnValue, 
                     expectedParams, 
                     inputNode.inputValues || {}
@@ -372,10 +372,10 @@ class VariableManager {
             const connectedDataSaves = [];
             for (const link of this.state.links) {
                 if (link.source === pythonNode.id) {
-                    const t = this.state.getNode(link.target);
+                    const t = this.state.createNode ? this.state.createNode.getNode(link.target) : null;
                     if (t && t.type === 'data_save') connectedDataSaves.push(t);
                 } else if (link.target === pythonNode.id) {
-                    const s = this.state.getNode(link.source);
+                    const s = this.state.createNode ? this.state.createNode.getNode(link.source) : null;
                     if (s && s.type === 'data_save') connectedDataSaves.push(s);
                 }
             }

@@ -9,6 +9,99 @@ class ConnectionHandler {
         this.events = eventManager;
         this.connectionLine = null;
         this.connectionDots = [];
+        
+        // connection state
+        this.isConnecting = false;
+        this.sourceNode = null;
+    }
+
+    // link management operations moved from StateManager
+    addLink(sourceId, targetId) {
+        // check if link already exists
+        const exists = this.state.links.some(l => 
+            (l.source === sourceId && l.target === targetId) ||
+            (l.source === targetId && l.target === sourceId)
+        );
+
+        if (exists) return null;
+
+        const link = { source: sourceId, target: targetId };
+        
+        // make python→if links non-selectable
+        const sourceNode = this.state.createNode ? this.state.createNode.getNode(sourceId) : null;
+        const targetNode = this.state.createNode ? this.state.createNode.getNode(targetId) : null;
+        if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'if_node') {
+            link.selectable = false;
+        }
+        
+        // validate link (will also block data_save connections)
+        const validation = Validation.validateLink(link, this.state.nodes);
+        if (!validation.isValid) {
+            throw new Error(`invalid link: ${validation.errors.join(', ')}`);
+        }
+
+        this.state.links.push(link);
+        this.state.emit('linkAdded', link);
+        this.state.emit('stateChanged');
+        if (this.state.saving) this.state.saving.scheduleAutosave();
+        
+        return link;
+    }
+
+    // helper to retrieve a link by endpoints
+    getLink(sourceId, targetId) {
+        return this.state.links.find(l =>
+            (l.source === sourceId && l.target === targetId) ||
+            (l.source === targetId && l.target === sourceId)
+        );
+    }
+
+    // update link metadata (e.g., conditions for if→python)
+    updateLink(sourceId, targetId, updates) {
+        const link = this.getLink(sourceId, targetId);
+        if (!link) return false;
+        Object.assign(link, updates);
+        this.state.emit('linkUpdated', link);
+        this.state.emit('stateChanged');
+        if (this.state.saving) this.state.saving.scheduleAutosave();
+        return true;
+    }
+
+
+
+    getLinks() {
+        return [...this.state.links];
+    }
+
+    // connection state management
+    setConnecting(isConnecting, sourceNode = null) {
+        this.isConnecting = isConnecting;
+        this.sourceNode = sourceNode;
+        this.state.emit('connectionStateChanged', { isConnecting, sourceNode });
+    }
+
+    // get dependencies for a node (nodes that must run before this node)
+    getDependencies(node) {
+        const dependencies = [];
+        const visited = new Set();
+        
+        const findDependencies = (currentNode) => {
+            // find all links where this node is the target
+            const incomingLinks = this.state.links.filter(link => link.target === currentNode.id);
+            
+            incomingLinks.forEach(link => {
+                const sourceNode = this.state.createNode ? this.state.createNode.getNode(link.source) : null;
+                if (sourceNode && !visited.has(sourceNode.id)) {
+                    visited.add(sourceNode.id);
+                    dependencies.push(sourceNode);
+                    // recursively find dependencies of the source node
+                    findDependencies(sourceNode);
+                }
+            });
+        };
+        
+        findDependencies(node);
+        return dependencies;
     }
 
     startConnection(event, sourceNode, dotSide = null) {
@@ -28,7 +121,7 @@ class ConnectionHandler {
             return;
         }
         
-        this.state.setConnecting(true, sourceNode);
+        this.setConnecting(true, sourceNode);
         
         // get the starting point from the connection dot if available
         const startPoint = this.getConnectionStartPoint(sourceNode, dotSide);
@@ -41,10 +134,10 @@ class ConnectionHandler {
     }
 
     updateConnection(event, coordinates) {
-        if (!this.state.isConnecting) return;
+        if (!this.isConnecting) return;
         
         // get the connection start point (could be from a specific dot)
-        const startPoint = this.connectionStartPoint || { x: this.state.sourceNode.x, y: this.state.sourceNode.y };
+        const startPoint = this.connectionStartPoint || { x: this.sourceNode.x, y: this.sourceNode.y };
         
         this.state.emit('updateConnectionLine', {
             startX: startPoint.x,
@@ -55,15 +148,15 @@ class ConnectionHandler {
     }
 
     endConnection(event, targetNode = null, coordinates = null) {
-        if (!this.state.isConnecting) return;
+        if (!this.isConnecting) return;
         
         // if no target node provided, try to find one at coordinates
         if (!targetNode && coordinates) {
-            targetNode = this.state.findNodeAtPosition(coordinates.x, coordinates.y, this.state.sourceNode.id);
+            targetNode = this.state.findNodeAtPosition(coordinates.x, coordinates.y, this.sourceNode.id);
         }
         
-        if (targetNode && targetNode.id !== this.state.sourceNode.id) {
-            this.events.handleConnectionEnd(event, this.state.sourceNode, targetNode);
+        if (targetNode && targetNode.id !== this.sourceNode.id) {
+            this.events.handleConnectionEnd(event, this.sourceNode, targetNode);
         } else {
             this.events.handleConnectionCancel();
         }
@@ -72,7 +165,7 @@ class ConnectionHandler {
     }
 
     cancelConnection() {
-        if (!this.state.isConnecting) return;
+        if (!this.isConnecting) return;
         
         this.events.handleConnectionCancel();
         this.cleanupConnection();
@@ -112,7 +205,7 @@ class ConnectionHandler {
     }
 
     cleanupConnection() {
-        this.state.setConnecting(false);
+        this.setConnecting(false);
         this.state.emit('removeConnectionLine');
         this.connectionLine = null;
         this.connectionStartPoint = null;
@@ -192,11 +285,11 @@ class ConnectionHandler {
 
     // connection types
     createStraightConnection(sourceId, targetId) {
-        return this.state.addLink(sourceId, targetId);
+        return this.addLink(sourceId, targetId);
     }
 
     createBezierConnection(sourceId, targetId) {
-        const link = this.state.addLink(sourceId, targetId);
+        const link = this.addLink(sourceId, targetId);
         if (link) {
             link.type = 'bezier';
         }
@@ -205,7 +298,7 @@ class ConnectionHandler {
 
     // bulk connection operations
     connectSelectedNodes() {
-        const selectedNodes = this.state.getSelectedNodes();
+        const selectedNodes = this.state.selectionHandler ? this.state.selectionHandler.getSelectedNodes() : [];
         if (selectedNodes.length < 2) return;
         
         // create connections between consecutive nodes
@@ -214,7 +307,7 @@ class ConnectionHandler {
             const targetId = selectedNodes[i + 1].id;
             
             if (this.canCreateConnection(sourceId, targetId)) {
-                this.state.addLink(sourceId, targetId);
+                this.addLink(sourceId, targetId);
             }
         }
     }
@@ -222,7 +315,7 @@ class ConnectionHandler {
     connectInSeries(nodeIds) {
         for (let i = 0; i < nodeIds.length - 1; i++) {
             if (this.canCreateConnection(nodeIds[i], nodeIds[i + 1])) {
-                this.state.addLink(nodeIds[i], nodeIds[i + 1]);
+                this.addLink(nodeIds[i], nodeIds[i + 1]);
             }
         }
     }
@@ -230,7 +323,7 @@ class ConnectionHandler {
     connectInParallel(sourceId, targetIds) {
         targetIds.forEach(targetId => {
             if (this.canCreateConnection(sourceId, targetId)) {
-                this.state.addLink(sourceId, targetId);
+                this.addLink(sourceId, targetId);
             }
         });
     }

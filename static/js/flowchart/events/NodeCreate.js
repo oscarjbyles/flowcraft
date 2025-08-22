@@ -48,9 +48,266 @@ class CreateNode {
         }
         
         this.state.emit('stateChanged');
-        this.state.scheduleAutosave();
+        if (this.state.saving) this.state.saving.scheduleAutosave();
         
         return node;
+    }
+
+    // node update operations
+    async updateNode(nodeId, updates) {
+        const node = this.getNode(nodeId);
+        if (!node) return false;
+
+        // store previous pythonFile for comparison
+        const previousPythonFile = node.pythonFile;
+
+        // update width if name changed
+        if (updates.name && updates.name !== node.name) {
+            updates.width = Geometry.getNodeWidth(updates.name);
+        }
+
+        // normalize pythonFile in updates to remove any leading 'nodes/' prefixes
+        if (typeof updates.pythonFile === 'string') {
+            const s = updates.pythonFile.replace(/\\/g, '/');
+            const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
+            updates.pythonFile = noPrefix;
+        }
+        
+        Object.assign(node, updates);
+        
+        // validate updated node
+        const validation = Validation.validateNode(node);
+        if (!validation.isValid) {
+            throw new Error(`invalid node update: ${validation.errors.join(', ')}`);
+        }
+
+        // when a python node's python file changes, ensure only one fresh input node exists
+        if (node.type === 'python_file' && typeof updates.pythonFile !== 'undefined' && updates.pythonFile !== previousPythonFile) {
+            // preserve existing input node values if possible
+            const existingInputs = this.state.nodes.filter(n => n.type === 'input_node' && n.targetNodeId === node.id);
+            const existingInputValues = existingInputs.length > 0 ? existingInputs[0].inputValues : {};
+            
+            // remove existing associated input nodes
+            existingInputs.forEach(inputNode => this.state.deleteNode.removeNode(inputNode.id, true));
+
+            // create a new input node only if the new python file is non-empty
+            if (updates.pythonFile && updates.pythonFile.trim() !== '') {
+                // create the new input node
+                const newInputNode = await this.checkAndCreateInputNode(node);
+                
+                // if a new input node was created and we had existing values, try to restore them
+                if (newInputNode && Object.keys(existingInputValues).length > 0) {
+                    // analyze the new python file to get parameters
+                    try {
+                        const response = await fetch('/api/analyze-python-function', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                python_file: updates.pythonFile
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success && result.parameters) {
+                            // restore values for parameters that still exist
+                            const updatedInputValues = {};
+                            result.parameters.forEach(param => {
+                                updatedInputValues[param] = existingInputValues[param] || '';
+                            });
+                            
+                            // update the new input node with preserved values
+                            this.updateNode(newInputNode.id, {
+                                inputValues: updatedInputValues
+                            });
+                        }
+                    } catch (error) {
+                        console.error('error preserving input values during file change:', error);
+                    }
+                }
+            }
+        }
+
+        this.state.emit('nodeUpdated', node);
+        this.state.emit('stateChanged');
+        if (this.state.saving) this.state.saving.scheduleAutosave();
+        
+        return true;
+    }
+
+
+
+    // node retrieval operations
+    getNode(nodeId) {
+        return this.state.nodes.find(n => n.id === nodeId);
+    }
+
+    getNodes() {
+        return [...this.state.nodes];
+    }
+
+    // magnet pairing operations
+    setMagnetPair(nodeAId, nodeBId) {
+        // ensure both nodes exist
+        const a = this.getNode(nodeAId);
+        const b = this.getNode(nodeBId);
+        if (!a || !b) return false;
+        // set partner ids on nodes
+        a.magnet_partner_id = b.id;
+        b.magnet_partner_id = a.id;
+        // update helper map
+        this.state.magnetPairs.set(a.id, b.id);
+        this.state.magnetPairs.set(b.id, a.id);
+        // emit update for rendering
+        this.state.emit('nodeUpdated', a);
+        this.state.emit('nodeUpdated', b);
+        this.state.emit('stateChanged');
+        return true;
+    }
+
+    clearMagnetForNode(nodeId) {
+        const node = this.getNode(nodeId);
+        if (!node) return false;
+        const partnerId = node.magnet_partner_id;
+        if (partnerId) {
+            const partner = this.getNode(partnerId);
+            if (partner) {
+                delete partner.magnet_partner_id;
+                this.state.magnetPairs.delete(partner.id);
+                this.state.emit('nodeUpdated', partner);
+            }
+            delete node.magnet_partner_id;
+            this.state.magnetPairs.delete(node.id);
+            this.state.emit('nodeUpdated', node);
+            this.state.emit('stateChanged');
+            return true;
+        }
+        return false;
+    }
+
+    getMagnetPartner(nodeId) {
+        // try map first
+        let partnerId = this.state.magnetPairs.get(nodeId);
+        if (!partnerId) {
+            // fallback to persisted property for hydration after reload
+            const n = this.getNode(nodeId);
+            if (n && n.magnet_partner_id) {
+                partnerId = n.magnet_partner_id;
+                // lazily hydrate the map for both directions
+                this.state.magnetPairs.set(nodeId, partnerId);
+                this.state.magnetPairs.set(partnerId, nodeId);
+            }
+        }
+        if (!partnerId) return null;
+        return this.getNode(partnerId) || null;
+    }
+
+    // rebuild magnet pairs from nodes (used after load/import)
+    rebuildMagnetPairsFromNodes() {
+        this.state.magnetPairs.clear();
+        this.state.nodes.forEach(n => {
+            const pid = n.magnet_partner_id;
+            if (!pid) return;
+            const partner = this.getNode(pid);
+            if (!partner) return;
+            this.state.magnetPairs.set(n.id, pid);
+            this.state.magnetPairs.set(pid, n.id);
+            if (partner.magnet_partner_id !== n.id) {
+                partner.magnet_partner_id = n.id;
+            }
+        });
+    }
+
+    // association helpers
+    getAssociatedPythonForIf(ifNodeId) {
+        const ifNode = this.getNode(ifNodeId);
+        if (!ifNode || ifNode.type !== 'if_node') return null;
+        // find a linked python_file node (either direction)
+        for (const link of this.state.links) {
+            if (link.source === ifNodeId) {
+                const n = this.getNode(link.target);
+                if (n && n.type === 'python_file') return n;
+            } else if (link.target === ifNodeId) {
+                const n = this.getNode(link.source);
+                if (n && n.type === 'python_file') return n;
+            }
+        }
+        return null;
+    }
+
+    getAssociatedIfForPython(pythonNodeId) {
+        const pyNode = this.getNode(pythonNodeId);
+        if (!pyNode || pyNode.type !== 'python_file') return null;
+        for (const link of this.state.links) {
+            if (link.source === pythonNodeId) {
+                const n = this.getNode(link.target);
+                if (n && n.type === 'if_node') return n;
+            } else if (link.target === pythonNodeId) {
+                const n = this.getNode(link.source);
+                if (n && n.type === 'if_node') return n;
+            }
+        }
+        return null;
+    }
+
+    hasUpstreamIfSplitter(pythonNodeId) {
+        const pyNode = this.getNode(pythonNodeId);
+        if (!pyNode || pyNode.type !== 'python_file') return false;
+        
+        // check if there's an if splitter upstream in the flow
+        const visited = new Set();
+        const queue = [pythonNodeId];
+        
+        while (queue.length > 0) {
+            const currentNodeId = queue.shift();
+            if (visited.has(currentNodeId)) continue;
+            visited.add(currentNodeId);
+            
+            // check incoming links to this node
+            for (const link of this.state.links) {
+                if (link.target === currentNodeId) {
+                    const sourceNode = this.getNode(link.source);
+                    if (sourceNode && sourceNode.type === 'if_node') {
+                        return true; // found upstream if splitter
+                    }
+                    // continue traversing upstream
+                    queue.push(link.source);
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    hasDownstreamIfSplitter(pythonNodeId) {
+        const pyNode = this.getNode(pythonNodeId);
+        if (!pyNode || pyNode.type !== 'python_file') return false;
+        
+        // check if there's an if splitter downstream in the flow
+        const visited = new Set();
+        const queue = [pythonNodeId];
+        
+        while (queue.length > 0) {
+            const currentNodeId = queue.shift();
+            if (visited.has(currentNodeId)) continue;
+            visited.add(currentNodeId);
+            
+            // check outgoing links from this node
+            for (const link of this.state.links) {
+                if (link.source === currentNodeId) {
+                    const targetNode = this.getNode(link.target);
+                    if (targetNode && targetNode.type === 'if_node') {
+                        return true; // found downstream if splitter
+                    }
+                    // continue traversing downstream
+                    queue.push(link.target);
+                }
+            }
+        }
+        
+        return false;
     }
 
     // group management
@@ -76,7 +333,7 @@ class CreateNode {
 
         // assign group id to nodes
         nodeIds.forEach(nodeId => {
-            const node = this.state.getNode(nodeId);
+            const node = this.getNode(nodeId);
             if (node) {
                 node.groupId = groupId;
             }
@@ -85,8 +342,12 @@ class CreateNode {
         this.state.groups.push(group);
         
         // clear node selection and select the new group
-        this.state.clearSelection();
-        this.state.selectGroup(group);
+        if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
+            this.state.selectionHandler.clearSelection();
+        }
+        if (this.state.selectionHandler && typeof this.state.selectionHandler.selectGroup === 'function') {
+            this.state.selectionHandler.selectGroup(group.id);
+        }
         
         this.state.emit('groupCreated', group);
         this.state.emit('selectionChanged', {
@@ -95,7 +356,7 @@ class CreateNode {
             group: group
         });
         this.state.emit('stateChanged');
-        this.state.scheduleAutosave();
+        if (this.state.saving) this.state.saving.scheduleAutosave();
         
         return group;
     }
@@ -126,7 +387,7 @@ class CreateNode {
         this.state.annotations.push(annotation);
         this.state.emit('annotationAdded', annotation);
         this.state.emit('stateChanged');
-        this.state.scheduleAutosave();
+        if (this.state.saving) this.state.saving.scheduleAutosave();
         return annotation;
     }
 
@@ -140,7 +401,7 @@ class CreateNode {
             if (existingInputs.length >= 1) {
                 // keep only the first if multiple exist
                 for (let i = 1; i < existingInputs.length; i++) {
-                    this.state.removeNode(existingInputs[i].id, true);
+                    this.state.deleteNode.removeNode(existingInputs[i].id, true);
                 }
                 return existingInputs[0]; // return the existing input node
             }
@@ -257,7 +518,7 @@ class CreateNode {
                 // if multiple input nodes exist, keep only the first and remove duplicates
                 console.warn(`multiple input nodes found for python node ${node.id}, removing duplicates`);
                 for (let i = 1; i < existingInputNodes.length; i++) {
-                    this.state.removeNode(existingInputNodes[i].id, true);
+                    this.state.deleteNode.removeNode(existingInputNodes[i].id, true);
                 }
             }
         }
@@ -397,7 +658,9 @@ class CreateNode {
                 name: 'ai node',
                 type: 'call_ai'
             });
-            this.state.selectNode(node.id, false);
+            if (this.state.selectionHandler && typeof this.state.selectionHandler.selectNode === 'function') {
+            this.state.selectionHandler.selectNode(node.id, false);
+        }
             this.updateStatusBar('added ai');
         } catch (error) {
             this.updateStatusBar('error adding ai');

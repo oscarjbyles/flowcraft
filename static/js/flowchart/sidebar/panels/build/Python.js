@@ -154,14 +154,14 @@
             let hasDownstreamIf = false;
             
             try {
-                if (state && typeof state.getAssociatedIfForPython === 'function') {
-                    alreadyHasIf = !!state.getAssociatedIfForPython(node.id);
+                if (state && state.createNode && typeof state.createNode.getAssociatedIfForPython === 'function') {
+                    alreadyHasIf = !!state.createNode.getAssociatedIfForPython(node.id);
                 }
-                if (state && typeof state.hasUpstreamIfSplitter === 'function') {
-                    hasUpstreamIf = state.hasUpstreamIfSplitter(node.id);
+                if (state && state.createNode && typeof state.createNode.hasUpstreamIfSplitter === 'function') {
+                    hasUpstreamIf = state.createNode.hasUpstreamIfSplitter(node.id);
                 }
-                if (state && typeof state.hasDownstreamIfSplitter === 'function') {
-                    hasDownstreamIf = state.hasDownstreamIfSplitter(node.id);
+                if (state && state.createNode && typeof state.createNode.hasDownstreamIfSplitter === 'function') {
+                    hasDownstreamIf = state.createNode.hasDownstreamIfSplitter(node.id);
                 }
             } catch (_) { 
                 alreadyHasIf = false; 

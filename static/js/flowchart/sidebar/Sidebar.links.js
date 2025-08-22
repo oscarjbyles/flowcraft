@@ -75,7 +75,7 @@
         // when in run mode, show explanation for evaluated result
         try {
             if (this.state.isRunMode) {
-                const linkObj = this.state.getLink(link.source, link.target) || link;
+                const linkObj = this.state.connectionHandler.getLink(link.source, link.target) || link;
                 const rcond = linkObj && linkObj.runtime_condition;
                 const rdetails = linkObj && linkObj.runtime_details;
                 // insert or update a run-mode explanation block under the builder
@@ -164,22 +164,22 @@
         const refreshBtn = document.getElementById('refresh_variables_btn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
-                if (!this.state.selectedLink) return;
-                const sourceNode = this.state.getNode(this.state.selectedLink.source);
-                const targetNode = this.state.getNode(this.state.selectedLink.target);
+                        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedLink) return;
+        const sourceNode = this.state.getNode(this.state.selectionHandler.selectedLink.source);
+        const targetNode = this.state.getNode(this.state.selectionHandler.selectedLink.target);
                 // if both endpoints are python nodes, refresh the argument coverage view; otherwise refresh shared variables
                 if (sourceNode && targetNode && sourceNode.type === 'python_file' && targetNode.type === 'python_file') {
-                    this.analyzeArgumentCoverageForLink(this.state.selectedLink, sourceNode, targetNode);
-                } else {
-                    this.analyzeConnectionVariables(this.state.selectedLink, sourceNode, targetNode);
+                                this.analyzeArgumentCoverageForLink(this.state.selectionHandler.selectedLink, sourceNode, targetNode);
+        } else {
+            this.analyzeConnectionVariables(this.state.selectionHandler.selectedLink, sourceNode, targetNode);
                 }
             });
         }
         const deleteLinkBtn = document.getElementById('delete_link_btn');
         if (deleteLinkBtn) {
             deleteLinkBtn.addEventListener('click', () => {
-                if (this.state.selectedLink) {
-                    this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
+                        if (this.state.selectionHandler && this.state.selectionHandler.selectedLink) {
+            this.state.deleteNode.deleteLink(this.state.selectionHandler.selectedLink.source, this.state.selectionHandler.selectedLink.target);
                     this.showSuccess('connection deleted');
                 }
             });
@@ -210,7 +210,7 @@
                 }
             }
         }
-        const linkObj = this.state.getLink(link.source, link.target) || link;
+        const linkObj = this.state.connectionHandler.getLink(link.source, link.target) || link;
         const rcond = linkObj && linkObj.runtime_condition;
         const rdetails = linkObj && linkObj.runtime_details;
         const title = `why this arm ${rcond === 'true' ? 'ran' : 'did not run'}`;

@@ -157,12 +157,12 @@
     };
 
     Sidebar.prototype.getIfConditionsForLink = function(link) {
-        const existingLink = this.state.getLink(link.source, link.target);
+        const existingLink = this.state.connectionHandler.getLink(link.source, link.target);
         return (existingLink && existingLink.conditions && Array.isArray(existingLink.conditions)) ? existingLink.conditions : [];
     };
 
     Sidebar.prototype.setIfConditionsForLink = function(link, conditions) {
-        this.state.updateLink(link.source, link.target, { conditions });
+        this.state.connectionHandler.updateLink(link.source, link.target, { conditions });
     };
 
     Sidebar.prototype.removeIfCondition = function(link, index) {

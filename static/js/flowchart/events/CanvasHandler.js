@@ -33,7 +33,7 @@ class CanvasHandler {
                 }
             }
             // clear annotation selection when clicking empty canvas
-            if (clickedOnCanvas && this.state.selectedAnnotation) {
+            if (clickedOnCanvas && this.state.selectionHandler && this.state.selectionHandler.selectedAnnotation) {
                 this.selectionHandler.clearSelection();
                 this.state.emit('updateSidebar');
             }
@@ -73,7 +73,7 @@ class CanvasHandler {
 
         // canvas mouse move for connection dragging and group selection
         this.svg.on('mousemove', (event) => {
-            if (this.state.isConnecting) {
+            if (this.state.connectionHandler.isConnecting) {
                 const coordinates = d3.pointer(event, this.zoomGroup.node());
                 this.connectionHandler.updateConnection(event, { x: coordinates[0], y: coordinates[1] });
             } else if (this.isGroupSelectMode() && this.selectionHandler.isAreaSelecting) {
@@ -84,7 +84,7 @@ class CanvasHandler {
 
         // canvas mouse up for connection ending and group selection
         this.svg.on('mouseup', (event) => {
-            if (this.state.isConnecting) {
+            if (this.state.connectionHandler.isConnecting) {
                 const coordinates = d3.pointer(event, this.zoomGroup.node());
                 this.connectionHandler.endConnection(event, null, { x: coordinates[0], y: coordinates[1] });
             } else if (this.isGroupSelectMode() && this.selectionHandler.isAreaSelecting) {
@@ -103,7 +103,7 @@ class CanvasHandler {
         });
         
         document.getElementById('delete_node').addEventListener('click', () => {
-            this.events.deleteSelectedNode();
+            this.events.state.deleteNode.deleteSelectedNodes();
             this.hideContextMenu();
         });
 

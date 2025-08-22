@@ -54,12 +54,12 @@ class DragHandler {
         this.state.setDragging(true, d);
         
         // check if this node is part of a multi-selection
-        this.isDraggingGroup = this.state.selectedNodes && this.state.selectedNodes.has(d.id) && this.state.selectedNodes.size > 1;
+        this.isDraggingGroup = this.state.selectionHandler && this.state.selectionHandler.selectedNodes && this.state.selectionHandler.selectedNodes.has(d.id) && this.state.selectionHandler.selectedNodes.size > 1;
         
         if (this.isDraggingGroup) {
             // store initial positions for all selected nodes
             this.groupDragStartPositions = new Map();
-            this.state.selectedNodes.forEach(nodeId => {
+            this.state.selectionHandler.selectedNodes.forEach(nodeId => {
                 const node = this.state.nodes.find(n => n.id === nodeId);
                 if (node) {
                     this.groupDragStartPositions.set(nodeId, { x: node.x, y: node.y });
@@ -91,8 +91,8 @@ class DragHandler {
             const offsetY = d.y - d.dragStartY;
             
             // update positions of all selected nodes
-            if (this.state.selectedNodes) {
-                this.state.selectedNodes.forEach(nodeId => {
+            if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes) {
+                this.state.selectionHandler.selectedNodes.forEach(nodeId => {
                     if (nodeId !== d.id) { // don't update the dragged node twice
                         const node = this.state.nodes.find(n => n.id === nodeId);
                         if (node && this.groupDragStartPositions.has(nodeId)) {
@@ -117,7 +117,7 @@ class DragHandler {
             } else {
                 this.updateDraggedNodePosition(d);
                 // if this node is magnetized to a partner, move partner accordingly during drag
-                const partner = this.state.getMagnetPartner(d.id);
+                const partner = this.state.createNode ? this.state.createNode.getMagnetPartner(d.id) : null;
                 if (partner) {
                     // if the dragged node is the python, keep the if node aligned beneath it
                     if (d.type === 'python_file' && partner.type === 'if_node') {
@@ -154,8 +154,8 @@ class DragHandler {
         
         if (this.isDraggingGroup) {
             // remove dragging class from all selected nodes
-            if (this.state.selectedNodes) {
-                this.state.selectedNodes.forEach(nodeId => {
+            if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes) {
+                this.state.selectionHandler.selectedNodes.forEach(nodeId => {
                     const node = this.state.nodes.find(n => n.id === nodeId);
                     if (node) {
                         this.removeDraggingClass(node);
@@ -167,11 +167,13 @@ class DragHandler {
             this.updateGroupDraggedPositions();
             
             // update all selected nodes in state manager if positions changed
-            if (positionChanged && this.state.selectedNodes) {
-                this.state.selectedNodes.forEach(nodeId => {
+            if (positionChanged && this.state.selectionHandler && this.state.selectionHandler.selectedNodes) {
+                this.state.selectionHandler.selectedNodes.forEach(nodeId => {
                     const node = this.state.nodes.find(n => n.id === nodeId);
                     if (node) {
-                        this.state.updateNode(node.id, { x: node.x, y: node.y });
+                        if (this.state.createNode) {
+                            this.state.createNode.updateNode(node.id, { x: node.x, y: node.y });
+                        }
                         
                         // update groups if node belongs to one
                         if (node.groupId) {
@@ -197,17 +199,21 @@ class DragHandler {
             
             // update node data in state manager and trigger autosave if position changed
             if (positionChanged) {
-                this.state.updateNode(d.id, { x: d.x, y: d.y });
+                if (this.state.createNode) {
+                    this.state.createNode.updateNode(d.id, { x: d.x, y: d.y });
+                }
                 // suppress next canvas click if a real drag occurred to prevent accidental node creation
                 this.state.suppressNextCanvasClick = true;
             }
 
             // detach if dragged if node moves away from its magnet partner
-            const partner = this.state.getMagnetPartner(d.id);
+            const partner = this.state.createNode ? this.state.createNode.getMagnetPartner(d.id) : null;
             if (partner && d.type === 'if_node' && partner.type === 'python_file') {
                 const shouldKeep = this.isNearSnapZone(d, partner);
                 if (!shouldKeep) {
-                    this.state.clearMagnetForNode(d.id);
+                    if (this.state.createNode) {
+                        this.state.createNode.clearMagnetForNode(d.id);
+                    }
                 }
             }
 
@@ -248,9 +254,9 @@ class DragHandler {
 
     updateGroupDraggedPositions() {
         // update positions for all selected nodes
-        if (!this.state.selectedNodes) return;
+        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedNodes) return;
         
-        this.state.selectedNodes.forEach(nodeId => {
+        this.state.selectionHandler.selectedNodes.forEach(nodeId => {
             const node = this.state.nodes.find(n => n.id === nodeId);
             if (node) {
                 this.state.emit('updateNodePosition', {
@@ -287,7 +293,9 @@ class DragHandler {
                 node.y += deltaY;
                 this.updateDraggedNodePosition(node);
                 // update node data in state manager for autosave
-                this.state.updateNode(node.id, { x: node.x, y: node.y });
+                if (this.state.createNode) {
+                    this.state.createNode.updateNode(node.id, { x: node.x, y: node.y });
+                }
             }
         });
     }
@@ -319,10 +327,10 @@ class DragHandler {
         let ifNode = null;
         if (node.type === 'if_node') {
             ifNode = node;
-            pythonNode = this.state.getAssociatedPythonForIf(node.id);
+            pythonNode = this.state.createNode ? this.state.createNode.getAssociatedPythonForIf(node.id) : null;
         } else if (node.type === 'python_file') {
             pythonNode = node;
-            ifNode = this.state.getAssociatedIfForPython(node.id);
+            ifNode = this.state.createNode ? this.state.createNode.getAssociatedIfForPython(node.id) : null;
         }
 
 		// fallback: if dragging a disconnected if node, find nearest python candidate within snap zone
@@ -371,12 +379,16 @@ class DragHandler {
 			// snap if node to desired position and set magnet pair both ways
 			ifNode.x = desiredX;
 			ifNode.y = desiredY;
-			this.state.updateNode(ifNode.id, { x: ifNode.x, y: ifNode.y });
+			if (this.state.createNode) {
+				this.state.createNode.updateNode(ifNode.id, { x: ifNode.x, y: ifNode.y });
+			}
 			this.updateDraggedNodePosition(ifNode);
 			// clear any previous magnets to prevent stale pairings
-			this.state.clearMagnetForNode(pythonNode.id);
-			this.state.clearMagnetForNode(ifNode.id);
-			this.state.setMagnetPair(ifNode.id, pythonNode.id);
+			if (this.state.createNode) {
+				this.state.createNode.clearMagnetForNode(pythonNode.id);
+				this.state.createNode.clearMagnetForNode(ifNode.id);
+				this.state.createNode.setMagnetPair(ifNode.id, pythonNode.id);
+			}
 		}
     }
 
@@ -402,7 +414,7 @@ class DragHandler {
 			this.state.emit('clearSnapPreview');
 			return;
 		}
-		let pythonNode = this.state.getAssociatedPythonForIf(node.id);
+		let pythonNode = this.state.createNode ? this.state.createNode.getAssociatedPythonForIf(node.id) : null;
 		const GAP = 20;
 		const pyHeight = 60;
 		const ifHeight = 60;

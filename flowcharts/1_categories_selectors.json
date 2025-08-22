@@ -7,13 +7,11 @@
       "pythonFile": "1_categories_selectors/delete_from_previous_script.py",
       "type": "python_file",
       "width": 206.36666870117188,
-      "x": 458,
-      "y": 148
+      "x": 430.0743713378906,
+      "y": 123
     },
     {
       "description": "",
-      "dragStartX": 863.5741577148438,
-      "dragStartY": 380.2646484375,
       "groupId": 1755428964943.605,
       "id": 1755167550651.0103,
       "name": "get base url",
@@ -38,8 +36,6 @@
     },
     {
       "description": "",
-      "dragStartX": 1125.8800048828125,
-      "dragStartY": 527.0776062011719,
       "groupId": 1755256312361.3877,
       "id": 1755168324002.294,
       "magnet_partner_id": 1755168329342.0771,
@@ -64,8 +60,6 @@
     },
     {
       "description": "",
-      "dragStartX": 1444.8553466796875,
-      "dragStartY": 531.0646667480469,
       "groupId": 1755256312361.3877,
       "id": 1755168331256.1504,
       "magnet_partner_id": 1755168365383.739,
@@ -89,8 +83,6 @@
     },
     {
       "description": "",
-      "dragStartX": 1245.58251953125,
-      "dragStartY": 853.4836120605469,
       "groupId": 1755429283451.7354,
       "id": 1755168356509.9187,
       "name": "1.1.2 - add base URL if needed",
@@ -102,8 +94,6 @@
     },
     {
       "description": "",
-      "dragStartX": 1444.8553466796875,
-      "dragStartY": 611.0646667480469,
       "groupId": 1755256312361.3877,
       "id": 1755168365383.739,
       "magnet_partner_id": 1755168331256.1504,
@@ -299,16 +289,15 @@
     },
     {
       "description": "",
-      "dragStartX": 2333.582275390625,
-      "dragStartY": 141.3406982421875,
       "groupId": null,
       "id": 1755817671037.915,
+      "magnet_partner_id": 1755899433278.8364,
       "name": "python node",
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 2333.582275390625,
-      "y": 141.3406982421875
+      "x": 2346.49560546875,
+      "y": 249.4892120361328
     },
     {
       "description": "",
@@ -318,30 +307,8 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1910.115966796875,
+      "x": 1819.72314453125,
       "y": 192.8311004638672
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1755863652164.6387,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 838.7977905273438,
-      "y": 551.7669677734375
-    },
-    {
-      "description": "",
-      "groupId": null,
-      "id": 1755864394316.0652,
-      "name": "python node",
-      "pythonFile": "",
-      "type": "python_file",
-      "width": 120,
-      "x": 2934.5830078125,
-      "y": 359.8360900878906
     },
     {
       "description": "",
@@ -362,8 +329,8 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1982.2362060546875,
-      "y": 587.4559020996094
+      "x": 1956.970947265625,
+      "y": 676.4862365722656
     },
     {
       "description": "",
@@ -373,8 +340,8 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1801.65478515625,
-      "y": 721.9059448242188
+      "x": 1939.4471435546875,
+      "y": 427.43023681640625
     },
     {
       "description": "",
@@ -386,6 +353,51 @@
       "width": 120,
       "x": 1839.7548828125,
       "y": 1099.494873046875
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755870545555.5144,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 1191.1435546875,
+      "y": 294.54095458984375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755886933211.5256,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 624.37841796875,
+      "y": 977.84423828125
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755886936205.2488,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 802.2151489257812,
+      "y": 790.697021484375
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755899433278.8364,
+      "magnet_partner_id": 1755817671037.915,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 2346.49560546875,
+      "y": 329.4892120361328
     }
   ],
   "links": [
@@ -506,6 +518,18 @@
       "runtime_details": null,
       "source": 1755430409098.3079,
       "target": 1755430271638.6248
+    },
+    {
+      "source": 1755886936205.2488,
+      "target": 1755886933211.5256
+    },
+    {
+      "source": 1755864865344.0615,
+      "target": 1755864726214.5605
+    },
+    {
+      "source": 1755861137475.1267,
+      "target": 1755864865344.0615
     }
   ],
   "groups": [
@@ -584,8 +608,8 @@
       "id": 1755207384135.138,
       "text": "1.1 - get category URLs",
       "type": "text",
-      "x": 439.1030224823121,
-      "y": 261.47093116352505
+      "x": 200.98955812684335,
+      "y": 335.7194968373532
     },
     {
       "fontSize": 30,
@@ -594,17 +618,99 @@
       "type": "text",
       "x": 543.0021360789644,
       "y": 1210.9944099386773
-    },
-    {
-      "fontSize": 14,
-      "id": 1755640965957.473,
-      "text": "text",
-      "type": "text",
-      "x": 854.4585790066471,
-      "y": 1024.4108963170856
     }
   ],
   "executions": [
+    {
+      "execution_id": "a1671d5b-2940-4211-883d-f52f2b8a4d44",
+      "timestamp": "2025-08-22T23:15:43.246032",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 23,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 4.3,
+      "completed_percentage": 8.7,
+      "failed_node": "python node",
+      "elapsed_ms": 669,
+      "execution_time": "0.669s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "60a1b76e-dab2-4871-8518-1905ebf7bc1c",
+      "timestamp": "2025-08-22T23:13:12.362286",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "failed",
+      "total_nodes": 23,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 8.7,
+      "completed_percentage": 13.0,
+      "failed_node": "python node",
+      "elapsed_ms": 2108,
+      "execution_time": "2.108s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
+    },
+    {
+      "execution_id": "fdfff7a0-e861-4084-b9d3-35fdf48b8e11",
+      "timestamp": "2025-08-22T22:08:58.636130",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 22,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 4.5,
+      "completed_percentage": 9.1,
+      "failed_node": "python node",
+      "elapsed_ms": 1171,
+      "execution_time": "1.171s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "0b0e42c0-4eb5-418e-a04a-06c25611dc3c",
+      "timestamp": "2025-08-22T21:58:40.473207",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 20,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 15.0,
+      "completed_percentage": 20.0,
+      "failed_node": "get web page content",
+      "elapsed_ms": 3339,
+      "execution_time": "3.339s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "d0efbae4-476a-421b-a159-32a87b9a7434",
+      "timestamp": "2025-08-22T19:48:37.919306",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 20,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 5.0,
+      "completed_percentage": 10.0,
+      "failed_node": "python node",
+      "elapsed_ms": 1348,
+      "execution_time": "1.348s",
+      "error_snippet": "execution was cancelled by user"
+    },
+    {
+      "execution_id": "783843c3-13f8-4a50-9154-dfbf27e7aae7",
+      "timestamp": "2025-08-22T19:10:29.264425",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 18,
+      "successful_nodes": 3,
+      "completed_nodes": 4,
+      "success_percentage": 16.7,
+      "completed_percentage": 22.2,
+      "failed_node": "get web page content",
+      "elapsed_ms": 7833,
+      "execution_time": "7.833s",
+      "error_snippet": "execution was cancelled by user"
+    },
     {
       "execution_id": "c84de725-262b-4c43-b4cb-4ffe38fcda3d",
       "timestamp": "2025-08-22T13:50:13.243056",

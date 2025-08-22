@@ -106,8 +106,8 @@ class EventManager {
                 this.app.annotationRenderer.render();
             }
             // scroll to selected node in run mode
-            if (this.state.isRunMode && this.state.selectedNodes && this.state.selectedNodes.size === 1) {
-                const nodeId = Array.from(this.state.selectedNodes)[0];
+            if (this.state.isRunMode && this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
+                const nodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
                 // todo: implement scroll to node functionality
             }
         });
@@ -152,13 +152,9 @@ class EventManager {
         const close = () => modal.close();
         const onYes = async () => {
             try {
-                if (!this.state.saving || !this.state.saving.storage) {
-            console.error('saving module not available for backup restore');
-            return;
-        }
-        const res = await this.state.saving.storage.restoreLatestBackup();
+                const res = await this.state.saving.storage.restoreLatestBackup();
                 if (res && res.success) {
-                    await this.state.load();
+                    if (this.state.saving) await this.state.saving.load();
                     this.app.updateStatusBar('restored latest backup');
                 } else {
                     this.app.updateStatusBar((res && res.message) || 'failed to restore backup');
@@ -169,7 +165,7 @@ class EventManager {
         const onNo = async () => {
             try {
                 // force the save to accept the destructive change
-                await this.state.save(false, true);
+                if (this.state.saving) await this.state.saving.save(false, true);
                 this.app.updateStatusBar('changes saved');
             } catch (_) {}
             cleanup();
@@ -206,7 +202,9 @@ class EventManager {
         switch (event.key) {
             case 'Delete':
             case 'Backspace':
-                this.handleDelete();
+                if (this.shouldHandleShortcut(event)) {
+                    this.state.deleteNode.handleDelete();
+                }
                 break;
                 
             case 'Escape':
@@ -260,55 +258,7 @@ class EventManager {
         return !inputElements.includes(activeElement.tagName);
     }
 
-    handleDelete() {
-        if (!this.shouldHandleShortcut({ key: 'Delete' })) return;
 
-        if (this.state.selectedNodes.size > 0) {
-            // check if we're in run mode - nodes cannot be deleted in run mode
-            if (this.state.currentMode === 'run') {
-                this.state.emit('statusUpdate', 'cannot delete nodes in run mode');
-                return;
-            }
-            
-            const nodeIds = Array.from(this.state.selectedNodes);
-            let deletedCount = 0;
-            let inputNodeAttempts = 0;
-            
-            nodeIds.forEach(nodeId => {
-                const node = this.state.getNode(nodeId);
-                if (node && node.type === 'input_node') {
-                    inputNodeAttempts++;
-                } else {
-                    const success = this.state.removeNode(nodeId);
-                    if (success) deletedCount++;
-                }
-            });
-            
-            // provide appropriate feedback
-            if (inputNodeAttempts > 0 && deletedCount === 0) {
-                this.state.emit('statusUpdate', 'input nodes cannot be deleted directly');
-            } else if (inputNodeAttempts > 0 && deletedCount > 0) {
-                this.state.emit('statusUpdate', `deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
-            } else if (deletedCount > 0) {
-                this.state.emit('statusUpdate', `deleted ${deletedCount} node(s)`);
-            }
-            
-        } else if (this.state.selectedAnnotation) {
-            // delete selected text node (annotation)
-            const annotationText = this.state.selectedAnnotation.text || 'text';
-            this.state.removeAnnotation(this.state.selectedAnnotation.id);
-            this.state.emit('statusUpdate', `deleted text: ${annotationText}`);
-            
-        } else if (this.state.selectedLink) {
-            this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
-            this.state.emit('statusUpdate', 'link deleted');
-            
-        } else if (this.state.selectedGroup) {
-            const groupName = this.state.selectedGroup.name;
-            this.state.removeGroup(this.state.selectedGroup.id);
-            this.state.emit('statusUpdate', `group "${groupName}" deleted`);
-        }
-    }
 
     handleEscape() {
         if (!this.shouldHandleShortcut({ key: 'Escape' })) return;
@@ -320,8 +270,8 @@ class EventManager {
         }
 
         // cancel connection mode
-        if (this.state.isConnecting) {
-            this.state.setConnecting(false);
+        if (this.state.connectionHandler.isConnecting) {
+            this.state.connectionHandler.setConnecting(false);
             this.state.emit('connectionCancelled');
             this.state.emit('statusUpdate', 'connection cancelled');
         }
@@ -334,8 +284,8 @@ class EventManager {
     handleGroupShortcut() {
         if (!this.shouldHandleShortcut({ key: 'g', ctrlKey: true })) return;
 
-        if (this.state.selectedNodes.size >= 2) {
-            const nodeIds = Array.from(this.state.selectedNodes);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size >= 2) {
+            const nodeIds = Array.from(this.state.selectionHandler.selectedNodes);
             try {
                 const group = this.createNode.createGroup(nodeIds);
                 this.state.emit('statusUpdate', `created group: ${group.name}`);
@@ -351,9 +301,13 @@ class EventManager {
         if (!this.shouldHandleShortcut({ key: 'a', ctrlKey: true })) return;
 
         // clear current selection and add all nodes
-        this.state.clearSelection();
+        if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
+            this.state.selectionHandler.clearSelection();
+        }
         this.state.nodes.forEach(node => {
-            this.state.selectNode(node.id);
+            if (this.state.selectionHandler && typeof this.state.selectionHandler.selectNode === 'function') {
+                this.state.selectionHandler.selectNode(node.id);
+            }
         });
         
         this.state.emit('statusUpdate', `selected all ${this.state.nodes.length} nodes`);
@@ -385,7 +339,9 @@ class EventManager {
             }
             
             // clear selections
-            this.state.clearSelection();
+            if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
+                this.state.selectionHandler.clearSelection();
+            }
         }
     }
 
@@ -395,7 +351,7 @@ class EventManager {
         try {
             this.state.selectionHandler.selectNode(node.id, isMultiSelect);
             
-            const selectedCount = this.state.selectedNodes.size;
+            const selectedCount = this.state.selectionHandler ? this.state.selectionHandler.selectedNodes.size : 0;
             if (selectedCount === 1) {
                 this.state.emit('statusUpdate', `selected: ${node.name}`);
             } else {
@@ -437,14 +393,14 @@ class EventManager {
 
     // connection event handlers
     handleConnectionStart(event, sourceNode) {
-        this.state.setConnecting(true, sourceNode);
+        this.state.connectionHandler.setConnecting(true, sourceNode);
         this.state.emit('statusUpdate', `connecting from ${sourceNode.name} - click target node or press escape to cancel`);
     }
 
     handleConnectionEnd(event, sourceNode, targetNode) {
         if (sourceNode && targetNode && sourceNode.id !== targetNode.id) {
             try {
-                const link = this.state.addLink(sourceNode.id, targetNode.id);
+                const link = this.state.connectionHandler.addLink(sourceNode.id, targetNode.id);
                 if (link) {
                     this.state.emit('statusUpdate', 'connection created');
                 } else {
@@ -455,11 +411,11 @@ class EventManager {
             }
         }
         
-        this.state.setConnecting(false);
+        this.state.connectionHandler.setConnecting(false);
     }
 
     handleConnectionCancel() {
-        this.state.setConnecting(false);
+        this.state.connectionHandler.setConnecting(false);
         this.state.emit('statusUpdate', 'connection cancelled');
     }
 
@@ -496,38 +452,15 @@ class EventManager {
     }
 
     editSelectedNode() {
-        if (this.state.selectedNodes.size === 1) {
-            const nodeId = Array.from(this.state.selectedNodes)[0];
-            this.state.currentEditingNode = this.state.getNode(nodeId);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
+            const nodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+            this.state.currentEditingNode = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
             // trigger sidebar update
             this.state.emit('updateSidebar');
         }
     }
 
-    deleteSelectedNode() {
-        const selectedNodes = Array.from(this.state.selectedNodes);
-        let deletedCount = 0;
-        let inputNodeAttempts = 0;
-        
-        selectedNodes.forEach(nodeId => {
-            const node = this.state.getNode(nodeId);
-            if (node && node.type === 'input_node') {
-                inputNodeAttempts++;
-            } else {
-                const success = this.state.removeNode(nodeId);
-                if (success) deletedCount++;
-            }
-        });
-        
-        // provide appropriate feedback
-        if (inputNodeAttempts > 0 && deletedCount === 0) {
-            this.state.emit('statusUpdate', 'input nodes cannot be deleted directly');
-        } else if (inputNodeAttempts > 0 && deletedCount > 0) {
-            this.state.emit('statusUpdate', `deleted ${deletedCount} node(s) - input nodes cannot be deleted directly`);
-        } else if (deletedCount > 0) {
-            this.state.emit('statusUpdate', `deleted ${deletedCount} node(s)`);
-        }
-    }
+
 
     handleDeleteKey(event) {
         // prevent default behavior if we're in an input field
@@ -537,22 +470,8 @@ class EventManager {
         
         event.preventDefault();
         
-        // delete selected nodes
-        if (this.state.selectedNodes.size > 0) {
-            this.deleteSelectedNode();
-        }
-        
-        // delete selected link
-        if (this.state.selectedLink) {
-            this.state.removeLink(this.state.selectedLink.source, this.state.selectedLink.target);
-            this.state.emit('statusUpdate', 'deleted link');
-        }
-        
-        // delete selected group
-        if (this.state.selectedGroup) {
-            this.state.removeGroup(this.state.selectedGroup.id);
-            this.state.emit('statusUpdate', 'deleted group');
-        }
+        // delegate all deletion logic to NodeDelete.js
+        this.state.deleteNode.handleDelete();
     }
 
     // cleanup

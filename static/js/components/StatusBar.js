@@ -136,13 +136,13 @@ class StatusBar {
     }
 
     async handleCoordinateChange(property, value) {
-        if (!this.state || !this.state.selectedNodes) return;
+        if (!this.state || !this.state.selectionHandler) return;
         
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = Array.from(this.state.selectionHandler.selectedNodes || []);
         if (selectedNodes.length !== 1) return;
         
         const nodeId = selectedNodes[0];
-        const node = this.state.getNode(nodeId);
+        const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
         if (!node) return;
         
         const numValue = parseFloat(value);
@@ -164,10 +164,12 @@ class StatusBar {
         }
         
         // update the node
-        await this.state.updateNode(nodeId, updates);
+        if (this.state.createNode) {
+            await this.state.createNode.updateNode(nodeId, updates);
+        }
         
         // trigger immediate save
-        this.state.scheduleAutosave();
+                    if (this.state.saving) this.state.saving.scheduleAutosave();
     }
 
     updateStatus(type, message, options = {}) {
@@ -293,18 +295,18 @@ class StatusBar {
         this.nodeCoordinates.style.display = 'flex';
         
         // guard against undefined selectedNodes
-        if (!this.state.selectedNodes) {
+        if (!this.state.selectionHandler) {
             this.hideCoordinateInputs();
             this.nodeCoordinates.style.opacity = '0.3';
             this.nodeCoordinates.title = 'no node selected';
             return;
         }
         
-        const selectedNodes = Array.from(this.state.selectedNodes);
+        const selectedNodes = Array.from(this.state.selectionHandler.selectedNodes || []);
         
         if (selectedNodes.length === 1) {
             // single node selected - show editable inputs
-            const node = this.state.getNode(selectedNodes[0]);
+            const node = this.state.createNode ? this.state.createNode.getNode(selectedNodes[0]) : null;
             if (node) {
                 const x = Math.round(node.x);
                 const y = Math.round(node.y);
@@ -329,7 +331,7 @@ class StatusBar {
         } else if (selectedNodes.length > 1) {
             // multiple nodes selected - hide inputs and show count
             this.hideCoordinateInputs();
-            const nodes = selectedNodes.map(id => this.state.getNode(id)).filter(Boolean);
+            const nodes = selectedNodes.map(id => this.state.createNode ? this.state.createNode.getNode(id) : null).filter(Boolean);
             if (nodes.length > 0) {
                 const avgX = Math.round(nodes.reduce((sum, node) => sum + node.x, 0) / nodes.length);
                 const avgY = Math.round(nodes.reduce((sum, node) => sum + node.y, 0) / nodes.length);

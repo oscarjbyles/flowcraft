@@ -744,7 +744,7 @@ class NodeRenderer {
 
     updateNodeStyles() {
         // guard against undefined selectedNodes
-        if (!this.state.selectedNodes) {
+        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedNodes) {
             return;
         }
         
@@ -752,21 +752,21 @@ class NodeRenderer {
         this.nodeGroup.selectAll('.node, .node_text')
             .classed('selection_preview', false) // clear preview styling
             .classed('selected', d => 
-                this.state.selectedNodes.has(d.id) && this.state.selectedNodes.size === 1)
+                this.state.selectionHandler.selectedNodes.has(d.id) && this.state.selectionHandler.selectedNodes.size === 1)
             .classed('multi_selected', d => 
-                this.state.selectedNodes.has(d.id) && this.state.selectedNodes.size > 1);
+                this.state.selectionHandler.selectedNodes.has(d.id) && this.state.selectionHandler.selectedNodes.size > 1);
 
         // ensure all nodes show the same blue selection regardless of base background
         // some nodes (like input_node and if_node) use inline fill which overrides css
         // override inline fill on single selection and restore appropriately otherwise
-        const isSingleSelection = this.state.selectedNodes.size === 1;
-        const isMultiSelection = this.state.selectedNodes.size > 1;
+        const isSingleSelection = this.state.selectionHandler.selectedNodes.size === 1;
+        const isMultiSelection = this.state.selectionHandler.selectedNodes.size > 1;
 
         this.nodeGroup.selectAll('.node').each((d, i, nodes) => {
             const rect = d3.select(nodes[i]);
             if (!d) return;
 
-            const isThisSelected = this.state.selectedNodes.has(d.id);
+            const isThisSelected = this.state.selectionHandler.selectedNodes.has(d.id);
 
             if (isSingleSelection && isThisSelected) {
                 // single selected: force blue background and matching stroke
@@ -840,13 +840,13 @@ class NodeRenderer {
         this.hideAllPlayButtons();
 
         // guard against undefined selectedNodes
-        if (!this.state.selectedNodes) {
+        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedNodes) {
             return;
         }
 
         // show play button only in run mode for selected nodes
-        if (this.state.currentMode === 'run' && this.state.selectedNodes.size === 1) {
-            const selectedNodeId = Array.from(this.state.selectedNodes)[0];
+        if (this.state.currentMode === 'run' && this.state.selectionHandler.selectedNodes.size === 1) {
+            const selectedNodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
             this.showPlayButton(selectedNodeId);
         }
     }
@@ -856,9 +856,9 @@ class NodeRenderer {
         this.hideAllRefreshButtons();
 
         // show refresh button for selected python nodes
-        if (this.state.selectedNodes.size === 1) {
-            const selectedNodeId = Array.from(this.state.selectedNodes)[0];
-            const selectedNode = this.state.getNode(selectedNodeId);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
+            const selectedNodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+            const selectedNode = this.state.createNode ? this.state.createNode.getNode(selectedNodeId) : null;
             
             if (selectedNode && selectedNode.type === 'python_file') {
                 this.showRefreshButton(selectedNodeId);
@@ -1149,9 +1149,9 @@ class NodeRenderer {
         this.hideAllPenButtons();
 
         // show pen button for selected python nodes
-        if (this.state.selectedNodes.size === 1) {
-            const selectedNodeId = Array.from(this.state.selectedNodes)[0];
-            const selectedNode = this.state.getNode(selectedNodeId);
+        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
+            const selectedNodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+            const selectedNode = this.state.createNode ? this.state.createNode.getNode(selectedNodeId) : null;
 
             if (selectedNode && selectedNode.type === 'python_file') {
                 this.showPenButton(selectedNodeId);
@@ -1278,7 +1278,7 @@ class NodeRenderer {
 
     // utility methods
     getNodeBounds(nodeId) {
-        const node = this.state.getNode(nodeId);
+        const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
         if (!node) return null;
 
         const width = node.width || 120;
@@ -1336,10 +1336,12 @@ class NodeRenderer {
                 });
                 
                 // update the node
-                await this.state.updateNode(node.id, {
-                    parameters: result.parameters,
-                    inputValues: updatedInputValues
-                });
+                if (this.state.createNode) {
+                    await this.state.createNode.updateNode(node.id, {
+                        parameters: result.parameters,
+                        inputValues: updatedInputValues
+                    });
+                }
                 
                 // force re-render of this node
                 this.removeSingleNode(node);
@@ -1387,7 +1389,9 @@ class NodeRenderer {
             rowGroup.select('.input_field_text').text(newValue);
             
             // update the node in state
-            await this.state.updateNode(node.id, { inputValues: node.inputValues });
+            if (this.state.createNode) {
+                await this.state.createNode.updateNode(node.id, { inputValues: node.inputValues });
+            }
             
             // remove the input element
             document.body.removeChild(input);
