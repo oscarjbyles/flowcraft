@@ -219,11 +219,18 @@ class ExecutionLogic {
         this.builder.executionStatus.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
         
         // auto-follow currently running python nodes if tracking is enabled and not user-disabled
+        console.log('[ExecutionLogic] viewport tracking check:', {
+            nodeType: node?.type,
+            isAutoTrackEnabled: this.builder.isAutoTrackEnabled,
+            userDisabledTracking: this.builder.userDisabledTracking,
+            shouldTrack: node && node.type === 'python_file' && this.builder.isAutoTrackEnabled && !this.builder.userDisabledTracking
+        });
         if (
             node && node.type === 'python_file' &&
             this.builder.isAutoTrackEnabled && !this.builder.userDisabledTracking
         ) {
-            this.builder.centerOnNode(node.id);
+            console.log('[ExecutionLogic] triggering viewport tracking for node:', node.id);
+            this.builder.viewportTracker.centerOnNode(node.id);
         }
         
         // show node details in sidebar

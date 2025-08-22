@@ -59,8 +59,6 @@ class FlowchartBuilder {
         this.isGroupSelectMode = false;
         this.justFinishedDragSelection = false;
         
-
-        
         // store execution results for individual nodes
         this.nodeExecutionResults = new Map(); // nodeId -> execution result (legacy reference)
 
@@ -68,23 +66,23 @@ class FlowchartBuilder {
         // all comments in lower case
         this.blockedNodeIds = new Set();
         
-                        // initialize execution logic module
-                this.executionLogic = new ExecutionLogic(this);
-                
-                // initialize node state manager module
-                this.nodeStateManager = new NodeStateManager(this);
-                
-                // initialize variable manager module
-                this.variableManager = new VariableManager(this);
-                
-                // initialize resume execution module
-                this.resumeExecution = new ResumeExecution(this);
-                
-                // initialize execution status module
-                this.executionStatus = new ExecutionStatus(this);
-                
-                // initialize output manager module
-                this.outputManager = new OutputManager(this);
+        // initialize execution logic module
+        this.executionLogic = new ExecutionLogic(this);
+        
+        // initialize node state manager module
+        this.nodeStateManager = new NodeStateManager(this);
+        
+        // initialize variable manager module
+        this.variableManager = new VariableManager(this);
+        
+        // initialize resume execution module
+        this.resumeExecution = new ResumeExecution(this);
+        
+        // initialize execution status module
+        this.executionStatus = new ExecutionStatus(this);
+        
+        // initialize output manager module
+        this.outputManager = new OutputManager(this);
         
         // setup core event listeners
         this.setupCoreEvents();
@@ -115,6 +113,9 @@ class FlowchartBuilder {
 
         // setup svg definitions (arrows, etc.)
         this.setupSvgDefinitions();
+
+        // initialize viewport tracker module (after svg is set up)
+        this.viewportTracker = new ViewportTracker(this);
 
         // initialize renderers
         await this.initializeRenderers();
@@ -418,8 +419,6 @@ class FlowchartBuilder {
         // removed arrowhead marker since we use custom middle arrows instead
     }
 
-
-
     setupNavigationButtons() {
         // delegate to centralized navigation module for left navigation
         window.Navigation.setupNavButtons(this);
@@ -430,16 +429,6 @@ class FlowchartBuilder {
         // setup sidebar toggle
         this.setupSidebarToggle();
     }
-
-
-
-
-
-
-
-
-
-
 
     setupSidebarToggle() {
         const toggleSidebarBtn = document.getElementById('toggle_sidebar_btn');
@@ -464,13 +453,7 @@ class FlowchartBuilder {
         }
     }
 
-
-
-
-
     // node creation delegated to CreateNode class
-
-
 
     // zoom operations
     disableZoom() {
@@ -524,7 +507,7 @@ class FlowchartBuilder {
 
         // animate center to the chosen node at zoom 1
         if (targetNode && typeof targetNode.id !== 'undefined') {
-            this.centerOnNodeWithTopOffset(targetNode.id, 300, 400, 1);
+            this.viewportTracker.centerOnNodeWithTopOffset(targetNode.id, 300, 400, 1);
         }
 
         // restore previous auto-tracking state but remain user-disabled until next explicit toggle
@@ -534,61 +517,6 @@ class FlowchartBuilder {
         if (this.toolbars && this.toolbars.refreshTrackBtnUI) {
             this.toolbars.refreshTrackBtnUI();
         }
-    }
-
-    // smoothly center a node in both axes at a specific zoom level
-    centerOnNodeCentered(nodeId, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
-        const node = this.state.getNode(nodeId);
-        if (!node) return;
-        const currentScale = this.state.transform && this.state.transform.k ? this.state.transform.k : 1;
-        const scale = scaleOverride || currentScale;
-
-        const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
-        const containerEl = document.querySelector('.canvas_container');
-        if (!svgEl || !containerEl) return;
-
-        const svgRect = svgEl.getBoundingClientRect();
-        const containerRect = containerEl.getBoundingClientRect();
-
-        const desiredSvgX = (containerRect.left - svgRect.left) + (containerRect.width / 2);
-        const desiredSvgY = (containerRect.top - svgRect.top) + (containerRect.height / 2);
-
-        const targetTranslateX = desiredSvgX - (scale * node.x);
-        const targetTranslateY = desiredSvgY - (scale * node.y);
-
-        this.svg
-            .transition()
-            .duration(Math.max(0, duration | 0))
-            .ease(easeFn || d3.easeCubicOut)
-            .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
-    }
-
-    // smoothly center horizontally and position a node offset from top at a specific zoom level
-    centerOnNodeWithTopOffset(nodeId, offsetTopPx = 400, duration = 400, scaleOverride = null, easeFn = d3.easeCubicOut) {
-        const node = this.state.getNode(nodeId);
-        if (!node) return;
-        const currentScale = this.state.transform && this.state.transform.k ? this.state.transform.k : 1;
-        const scale = scaleOverride || currentScale;
-
-        const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
-        const containerEl = document.querySelector('.canvas_container');
-        if (!svgEl || !containerEl) return;
-
-        const svgRect = svgEl.getBoundingClientRect();
-        const containerRect = containerEl.getBoundingClientRect();
-
-        // center horizontally, offset vertically from the top by offsetTopPx
-        const desiredSvgX = (containerRect.left - svgRect.left) + (containerRect.width / 2);
-        const desiredSvgY = (containerRect.top - svgRect.top) + offsetTopPx;
-
-        const targetTranslateX = desiredSvgX - (scale * node.x);
-        const targetTranslateY = desiredSvgY - (scale * node.y);
-
-        this.svg
-            .transition()
-            .duration(Math.max(0, duration | 0))
-            .ease(easeFn || d3.easeCubicOut)
-            .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
     }
 
 
@@ -677,8 +605,6 @@ class FlowchartBuilder {
         this.updateStatusBar('flowchart exported');
     }
 
-
-
     async importData(file) {
         try {
             const data = await this.state.storage.importFromJson(file);
@@ -703,8 +629,6 @@ class FlowchartBuilder {
         return NodeOrder.calculateNodeOrder(this.state.nodes, this.state.links, this.state.groups);
     }
 
-
-
     switchToRunMode(clearRuntimeIndicators = true) {
         this.state.setMode('run');
         // enable auto tracking by default when entering run mode
@@ -719,7 +643,7 @@ class FlowchartBuilder {
         }
     }
 
-            // history mode removed
+    // history mode removed
 
     toggleFlowView() {
         // allow flow view toggle in both build and run modes
@@ -837,12 +761,6 @@ class FlowchartBuilder {
         }
     }
 
-
-
-
-
-
-
     updateFlowViewUI(isFlowView) {
         const flowToggleBtn = document.getElementById('flow_toggle_btn');
         if (isFlowView) {
@@ -855,8 +773,6 @@ class FlowchartBuilder {
             flowToggleBtn.title = 'Toggle Flow View';
         }
     }
-
-
 
     deselectAll() {
         // if group select mode is active, turn it off and enable pan tool
@@ -1023,11 +939,6 @@ class FlowchartBuilder {
         }
     }
 
-    
-
-    
-
-    
     getCurrentFlowchartName() {
         // prefer the canonical filename from storage to avoid ui sync issues
         const filename = this.state.storage.getCurrentFlowchart() || '';
@@ -1040,22 +951,6 @@ class FlowchartBuilder {
         const selector = document.getElementById('flowchart_selector');
         return (selector && selector.value) ? selector.value : 'default';
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     async gatherInputVariables(targetNode) {
         return this.variableManager.gatherInputVariables(targetNode);
@@ -1106,47 +1001,6 @@ class FlowchartBuilder {
     static get NODE_STATES() {
         return NodeStateManager.NODE_STATES;
     }
-
-
-
-    // smooth center on a node by id
-    centerOnNode(nodeId) {
-        const node = this.state.getNode(nodeId);
-        if (!node) return;
-        // nodes are positioned by translate(x, y) with their rect centered at (x, y)
-        const scale = this.state.transform.k || 1;
-
-        // target placement rules:
-        // - horizontal: align node center with the horizontal center of the .canvas_container
-        // - vertical: keep node center 250px from the top of the browser window
-        const svgEl = this.svg && this.svg.node ? this.svg.node() : null;
-        const containerEl = document.querySelector('.canvas_container');
-        if (!svgEl || !containerEl) return;
-
-        const svgRect = svgEl.getBoundingClientRect();
-        const containerRect = containerEl.getBoundingClientRect();
-
-        // desired position of the node center in svg screen coords
-        const desiredSvgX = (containerRect.left - svgRect.left) + (containerRect.width / 2);
-        const desiredSvgY = (250 - svgRect.top);
-
-        // translate so that: scale * node.(x|y) + translate = desiredSvg(X|Y)
-        const targetTranslateX = desiredSvgX - (scale * node.x);
-        const targetTranslateY = desiredSvgY - (scale * node.y);
-
-        this.svg
-            .transition()
-            .duration(600)
-            .ease(d3.easeCubicOut)
-            .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
-    }
-
-
-
-
-
-
-
 
 
 

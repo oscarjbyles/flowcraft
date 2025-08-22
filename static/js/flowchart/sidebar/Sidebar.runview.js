@@ -679,8 +679,8 @@
                 failureInfo.style.display = '';
                 if (gotoBtn) {
                     gotoBtn.onclick = () => {
-                        if (window.flowchartApp && typeof window.flowchartApp.centerOnNode === 'function') {
-                            window.flowchartApp.centerOnNode(id);
+                        if (window.flowchartApp && window.flowchartApp.viewportTracker && typeof window.flowchartApp.viewportTracker.centerOnNode === 'function') {
+                            window.flowchartApp.viewportTracker.centerOnNode(id);
                         }
                     };
                 }

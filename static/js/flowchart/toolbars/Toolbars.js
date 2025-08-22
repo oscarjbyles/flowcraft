@@ -63,7 +63,7 @@ class Toolbars {
                 this.updateStatusBar(willEnable ? 'auto tracking enabled' : 'auto tracking disabled');
                 
                 if (willEnable && this.builder.isExecuting && this.builder.currentExecutingNodeId) {
-                    this.builder.centerOnNode(this.builder.currentExecutingNodeId);
+                    this.builder.viewportTracker.centerOnNode(this.builder.currentExecutingNodeId);
                 }
             });
             
