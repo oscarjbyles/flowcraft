@@ -33,9 +33,8 @@ class CanvasHandler {
                 }
             }
             // clear annotation selection when clicking empty canvas
-            if (clickedOnCanvas && this.state.selectionHandler && this.state.selectionHandler.selectedAnnotation) {
-                this.selectionHandler.clearSelection();
-                this.state.emit('updateSidebar');
+            if (clickedOnCanvas && this.state.selectionHandler.hasAnnotationSelection()) {
+                this.state.selectionHandler.safeClearSelection();
             }
         });
 
@@ -48,11 +47,9 @@ class CanvasHandler {
                 if (this.isGroupSelectMode()) {
                     // only clear if this wasn't part of a drag operation
                     if (!this.selectionHandler.isAreaSelecting && !this.justFinishedDragSelection()) {
-                        if (!event.ctrlKey && !event.shiftKey) {
-                            this.selectionHandler.clearSelection();
-                            this.state.emit('updateNodeStyles');
-                            this.state.emit('updateSidebar');
-                        }
+                                            if (!event.ctrlKey && !event.shiftKey) {
+                        this.selectionHandler.safeClearSelection();
+                    }
                     }
                 } else {
                     // if a drag operation or annotation drag just occurred, suppress node creation
@@ -99,16 +96,16 @@ class CanvasHandler {
         // context menu handlers
         document.getElementById('edit_node').addEventListener('click', () => {
             this.events.editSelectedNode();
-            this.hideContextMenu();
+            this.events.hideContextMenu();
         });
         
         document.getElementById('delete_node').addEventListener('click', () => {
             this.events.state.deleteNode.deleteSelectedNodes();
-            this.hideContextMenu();
+            this.events.hideContextMenu();
         });
 
         // hide context menu on click elsewhere
-        document.addEventListener('click', () => this.hideContextMenu());
+        document.addEventListener('click', () => this.events.hideContextMenu());
 
         // context menu display handler
         this.state.on('showContextMenu', (data) => {
@@ -133,11 +130,7 @@ class CanvasHandler {
         });
     }
 
-    hideContextMenu() {
-        if (this.contextMenu) {
-            this.contextMenu.style.display = 'none';
-        }
-    }
+
 
     handleResize() {
         // delegate to FlowchartBuilder for canvas dimension updates

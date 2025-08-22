@@ -32,22 +32,7 @@
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-}
-.app_logo .logo_node {
-  fill: var(--surface-variant);
-  stroke: var(--primary-color);
-  stroke-width: 2px;
-}
-.app_logo .logo_center {
-  fill: var(--primary-color);
-  stroke: var(--on-primary);
-  stroke-width: 1.5px;
-}
-.app_logo .logo_connector {
-  fill: none;
-  stroke: var(--primary-color);
-  stroke-width: 2px;
-  stroke-linecap: round;
+  color: white;
 }
 
 /* content */

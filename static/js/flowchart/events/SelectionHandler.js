@@ -205,13 +205,7 @@ class SelectionHandler {
         
         this.state.emit('hideSelectionRect');
         this.state.emit('previewSelection', []); // clear preview
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     getNodesInRectangle(rect) {
@@ -250,20 +244,12 @@ class SelectionHandler {
         this.selectedLink = null;
         this.selectedGroup = null;
         
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     selectNone() {
         this.clearSelection();
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateLinkStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     invertSelection() {
@@ -276,13 +262,7 @@ class SelectionHandler {
             }
         });
         
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     selectByType(nodeType) {
@@ -294,13 +274,7 @@ class SelectionHandler {
                 this.selectedNodes.add(node.id);
             });
         
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     selectConnectedNodes(startNodeId) {
@@ -324,13 +298,7 @@ class SelectionHandler {
             });
         }
         
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     // group selection
@@ -345,13 +313,7 @@ class SelectionHandler {
         this.selectedLink = null;
         this.selectedGroup = null;
         
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
-        this.state.emit('updateNodeStyles');
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     // migrated selection management methods
@@ -371,12 +333,7 @@ class SelectionHandler {
         this.selectedGroup = null;
         this.selectedAnnotation = null;
         
-        this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
-            link: this.selectedLink,
-            group: this.selectedGroup,
-            annotation: null
-        });
+        this.emitSelectionChange();
     }
 
     selectLink(link) {
@@ -385,12 +342,7 @@ class SelectionHandler {
         this.selectedGroup = null;
         this.selectedAnnotation = null;
         
-        this.state.emit('selectionChanged', {
-            nodes: [],
-            link: this.selectedLink,
-            group: this.selectedGroup,
-            annotation: null
-        });
+        this.emitSelectionChange();
     }
 
     selectGroup(groupId) {
@@ -399,11 +351,7 @@ class SelectionHandler {
         this.selectedGroup = this.state.getGroup(groupId);
         this.selectedAnnotation = null;
         
-        this.state.emit('selectionChanged', {
-            nodes: [],
-            link: this.selectedLink,
-            group: this.selectedGroup
-        });
+        this.emitSelectionChange();
     }
 
     clearSelection() {
@@ -413,12 +361,7 @@ class SelectionHandler {
         this.state.currentEditingNode = null;
         this.selectedAnnotation = null;
         
-        this.state.emit('selectionChanged', {
-            nodes: [],
-            link: null,
-            group: null,
-            annotation: null
-        });
+        this.emitSelectionChange();
     }
 
     selectAnnotation(annotationId) {
@@ -426,13 +369,7 @@ class SelectionHandler {
         this.selectedLink = null;
         this.selectedGroup = null;
         this.selectedAnnotation = this.state.annotations.find(a => a.id === annotationId) || null;
-        this.state.emit('selectionChanged', {
-            nodes: [],
-            link: null,
-            group: null,
-            annotation: this.selectedAnnotation
-        });
-        this.state.emit('updateSidebar');
+        this.emitSelectionChange();
     }
 
     getSelectedNodes() {
@@ -456,6 +393,122 @@ class SelectionHandler {
 
     getSelectedNodeCount() {
         return this.selectedNodes.size;
+    }
+
+    // Safe access methods for external use
+    hasNodeSelection() {
+        return this.selectedNodes.size > 0;
+    }
+
+    hasLinkSelection() {
+        return this.selectedLink !== null;
+    }
+
+    hasGroupSelection() {
+        return this.selectedGroup !== null;
+    }
+
+    hasAnnotationSelection() {
+        return this.selectedAnnotation !== null;
+    }
+
+    hasAnySelection() {
+        return this.hasNodeSelection() || this.hasLinkSelection() || 
+               this.hasGroupSelection() || this.hasAnnotationSelection();
+    }
+
+    // Safe wrapper methods for external calls
+    safeClearSelection() {
+        this.clearSelection();
+    }
+
+    safeSelectNode(nodeId, multiSelect = false) {
+        this.selectNode(nodeId, multiSelect);
+    }
+
+    safeSelectLink(link) {
+        this.selectLink(link);
+    }
+
+    safeSelectGroup(groupId) {
+        this.selectGroup(groupId);
+    }
+
+    // Batch selection operations
+    selectMultipleNodes(nodeIds, clearExisting = true) {
+        if (clearExisting) {
+            this.selectedNodes.clear();
+        }
+        nodeIds.forEach(id => this.selectedNodes.add(id));
+        this.emitSelectionChange();
+    }
+
+    // Selection state queries
+    isNodeSelected(nodeId) {
+        return this.selectedNodes.has(nodeId);
+    }
+
+    getSelectedNodeIds() {
+        return Array.from(this.selectedNodes);
+    }
+
+    // Enhanced selection change emission
+    emitSelectionChange() {
+        this.state.emit('selectionChanged', {
+            nodes: Array.from(this.selectedNodes),
+            link: this.selectedLink,
+            group: this.selectedGroup,
+            annotation: this.selectedAnnotation
+        });
+        this.state.emit('updateNodeStyles');
+        this.state.emit('updateLinkStyles');
+        this.state.emit('updateSidebar');
+    }
+
+    // Selection state validation
+    validateSelectionState() {
+        // ensure selected nodes still exist
+        const validNodeIds = new Set(this.state.nodes.map(n => n.id));
+        const invalidNodeIds = Array.from(this.selectedNodes).filter(id => !validNodeIds.has(id));
+        
+        if (invalidNodeIds.length > 0) {
+            console.warn('cleaning up invalid node selections:', invalidNodeIds);
+            invalidNodeIds.forEach(id => this.selectedNodes.delete(id));
+        }
+        
+        // ensure selected link still exists
+        if (this.selectedLink) {
+            const linkExists = this.state.links.some(l => 
+                l.source === this.selectedLink.source && l.target === this.selectedLink.target
+            );
+            if (!linkExists) {
+                console.warn('cleaning up invalid link selection');
+                this.selectedLink = null;
+            }
+        }
+        
+        // ensure selected group still exists
+        if (this.selectedGroup) {
+            const groupExists = this.state.groups.some(g => g.id === this.selectedGroup.id);
+            if (!groupExists) {
+                console.warn('cleaning up invalid group selection');
+                this.selectedGroup = null;
+            }
+        }
+        
+        // ensure selected annotation still exists
+        if (this.selectedAnnotation) {
+            const annotationExists = this.state.annotations.some(a => a.id === this.selectedAnnotation.id);
+            if (!annotationExists) {
+                console.warn('cleaning up invalid annotation selection');
+                this.selectedAnnotation = null;
+            }
+        }
+    }
+
+    // Call validation when state changes
+    onStateChanged() {
+        this.validateSelectionState();
     }
 
     // selection rectangle methods (moved from FlowchartBuilder.js)

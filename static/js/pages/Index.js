@@ -823,6 +823,9 @@
         // store selection handler reference in state manager
         app.state.selectionHandler = app.selectionHandler;
         
+        // connect selection handler to state changes for validation
+        app.state.connectSelectionHandler();
+        
         app.connectionHandler = new ConnectionHandler(app.state, app.events);
         
         // store connection handler reference in state manager

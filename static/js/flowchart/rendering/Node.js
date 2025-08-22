@@ -752,21 +752,21 @@ class NodeRenderer {
         this.nodeGroup.selectAll('.node, .node_text')
             .classed('selection_preview', false) // clear preview styling
             .classed('selected', d => 
-                this.state.selectionHandler.selectedNodes.has(d.id) && this.state.selectionHandler.selectedNodes.size === 1)
+                this.state.selectionHandler.isNodeSelected(d.id) && this.state.selectionHandler.getSelectedNodeCount() === 1)
             .classed('multi_selected', d => 
-                this.state.selectionHandler.selectedNodes.has(d.id) && this.state.selectionHandler.selectedNodes.size > 1);
+                this.state.selectionHandler.isNodeSelected(d.id) && this.state.selectionHandler.getSelectedNodeCount() > 1);
 
         // ensure all nodes show the same blue selection regardless of base background
         // some nodes (like input_node and if_node) use inline fill which overrides css
         // override inline fill on single selection and restore appropriately otherwise
-        const isSingleSelection = this.state.selectionHandler.selectedNodes.size === 1;
-        const isMultiSelection = this.state.selectionHandler.selectedNodes.size > 1;
+        const isSingleSelection = this.state.selectionHandler.getSelectedNodeCount() === 1;
+        const isMultiSelection = this.state.selectionHandler.getSelectedNodeCount() > 1;
 
         this.nodeGroup.selectAll('.node').each((d, i, nodes) => {
             const rect = d3.select(nodes[i]);
             if (!d) return;
 
-            const isThisSelected = this.state.selectionHandler.selectedNodes.has(d.id);
+            const isThisSelected = this.state.selectionHandler.isNodeSelected(d.id);
 
             if (isSingleSelection && isThisSelected) {
                 // single selected: force blue background and matching stroke
@@ -839,14 +839,15 @@ class NodeRenderer {
         // hide all play buttons first
         this.hideAllPlayButtons();
 
-        // guard against undefined selectedNodes
-        if (!this.state.selectionHandler || !this.state.selectionHandler.selectedNodes) {
+        // guard against undefined selectionHandler
+        if (!this.state.selectionHandler) {
             return;
         }
 
         // show play button only in run mode for selected nodes
-        if (this.state.currentMode === 'run' && this.state.selectionHandler.selectedNodes.size === 1) {
-            const selectedNodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+        if (this.state.currentMode === 'run' && this.state.selectionHandler.hasNodeSelection() && this.state.selectionHandler.getSelectedNodeCount() === 1) {
+            const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
+            const selectedNodeId = nodeIds[0];
             this.showPlayButton(selectedNodeId);
         }
     }
@@ -856,8 +857,9 @@ class NodeRenderer {
         this.hideAllRefreshButtons();
 
         // show refresh button for selected python nodes
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
-            const selectedNodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+        if (this.state.selectionHandler && this.state.selectionHandler.hasNodeSelection() && this.state.selectionHandler.getSelectedNodeCount() === 1) {
+            const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
+            const selectedNodeId = nodeIds[0];
             const selectedNode = this.state.createNode ? this.state.createNode.getNode(selectedNodeId) : null;
             
             if (selectedNode && selectedNode.type === 'python_file') {
@@ -1149,8 +1151,9 @@ class NodeRenderer {
         this.hideAllPenButtons();
 
         // show pen button for selected python nodes
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
-            const selectedNodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+        if (this.state.selectionHandler && this.state.selectionHandler.hasNodeSelection() && this.state.selectionHandler.getSelectedNodeCount() === 1) {
+            const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
+            const selectedNodeId = nodeIds[0];
             const selectedNode = this.state.createNode ? this.state.createNode.getNode(selectedNodeId) : null;
 
             if (selectedNode && selectedNode.type === 'python_file') {

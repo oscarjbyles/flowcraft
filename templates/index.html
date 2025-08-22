@@ -102,15 +102,21 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
     <!-- core modules -->
-    <script src="/static/js/core/StateManager.js"></script>
+    <script src="/static/js/flowchart/StateManager.js"></script>
     <script src="/static/js/flowchart/events/Saving.js"></script>
     
     <!-- mode-based loading: only load modules in build and run modes -->
     <script>
-        // check if we're in build or run mode
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode') || 'build';
-        const isFlowchartMode = mode === 'build' || mode === 'run';
+        // prevent multiple executions
+        if (window.__mode_loading_initialized) {
+            // already initialized, skip
+        } else {
+            window.__mode_loading_initialized = true;
+            
+            // check if we're in build or run mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode') || 'build';
+            const isFlowchartMode = mode === 'build' || mode === 'run';
         
         if (isFlowchartMode) {
             // load EventManager only for build and run modes
@@ -279,6 +285,7 @@
 
             // start waiting for dependencies
             waitForDependencies();
+        }
         }
     </script>
 {% endblock %}

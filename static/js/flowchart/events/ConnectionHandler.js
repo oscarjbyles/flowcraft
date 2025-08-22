@@ -43,7 +43,7 @@ class ConnectionHandler {
         this.state.links.push(link);
         this.state.emit('linkAdded', link);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return link;
     }
@@ -63,7 +63,7 @@ class ConnectionHandler {
         Object.assign(link, updates);
         this.state.emit('linkUpdated', link);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         return true;
     }
 

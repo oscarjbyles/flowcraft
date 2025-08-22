@@ -90,6 +90,13 @@ class Saving {
     }
 
     /**
+     * centralized method for triggering autosave from other modules
+     */
+    triggerAutosave() {
+        this.scheduleAutosave();
+    }
+
+    /**
      * save flowchart data to server
      */
     async save(isAutosave = false, force = false) {

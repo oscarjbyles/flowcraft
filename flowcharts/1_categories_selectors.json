@@ -296,8 +296,8 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 2346.49560546875,
-      "y": 249.4892120361328
+      "x": 2277.01123046875,
+      "y": 105.43614196777344
     },
     {
       "description": "",
@@ -396,8 +396,54 @@
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
-      "x": 2346.49560546875,
-      "y": 329.4892120361328
+      "x": 2277.01123046875,
+      "y": 185.43614196777344
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755902333945.3508,
+      "magnet_partner_id": 1755902336982.2231,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2353.068115234375,
+      "y": 438.1152038574219
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755902336982.2231,
+      "magnet_partner_id": 1755902333945.3508,
+      "name": "if condition",
+      "pythonFile": "",
+      "type": "if_node",
+      "width": 120,
+      "x": 2353.068115234375,
+      "y": 518.1152038574219
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755903007623.137,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2255.551025390625,
+      "y": 608.2642822265625
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755904104681.001,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 2076.76708984375,
+      "y": 155.1240997314453
     }
   ],
   "links": [
@@ -530,6 +576,11 @@
     {
       "source": 1755861137475.1267,
       "target": 1755864865344.0615
+    },
+    {
+      "selectable": false,
+      "source": 1755902333945.3508,
+      "target": 1755902336982.2231
     }
   ],
   "groups": [
@@ -608,8 +659,8 @@
       "id": 1755207384135.138,
       "text": "1.1 - get category URLs",
       "type": "text",
-      "x": 200.98955812684335,
-      "y": 335.7194968373532
+      "x": 194.1494092010621,
+      "y": 401.8409567982907
     },
     {
       "fontSize": 30,

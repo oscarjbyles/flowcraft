@@ -106,8 +106,9 @@ class EventManager {
                 this.app.annotationRenderer.render();
             }
             // scroll to selected node in run mode
-            if (this.state.isRunMode && this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
-                const nodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+            if (this.state.isRunMode && this.state.selectionHandler.hasNodeSelection() && this.state.selectionHandler.getSelectedNodeCount() === 1) {
+                const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
+                const nodeId = nodeIds[0];
                 // todo: implement scroll to node functionality
             }
         });
@@ -277,15 +278,15 @@ class EventManager {
         }
         
         // clear selections
-        this.state.selectionHandler.clearSelection();
+        this.state.selectionHandler.safeClearSelection();
         this.state.emit('statusUpdate', 'selection cleared');
     }
 
     handleGroupShortcut() {
         if (!this.shouldHandleShortcut({ key: 'g', ctrlKey: true })) return;
 
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size >= 2) {
-            const nodeIds = Array.from(this.state.selectionHandler.selectedNodes);
+        if (this.state.selectionHandler.hasNodeSelection() && this.state.selectionHandler.getSelectedNodeCount() >= 2) {
+            const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
             try {
                 const group = this.createNode.createGroup(nodeIds);
                 this.state.emit('statusUpdate', `created group: ${group.name}`);
@@ -299,17 +300,8 @@ class EventManager {
 
     handleSelectAll() {
         if (!this.shouldHandleShortcut({ key: 'a', ctrlKey: true })) return;
-
-        // clear current selection and add all nodes
-        if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
-            this.state.selectionHandler.clearSelection();
-        }
-        this.state.nodes.forEach(node => {
-            if (this.state.selectionHandler && typeof this.state.selectionHandler.selectNode === 'function') {
-                this.state.selectionHandler.selectNode(node.id);
-            }
-        });
         
+        this.state.selectionHandler.selectAll();
         this.state.emit('statusUpdate', `selected all ${this.state.nodes.length} nodes`);
     }
 
@@ -339,9 +331,7 @@ class EventManager {
             }
             
             // clear selections
-            if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
-                this.state.selectionHandler.clearSelection();
-            }
+            this.state.selectionHandler.safeClearSelection();
         }
     }
 
@@ -351,7 +341,7 @@ class EventManager {
         try {
             this.state.selectionHandler.selectNode(node.id, isMultiSelect);
             
-            const selectedCount = this.state.selectionHandler ? this.state.selectionHandler.selectedNodes.size : 0;
+            const selectedCount = this.state.selectionHandler.getSelectedNodeCount();
             if (selectedCount === 1) {
                 this.state.emit('statusUpdate', `selected: ${node.name}`);
             } else {
@@ -452,8 +442,9 @@ class EventManager {
     }
 
     editSelectedNode() {
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size === 1) {
-            const nodeId = Array.from(this.state.selectionHandler.selectedNodes)[0];
+        if (this.state.selectionHandler.hasNodeSelection() && this.state.selectionHandler.getSelectedNodeCount() === 1) {
+            const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
+            const nodeId = nodeIds[0];
             this.state.currentEditingNode = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
             // trigger sidebar update
             this.state.emit('updateSidebar');

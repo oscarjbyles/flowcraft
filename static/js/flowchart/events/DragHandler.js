@@ -54,12 +54,12 @@ class DragHandler {
         this.state.setDragging(true, d);
         
         // check if this node is part of a multi-selection
-        this.isDraggingGroup = this.state.selectionHandler && this.state.selectionHandler.selectedNodes && this.state.selectionHandler.selectedNodes.has(d.id) && this.state.selectionHandler.selectedNodes.size > 1;
+        this.isDraggingGroup = this.state.selectionHandler && this.state.selectionHandler.isNodeSelected(d.id) && this.state.selectionHandler.getSelectedNodeCount() > 1;
         
         if (this.isDraggingGroup) {
             // store initial positions for all selected nodes
             this.groupDragStartPositions = new Map();
-            this.state.selectionHandler.selectedNodes.forEach(nodeId => {
+            this.state.selectionHandler.getSelectedNodeIds().forEach(nodeId => {
                 const node = this.state.nodes.find(n => n.id === nodeId);
                 if (node) {
                     this.groupDragStartPositions.set(nodeId, { x: node.x, y: node.y });
@@ -91,8 +91,8 @@ class DragHandler {
             const offsetY = d.y - d.dragStartY;
             
             // update positions of all selected nodes
-            if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes) {
-                this.state.selectionHandler.selectedNodes.forEach(nodeId => {
+            if (this.state.selectionHandler && this.state.selectionHandler.hasNodeSelection()) {
+                this.state.selectionHandler.getSelectedNodeIds().forEach(nodeId => {
                     if (nodeId !== d.id) { // don't update the dragged node twice
                         const node = this.state.nodes.find(n => n.id === nodeId);
                         if (node && this.groupDragStartPositions.has(nodeId)) {
@@ -154,8 +154,8 @@ class DragHandler {
         
         if (this.isDraggingGroup) {
             // remove dragging class from all selected nodes
-            if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes) {
-                this.state.selectionHandler.selectedNodes.forEach(nodeId => {
+            if (this.state.selectionHandler && this.state.selectionHandler.hasNodeSelection()) {
+                this.state.selectionHandler.getSelectedNodeIds().forEach(nodeId => {
                     const node = this.state.nodes.find(n => n.id === nodeId);
                     if (node) {
                         this.removeDraggingClass(node);
@@ -167,8 +167,8 @@ class DragHandler {
             this.updateGroupDraggedPositions();
             
             // update all selected nodes in state manager if positions changed
-            if (positionChanged && this.state.selectionHandler && this.state.selectionHandler.selectedNodes) {
-                this.state.selectionHandler.selectedNodes.forEach(nodeId => {
+            if (positionChanged && this.state.selectionHandler && this.state.selectionHandler.hasNodeSelection()) {
+                this.state.selectionHandler.getSelectedNodeIds().forEach(nodeId => {
                     const node = this.state.nodes.find(n => n.id === nodeId);
                     if (node) {
                         if (this.state.createNode) {

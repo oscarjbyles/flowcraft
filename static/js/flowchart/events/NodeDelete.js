@@ -37,9 +37,7 @@ class DeleteNode {
         this.state.links = this.state.links.filter(l => l.source !== nodeId && l.target !== nodeId);
         
         // remove from selection - delegate to SelectionHandler
-        if (this.state.selectionHandler) {
-            this.state.selectionHandler.removeNodeFromSelection(nodeId);
-        }
+        this.state.selectionHandler.removeNodeFromSelection(nodeId);
         
         // remove from groups
         this.state.groups.forEach(group => {
@@ -56,7 +54,7 @@ class DeleteNode {
         
         this.state.emit('nodeRemoved', node);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return true;
     }
@@ -68,7 +66,7 @@ class DeleteNode {
 
     // delete selected nodes with proper feedback moved from EventManager.js
     deleteSelectedNodes() {
-        if (!this.state.selectionHandler || this.state.selectionHandler.selectedNodes.size === 0) return false;
+        if (!this.state.selectionHandler.hasNodeSelection()) return false;
 
         // check if we're in run mode - nodes cannot be deleted in run mode
         if (this.state.currentMode === 'run') {
@@ -76,7 +74,7 @@ class DeleteNode {
             return false;
         }
         
-        const nodeIds = Array.from(this.state.selectionHandler.selectedNodes);
+        const nodeIds = this.state.selectionHandler.getSelectedNodeIds();
         let deletedCount = 0;
         let inputNodeAttempts = 0;
         
@@ -104,8 +102,7 @@ class DeleteNode {
 
     // delete selected node (single node)
     deleteSelectedNode() {
-        const selectedNodes = this.state.selectionHandler ? this.state.selectionHandler.getSelectedNodes() : [];
-        if (selectedNodes.length > 0) {
+        if (this.state.selectionHandler.hasNodeSelection()) {
             return this.deleteSelectedNodes();
         }
         return false;
@@ -124,20 +121,18 @@ class DeleteNode {
         this.state.links.splice(linkIndex, 1);
         
         // clear link selection - delegate to SelectionHandler
-        if (this.state.selectionHandler) {
-            this.state.selectionHandler.clearLinkSelection();
-        }
+        this.state.selectionHandler.clearLinkSelection();
 
         this.state.emit('linkRemoved', link);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return true;
     }
 
     // delete selected link
     deleteSelectedLink() {
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedLink) {
+        if (this.state.selectionHandler.hasLinkSelection()) {
             const success = this.deleteLink(this.state.selectionHandler.selectedLink.source, this.state.selectionHandler.selectedLink.target);
             if (success) {
                 this.state.emit('statusUpdate', 'link deleted');
@@ -164,20 +159,18 @@ class DeleteNode {
         this.state.groups.splice(groupIndex, 1);
         
         // clear group selection - delegate to SelectionHandler
-        if (this.state.selectionHandler) {
-            this.state.selectionHandler.clearGroupSelection(groupId);
-        }
+        this.state.selectionHandler.clearGroupSelection(groupId);
 
         this.state.emit('groupRemoved', group);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return true;
     }
 
     // delete selected group
     deleteSelectedGroup() {
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedGroup) {
+        if (this.state.selectionHandler.hasGroupSelection()) {
             const groupName = this.state.selectionHandler.selectedGroup.name;
             const success = this.deleteGroup(this.state.selectionHandler.selectedGroup.id);
             if (success) {
@@ -196,13 +189,13 @@ class DeleteNode {
         this.state.annotations.splice(idx, 1);
         this.state.emit('annotationRemoved', ann);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         return true;
     }
 
     // delete selected annotation
     deleteSelectedAnnotation() {
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedAnnotation) {
+        if (this.state.selectionHandler.hasAnnotationSelection()) {
             const annotationText = this.state.selectionHandler.selectedAnnotation.text || 'text';
             const success = this.removeAnnotation(this.state.selectionHandler.selectedAnnotation.id);
             if (success) {
@@ -215,13 +208,13 @@ class DeleteNode {
 
     // handle delete key press - consolidated from EventManager.js
     handleDelete() {
-        if (this.state.selectionHandler && this.state.selectionHandler.selectedNodes.size > 0) {
+        if (this.state.selectionHandler.hasNodeSelection()) {
             return this.deleteSelectedNodes();
-        } else if (this.state.selectionHandler && this.state.selectionHandler.selectedAnnotation) {
+        } else if (this.state.selectionHandler.hasAnnotationSelection()) {
             return this.deleteSelectedAnnotation();
-        } else if (this.state.selectionHandler && this.state.selectionHandler.selectedLink) {
+        } else if (this.state.selectionHandler.hasLinkSelection()) {
             return this.deleteSelectedLink();
-        } else if (this.state.selectionHandler && this.state.selectionHandler.selectedGroup) {
+        } else if (this.state.selectionHandler.hasGroupSelection()) {
             return this.deleteSelectedGroup();
         }
         return false;

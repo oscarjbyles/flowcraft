@@ -48,7 +48,7 @@ class CreateNode {
         }
         
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return node;
     }
@@ -132,7 +132,7 @@ class CreateNode {
 
         this.state.emit('nodeUpdated', node);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return true;
     }
@@ -342,12 +342,8 @@ class CreateNode {
         this.state.groups.push(group);
         
         // clear node selection and select the new group
-        if (this.state.selectionHandler && typeof this.state.selectionHandler.clearSelection === 'function') {
-            this.state.selectionHandler.clearSelection();
-        }
-        if (this.state.selectionHandler && typeof this.state.selectionHandler.selectGroup === 'function') {
-            this.state.selectionHandler.selectGroup(group.id);
-        }
+        this.state.selectionHandler.safeClearSelection();
+        this.state.selectionHandler.safeSelectGroup(group.id);
         
         this.state.emit('groupCreated', group);
         this.state.emit('selectionChanged', {
@@ -356,7 +352,7 @@ class CreateNode {
             group: group
         });
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         
         return group;
     }
@@ -387,7 +383,7 @@ class CreateNode {
         this.state.annotations.push(annotation);
         this.state.emit('annotationAdded', annotation);
         this.state.emit('stateChanged');
-        if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
         return annotation;
     }
 
@@ -487,6 +483,8 @@ class CreateNode {
         
         this.state.links.push(link);
         this.state.emit('linkAdded', link);
+        this.state.emit('stateChanged');
+        if (this.state.saving) this.state.saving.triggerAutosave();
     }
 
     // check loaded nodes for input requirements (called after loading from JSON)

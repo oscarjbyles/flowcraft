@@ -38,12 +38,6 @@ class StateManager extends (window.EventEmitter || class {
         // annotations (text labels, braces, etc.)
         this.annotations = [];
         
-        // selection state - now handled by SelectionHandler
-        // this.selectedNodes = new Set();
-        // this.selectedLink = null;
-        // this.selectedGroup = null;
-        // this.selectedAnnotation = null;
-        
         // interaction state
         this.isDragging = false;
         this.draggedNode = null;
@@ -90,50 +84,6 @@ class StateManager extends (window.EventEmitter || class {
         this.deleteNode = null;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // association helpers delegation to CreateNode
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     updateGroup(groupId, updates) {
         const group = this.getGroup(groupId);
         if (!group) return false;
@@ -151,8 +101,6 @@ class StateManager extends (window.EventEmitter || class {
         
         return true;
     }
-
-
 
     getGroup(groupId) {
         return this.groups.find(g => g.id === groupId);
@@ -172,8 +120,6 @@ class StateManager extends (window.EventEmitter || class {
         this.draggedNode = draggedNode;
         this.emit('dragStateChanged', { isDragging, draggedNode });
     }
-
-
 
     setMode(mode) {
         const previousMode = this.currentMode;
@@ -274,6 +220,15 @@ class StateManager extends (window.EventEmitter || class {
             groupCount: this.groups.length,
             selectedNodeCount: this.selectionHandler ? this.selectionHandler.getSelectedNodeCount() : 0
         };
+    }
+
+    // Connect selection handler to state changes for validation
+    connectSelectionHandler() {
+        if (this.selectionHandler && typeof this.selectionHandler.onStateChanged === 'function') {
+            this.on('stateChanged', () => {
+                this.selectionHandler.onStateChanged();
+            });
+        }
     }
 
 }

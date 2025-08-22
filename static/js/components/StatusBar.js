@@ -169,7 +169,7 @@ class StatusBar {
         }
         
         // trigger immediate save
-                    if (this.state.saving) this.state.saving.scheduleAutosave();
+        if (this.state.saving) this.state.saving.triggerAutosave();
     }
 
     updateStatus(type, message, options = {}) {
