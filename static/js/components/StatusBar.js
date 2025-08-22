@@ -4,9 +4,9 @@
     if (window.StatusBar) { return; }
 
 class StatusBar {
-    constructor(flowchartBuilder) {
-        this.flowchartBuilder = flowchartBuilder;
-        this.state = flowchartBuilder.state;
+    constructor(app) {
+        this.app = app;
+        this.state = app.state;
         
         // status bar elements
         this.statusText = null;

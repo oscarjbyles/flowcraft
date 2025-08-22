@@ -4,9 +4,9 @@
     if (window.ResumeExecution) { return; }
 
 class ResumeExecution {
-    constructor(flowchartBuilder) {
-        this.builder = flowchartBuilder;
-        this.state = flowchartBuilder.state;
+    constructor(app) {
+        this.builder = app;
+        this.state = app.state;
     }
 
     async handleResumeExecution(data) {

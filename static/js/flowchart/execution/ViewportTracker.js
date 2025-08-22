@@ -4,11 +4,11 @@
     if (window.ViewportTracker) { return; }
 
 class ViewportTracker {
-    constructor(flowchartBuilder) {
-        this.flowchartBuilder = flowchartBuilder;
-        this.state = flowchartBuilder.state;
-        this.svg = flowchartBuilder.svg;
-        this.zoom = flowchartBuilder.zoom;
+    constructor(app) {
+        this.app = app;
+        this.state = app.state;
+        this.svg = app.svg;
+        this.zoom = app.zoom;
     }
 
     // smoothly center a node in both axes at a specific zoom level

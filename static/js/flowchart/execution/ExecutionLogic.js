@@ -4,9 +4,9 @@
     if (window.ExecutionLogic) { return; }
 
 class ExecutionLogic {
-    constructor(flowchartBuilder) {
-        this.builder = flowchartBuilder;
-        this.state = flowchartBuilder.state;
+    constructor(app) {
+        this.builder = app;
+        this.state = app.state;
         
         // execution control
         this.currentExecutionController = null;

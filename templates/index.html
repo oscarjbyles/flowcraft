@@ -289,17 +289,10 @@
 
                 console.log('all dependencies loaded, initializing app');
                 
-                // load FlowchartBuilder first
-                const script = document.createElement('script');
-                script.src = '/static/js/core/FlowchartBuilder.js';
-                document.head.appendChild(script);
-                
-                // load Index.js after FlowchartBuilder
-                script.onload = function() {
-                    const mainScript = document.createElement('script');
-                    mainScript.src = '/static/js/pages/Index.js';
-                    document.head.appendChild(mainScript);
-                };
+                // load Index.js directly
+                const mainScript = document.createElement('script');
+                mainScript.src = '/static/js/pages/Index.js';
+                document.head.appendChild(mainScript);
             }
 
             // start waiting for dependencies

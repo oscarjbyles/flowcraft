@@ -4,11 +4,11 @@
     if (window.Toolbars) { return; }
 
 class Toolbars {
-    constructor(flowchartBuilder) {
-        this.builder = flowchartBuilder;
-        this.state = flowchartBuilder.state;
-        this.createNode = flowchartBuilder.createNode;
-        this.updateStatusBar = (message) => flowchartBuilder.updateStatusBar(message);
+    constructor(app) {
+        this.builder = app;
+        this.state = app.state;
+        this.createNode = app.createNode;
+        this.updateStatusBar = (message) => app.updateStatusBar(message);
         
         // toolbar state
         this._collapseBuildToolbar = null;

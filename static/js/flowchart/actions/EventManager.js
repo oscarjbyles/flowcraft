@@ -4,10 +4,10 @@
     if (window.EventManager) { return; }
 
 class EventManager {
-    constructor(stateManager, createNode, flowchartBuilder) {
+    constructor(stateManager, createNode, app) {
         this.state = stateManager;
         this.createNode = createNode;
-        this.flowchartBuilder = flowchartBuilder;
+        this.app = app;
         this.setupKeyboardShortcuts();
         this.setupCoreEvents();
     }
@@ -26,19 +26,19 @@ class EventManager {
         this.state.on('stateChanged', () => {
             // update order when state changes if in flow view
             if (this.state.isFlowView) {
-                NodeOrder.renderNodeOrder(this.flowchartBuilder.nodeRenderer, (message) => this.flowchartBuilder.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
+                NodeOrder.renderNodeOrder(this.app.nodeRenderer, (message) => this.app.updateStatusBar(message), this.state.nodes, this.state.links, this.state.groups);
             }
             if (this.state.isErrorView) {
-                ErrorCircles.renderErrorCircles(this.flowchartBuilder.nodeRenderer);
-                if (this.flowchartBuilder.nodeRenderer && this.flowchartBuilder.nodeRenderer.updateCoverageAlerts) {
-                    this.flowchartBuilder.nodeRenderer.updateCoverageAlerts();
+                ErrorCircles.renderErrorCircles(this.app.nodeRenderer);
+                if (this.app.nodeRenderer && this.app.nodeRenderer.updateCoverageAlerts) {
+                    this.app.nodeRenderer.updateCoverageAlerts();
                 }
             }
         });
         
         // status updates
         this.state.on('statusUpdate', (message) => {
-            this.flowchartBuilder.updateStatusBar(message);
+            this.app.updateStatusBar(message);
         });
     }
 
@@ -46,21 +46,21 @@ class EventManager {
         // data events
         this.state.on('dataSaved', (data) => {
             if (data.message) {
-                this.flowchartBuilder.updateStatusBar(data.message);
+                this.app.updateStatusBar(data.message);
             }
         });
         
         this.state.on('dataLoaded', (data) => {
-            this.flowchartBuilder.restoreViewportFromStorage();
+            this.app.restoreViewportFromStorage();
         });
         
         // error events
         this.state.on('saveError', (data) => {
-            this.flowchartBuilder.updateStatusBar(data.message);
+            this.app.updateStatusBar(data.message);
         });
         
         this.state.on('loadError', (data) => {
-            this.flowchartBuilder.updateStatusBar(data.message);
+            this.app.updateStatusBar(data.message);
         });
         
         // destructive change guard
@@ -71,18 +71,18 @@ class EventManager {
 
     setupModeEvents() {
         // zoom events
-        this.state.on('disableZoom', () => this.flowchartBuilder.disableZoom());
-        this.state.on('enableZoom', () => this.flowchartBuilder.enableZoom());
+        this.state.on('disableZoom', () => this.app.disableZoom());
+        this.state.on('enableZoom', () => this.app.enableZoom());
         
         // mode change events
         this.state.on('modeChanged', (data) => {
-            if (this.flowchartBuilder.toolbars) {
-                this.flowchartBuilder.toolbars.updateModeUI(data.mode, data.previousMode);
+            if (this.app.toolbars) {
+                this.app.toolbars.updateModeUI(data.mode, data.previousMode);
             }
         });
         
         this.state.on('flowViewChanged', (data) => {
-            this.flowchartBuilder.updateFlowViewUI(data.isFlowView);
+            this.app.updateFlowViewUI(data.isFlowView);
         });
         
         this.state.on('errorViewChanged', (data) => {
@@ -92,8 +92,8 @@ class EventManager {
         // link events for error view
         ['linkAdded','linkUpdated','linkRemoved'].forEach(evt => {
             this.state.on(evt, () => {
-                if (this.state.isErrorView && this.flowchartBuilder.linkRenderer && this.flowchartBuilder.linkRenderer.renderCoverageAlerts) {
-                    this.flowchartBuilder.linkRenderer.renderCoverageAlerts();
+                if (this.state.isErrorView && this.app.linkRenderer && this.app.linkRenderer.renderCoverageAlerts) {
+                    this.app.linkRenderer.renderCoverageAlerts();
                 }
             });
         });
@@ -102,8 +102,8 @@ class EventManager {
     setupSelectionEvents() {
         // selection changes
         this.state.on('selectionChanged', () => {
-            if (this.flowchartBuilder.annotationRenderer && this.flowchartBuilder.annotationRenderer.render) {
-                this.flowchartBuilder.annotationRenderer.render();
+            if (this.app.annotationRenderer && this.app.annotationRenderer.render) {
+                this.app.annotationRenderer.render();
             }
             // scroll to selected node in run mode
             if (this.state.isRunMode && this.state.selectedNodes.size === 1) {
@@ -155,9 +155,9 @@ class EventManager {
                 const res = await this.state.storage.restoreLatestBackup();
                 if (res && res.success) {
                     await this.state.load();
-                    this.flowchartBuilder.updateStatusBar('restored latest backup');
+                    this.app.updateStatusBar('restored latest backup');
                 } else {
-                    this.flowchartBuilder.updateStatusBar((res && res.message) || 'failed to restore backup');
+                    this.app.updateStatusBar((res && res.message) || 'failed to restore backup');
                 }
             } catch (_) {}
             cleanup();
@@ -166,7 +166,7 @@ class EventManager {
             try {
                 // force the save to accept the destructive change
                 await this.state.save(false, true);
-                this.flowchartBuilder.updateStatusBar('changes saved');
+                this.app.updateStatusBar('changes saved');
             } catch (_) {}
             cleanup();
         };

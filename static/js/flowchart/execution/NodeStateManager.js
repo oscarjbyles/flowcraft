@@ -4,9 +4,9 @@
     if (window.NodeStateManager) { return; }
 
 class NodeStateManager {
-    constructor(flowchartBuilder) {
-        this.builder = flowchartBuilder;
-        this.state = flowchartBuilder.state;
+    constructor(app) {
+        this.builder = app;
+        this.state = app.state;
     }
 
     // node state enum for better type safety and consistency

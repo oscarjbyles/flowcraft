@@ -4,8 +4,8 @@
     if (window.OutputManager) { return; }
 
 class OutputManager {
-    constructor(flowchartBuilder) {
-        this.flowchartBuilder = flowchartBuilder;
+    constructor(app) {
+        this.app = app;
         this.globalExecutionLog = ''; // overall execution log
     }
 
@@ -15,8 +15,8 @@ class OutputManager {
         
         // only update the console display if no specific node is selected
         // or if we're not in run mode with a node selection
-        const selectedNodes = Array.from(this.flowchartBuilder.state.selectedNodes);
-        const isRunMode = this.flowchartBuilder.state.currentMode === 'run';
+        const selectedNodes = Array.from(this.app.state.selectedNodes);
+        const isRunMode = this.app.state.currentMode === 'run';
         
         if (!isRunMode || selectedNodes.length !== 1) {
             const consoleLog = document.getElementById('console_output_log');
@@ -73,20 +73,20 @@ class OutputManager {
         this.globalExecutionLog = '';
         
         // clear all node execution results
-        if (this.flowchartBuilder.nodeExecutionResults) {
-            this.flowchartBuilder.nodeExecutionResults.clear();
+        if (this.app.nodeExecutionResults) {
+            this.app.nodeExecutionResults.clear();
         }
         // also clear execution logic data
-        if (this.flowchartBuilder.executionLogic) {
-            this.flowchartBuilder.executionLogic.nodeExecutionResults.clear();
+        if (this.app.executionLogic) {
+            this.app.executionLogic.nodeExecutionResults.clear();
         }
         // clear variable manager data
-        if (this.flowchartBuilder.variableManager) {
-            this.flowchartBuilder.variableManager.clearVariables();
+        if (this.app.variableManager) {
+            this.app.variableManager.clearVariables();
         }
         
         // trigger sidebar update to reflect cleared state
-        this.flowchartBuilder.state.emit('updateSidebar');
+        this.app.state.emit('updateSidebar');
     }
 
     formatNodeOutput(output) {
