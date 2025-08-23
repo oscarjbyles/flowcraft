@@ -673,6 +673,36 @@
   ],
   "executions": [
     {
+      "execution_id": "5b6ff88d-fe04-4453-a14e-7284f7e2bc1f",
+      "timestamp": "2025-08-23T09:37:12.618016",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "failed",
+      "total_nodes": 25,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 8.0,
+      "completed_percentage": 12.0,
+      "failed_node": "python node",
+      "elapsed_ms": 7748,
+      "execution_time": "7.748s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
+    },
+    {
+      "execution_id": "dfbbe284-56c6-41c9-a47c-5098d4c14ffa",
+      "timestamp": "2025-08-23T09:24:47.457983",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "failed",
+      "total_nodes": 25,
+      "successful_nodes": 2,
+      "completed_nodes": 3,
+      "success_percentage": 8.0,
+      "completed_percentage": 12.0,
+      "failed_node": "python node",
+      "elapsed_ms": 8016,
+      "execution_time": "8.016s",
+      "error_snippet": "network error: server error: 400 BAD REQUEST"
+    },
+    {
       "execution_id": "a1671d5b-2940-4211-883d-f52f2b8a4d44",
       "timestamp": "2025-08-22T23:15:43.246032",
       "flowchart_name": "1_categories_selectors.json",

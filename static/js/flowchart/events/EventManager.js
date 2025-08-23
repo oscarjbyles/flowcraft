@@ -223,7 +223,7 @@ class EventManager {
                     // only handle shortcut when not focused on form fields
                     if (this.shouldHandleShortcut(event)) {
                         event.preventDefault();
-                        this.handleSelectAll();
+                        this.state.selectionHandler.handleSelectAll();
                     }
                     // else: allow native select-all in inputs/textareas
                 }
@@ -245,10 +245,6 @@ class EventManager {
                 }
                 break;
         }
-    }
-
-    handleKeyUp(event) {
-        // handle key releases if needed
     }
 
     shouldHandleShortcut(event) {
@@ -298,12 +294,7 @@ class EventManager {
         }
     }
 
-    handleSelectAll() {
-        if (!this.shouldHandleShortcut({ key: 'a', ctrlKey: true })) return;
-        
-        this.state.selectionHandler.selectAll();
-        this.state.emit('statusUpdate', `selected all ${this.state.nodes.length} nodes`);
-    }
+
 
     // canvas event handlers
     handleCanvasClick(event, coordinates) {

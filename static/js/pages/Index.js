@@ -97,8 +97,7 @@
                 console.error('error initializing navigation:', error);
             }
 
-            console.log('flowchart application initialized');
-            console.log('debug helpers available at window.debugFlowchart');
+
             
         } catch (error) {
             console.error('failed to initialize flowchart application:', error);
@@ -680,7 +679,9 @@
         
         // initialize saving module
         app.state.saving = new Saving(app.state);
-        console.log('saving module attached to state:', !!app.state.saving);
+
+        // initialize execution feed module
+        app.executionFeed = new ExecutionFeed(app.state);
         
         // initialize node creation service
         app.createNode = new CreateNode(app.state, (message) => app.updateStatusBar(message));

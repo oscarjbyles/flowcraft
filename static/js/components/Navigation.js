@@ -595,7 +595,7 @@
         // wire left navigation buttons
         setupNavButtons(app){
             onDomReady(() => {
-                console.log('[nav] setupNavButtons start', { hasApp: !!app, path: window.location.pathname });
+        
                 
                 // dashboard
                 const db = document.getElementById('dashboard_btn');
@@ -649,27 +649,27 @@
 
                 // highlight active nav (non-builder pages only)
                 setActiveNav();
-                console.log('[nav] setupNavButtons done');
+
             });
         },
 
         init(app){
-            console.log('[nav] init called', { hasApp: !!app });
+    
             this.setupNavButtons(app || (window.flowchartApp || null));
             
             // flowchart ui setup
             if (!app && window.Navigation && typeof window.Navigation.setupFlowchartUI === 'function') {
-                console.log('[nav] calling setupFlowchartUI');
+
                 window.Navigation.setupFlowchartUI(null);
             } else if (app) {
-                console.log('[nav] skipping setupFlowchartUI on builder (handled by Navigation)');
+
             } else {
                 console.warn('[nav] setupFlowchartUI not available on window.Navigation');
             }
             
             // initialize page-specific functionality
             initializePage();
-            console.log('[nav] init complete');
+
         },
 
         // expose utility functions for other modules

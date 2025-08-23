@@ -481,6 +481,11 @@ class ExecutionStatus {
         const statusText = executionData.status === 'success' ? 'completed' : 
                           executionData.status === 'failed' ? 'failed' : (executionData.status || 'stopped');
         this.updateExecutionStatus(statusText, `historical execution - ${executionData.successful_nodes}/${executionData.total_nodes} nodes completed`);
+        
+        // restore execution feed
+        if (this.builder.executionFeed) {
+            this.builder.executionFeed.displayHistoryExecutionResults(executionData);
+        }
     }
 }
 

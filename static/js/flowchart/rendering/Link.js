@@ -657,7 +657,7 @@ class LinkRenderer {
         // guard: hide link coverage alerts when error view is disabled
         if (!this.state.isErrorView) {
             try {
-                console.log('[error_view] removing link coverage alerts (disabled)');
+        
             } catch (_) {}
             this.linkGroup && this.linkGroup.selectAll('.link-coverage-alert').remove();
             data = [];

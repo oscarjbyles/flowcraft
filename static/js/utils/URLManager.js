@@ -64,7 +64,7 @@ class URLManager {
         // refresh internal params to reflect latest url
         this.params = new URLSearchParams(window.location.search);
 
-        console.log(`[URLManager] Updated URL to flowchart: ${displayName}`);
+
     }
 
     /**
@@ -182,7 +182,7 @@ class URLManager {
      */
     setupPopstateHandler(callback) {
         window.addEventListener('popstate', (event) => {
-            console.log('[URLManager] Browser navigation detected');
+    
             
             // update internal params from current url
             this.params = new URLSearchParams(window.location.search);

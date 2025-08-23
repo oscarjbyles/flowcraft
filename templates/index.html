@@ -270,12 +270,9 @@
                 const missing = requiredClasses.filter(className => !window[className]);
                 
                 if (missing.length > 0) {
-                    console.log('waiting for dependencies:', missing);
                     setTimeout(waitForDependencies, 100);
                     return;
                 }
-
-                console.log('all dependencies loaded, initializing app');
                 
                 // load Index.js directly
                 const mainScript = document.createElement('script');

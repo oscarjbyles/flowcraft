@@ -85,6 +85,7 @@ class StateManager extends (window.EventEmitter || class {
     }
 
     updateGroup(groupId, updates) {
+
         const group = this.getGroup(groupId);
         if (!group) return false;
 
@@ -100,6 +101,7 @@ class StateManager extends (window.EventEmitter || class {
         this.emit('stateChanged');
         
         return true;
+        
     }
 
     getGroup(groupId) {

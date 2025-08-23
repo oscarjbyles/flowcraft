@@ -23,7 +23,7 @@ class NodeRenderer {
         // hide coverage alerts unless error view is enabled
         try {
             if (!this.state.isErrorView) {
-                console.log('[error_view] removing coverage alerts (disabled)');
+        
                 this.nodeGroup.selectAll('.coverage_alert').remove();
                 return;
             }

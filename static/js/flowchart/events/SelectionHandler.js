@@ -247,6 +247,19 @@ class SelectionHandler {
         this.emitSelectionChange();
     }
 
+    handleSelectAll() {
+        // only handle shortcut when not focused on form fields
+        const activeElement = document.activeElement;
+        const inputElements = ['INPUT', 'TEXTAREA', 'SELECT'];
+        
+        if (inputElements.includes(activeElement.tagName)) {
+            return; // don't handle shortcuts if user is typing in an input
+        }
+        
+        this.selectAll();
+        this.state.emit('statusUpdate', `selected all ${this.state.nodes.length} nodes`);
+    }
+
     selectNone() {
         this.clearSelection();
         this.emitSelectionChange();

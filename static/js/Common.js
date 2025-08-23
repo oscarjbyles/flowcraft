@@ -13,9 +13,7 @@
             // verify core utilities are available
             const coreUtils = ['EventEmitter', 'Geometry', 'Storage', 'Validation', 'URLManager', 'DropdownManager'];
             coreUtils.forEach(util => {
-                if (window[util]) {
-                    console.log(`✅ ${util} loaded successfully`);
-                } else {
+                if (!window[util]) {
                     console.warn(`⚠️ ${util} not found`);
                 }
             });

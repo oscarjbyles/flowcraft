@@ -7,7 +7,7 @@ class Sidebar {
     constructor(stateManager, createNode) {
         this.state = stateManager;
         this.createNode = createNode;
-        console.log('sidebar created, saving module available:', !!(this.state && this.state.saving));
+
         this.currentView = 'default';
         this.pythonFiles = [];
         this.filteredFiles = [];

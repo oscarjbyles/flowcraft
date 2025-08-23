@@ -80,6 +80,11 @@ class ExecutionLogic {
         this.builder.outputManager.globalExecutionLog = '';
         this.builder.outputManager.clearOutput();
 
+        // clear execution feed
+        if (this.builder.executionFeed) {
+            this.builder.executionFeed.clear();
+        }
+
         // reset blocked branches
         this.blockedNodeIds.clear();
         // clear restored variable state when starting new execution
@@ -223,6 +228,11 @@ class ExecutionLogic {
         this.builder.nodeStateManager.addNodeLoadingAnimation(node.id);
         this.builder.executionStatus.updateExecutionStatus('running', `executing node ${nodeIndex}/${totalNodes}: ${node.name}`);
         
+        // create feed entry for this node
+        if (this.builder.executionFeed) {
+            this.builder.executionFeed.createNodeEntry(node);
+        }
+        
         // auto-follow currently running python nodes if tracking is enabled and not user-disabled
         console.log('[ExecutionLogic] viewport tracking check:', {
             nodeType: node?.type,
@@ -293,6 +303,11 @@ class ExecutionLogic {
                 this.builder.nodeStateManager.setNodeState(node.id, 'completed');
                 this.builder.executionStatus.updateNodeDetails(node, 'completed', runtime, result.output);
 
+                // finalize feed entry for this node
+                if (this.builder.executionFeed) {
+                    this.builder.executionFeed.finalizeNode(node, result, startTime);
+                }
+
                 // auto-highlight associated input node in green when inputs were used successfully
                 try {
                     const usedInputs = !!(result && (result.input_used || (result.input_values && Object.keys(result.input_values || {}).length > 0)));
@@ -353,6 +368,12 @@ class ExecutionLogic {
                     node.runtimeStatus = 'error';
                     if (this.builder.nodeRenderer) this.builder.nodeRenderer.updateNodeStyles();
                 }
+                
+                // finalize feed entry for this node (with error)
+                if (this.builder.executionFeed) {
+                    this.builder.executionFeed.finalizeNode(node, result, startTime);
+                }
+                
                 // format error message with line number if available
                 let errorDisplay = result.error || 'unknown error';
                 if (result.error_line && result.error_line > 0 && !/^\s*line\s+\d+\s*:/i.test(errorDisplay)) {
@@ -648,6 +669,12 @@ class ExecutionLogic {
                 // normalize whitespace to improve duplicate detection
                 line = line.trim();
                 if (!line) return;
+                
+                // add line to execution feed
+                if (this.builder.executionFeed) {
+                    this.builder.executionFeed.addLine(node, line);
+                }
+                
                 // append live output to the sidebar console if this node is selected
                 const selected = this.state.selectionHandler ? Array.from(this.state.selectionHandler.selectedNodes) : [];
                 if (selected.length === 1 && selected[0] === node.id) {

@@ -31,7 +31,7 @@ class Saving {
         this.debounceNodeSave = this.debounceNodeSave.bind(this);
         this.debounceGroupSave = this.debounceGroupSave.bind(this);
         
-        console.log('saving: module created with storage instance:', !!this.storage);
+
     }
 
     /**
@@ -39,7 +39,7 @@ class Saving {
      */
     initialize(builder) {
         this.builder = builder;
-        console.log('saving: module initialized with builder reference');
+
     }
 
     /**
