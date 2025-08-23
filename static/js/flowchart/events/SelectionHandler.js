@@ -45,7 +45,19 @@ class SelectionHandler {
         } else {
             // normal selection behavior
             const isMultiSelect = event.shiftKey;
-            this.events.handleNodeClick(event, node);
+            
+            try {
+                this.selectNode(node.id, isMultiSelect);
+                
+                const selectedCount = this.getSelectedNodeCount();
+                if (selectedCount === 1) {
+                    this.state.emit('statusUpdate', `selected: ${node.name}`);
+                } else {
+                    this.state.emit('statusUpdate', `selected ${selectedCount} nodes`);
+                }
+            } catch (error) {
+                this.state.emit('statusUpdate', `error selecting node: ${error.message}`);
+            }
         }
         
         // when in run mode, ensure the right sidebar is open on node click
@@ -83,7 +95,13 @@ class SelectionHandler {
 
     handleLinkClick(event, link) {
         event.stopPropagation();
-        this.events.handleLinkClick(event, link);
+        
+        try {
+            this.selectLink(link);
+            this.state.emit('statusUpdate', 'link selected - press delete to remove');
+        } catch (error) {
+            this.state.emit('statusUpdate', `error selecting link: ${error.message}`);
+        }
         
         // when in run mode, ensure the right sidebar is open on link click (e.g., if→python circle)
         // all comments in lower case
@@ -119,7 +137,13 @@ class SelectionHandler {
 
     handleGroupClick(event, group) {
         event.stopPropagation();
-        this.events.handleGroupClick(event, group);
+        
+        try {
+            this.selectGroup(group.id);
+            this.state.emit('statusUpdate', `selected group: ${group.name}`);
+        } catch (error) {
+            this.state.emit('statusUpdate', `error selecting group: ${error.message}`);
+        }
         
         this.state.emit('updateSidebar');
     }
@@ -127,7 +151,33 @@ class SelectionHandler {
     handleCanvasClick(event, coordinates) {
         // if not holding shift, this will clear selection and add new node
         if (!event.shiftKey) {
-            this.events.handleCanvasClick(event, coordinates);
+            // check if clicking on empty space
+            const clickedNode = this.state.findNodeAtPosition(coordinates.x, coordinates.y);
+            
+            if (!clickedNode) {
+                // if a group drag just completed, suppress this click to avoid unintended node creation
+                if (this.state.suppressNextCanvasClick) {
+                    this.state.suppressNextCanvasClick = false;
+                    return;
+                }
+                // only allow node creation in build mode
+                if (this.state.isBuildMode) {
+                    // clicked on empty space - add new node
+                    try {
+                        const node = this.state.createNode.addNode({
+                            x: coordinates.x,
+                            y: coordinates.y
+                        });
+                        this.state.emit('statusUpdate', `added node: ${node.name}`);
+                    } catch (error) {
+                        this.state.emit('statusUpdate', `error adding node: ${error.message}`);
+                    }
+                }
+                
+                // clear selections
+                this.safeClearSelection();
+            }
+            
             this.state.emit('updateNodeStyles');
             this.state.emit('updateLinkStyles');
             this.state.emit('updateSidebar');

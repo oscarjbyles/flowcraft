@@ -33,6 +33,8 @@
   height: 28px;
   flex-shrink: 0;
   color: white;
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 /* content */

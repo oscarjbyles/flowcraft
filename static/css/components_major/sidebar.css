@@ -27,6 +27,10 @@
     min-height: 0; /* allow flex shrinking */
 }
 
+.sidebar_content {
+    padding: 16px;
+}
+
 /* collapsed sidebar: hide panel, expand canvas and move start toolbar left */
 .properties_sidebar.collapsed { display: none !important; }
 
@@ -52,6 +56,7 @@
     width: 100%;
     border-right: none;
     overflow-y: auto;
+    padding: 16px;
 }
 
 .properties_sidebar.run_mode .sidebar_content:last-child {

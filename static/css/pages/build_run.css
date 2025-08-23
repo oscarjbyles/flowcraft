@@ -110,7 +110,6 @@
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--border-color);
     background: var(--surface-color);
     z-index: 1101; /* ensure header stays above other content */
 }

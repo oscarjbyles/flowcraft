@@ -296,70 +296,7 @@ class EventManager {
 
 
 
-    // canvas event handlers
-    handleCanvasClick(event, coordinates) {
-        // check if clicking on empty space
-        const clickedNode = this.state.findNodeAtPosition(coordinates.x, coordinates.y);
-        
-        if (!clickedNode) {
-            // if a group drag just completed, suppress this click to avoid unintended node creation
-            if (this.state.suppressNextCanvasClick) {
-                this.state.suppressNextCanvasClick = false;
-                return;
-            }
-            // only allow node creation in build mode
-            if (this.state.isBuildMode) {
-                // clicked on empty space - add new node
-                try {
-                    const node = this.createNode.addNode({
-                        x: coordinates.x,
-                        y: coordinates.y
-                    });
-                    this.state.emit('statusUpdate', `added node: ${node.name}`);
-                } catch (error) {
-                    this.state.emit('statusUpdate', `error adding node: ${error.message}`);
-                }
-            }
-            
-            // clear selections
-            this.state.selectionHandler.safeClearSelection();
-        }
-    }
 
-    handleNodeClick(event, node) {
-        const isMultiSelect = event.shiftKey;
-        
-        try {
-            this.state.selectionHandler.selectNode(node.id, isMultiSelect);
-            
-            const selectedCount = this.state.selectionHandler.getSelectedNodeCount();
-            if (selectedCount === 1) {
-                this.state.emit('statusUpdate', `selected: ${node.name}`);
-            } else {
-                this.state.emit('statusUpdate', `selected ${selectedCount} nodes`);
-            }
-        } catch (error) {
-            this.state.emit('statusUpdate', `error selecting node: ${error.message}`);
-        }
-    }
-
-    handleLinkClick(event, link) {
-        try {
-            this.state.selectionHandler.selectLink(link);
-            this.state.emit('statusUpdate', 'link selected - press delete to remove');
-        } catch (error) {
-            this.state.emit('statusUpdate', `error selecting link: ${error.message}`);
-        }
-    }
-
-    handleGroupClick(event, group) {
-        try {
-            this.state.selectionHandler.selectGroup(group.id);
-            this.state.emit('statusUpdate', `selected group: ${group.name}`);
-        } catch (error) {
-            this.state.emit('statusUpdate', `error selecting group: ${error.message}`);
-        }
-    }
 
     // drag event handlers
     handleDragStart(event, node) {

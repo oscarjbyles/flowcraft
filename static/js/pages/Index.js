@@ -370,6 +370,24 @@
                 }
             },
 
+            switchToBuildMode() {
+                this.state.setMode('build');
+                // disable auto tracking when entering build mode
+                this.isAutoTrackEnabled = false;
+                this.userDisabledTracking = true;
+                if (this.toolbars && this.toolbars.refreshTrackBtnUI) {
+                    this.toolbars.refreshTrackBtnUI();
+                }
+                // clear any runtime indicators when switching to build mode
+                if (this.executionLogic) {
+                    this.clearIfRuntimeIndicators();
+                }
+                // hide the live execution feed when switching to build mode
+                if (this.toolbars && this.toolbars.setRunFeedBarDisplay) {
+                    this.toolbars.setRunFeedBarDisplay('none');
+                }
+            },
+
             toggleFlowView() {
                 // allow flow view toggle in both build and run modes
                 this.state.setFlowView(!this.state.isFlowView);

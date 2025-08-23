@@ -35,8 +35,33 @@
 
     function setActiveNav(){
         const path = window.location.pathname;
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode') || 'build';
+        
+        // clear all active states
         const ids = ['dashboard_btn','build_btn','scripts_btn','run_btn','export_btn','data_matrix_btn'];
-        ids.forEach(id => { const el = document.getElementById(id); if (el){ el.classList.remove('active'); el.classList.remove('run_mode_active'); }});
+        ids.forEach(id => { 
+            const el = document.getElementById(id); 
+            if (el){ 
+                el.classList.remove('active'); 
+                el.classList.remove('run_mode_active'); 
+            }
+        });
+        
+        // handle main flowchart page (/) with mode-specific highlighting
+        if (path === '/') {
+            if (mode === 'run') {
+                const runBtn = document.getElementById('run_btn');
+                if (runBtn) runBtn.classList.add('run_mode_active');
+            } else {
+                // build mode or no mode specified
+                const buildBtn = document.getElementById('build_btn');
+                if (buildBtn) buildBtn.classList.add('active');
+            }
+            return;
+        }
+        
+        // handle other pages
         const map = { '/dashboard':'dashboard_btn', '/scripts':'scripts_btn', '/data':'data_matrix_btn' };
         const id = map[path];
         const el = id ? document.getElementById(id) : null;
@@ -590,6 +615,17 @@
         });
     }
 
+    // update navigation highlighting when url changes
+    function updateNavOnUrlChange() {
+        // listen for popstate events (back/forward navigation)
+        window.addEventListener('popstate', () => {
+            setTimeout(setActiveNav, 0); // slight delay to ensure url is updated
+        });
+        
+        // also update on initial load
+        setActiveNav();
+    }
+
     // main navigation object
     const Navigation = {
         // wire left navigation buttons
@@ -607,7 +643,12 @@
                     if (app && typeof app.switchToBuildMode === 'function') {
                         try { if (app.state && app.state.isRunMode && typeof app.clearRunModeState === 'function') app.clearRunModeState(); } catch(_) {}
                         app.switchToBuildMode();
-                        try { const u = new URL(window.location.href); u.searchParams.set('mode','build'); window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); } catch(_) {}
+                        try { 
+                            const u = new URL(window.location.href); 
+                            u.searchParams.set('mode','build'); 
+                            window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); 
+                            setActiveNav(); // update highlighting after mode change
+                        } catch(_) {}
                     } else {
                         window.location.href = withFlowchart('/?mode=build');
                     }
@@ -624,7 +665,12 @@
                     if (app && typeof app.switchToRunMode === 'function') {
                         console.log('[debug] calling app.switchToRunMode()');
                         app.switchToRunMode();
-                        try { const u = new URL(window.location.href); u.searchParams.set('mode','run'); window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); } catch(_) {}
+                        try { 
+                            const u = new URL(window.location.href); 
+                            u.searchParams.set('mode','run'); 
+                            window.history.replaceState(null,'',u.pathname + '?' + u.searchParams.toString()); 
+                            setActiveNav(); // update highlighting after mode change
+                        } catch(_) {}
                     } else {
                         console.log('[debug] no app or switchToRunMode function, navigating to:', withFlowchart('/?mode=run'));
                         window.location.href = withFlowchart('/?mode=run');
@@ -647,8 +693,11 @@
                     if (data) data.onclick = () => { window.location.href = withFlowchart('/data'); };
                 }
 
-                // highlight active nav (non-builder pages only)
+                // highlight active nav (all pages)
                 setActiveNav();
+                
+                // setup url change listeners for navigation highlighting
+                updateNavOnUrlChange();
 
             });
         },
@@ -676,7 +725,8 @@
         withFlowchart: withFlowchart,
         buildHref: buildHref,
         clearRunVisualsIfNeeded: clearRunVisualsIfNeeded,
-        setupFlowchartUI: setupFlowchartUI
+        setupFlowchartUI: setupFlowchartUI,
+        setActiveNav: setActiveNav
     };
 
     window.Navigation = Navigation;
