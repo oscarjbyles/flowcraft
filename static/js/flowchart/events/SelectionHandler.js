@@ -381,17 +381,9 @@ class SelectionHandler {
 
     // migrated selection management methods
     selectNode(nodeId, multiSelect = false) {
-        console.log('[selectionHandler] selectNode called:', { nodeId, multiSelect });
-        
         // get the node to log its type
         const node = this.state.nodes.find(n => n.id === nodeId);
-        if (node) {
-            console.log('[selectionHandler] selected node details:', { 
-                id: node.id, 
-                type: node.type, 
-                name: node.name 
-            });
-        } else {
+        if (!node) {
             console.warn('[selectionHandler] node not found for id:', nodeId);
         }
         
@@ -451,10 +443,6 @@ class SelectionHandler {
 
     getSelectedNodes() {
         const selectedNodes = this.state.nodes.filter(n => this.selectedNodes.has(n.id));
-        console.log('[selectionHandler] getSelectedNodes called:', { 
-            selectedNodeIds: Array.from(this.selectedNodes),
-            selectedNodes: selectedNodes.map(n => ({ id: n.id, type: n.type, name: n.name }))
-        });
         return selectedNodes;
     }
 
@@ -536,13 +524,6 @@ class SelectionHandler {
 
     // Enhanced selection change emission
     emitSelectionChange() {
-        console.log('[selectionHandler] emitSelectionChange called:', {
-            selectedNodes: Array.from(this.selectedNodes),
-            selectedLink: this.selectedLink,
-            selectedGroup: this.selectedGroup,
-            selectedAnnotation: this.selectedAnnotation
-        });
-        
         this.state.emit('selectionChanged', {
             nodes: Array.from(this.selectedNodes),
             link: this.selectedLink,

@@ -46,17 +46,7 @@
     }
 
     // diagnostics
-    try { console.log('[dm] init data matrix page'); } catch(_) {}
     if (!container) { try { console.warn('[dm] container #dm_content not found'); } catch(_) {} }
-    try {
-        console.log('[dm] document.readyState', document.readyState);
-        if (container) {
-            const cs = window.getComputedStyle(container);
-            const rect = container.getBoundingClientRect();
-            console.log('[dm] container style', { display: cs.display, visibility: cs.visibility, position: cs.position });
-            console.log('[dm] container rect', { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
-        }
-    } catch(_) {}
 
     // unify flowchart context from url
     const params = new URLSearchParams(window.location.search);
@@ -65,7 +55,6 @@
     const flowFileParam = params.get('flowchart_name'); // filename form (with .json)
     const flowDisplay = (flowNameParam || (flowFileParam ? flowFileParam.replace(/\.json$/i, '') : 'default'));
     const flowFilename = (flowFileParam || `${flowDisplay}.json`);
-    try { console.log('[dm] url params', { modeParam, flowNameParam, flowFileParam, flowDisplay, flowFilename }); } catch(_) {}
 
     // wire navigation to preserve flowchart across pages
     function withFlowchart(href){
@@ -101,13 +90,10 @@
     // create flowchart modal is wired by centralized navigation module
     
     // fetch latest history for current flowchart
-    try { console.log('[dm] fetching history for', flowFilename); } catch(_) {}
     let data;
     try {
         const res = await fetch(`/api/history?flowchart_name=${encodeURIComponent(flowFilename)}`);
-        try { console.log('[dm] /api/history status', res.status); } catch(_) {}
         data = await res.json();
-        try { console.log('[dm] /api/history json', data); } catch(_) {}
     } catch (err) {
         try { console.error('[dm] /api/history fetch failed', err); } catch(_) {}
         container.appendChild(el('div','dm_error','failed to load history (network error)'));
@@ -120,20 +106,16 @@
     }
 
     const executions = data.history || [];
-    try { console.log('[dm] executions count', executions.length); } catch(_) {}
     if (executions.length === 0) {
-        try { console.log('[dm] no executions for', flowFilename); } catch(_) {}
         container.appendChild(el('div','dm_empty','no executions yet'));
         return;
     }
 
     // helper to fetch full execution details for richer data
     async function fetchDetails(executionId){
-        try { console.log('[dm] fetching details for', executionId); } catch(_) {}
         try {
             const resp = await fetch(`/api/history/${executionId}?flowchart_name=${encodeURIComponent(flowFilename)}`);
             const json = await resp.json();
-            try { console.log('[dm] details status', resp.status, 'id', executionId); } catch(_) {}
             if (json && json.status === 'success') return json.execution;
             try { console.warn('[dm] details non-success', json); } catch(_) {}
         } catch (e) {
@@ -145,9 +127,7 @@
     // render one row block per execution and enrich with detailed data
     const detailPromises = executions.map(exec => fetchDetails(exec.execution_id));
     const details = await Promise.all(detailPromises);
-    try { console.log('[dm] fetched details count', details.length); } catch(_) {}
     executions.forEach((exec, idx) => {
-        try { console.log('[dm] render row', { idx, exec, detail: details[idx] }); } catch(_) {}
         const row = el('div','dm_row');
 
         // left: high-level execution info
@@ -535,11 +515,7 @@
         if (failureInfo && failureInfo.style.display !== 'none') {
             row.appendChild(failureInfo);
         }
-        try {
-            const cCount = container.childElementCount;
-            const rRect = row.getBoundingClientRect();
-            console.log('[dm] row appended', { childCount: cCount, rowRect: { x: rRect.x, y: rRect.y, w: rRect.width, h: rRect.height } });
-        } catch(_) {}
+
     });
     
     // update status bar with execution count

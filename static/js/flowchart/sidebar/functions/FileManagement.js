@@ -183,7 +183,6 @@ class FileManagementFunctions {
                 this.sidebar.state.saving.storage.setCurrentFlowchart(currentFlowchart);
             }
             
-            console.log('[FileManagement] initialized flowchart dropdown, current:', currentFlowchart);
             return true;
         } catch (error) {
             console.error('[FileManagement] failed to initialize flowchart dropdown:', error);

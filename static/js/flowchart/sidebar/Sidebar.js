@@ -95,17 +95,6 @@ class Sidebar {
         const mode = this.state.isRunMode ? 'run' : 'build';
         const context = this.getContext(selection);
 
-        console.log('[sidebar] updateContent called:', { 
-            mode, 
-            context, 
-            selection: {
-                nodes: selection.nodes,
-                annotation: selection.annotation,
-                link: selection.link,
-                group: selection.group
-            }
-        });
-
         // activate appropriate panel
         this.activatePanel(context === 'single' ? 'single' : context);
 
@@ -117,17 +106,11 @@ class Sidebar {
                 return;
             }
 
-            console.log('[sidebar] rendering single node:', { 
-                nodeId, 
-                nodeType: node.type, 
-                nodeName: node.name,
-                node: node 
-            });
+
 
             // use controller registry to render node
             this.controllerRegistry.render(mode, node.type, node);
         } else {
-            console.log('[sidebar] rendering context controller:', { mode, context });
             // use selection type controller
             this.controllerRegistry.render(mode, context, selection);
         }
@@ -169,7 +152,6 @@ class Sidebar {
                 annotation: selectedAnnotation
             };
             
-            console.log('[sidebar] updateFromState called with selection:', selection);
             this.updateContent(selection);
         } else {
             console.warn('[sidebar] selectionHandler not available in updateFromState');
@@ -199,7 +181,6 @@ window.Sidebar = Sidebar;
 
 // unified collapse/expand management for right sidebar
 Sidebar.prototype.setCollapsed = function(isCollapsed) {
-    try { console.log('[sidebar] setCollapsed called', { isCollapsed }); } catch(_) {}
     const C = window.SidebarConstants || null;
     const propertiesSidebar = document.getElementById(C?.ids?.propertiesSidebar || 'properties_sidebar');
     const mainContent = document.querySelector('.' + ((C && C.classes && C.classes.mainContent) || 'main_content'));
@@ -258,16 +239,12 @@ Sidebar.prototype.setCollapsed = function(isCollapsed) {
         }
     }
 
-    try {
-        const finalState = propertiesSidebar.classList.contains('collapsed');
-        console.log('[sidebar] setCollapsed complete', { finalCollapsed: finalState });
-    } catch(_) {}
+
 };
 
 // url and history handlers for flowchart switching
 Sidebar.prototype.setupURLHandlers = function() {
     this.urlManager.setupPopstateHandler(async (flowchartName, displayName) => {
-        console.log(`[Sidebar] URL changed to flowchart: ${flowchartName} (${displayName})`);
         const flowchartExists = this.flowcharts.some(f => f.filename === flowchartName);
         if (flowchartExists) {
             // check if we're in run, build, or settings mode and clear execution output if needed

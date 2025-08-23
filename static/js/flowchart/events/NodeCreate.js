@@ -491,7 +491,6 @@ class CreateNode {
     async checkLoadedNodesForInputs() {
         // skip input node creation if we're restoring from execution history
         if (this.state.isRestoringFromHistory) {
-            console.log('skipping input node creation during history restoration');
             return;
         }
         

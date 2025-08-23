@@ -73,7 +73,6 @@
         try {
             // check if EventManager is available (only loaded in build/run modes)
             if (!window.EventManager) {
-                console.log('EventManager not available - not in flowchart mode');
                 return;
             }
             

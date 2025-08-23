@@ -1326,7 +1326,6 @@ class NodeRenderer {
                 // this prevents losing user input when parameters are temporarily empty
                 if (Array.isArray(result.parameters) && result.parameters.length === 0) {
                     // keep the existing input node with current values instead of deleting it
-                    console.log('no parameters found, preserving existing input node');
                     return;
                 }
                 

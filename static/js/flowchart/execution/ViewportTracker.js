@@ -68,29 +68,19 @@ class ViewportTracker {
 
     // smooth center on a node by id
     centerOnNode(nodeId) {
-        console.log('[ViewportTracker] centerOnNode called with nodeId:', nodeId);
         const node = this.state.createNode ? this.state.createNode.getNode(nodeId) : null;
         if (!node) {
-            console.log('[ViewportTracker] node not found for nodeId:', nodeId);
             return;
         }
         // nodes are positioned by translate(x, y) with their rect centered at (x, y)
         const scale = this.state.transform.k || 1;
-        console.log('[ViewportTracker] scale:', scale, 'node position:', { x: node.x, y: node.y });
 
         // target placement rules:
         // - horizontal: align node center with the horizontal center of the .canvas_container
         // - vertical: keep node center 250px from the top of the browser window
-        console.log('[ViewportTracker] svg debug:', {
-            hasSvg: !!this.svg,
-            svgType: typeof this.svg,
-            hasNodeMethod: this.svg && typeof this.svg.node === 'function',
-            svgKeys: this.svg ? Object.keys(this.svg) : null
-        });
         const svgEl = this.svg && typeof this.svg.node === 'function' ? this.svg.node() : null;
         const containerEl = document.querySelector('.canvas_container');
         if (!svgEl || !containerEl) {
-            console.log('[ViewportTracker] missing elements:', { svgEl: !!svgEl, containerEl: !!containerEl });
             return;
         }
 
@@ -105,21 +95,11 @@ class ViewportTracker {
         const targetTranslateX = desiredSvgX - (scale * node.x);
         const targetTranslateY = desiredSvgY - (scale * node.y);
 
-        console.log('[ViewportTracker] viewport calculation:', {
-            desiredSvgX,
-            desiredSvgY,
-            targetTranslateX,
-            targetTranslateY,
-            scale
-        });
-
         this.svg
             .transition()
             .duration(600)
             .ease(d3.easeCubicOut)
             .call(this.zoom.transform, d3.zoomIdentity.translate(targetTranslateX, targetTranslateY).scale(scale));
-        
-        console.log('[ViewportTracker] transform applied');
     }
 }
 

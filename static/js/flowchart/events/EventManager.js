@@ -233,7 +233,6 @@ class EventManager {
                 if (event.ctrlKey) {
                     event.preventDefault();
                     // todo: implement undo
-                    console.log('undo not implemented yet');
                 }
                 break;
                 
@@ -241,7 +240,6 @@ class EventManager {
                 if (event.ctrlKey) {
                     event.preventDefault();
                     // todo: implement redo
-                    console.log('redo not implemented yet');
                 }
                 break;
         }

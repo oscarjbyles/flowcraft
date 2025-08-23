@@ -206,7 +206,6 @@
             if (typeof Dashboard !== 'undefined') {
                 try {
                     new Dashboard();
-                    console.log('Dashboard initialized successfully');
                 } catch (error) {
                     console.error('Error initializing Dashboard:', error);
                 }
@@ -230,7 +229,6 @@
             if (typeof Settings !== 'undefined') {
                 try {
                     new Settings();
-                    console.log('Settings initialized successfully');
                 } catch (error) {
                     console.error('Error initializing Settings:', error);
                 }
@@ -242,8 +240,6 @@
 
     function initializeDataMatrixPage() {
         onDomReady(async () => {
-            try { console.log('[dm] init data matrix page'); } catch(_) {}
-            
             const container = document.getElementById('dm_content');
             if (!container) { 
                 try { console.warn('[dm] container #dm_content not found'); } catch(_) {} 
@@ -414,7 +410,7 @@
     // flowchart ui setup
     function setupFlowchartUI(app){
         onDomReady(async () => {
-            try { console.log('[nav-flow] setup start', { path: window.location.pathname, hasApp: !!app }); } catch(_) {}
+            
             const urlMgr = getUrlManager();
             const selector = document.getElementById('flowchart_selector');
             const dropdown = document.getElementById('flowchart_dropdown');
@@ -661,9 +657,7 @@
                 // run
                 const run = document.getElementById('run_btn');
                 if (run) run.onclick = () => {
-                    console.log('[debug] run button clicked');
                     if (app && typeof app.switchToRunMode === 'function') {
-                        console.log('[debug] calling app.switchToRunMode()');
                         app.switchToRunMode();
                         try { 
                             const u = new URL(window.location.href); 
@@ -672,7 +666,6 @@
                             setActiveNav(); // update highlighting after mode change
                         } catch(_) {}
                     } else {
-                        console.log('[debug] no app or switchToRunMode function, navigating to:', withFlowchart('/?mode=run'));
                         window.location.href = withFlowchart('/?mode=run');
                     }
                 };

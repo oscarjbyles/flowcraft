@@ -69,8 +69,7 @@ class ControllerRegistry {
             // fallback to default controller
             const defaultController = modeControllers['default'];
             if (defaultController) {
-                console.log(`[controllerRegistry] falling back to default controller for: ${mode}_${type}`);
-                return new defaultController(this.sidebar);
+                            return new defaultController(this.sidebar);
             }
             return null;
         }

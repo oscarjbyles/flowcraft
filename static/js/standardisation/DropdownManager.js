@@ -18,9 +18,6 @@ class DropdownManager {
 
     // create a new dropdown instance
     create(config) {
-        if (this.debug) {
-            console.log('DropdownManager.create called with config:', config);
-        }
 
         const {
             containerId,
@@ -40,9 +37,7 @@ class DropdownManager {
             return null;
         }
 
-        if (this.debug) {
-            console.log('DropdownManager.create: elements found successfully');
-        }
+
 
         const dropdown = new DropdownInstance({
             container,
@@ -383,7 +378,4 @@ window.DropdownManager = new DropdownManager();
 // debug mode (can be enabled for troubleshooting)
 window.DropdownManager.debug = false;
 
-// log initialization
-if (window.DropdownManager.debug) {
-    console.log('DropdownManager initialized successfully');
-}
+

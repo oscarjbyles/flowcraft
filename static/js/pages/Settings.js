@@ -404,10 +404,8 @@ class Settings {
                     if (!ts) return;
                     try {
                         const url = `/api/flowchart/backups/${encodeURIComponent(ts)}/restore?name=${encodeURIComponent(current)}`;
-                        console.log('[backups] restore click', { ts, url, current });
                         const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
                         const data = await resp.json().catch(() => ({ status: 'error', message: 'invalid json' }));
-                        console.log('[backups] restore response', { status: resp.status, ok: resp.ok, data });
                         if (resp.ok && data && data.status === 'success') {
                             this.showSuccess('restored backup');
                             // refresh the backups table to reflect any changes
@@ -435,13 +433,11 @@ class Settings {
         };
 
         this.loadAndRenderBackups = async () => {
-            console.log('[backups] loading backups table...');
             try {
                 const name = encodeURIComponent(current);
                 const resp = await fetch(`/api/flowchart/backups?name=${name}`);
                 const payload = await resp.json();
                 const backups = resp.ok && payload && payload.status === 'success' ? (payload.backups || []) : [];
-                console.log('[backups] loaded list', { count: backups.length });
 
                 // load active data counts
                 let activeData = null;
@@ -451,7 +447,6 @@ class Settings {
                 } catch (_) {}
 
                 renderRows(activeData || { nodes: [], links: [], groups: [] }, backups, false);
-                console.log('[backups] table rendered');
             } catch (err) {
                 tableBody.innerHTML = '<tr><td colspan="8" style="opacity:.7">failed to load backups</td></tr>';
                 console.error('[backups] failed to load backups', err);
@@ -471,7 +466,6 @@ class Settings {
     // utility methods
     showSuccess(message) {
         // simple success notification - can be enhanced later
-        console.log('[Settings] Success:', message);
         // could add toast notification here
     }
 
