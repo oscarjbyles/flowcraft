@@ -1,8 +1,10 @@
-// python file dropdown functionality - updated to use centralized DropdownManager
-(function(){
-    if (!window.Sidebar) return;
+// copy content from Sidebar.files.js
+class FileManagementFunctions {
+    constructor(sidebar) {
+        this.sidebar = sidebar;
+    }
 
-    Sidebar.prototype.initializePythonFileDropdown = function() {
+    initializePythonFileDropdown() {
         // wait for DropdownManager to be available
         if (!window.DropdownManager) {
             console.warn('DropdownManager not available, retrying in 100ms...');
@@ -43,9 +45,9 @@
 
         // load initial files
         this.loadPythonFiles();
-    };
+    }
 
-    Sidebar.prototype.loadPythonFiles = async function() {
+    async loadPythonFiles() {
         if (!this.pythonFileDropdown) return;
 
         this.pythonFileDropdown.showLoading('loading python files...');
@@ -74,9 +76,9 @@
             console.error('error loading python files:', error);
             this.pythonFileDropdown.showError('error loading files');
         }
-    };
+    }
 
-    Sidebar.prototype.selectPythonFile = async function(path, displayPath) {
+    async selectPythonFile(path, displayPath) {
         const input = document.getElementById('python_file');
         if (!input) return;
 
@@ -113,69 +115,87 @@
             this.updatePythonFileStatus('error checking file', 'error');
             this.updatePythonFilePath('');
         }
-    };
+    }
 
-    Sidebar.prototype.updatePythonFileStatus = function(text, icon) {
+    updatePythonFileStatus(text, icon) {
         const statusIcon = document.getElementById('python_file_status_icon');
         const statusText = document.getElementById('python_file_status_text');
         
         if (statusIcon) statusIcon.textContent = icon;
         if (statusText) statusText.textContent = text;
-    };
+    }
 
-    Sidebar.prototype.updatePythonFilePath = function(path) {
+    updatePythonFilePath(path) {
         const pathBlock = document.getElementById('python_file_path_block');
         if (pathBlock) {
             pathBlock.textContent = path || '';
             pathBlock.style.display = path ? 'block' : 'none';
         }
-    };
+    }
 
     // legacy methods for backward compatibility
-    Sidebar.prototype.setupDropdownEvents = function() {
+    setupDropdownEvents() {
         // this is now handled by DropdownManager
         console.warn('setupDropdownEvents is deprecated - use DropdownManager instead');
-    };
+    }
 
-    Sidebar.prototype.toggleDropdown = function() {
+    toggleDropdown() {
         if (this.pythonFileDropdown) {
             this.pythonFileDropdown.toggle();
         }
-    };
+    }
 
-    Sidebar.prototype.openDropdown = function() {
+    openDropdown() {
         if (this.pythonFileDropdown) {
             this.pythonFileDropdown.open();
         }
-    };
+    }
 
-    Sidebar.prototype.closeDropdown = function() {
+    closeDropdown() {
         if (this.pythonFileDropdown) {
             this.pythonFileDropdown.close();
         }
-    };
+    }
 
-    Sidebar.prototype.filterFiles = function(searchTerm) {
+    filterFiles(searchTerm) {
         if (this.pythonFileDropdown) {
             this.pythonFileDropdown.filterItems(searchTerm);
         }
-    };
+    }
 
-    Sidebar.prototype.updateDropdownMenu = function() {
+    updateDropdownMenu() {
         // this is now handled by DropdownManager
         console.warn('updateDropdownMenu is deprecated - use DropdownManager instead');
-    };
+    }
 
-    Sidebar.prototype.selectFile = function(path, displayPath) {
+    selectFile(path, displayPath) {
         this.selectPythonFile(path, displayPath);
-    };
+    }
 
-    Sidebar.prototype.showDropdownError = function(message) {
+    async initializeFlowchartDropdown() {
+        try {
+            // get current flowchart from url or storage
+            const urlManager = new URLManager();
+            const currentFlowchart = urlManager.getFlowchartFilenameFromURL();
+            
+            // set current flowchart in storage
+            if (this.sidebar.state?.saving?.storage) {
+                this.sidebar.state.saving.storage.setCurrentFlowchart(currentFlowchart);
+            }
+            
+            console.log('[FileManagement] initialized flowchart dropdown, current:', currentFlowchart);
+            return true;
+        } catch (error) {
+            console.error('[FileManagement] failed to initialize flowchart dropdown:', error);
+            return false;
+        }
+    }
+
+    showDropdownError(message) {
         if (this.pythonFileDropdown) {
             this.pythonFileDropdown.showError(message);
         }
-    };
+    }
+}
 
-})();
-
-
+window.FileManagementFunctions = FileManagementFunctions;

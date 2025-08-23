@@ -1,69 +1,26 @@
 // annotation controller for build mode
 (function(){
-    if (!window.Sidebar) return;
-
-    class AnnotationController {
+    class AnnotationController extends BaseController {
         constructor(sidebar) {
-            this.sidebar = sidebar;
+            super(sidebar);
+            this.sections = {
+                header: new HeaderSection(sidebar),
+                annotation: new AnnotationSection(sidebar),
+                deleteButton: new DeleteButtonSection(sidebar)
+            };
         }
 
         render(annotation) {
             if (!annotation || !this.sidebar) return;
-            
-            // show sections for annotation
-            this.showSections([
-                'text_annotation_properties',
-                'arrow_annotation_properties'
-            ]);
 
-            // hide sections not relevant for annotation
-            this.hideSections([
-                'node_name',
-                'python_file',
-                'arguments_section',
-                'returns_section',
-                'if_node_variables_section',
-                'data_save_variable_section',
-                'data_save_name_section',
-                'input_node_inputs_section',
-                'python_quick_actions',
+            this.showSections([
+                'annotation_properties',
                 'delete_node_from_sidebar'
             ]);
 
-            // update header
-            this.updateHeader('ANNOTATION');
-
-            // show annotation panel
-            if (typeof this.sidebar.showAnnotationPanel === 'function') {
-                this.sidebar.showAnnotationPanel(annotation);
-            }
-        }
-
-        showSections(sectionIds) {
-            sectionIds.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.style.display = '';
-                    element.classList.remove('hidden');
-                }
+            Object.values(this.sections).forEach(section => {
+                section.render(annotation);
             });
-        }
-
-        hideSections(sectionIds) {
-            sectionIds.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.style.display = 'none';
-                    element.classList.add('hidden');
-                }
-            });
-        }
-
-        updateHeader(text) {
-            const headerElement = document.getElementById('properties_header_text');
-            if (headerElement) {
-                headerElement.textContent = text;
-            }
         }
     }
 

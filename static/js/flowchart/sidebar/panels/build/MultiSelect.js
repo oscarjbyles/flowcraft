@@ -1,71 +1,26 @@
-// multi-select controller for build mode
+// multi select controller for build mode
 (function(){
-    if (!window.Sidebar) return;
-
-    class MultiSelectController {
+    class MultiSelectController extends BaseController {
         constructor(sidebar) {
-            this.sidebar = sidebar;
+            super(sidebar);
+            this.sections = {
+                header: new HeaderSection(sidebar),
+                multiSelect: new MultiSelectSection(sidebar),
+                deleteButton: new DeleteButtonSection(sidebar)
+            };
         }
 
-        render(nodeIds) {
-            if (!Array.isArray(nodeIds) || nodeIds.length === 0) return;
-            
-            // show sections for multi-select
-            this.showSections([
-                'create_group_btn',
-                'align_nodes_btn',
-                'delete_selected_nodes',
-                'selected_nodes_list'
-            ]);
+        render(selection) {
+            if (!selection || !this.sidebar) return;
 
-            // hide sections not relevant for multi-select
-            this.hideSections([
-                'node_name',
-                'python_file',
-                'arguments_section',
-                'returns_section',
-                'if_node_variables_section',
-                'data_save_variable_section',
-                'data_save_name_section',
-                'input_node_inputs_section',
-                'python_quick_actions',
+            this.showSections([
+                'multi_select_properties',
                 'delete_node_from_sidebar'
             ]);
 
-            // update header
-            this.updateHeader('MULTI SELECT');
-
-            // update selected nodes list
-            if (typeof this.sidebar.updateSelectedNodesList === 'function') {
-                this.sidebar.updateSelectedNodesList(nodeIds);
-            }
-        }
-
-        showSections(sectionIds) {
-            sectionIds.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.style.display = '';
-                    element.classList.remove('hidden');
-                }
+            Object.values(this.sections).forEach(section => {
+                section.render(selection);
             });
-        }
-
-        hideSections(sectionIds) {
-            sectionIds.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.style.display = 'none';
-                    element.classList.add('hidden');
-                }
-            });
-        }
-
-        updateHeader(text) {
-            const headerElement = document.getElementById('properties_header_text');
-            if (headerElement) {
-                headerElement.textContent = text;
-            }
         }
     }
 

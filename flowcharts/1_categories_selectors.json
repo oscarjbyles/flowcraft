@@ -62,13 +62,13 @@
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168331256.1504,
-      "magnet_partner_id": 1755168365383.739,
       "name": "1.1.1.2 - use common class names",
       "pythonFile": "",
       "type": "python_file",
       "width": 256.78334045410156,
       "x": 1444.8553466796875,
-      "y": 531.0646667480469
+      "y": 531.0646667480469,
+      "magnet_partner_id": 1755168365383.739
     },
     {
       "description": "",
@@ -96,13 +96,13 @@
       "description": "",
       "groupId": 1755256312361.3877,
       "id": 1755168365383.739,
-      "magnet_partner_id": 1755168331256.1504,
       "name": "empty?",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
       "x": 1444.8553466796875,
-      "y": 611.0646667480469
+      "y": 611.0646667480469,
+      "magnet_partner_id": 1755168331256.1504
     },
     {
       "dataSource": {
@@ -318,8 +318,8 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1406.8817138671875,
-      "y": 485.9765319824219
+      "x": 1601.4849853515625,
+      "y": 361.900634765625
     },
     {
       "description": "",
@@ -329,8 +329,8 @@
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
-      "x": 1956.970947265625,
-      "y": 676.4862365722656
+      "x": 1905.0709228515625,
+      "y": 684.4708557128906
     },
     {
       "description": "",
@@ -403,25 +403,25 @@
       "description": "",
       "groupId": null,
       "id": 1755902333945.3508,
-      "magnet_partner_id": 1755902336982.2231,
       "name": "python node",
       "pythonFile": "",
       "type": "python_file",
       "width": 120,
       "x": 2375.634765625,
-      "y": 374.9288635253906
+      "y": 374.9288635253906,
+      "magnet_partner_id": 1755902336982.2231
     },
     {
       "description": "",
       "groupId": null,
       "id": 1755902336982.2231,
-      "magnet_partner_id": 1755902333945.3508,
       "name": "if condition",
       "pythonFile": "",
       "type": "if_node",
       "width": 120,
       "x": 2375.634765625,
-      "y": 454.9288635253906
+      "y": 454.9288635253906,
+      "magnet_partner_id": 1755902333945.3508
     },
     {
       "description": "",
@@ -444,6 +444,61 @@
       "width": 120,
       "x": 2076.76708984375,
       "y": 155.1240997314453
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755960115085.9026,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 321,
+      "y": 393
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755960156008.8657,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 480,
+      "y": 649
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755960157410.2358,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 312,
+      "y": 514
+    },
+    {
+      "description": "",
+      "groupId": null,
+      "id": 1755960157875.379,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 324,
+      "y": 454
+    },
+    {
+      "id": 1755973900835.3516,
+      "x": 2287.872802734375,
+      "y": 485.44708251953125,
+      "name": "python node",
+      "type": "python_file",
+      "pythonFile": "",
+      "description": "",
+      "groupId": null,
+      "width": 120
     }
   ],
   "links": [

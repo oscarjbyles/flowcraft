@@ -27,7 +27,17 @@
             'ResumeExecution',
             'ExecutionStatus',
             'OutputManager',
-            'ViewportTracker'
+            'ViewportTracker',
+            // Add section dependencies
+            'BaseSection',
+            'HeaderSection',
+            'NodeNameSection',
+            'DeleteButtonSection',
+            // Add controller dependencies
+            'BaseController',
+            'ControllerRegistry',
+            'DefaultController',
+            'DefaultRunController'
         ];
 
         const missing = requiredClasses.filter(className => !window[className]);

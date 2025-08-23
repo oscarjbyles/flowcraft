@@ -142,6 +142,11 @@ class Saving {
                         const noPrefix = s.replace(/^(?:nodes\/)*/i, '');
                         n.pythonFile = noPrefix;
                     }
+                    // normalize node types - ensure all nodes have a valid type
+                    if (n && (!n.type || typeof n.type !== 'string')) {
+                        console.log('[saving] normalizing node type for node:', n.id, 'from:', n.type, 'to: python_file');
+                        n.type = 'python_file'; // default fallback
+                    }
                 });
             } catch(_) {}
             

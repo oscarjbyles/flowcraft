@@ -1,6 +1,6 @@
-// group controller for run mode
+// default controller for run mode
 (function(){
-    class GroupRunController extends BaseController {
+    class DefaultRunController extends BaseController {
         constructor(sidebar) {
             super(sidebar);
             this.sections = {
@@ -9,19 +9,19 @@
             };
         }
 
-        render(group) {
-            if (!group || !this.sidebar) return;
+        render(data) {
+            if (!this.sidebar) return;
 
             this.showSections([
                 'execution_status',
-                'group_properties'
+                'default_properties'
             ]);
 
             Object.values(this.sections).forEach(section => {
-                section.render(group);
+                section.render(data);
             });
         }
     }
 
-    window.GroupRunController = GroupRunController;
+    window.DefaultRunController = DefaultRunController;
 })();

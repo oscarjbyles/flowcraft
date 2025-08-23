@@ -119,42 +119,27 @@
             const isFlowchartMode = mode === 'build' || mode === 'run';
         
         if (isFlowchartMode) {
-            // load EventManager only for build and run modes
-            const script = document.createElement('script');
-            script.src = '/static/js/flowchart/events/EventManager.js';
-            document.head.appendChild(script);
-            
-            // interaction modules
-            const interactionModules = [
+            // load all modules sequentially to ensure proper dependency order
+            const allModules = [
+                // EventManager first
+                '/static/js/flowchart/events/EventManager.js',
+                
+                // interaction modules
                 '/static/js/flowchart/events/DragHandler.js',
                 '/static/js/flowchart/events/SelectionHandler.js',
                 '/static/js/flowchart/events/ConnectionHandler.js',
                 '/static/js/flowchart/events/CanvasHandler.js',
-                '/static/js/flowchart/toolbars/Toolbars.js'
-            ];
-            interactionModules.forEach(src => {
-                const script = document.createElement('script');
-                script.src = src;
-                document.head.appendChild(script);
-            });
-            
-            // rendering modules
-            const renderingModules = [
+                '/static/js/flowchart/toolbars/Toolbars.js',
+                
+                // rendering modules
                 '/static/js/flowchart/rendering/Node.js',
                 '/static/js/flowchart/rendering/Link.js',
                 '/static/js/flowchart/rendering/Group.js',
                 '/static/js/flowchart/rendering/Annotation.js',
                 '/static/js/flowchart/toolbars/NodeOrder.js',
-                '/static/js/flowchart/toolbars/ErrorCircles.js'
-            ];
-            renderingModules.forEach(src => {
-                const script = document.createElement('script');
-                script.src = src;
-                document.head.appendChild(script);
-            });
-            
-            // execution modules
-            const executionModules = [
+                '/static/js/flowchart/toolbars/ErrorCircles.js',
+                
+                // execution modules
                 '/static/js/flowchart/execution/ExecutionStatus.js',
                 '/static/js/flowchart/execution/ExecutionLogic.js',
                 '/static/js/flowchart/execution/Feed.js',
@@ -164,78 +149,132 @@
                 '/static/js/flowchart/execution/ResumeExecution.js',
                 '/static/js/flowchart/execution/ViewportTracker.js'
             ];
-            executionModules.forEach(src => {
+            
+            function loadAllModulesSequentially(modules, index = 0) {
+                if (index >= modules.length) {
+                    // all modules loaded, now load sidebar modules
+                    loadScriptsSequentially(sidebarModules);
+                    return;
+                }
+                
                 const script = document.createElement('script');
-                script.src = src;
+                script.src = modules[index];
+                script.onload = () => {
+                    loadAllModulesSequentially(modules, index + 1);
+                };
+                script.onerror = () => {
+                    console.error('failed to load module:', modules[index]);
+                    loadAllModulesSequentially(modules, index + 1);
+                };
                 document.head.appendChild(script);
-            });
+            }
+            
+            // modules will be loaded sequentially starting with service modules
             
             // properties sidebar components
             const sidebarModules = [
-                '/static/js/flowchart/sidebar/Sidebar.base.js',
-                '/static/js/flowchart/sidebar/Sidebar.content.js',
-                '/static/js/flowchart/sidebar/Sidebar.constants.js',
-                '/static/js/flowchart/sidebar/ui/Dropdowns.js',
-                '/static/js/flowchart/sidebar/ui/Visibility.js',
+                // Base classes (load first)
+                '/static/js/flowchart/sidebar/panels/base/BaseSection.js',
+                '/static/js/flowchart/sidebar/panels/base/BaseController.js',
                 
-                // build mode node type controllers
+                // Common sections
+                '/static/js/flowchart/sidebar/sections/common/Header.js',
+                '/static/js/flowchart/sidebar/sections/common/NodeName.js',
+                '/static/js/flowchart/sidebar/sections/common/DeleteButton.js',
+                
+                // Python sections
+                '/static/js/flowchart/sidebar/sections/python/PythonFile.js',
+                '/static/js/flowchart/sidebar/sections/python/Arguments.js',
+                '/static/js/flowchart/sidebar/sections/python/Returns.js',
+                '/static/js/flowchart/sidebar/sections/python/QuickActions.js',
+                
+                // Input sections
+                '/static/js/flowchart/sidebar/sections/input/InputList.js',
+                
+                // Run mode sections
+                '/static/js/flowchart/sidebar/sections/run/ExecutionStatus.js',
+                '/static/js/flowchart/sidebar/sections/run/FileInfo.js',
+                
+                // Function modules
+                '/static/js/flowchart/sidebar/functions/Analysis.js',
+                '/static/js/flowchart/sidebar/functions/FileManagement.js',
+                
+                // Controllers (load after base classes)
+                '/static/js/flowchart/sidebar/panels/build/Default.js',
                 '/static/js/flowchart/sidebar/panels/build/Python.js',
                 '/static/js/flowchart/sidebar/panels/build/InputNode.js',
                 '/static/js/flowchart/sidebar/panels/build/IfNode.js',
                 '/static/js/flowchart/sidebar/panels/build/DataSave.js',
                 '/static/js/flowchart/sidebar/panels/build/TextNode.js',
-                
-                // build mode selection controllers
                 '/static/js/flowchart/sidebar/panels/build/MultiSelect.js',
                 '/static/js/flowchart/sidebar/panels/build/Group.js',
                 '/static/js/flowchart/sidebar/panels/build/Link.js',
                 '/static/js/flowchart/sidebar/panels/build/Annotation.js',
-                
-                // run mode node type controllers
+                '/static/js/flowchart/sidebar/panels/run/Default.js',
                 '/static/js/flowchart/sidebar/panels/run/Python.js',
                 '/static/js/flowchart/sidebar/panels/run/InputNode.js',
                 '/static/js/flowchart/sidebar/panels/run/IfNode.js',
                 '/static/js/flowchart/sidebar/panels/run/DataSave.js',
                 '/static/js/flowchart/sidebar/panels/run/TextNode.js',
-                
-                // run mode selection controllers
                 '/static/js/flowchart/sidebar/panels/run/MultiSelect.js',
                 '/static/js/flowchart/sidebar/panels/run/Group.js',
                 '/static/js/flowchart/sidebar/panels/run/Link.js',
                 '/static/js/flowchart/sidebar/panels/run/Annotation.js',
                 
-                // controller registry
+                // Controller registry (load after all controllers)
                 '/static/js/flowchart/sidebar/panels/ControllerRegistry.js',
                 
-                // feature modules
-                '/static/js/flowchart/sidebar/functions/Status.js',
-                '/static/js/flowchart/sidebar/Sidebar.selection.js',
-                '/static/js/flowchart/sidebar/Sidebar.nodes.js',
-                '/static/js/flowchart/sidebar/functions/Forms.js',
-                '/static/js/flowchart/sidebar/Sidebar.files.js',
-                '/static/js/flowchart/sidebar/Sidebar.links.js',
-                '/static/js/flowchart/sidebar/functions/Analysis.js',
-                '/static/js/flowchart/sidebar/Sidebar.iflogic.js',
-                '/static/js/flowchart/sidebar/Sidebar.flowcharts.js',
-                '/static/js/flowchart/sidebar/functions/Url.js',
-                '/static/js/flowchart/sidebar/functions/Events.js',
-                '/static/js/flowchart/sidebar/Sidebar.runview.js'
+                // Base sidebar (load last)
+                '/static/js/flowchart/sidebar/Sidebar.js'
             ];
-            sidebarModules.forEach(src => {
+            // load sidebar modules with proper dependency handling
+            function loadScriptsSequentially(scripts, index = 0) {
+                if (index >= scripts.length) {
+                    // all scripts loaded, start dependency check
+                    waitForDependencies();
+                    return;
+                }
+                
                 const script = document.createElement('script');
-                script.src = src;
+                script.src = scripts[index];
+                script.onload = () => {
+                    loadScriptsSequentially(scripts, index + 1);
+                };
+                script.onerror = () => {
+                    console.error('failed to load script:', scripts[index]);
+                    loadScriptsSequentially(scripts, index + 1);
+                };
                 document.head.appendChild(script);
-            });
+            }
             
-            // node creation service
-            const createNodeScript = document.createElement('script');
-            createNodeScript.src = '/static/js/flowchart/events/NodeCreate.js';
-            document.head.appendChild(createNodeScript);
+            // sidebar modules will be loaded by loadAllModulesSequentially
             
-            // node deletion service
-            const deleteNodeScript = document.createElement('script');
-            deleteNodeScript.src = '/static/js/flowchart/events/NodeDelete.js';
-            document.head.appendChild(deleteNodeScript);
+            // node creation and deletion services
+            const serviceModules = [
+                '/static/js/flowchart/events/NodeCreate.js',
+                '/static/js/flowchart/events/NodeDelete.js'
+            ];
+            
+            function loadServiceModules(modules, index = 0) {
+                if (index >= modules.length) {
+                    // all service modules loaded, start loading all modules
+                    loadAllModulesSequentially(allModules);
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = modules[index];
+                script.onload = () => {
+                    loadServiceModules(modules, index + 1);
+                };
+                script.onerror = () => {
+                    console.error('failed to load service module:', modules[index]);
+                    loadServiceModules(modules, index + 1);
+                };
+                document.head.appendChild(script);
+            }
+            
+            loadServiceModules(serviceModules);
             
             // wait for all dependencies to be loaded before initializing
             function waitForDependencies() {
@@ -264,15 +303,28 @@
                     'ResumeExecution',
                     'ExecutionStatus',
                     'OutputManager',
-                    'ViewportTracker'
+                    'ViewportTracker',
+                    // Add section dependencies
+                    'BaseSection',
+                    'HeaderSection',
+                    'NodeNameSection',
+                    'DeleteButtonSection',
+                    // Add controller dependencies
+                    'BaseController',
+                    'ControllerRegistry',
+                    'DefaultController',
+                    'DefaultRunController'
                 ];
 
                 const missing = requiredClasses.filter(className => !window[className]);
                 
                 if (missing.length > 0) {
+                    console.log('waiting for dependencies:', missing);
                     setTimeout(waitForDependencies, 100);
                     return;
                 }
+                
+                console.log('all dependencies loaded, initializing app...');
                 
                 // load Index.js directly
                 const mainScript = document.createElement('script');
@@ -280,8 +332,7 @@
                 document.head.appendChild(mainScript);
             }
 
-            // start waiting for dependencies
-            waitForDependencies();
+            // dependencies will be checked after scripts are loaded
         }
         }
     </script>
