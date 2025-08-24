@@ -136,7 +136,17 @@
     {% include 'partials/modals/create_flowchart.html' %}
     
     <!-- dashboard page functionality -->
-    <script src="/static/js/pages/Dashboard.js"></script>
+    <script src="/static/js/pages/Pages.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loader = new DynamicScriptLoader('/static/js/pages/dashboard/');
+        loader.loadAllScripts().then(() => {
+            if (typeof Dashboard !== 'undefined') {
+                new Dashboard();
+            }
+        });
+    });
+    </script>
 </body>
 </html>
 

@@ -81,22 +81,26 @@ class PanelsEditor {
         let html = `
             <div class="panels_node_section" data-mode="${modeName}" data-node="${nodeType}">
                 <div class="panels_node_title_row">
-                    <div class="panels_node_title">${nodeType}</div>
-                    <div class="panels_selectable_toggle">
-                        <div class="panels_toggle_switch ${isSelectable ? 'active' : ''}" 
-                             data-mode="${modeName}" 
-                             data-node="${nodeType}" 
-                             data-property="selectable">
-                        </div>
-                        <span>selectable</span>
+                    <div class="panels_node_title_row_left">
+                        <div class="panels_node_title">${nodeType}</div>
                     </div>
-                    <div class="panels_node_actions">
-                        <button class="panels_node_btn" data-action="move-node-up" data-mode="${modeName}" data-node="${nodeType}" title="move up">
-                            <span class="material-icons">keyboard_arrow_up</span>
-                        </button>
-                        <button class="panels_node_btn" data-action="move-node-down" data-mode="${modeName}" data-node="${nodeType}" title="move down">
-                            <span class="material-icons">keyboard_arrow_down</span>
-                        </button>
+                    <div class="panels_node_title_row_right">
+                        <div class="panels_node_actions">
+                            <button class="panels_node_btn" data-action="move-node-up" data-mode="${modeName}" data-node="${nodeType}" title="move up">
+                                <span class="material-icons">keyboard_arrow_up</span>
+                            </button>
+                            <button class="panels_node_btn" data-action="move-node-down" data-mode="${modeName}" data-node="${nodeType}" title="move down">
+                                <span class="material-icons">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                        <div class="panels_selectable_toggle">
+                            <div class="panels_toggle_switch ${isSelectable ? 'active' : ''}" 
+                                 data-mode="${modeName}" 
+                                 data-node="${nodeType}" 
+                                 data-property="selectable">
+                            </div>
+                            <span>selectable</span>
+                        </div>
                     </div>
                 </div>
         `;

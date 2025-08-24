@@ -31,7 +31,7 @@
             </button>
             <button class="settings_sidebar_item" data-section="properties_sidebar_config">
                 <span class="material-icons">tune</span>
-                properties sidebar config
+                Sidebar Configuration
             </button>
         </div>
     </div>
@@ -173,7 +173,7 @@
 
         <!-- properties sidebar config section -->
         <div class="settings_section" id="properties_sidebar_config">
-            <h2 class="settings_section_title">properties sidebar config</h2>
+            <h2 class="settings_section_title">Properties Sidebar Configuration</h2>
             
             <div class="form_group">
                 <div class="panels_editor_container">
@@ -193,7 +193,17 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- settings page functionality -->
-<script src="/static/js/pages/settings/SidebarConfig.js"></script>
-<script src="/static/js/pages/Settings.js"></script>
+
+<script src="/static/js/pages/Pages.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loader = new DynamicScriptLoader('/static/js/pages/settings/');
+    loader.loadAllScripts().then(() => {
+        if (typeof Settings !== 'undefined') {
+            new Settings();
+        }
+    });
+});
+</script>
+
 {% endblock %}

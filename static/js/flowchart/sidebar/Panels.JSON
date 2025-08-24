@@ -19,13 +19,6 @@
       "rename": true,
       "delete": false
     },
-    "annotation": {
-      "section": [
-        "annotation_properties"
-      ],
-      "rename": true,
-      "delete": true
-    },
     "annotation_text": {
       "section": [
         "annotation_properties"

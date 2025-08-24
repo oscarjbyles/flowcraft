@@ -14,6 +14,18 @@
     {% include 'partials/modals/create_flowchart.html' %}
 {% endblock %}
 {% block scripts %}
-    <script src="/static/js/pages/DataMatrix.js"></script>
+
+<script src="/static/js/pages/Pages.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loader = new DynamicScriptLoader('/static/js/pages/data_matrix/');
+    loader.loadAllScripts().then(() => {
+        if (typeof Settings !== 'undefined') {
+            new Settings();
+        }
+    });
+});
+</script>
+
 {% endblock %}
 

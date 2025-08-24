@@ -457,6 +457,17 @@
     margin-bottom: 8px;
 }
 
+.panels_node_title_row_left {
+    display: flex;
+    align-items: center;
+}
+
+.panels_node_title_row_right {
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+}
+
 .panels_selectable_toggle {
     display: flex;
     align-items: center;

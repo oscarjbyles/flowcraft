@@ -203,15 +203,8 @@
 
     function initializeDashboardPage() {
         onDomReady(() => {
-            if (typeof Dashboard !== 'undefined') {
-                try {
-                    new Dashboard();
-                } catch (error) {
-                    console.error('Error initializing Dashboard:', error);
-                }
-            } else {
-                console.error('Dashboard class not found');
-            }
+            // dashboard initialization is now handled by the dashboard page itself
+            // after dynamic script loading is complete
         });
     }
 
@@ -226,15 +219,8 @@
                 });
             }
             
-            if (typeof Settings !== 'undefined') {
-                try {
-                    new Settings();
-                } catch (error) {
-                    console.error('Error initializing Settings:', error);
-                }
-            } else {
-                console.error('Settings class not found');
-            }
+            // settings initialization is now handled by the settings page itself
+            // after dynamic script loading is complete
         });
     }
 
