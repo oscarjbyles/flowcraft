@@ -3,6 +3,8 @@
 /* container */
 .navigation {
   width: 320px;
+  max-width: 320px;
+  min-width: 320px;
   height: 100vh;
   background: linear-gradient(180deg, var(--surface-color) 0%, var(--surface-variant) 100%);
   border-right: 1px solid var(--border-color);

@@ -7,13 +7,7 @@
 {% block content %}
 <!-- settings page -->
 <div class="settings_page">
-    <!-- back navigation -->
-    <div class="settings_header">
-        <a href="#" class="back_link" data-back-link>
-            <span class="material-icons">arrow_back</span>
-            back to flowchart
-        </a>
-    </div>
+
     <!-- settings content container -->
     <div class="settings_content_container">
         <!-- settings sidebar -->
@@ -34,6 +28,10 @@
             <button class="settings_sidebar_item" data-section="backups">
                 <span class="material-icons">backup</span>
                 backups
+            </button>
+            <button class="settings_sidebar_item" data-section="properties_sidebar_config">
+                <span class="material-icons">tune</span>
+                properties sidebar config
             </button>
         </div>
     </div>
@@ -173,6 +171,19 @@
             </div>
         </div>
 
+        <!-- properties sidebar config section -->
+        <div class="settings_section" id="properties_sidebar_config">
+            <h2 class="settings_section_title">properties sidebar config</h2>
+            
+            <div class="form_group">
+                <div class="panels_editor_container">
+                    <div class="panels_editor_content" id="panels_editor_content">
+                        <!-- dynamic content will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- spacing block at bottom of settings -->
         <div id="settings_bottom_spacer" style="width: 100px; height: 35px;"></div>
         </div>
@@ -183,5 +194,6 @@
 
 {% block scripts %}
 <!-- settings page functionality -->
+<script src="/static/js/pages/settings/SidebarConfig.js"></script>
 <script src="/static/js/pages/Settings.js"></script>
 {% endblock %}

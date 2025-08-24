@@ -2,7 +2,8 @@
   "build": {
     "default": {
       "section": [
-        "default_properties"
+        "default_properties",
+        "new_section"
       ],
       "rename": true,
       "delete": true
@@ -19,6 +20,20 @@
       "delete": false
     },
     "annotation": {
+      "section": [
+        "annotation_properties"
+      ],
+      "rename": true,
+      "delete": true
+    },
+    "annotation_text": {
+      "section": [
+        "annotation_properties"
+      ],
+      "rename": true,
+      "delete": true
+    },
+    "annotation_arrow": {
       "section": [
         "annotation_properties"
       ],
@@ -65,7 +80,7 @@
     "multi_select": {
       "section": [
         "multi_select_properties"
-      ],  
+      ],
       "rename": true,
       "delete": true
     },
@@ -82,12 +97,23 @@
     "default": {
       "section": [
         "execution_status",
-        "default_properties"
+        "annotation_properties"
+      ],
+      "rename": true,
+      "delete": true
+    },
+    "annotation": {
+      "section": [
+        "execution_status",
+        "default_properties",
+        "new_section",
+        "new_section",
+        "wfw"
       ],
       "rename": true,
       "delete": false
     },
-    "annotation": {
+    "annotation_text": {
       "section": [
         "execution_status",
         "annotation_properties"
@@ -95,11 +121,19 @@
       "rename": true,
       "delete": false
     },
+    "annotation_arrow": {
+      "section": [
+        "execution_status",
+        "annotation_properties"
+      ],
+      "rename": false,
+      "delete": false
+    },
     "data_save": {
       "section": [
         "execution_status",
-        "node_file_info",
         "node_input_log",
+        "node_file_info",
         "node_output_log"
       ],
       "rename": true,

@@ -43,7 +43,17 @@ class Sidebar {
     getNodeType(selection) {
 
         // simplified type determination
-        if (selection.annotation) return 'annotation';
+        if (selection.annotation) {
+            // distinguish between text and arrow annotations
+            // get the selected annotation from the selection handler
+            const selectedAnnotation = this.state.selectionHandler ? this.state.selectionHandler.selectedAnnotation : null;
+            if (selectedAnnotation && selectedAnnotation.type === 'text') {
+                return 'annotation_text';
+            } else if (selectedAnnotation && selectedAnnotation.type === 'arrow') {
+                return 'annotation_arrow';
+            }
+            return 'annotation';
+        }
         if (selection.link) return 'link';
         if (selection.group || (selection.nodes && selection.nodes.length > 1)) return 'group';
         if (selection.nodes && selection.nodes.length === 1) {
@@ -118,6 +128,7 @@ class Sidebar {
         }
         
         // 3. call all functions defined in the section array from the JSON file
+        const sectionInstances = [];
         for (const sectionName of sectionsConfig.section) {
             try {
                 // dynamically import the section script based on node type and section name
@@ -130,6 +141,7 @@ class Sidebar {
                 // create instance and render
                 const sectionInstance = new SectionClass();
                 sidebarContent += sectionInstance.render(nodeData);
+                sectionInstances.push(sectionInstance);
                 
             } catch (error) {
                 console.error(`failed to load section ${sectionName} for node type ${nodeType}:`, error);
@@ -162,6 +174,15 @@ class Sidebar {
         if (this.contentContainer) {
             this.contentContainer.innerHTML = sidebarContent;
             console.log('content injected successfully');
+            
+            // 5. initialize all section instances
+            setTimeout(() => {
+                sectionInstances.forEach(sectionInstance => {
+                    if (typeof sectionInstance.init === 'function') {
+                        sectionInstance.init(nodeData);
+                    }
+                });
+            }, 0);
         } else {
             console.error('contentContainer not found - cannot inject content');
         }

@@ -2,10 +2,20 @@
 class Settings {
     constructor() {
         this.urlManager = new URLManager();
+        this.panelsEditor = null;
+        this.removeMainContentClass();
         this.initializeSettingsSidebar();
         this.initializeFormHandlers();
         this.loadSettingsData();
         this.initializeBackupsTable();
+    }
+
+    // remove main_content class from settings page div
+    removeMainContentClass() {
+        const mainContentDiv = document.querySelector('.main_content.settings_page');
+        if (mainContentDiv) {
+            mainContentDiv.classList.remove('main_content');
+        }
     }
 
     // initialize settings sidebar navigation
@@ -25,6 +35,10 @@ class Settings {
                 settingsSections.forEach(section => {
                     if (section.id === targetSection) {
                         section.classList.add('active');
+                        // initialize panels editor if properties sidebar config is active
+                        if (targetSection === 'properties_sidebar_config' && !this.panelsEditor) {
+                            this.initializePanelsEditor();
+                        }
                     } else {
                         section.classList.remove('active');
                     }
@@ -457,6 +471,15 @@ class Settings {
     }
 
 
+
+    // initialize panels editor
+    initializePanelsEditor() {
+        if (window.PanelsEditor) {
+            this.panelsEditor = new PanelsEditor();
+        } else {
+            console.error('panels editor not loaded');
+        }
+    }
 
     // get current flowchart name
     getCurrentFlowchart() {
