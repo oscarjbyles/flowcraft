@@ -102,17 +102,7 @@
       "rename": true,
       "delete": true
     },
-    "annotation": {
-      "section": [
-        "execution_status",
-        "default_properties",
-        "new_section",
-        "new_section",
-        "wfw"
-      ],
-      "rename": true,
-      "delete": false
-    },
+    "annotation": false,
     "annotation_text": {
       "section": [
         "execution_status",
@@ -122,12 +112,9 @@
       "delete": false
     },
     "annotation_arrow": {
-      "section": [
-        "execution_status",
-        "annotation_properties"
-      ],
-      "rename": false,
-      "delete": false
+      "section": [],
+      "rename": true,
+      "delete": true
     },
     "data_save": {
       "section": [

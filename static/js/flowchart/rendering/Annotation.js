@@ -348,6 +348,12 @@ class AnnotationRenderer {
                     newStartY = wy;
                 }
                 
+                // update the annotation data immediately to prevent render from overwriting
+                annotation.startX = newStartX;
+                annotation.startY = newStartY;
+                annotation.endX = newEndX;
+                annotation.endY = newEndY;
+                
                 // update the visual representation immediately
                 const group = d3.select(this.parentNode);
                 const startX = newStartX - annotation.x;

@@ -10,31 +10,25 @@
       "width": 120,
       "x": 522,
       "y": 381
-    }
-  ],
-  "links": [],
-  "groups": [],
-  "annotations": [
-    {
-      "fontSize": 14,
-      "id": 1756029122099.8713,
-      "text": "text",
-      "type": "text",
-      "x": 663.5,
-      "y": 487.5
     },
     {
-      "endX": 741.5,
-      "endY": 511.5,
-      "id": 1756029150166.3423,
-      "startX": 641.5,
-      "startY": 511.5,
-      "strokeColor": "var(--on-surface)",
-      "strokeWidth": 2,
-      "type": "arrow",
-      "x": 1180.5,
-      "y": 544.5
+      "description": "",
+      "groupId": null,
+      "id": 1756034197110.5847,
+      "name": "python node",
+      "pythonFile": "",
+      "type": "python_file",
+      "width": 120,
+      "x": 469,
+      "y": 583
     }
   ],
-  "executions": []
+  "links": [
+    {
+      "source": 1756029119031.9387,
+      "target": 1756034197110.5847
+    }
+  ],
+  "groups": [],
+  "annotations": []
 }

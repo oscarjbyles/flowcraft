@@ -55,7 +55,7 @@ class PanelsEditor {
         let html = `
             <div class="panels_mode_section" data-mode="${modeName}">
                 <div class="panels_mode_title" data-action="toggle-accordion">
-                    <span>${modeName} mode</span>
+                    <span>${modeName.charAt(0).toUpperCase() + modeName.slice(1)}</span>
                     <span class="material-icons">expand_more</span>
                 </div>
                 <div class="panels_mode_content">
@@ -75,10 +75,21 @@ class PanelsEditor {
 
     // render a node type section
     renderNodeSection(modeName, nodeType, nodeConfig) {
+        // determine if node is selectable (not set to false)
+        const isSelectable = nodeConfig !== false;
+        
         let html = `
             <div class="panels_node_section" data-mode="${modeName}" data-node="${nodeType}">
                 <div class="panels_node_title_row">
                     <div class="panels_node_title">${nodeType}</div>
+                    <div class="panels_selectable_toggle">
+                        <div class="panels_toggle_switch ${isSelectable ? 'active' : ''}" 
+                             data-mode="${modeName}" 
+                             data-node="${nodeType}" 
+                             data-property="selectable">
+                        </div>
+                        <span>selectable</span>
+                    </div>
                     <div class="panels_node_actions">
                         <button class="panels_node_btn" data-action="move-node-up" data-mode="${modeName}" data-node="${nodeType}" title="move up">
                             <span class="material-icons">keyboard_arrow_up</span>
@@ -90,14 +101,16 @@ class PanelsEditor {
                 </div>
         `;
 
-        // render sections array
-        if (nodeConfig.section) {
-            html += this.renderSectionsArray(modeName, nodeType, nodeConfig.section);
-        }
+        // render sections array and boolean properties only if node is selectable
+        if (isSelectable) {
+            if (nodeConfig.section) {
+                html += this.renderSectionsArray(modeName, nodeType, nodeConfig.section);
+            }
 
-        // render boolean properties side by side
-        if (nodeConfig.rename !== undefined || nodeConfig.delete !== undefined) {
-            html += this.renderBooleanPropertiesSideBySide(modeName, nodeType, nodeConfig);
+            // render boolean properties side by side
+            if (nodeConfig.rename !== undefined || nodeConfig.delete !== undefined) {
+                html += this.renderBooleanPropertiesSideBySide(modeName, nodeType, nodeConfig);
+            }
         }
 
         html += '</div>';
@@ -307,14 +320,34 @@ class PanelsEditor {
         const property = toggle.dataset.property;
         const newValue = !toggle.classList.contains('active');
 
-        if (this.panelsData[mode] && this.panelsData[mode][node]) {
-            this.panelsData[mode][node][property] = newValue;
-            toggle.classList.toggle('active', newValue);
-            
-            // update the text label
-            const label = toggle.nextElementSibling;
-            if (label) {
-                label.textContent = newValue ? 'enabled' : 'disabled';
+        if (this.panelsData[mode]) {
+            if (property === 'selectable') {
+                // handle selectable toggle specifically
+                if (newValue) {
+                    // turning on - restore default configuration
+                    this.panelsData[mode][node] = this.getDefaultNodeConfig(mode, node);
+                } else {
+                    // turning off - set to false
+                    this.panelsData[mode][node] = false;
+                }
+                
+                // update toggle visual state
+                toggle.classList.toggle('active', newValue);
+                
+                // re-render just this specific node section
+                this.reRenderNodeSection(mode, node);
+            } else {
+                // handle other properties normally - only if node config exists and is not false
+                if (this.panelsData[mode][node] && typeof this.panelsData[mode][node] === 'object') {
+                    this.panelsData[mode][node][property] = newValue;
+                    toggle.classList.toggle('active', newValue);
+                    
+                    // update the text label
+                    const label = toggle.nextElementSibling;
+                    if (label) {
+                        label.textContent = newValue ? 'enabled' : 'disabled';
+                    }
+                }
             }
 
             this.scheduleAutoSave();
@@ -528,6 +561,26 @@ class PanelsEditor {
     }
 
 
+
+    // re-render a specific node section
+    reRenderNodeSection(mode, nodeType) {
+        const nodeSection = document.querySelector(`[data-mode="${mode}"][data-node="${nodeType}"]`);
+        if (nodeSection) {
+            const nodeConfig = this.panelsData[mode][nodeType];
+            const newHtml = this.renderNodeSection(mode, nodeType, nodeConfig);
+            nodeSection.outerHTML = newHtml;
+        }
+    }
+
+    // get default node configuration
+    getDefaultNodeConfig(mode, nodeType) {
+        // return a simple default configuration with empty sections array
+        return {
+            section: [],
+            rename: true,
+            delete: true
+        };
+    }
 
     // utility method to escape html
     escapeHtml(text) {

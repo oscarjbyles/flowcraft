@@ -726,15 +726,30 @@
       "y": 1210.9944099386773
     },
     {
+      "fontSize": 14,
       "id": 1756029084304.9834,
-      "x": 1009.2340395003276,
-      "y": 1070.3159270124015,
-      "type": "text",
       "text": "text",
-      "fontSize": 14
+      "type": "text",
+      "x": 1009.2340395003276,
+      "y": 1070.3159270124015
     }
   ],
   "executions": [
+    {
+      "execution_id": "e2482f80-42ee-406e-bfa4-c5d1fee8eb0b",
+      "timestamp": "2025-08-24T12:17:29.334277",
+      "flowchart_name": "1_categories_selectors.json",
+      "status": "stopped",
+      "total_nodes": 25,
+      "successful_nodes": 1,
+      "completed_nodes": 2,
+      "success_percentage": 4.0,
+      "completed_percentage": 8.0,
+      "failed_node": "python node",
+      "elapsed_ms": 964,
+      "execution_time": "0.964s",
+      "error_snippet": "execution was cancelled by user"
+    },
     {
       "execution_id": "5b6ff88d-fe04-4453-a14e-7284f7e2bc1f",
       "timestamp": "2025-08-23T09:37:12.618016",
