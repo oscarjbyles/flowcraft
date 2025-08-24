@@ -38,20 +38,28 @@ class Storage {
         try {
             // do not attempt to save if we don't yet know which flowchart is active
             if (!this.currentFlowchart) {
+                console.warn('[Storage] No current flowchart set, skipping save');
                 return { success: false, message: null };
             }
+            
+            // ensure we have a valid flowchart name
+            if (!this.currentFlowchart.trim()) {
+                console.warn('[Storage] Empty flowchart name, skipping save');
+                return { success: false, message: null };
+            }
+            
             const saveData = {
                 ...data,
                 flowchart_name: this.currentFlowchart,
                 force: !!force
             };
 
-            // console.log(`[Storage] Saving to flowchart: ${this.currentFlowchart}`, {
-            //     isAutosave,
-            //     nodeCount: data.nodes?.length || 0,
-            //     linkCount: data.links?.length || 0,
-            //     groupCount: data.groups?.length || 0
-            // });
+            console.log(`[Storage] Saving to flowchart: ${this.currentFlowchart}`, {
+                isAutosave,
+                nodeCount: data.nodes?.length || 0,
+                linkCount: data.links?.length || 0,
+                groupCount: data.groups?.length || 0
+            });
 
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
@@ -62,7 +70,7 @@ class Storage {
             });
 
             if (response.ok) {
-                // console.log(`[Storage] Successfully saved to ${this.currentFlowchart}`);
+                console.log(`[Storage] Successfully saved to ${this.currentFlowchart}`);
                 return { success: true, message: isAutosave ? null : 'flowchart saved successfully' };
             } else {
                 // try to parse structured error for destructive change
@@ -71,7 +79,7 @@ class Storage {
                 if (response.status === 409 && payload && payload.code === 'destructive_change') {
                     return { success: false, code: 'destructive_change', payload };
                 }
-                console.error(`[Storage] Failed to save to ${this.currentFlowchart}:`, response.status);
+                console.error(`[Storage] Failed to save to ${this.currentFlowchart}:`, response.status, payload);
                 return { success: false, message: 'error saving flowchart' };
             }
         } catch (error) {
@@ -143,12 +151,32 @@ class Storage {
      */
     async load(flowchartName = null) {
         try {
-            const name = flowchartName || this.currentFlowchart;
+            let name = flowchartName || this.currentFlowchart;
+            
+            // if no name is provided, try to get from localStorage or use default
+            if (!name) {
+                try {
+                    const last = localStorage.getItem('last_accessed_flowchart');
+                    if (last) {
+                        name = last;
+                        this.currentFlowchart = last;
+                    } else {
+                        name = 'default.json';
+                        this.currentFlowchart = 'default.json';
+                    }
+                } catch (_) {
+                    name = 'default.json';
+                    this.currentFlowchart = 'default.json';
+                }
+            }
+            
+            console.log(`[Storage] Loading flowchart: ${name}`);
             const url = `${this.apiEndpoint}?name=${encodeURIComponent(name)}`;
             
             const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
+                console.log(`[Storage] Successfully loaded flowchart: ${name}`);
                 return { 
                     success: true, 
                     data: {
@@ -160,6 +188,7 @@ class Storage {
                     message: 'flowchart loaded successfully'
                 };
             } else {
+                console.error(`[Storage] Failed to load flowchart: ${name}, status: ${response.status}`);
                 return { success: false, message: 'error loading flowchart' };
             }
         } catch (error) {

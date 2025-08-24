@@ -1,72 +1,52 @@
-class PythonFileSection extends BaseSection {
-    constructor(sidebar) {
-        super(sidebar);
-        this.element = document.getElementById('python_file');
+class PythonFileSection {
+    constructor() {
+        // no longer needs sidebar reference or DOM element
     }
 
-    render(node) {
-        if (this.element && node) {
-            const stored = node.pythonFile || '';
-            const noPrefix = stored.replace(/^(?:nodes\/)*/i, '');
-            this.element.value = '';
-            this.element.placeholder = '';
-            this.element.dataset.fullPath = noPrefix;
+    render(nodeData) {
+        const stored = nodeData.pythonFile || '';
+        const noPrefix = stored.replace(/^(?:nodes\/)*/i, '');
+        const hasFile = !!nodeData.pythonFile;
 
-            this.updateStatus(node);
-        }
-    }
+        const statusIcon = hasFile ? 'check_circle' : 'close';
+        const statusColor = hasFile ? '#66bb6a' : '#f44336';
+        const statusText = hasFile ? 'python file selected' : 'select python file';
+        const pathDisplay = hasFile ? this.formatPathForDisplay(noPrefix) : '';
 
-    updateStatus(node) {
-        try {
-            const iconEl = document.getElementById('python_file_status_icon');
-            const textEl = document.getElementById('python_file_status_text');
-            const pathEl = document.getElementById('python_file_path_block');
-            const path = (node.pythonFile || '').replace(/^(?:nodes\/)*/i, '');
-            const hasFile = !!node.pythonFile;
-
-            if (hasFile) {
-                if (iconEl) {
-                    iconEl.textContent = 'check_circle';
-                    iconEl.style.color = '#66bb6a';
-                }
-                if (textEl) {
-                    textEl.textContent = 'python file selected';
-                    textEl.style.opacity = '1';
-                }
-                if (pathEl) {
-                    const formatted = this.formatPathForDisplay(path);
-                    pathEl.innerHTML = formatted;
-                    pathEl.style.display = '';
-                }
-            } else {
-                if (iconEl) {
-                    iconEl.textContent = 'close';
-                    iconEl.style.color = '#f44336';
-                }
-                if (textEl) {
-                    textEl.textContent = 'select python file';
-                    textEl.style.opacity = '0.9';
-                }
-                if (pathEl) {
-                    pathEl.innerHTML = '';
-                    pathEl.style.display = 'none';
-                }
-            }
-        } catch (_) {}
+        return `
+            <div class="form_group">
+                <label class="form_label" for="python_file">python file</label>
+                <div class="dropdown_container" id="python_file_container" style="position: relative;">
+                    <input type="text" id="python_file" class="form_input dropdown_input"
+                           value="${noPrefix}" placeholder="" readonly>
+                    <span class="dropdown_arrow material-icons">folder_open</span>
+                    <div class="dropdown_menu" id="python_file_dropdown">
+                        <div class="dropdown_loading">loading python files...</div>
+                    </div>
+                    <div id="python_file_status_block" style="position: absolute; left: 10px; right: 28px; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; pointer-events: none;">
+                        <span id="python_file_status_icon" class="material-icons" style="font-size: 16px; color: ${statusColor};">${statusIcon}</span>
+                        <span id="python_file_status_text" style="font-size: 0.85rem; opacity: 0.9;">${statusText}</span>
+                    </div>
+                </div>
+                ${pathDisplay ? `<div id="python_file_path_block" class="data_save_value data_save_value_monospace" style="margin-top: 6px;">${pathDisplay}</div>` : ''}
+            </div>
+        `;
     }
 
     formatPathForDisplay(path) {
         try {
-            const normalized = String(path).replace(/\\\\\\\\/g, '/');
+            const normalized = String(path).replace(/\\\\\\\\\\\\\\\\/g, '/');
             const escaped = normalized
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/\\"/g, '&quot;')
+                .replace(/\\\\"/g, '&quot;')
                 .replace(/'/g, '&#39;');
-            return escaped.replace(/\\//g, '/<br>&nbsp;&nbsp;');
+            return escaped.replace(/\\\\//g, '/<br>&nbsp;&nbsp;');
         } catch(_) {
             return String(path);
         }
     }
 }
+
+window.PythonFileSection = PythonFileSection;

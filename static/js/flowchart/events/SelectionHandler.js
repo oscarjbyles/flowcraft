@@ -522,17 +522,22 @@ class SelectionHandler {
         return Array.from(this.selectedNodes);
     }
 
-    // Enhanced selection change emission
+    // simplify emitSelectionChange method
     emitSelectionChange() {
+        // single event emission with simplified data
+        const selectedNodesArray = Array.from(this.selectedNodes);
+        console.log('selection change event emission array =', selectedNodesArray);
+        
         this.state.emit('selectionChanged', {
-            nodes: Array.from(this.selectedNodes),
+            nodes: selectedNodesArray,
             link: this.selectedLink,
             group: this.selectedGroup,
             annotation: this.selectedAnnotation
         });
+
+        // keep these for visual updates
         this.state.emit('updateNodeStyles');
         this.state.emit('updateLinkStyles');
-        this.state.emit('updateSidebar');
     }
 
     // Selection state validation

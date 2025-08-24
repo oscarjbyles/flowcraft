@@ -85,7 +85,6 @@
     border-bottom: 1px solid var(--border-color);
     padding: 16px;
     background: var(--surface-color);
-    display: none; /* hidden by default; shown for single node selection */
 }
 
 /* dropdown styles moved to /static/css/components/dropdown.css */

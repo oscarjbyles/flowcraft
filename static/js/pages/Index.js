@@ -27,17 +27,7 @@
             'ResumeExecution',
             'ExecutionStatus',
             'OutputManager',
-            'ViewportTracker',
-            // Add section dependencies
-            'BaseSection',
-            'HeaderSection',
-            'NodeNameSection',
-            'DeleteButtonSection',
-            // Add controller dependencies
-            'BaseController',
-            'ControllerRegistry',
-            'DefaultController',
-            'DefaultRunController'
+            'ViewportTracker'
         ];
 
         const missing = requiredClasses.filter(className => !window[className]);
@@ -938,22 +928,7 @@
         }
         
         try {
-            // wait for sidebar to initialize flowchart dropdown and set current flowchart
-            // ensure the method exists before calling it (sidebar modules load asynchronously)
-            if (typeof app.sidebar.initializeFlowchartDropdown === 'function') {
-                await app.sidebar.initializeFlowchartDropdown();
-            } else {
-                console.warn('initializeFlowchartDropdown not available, waiting for sidebar modules to load...');
-                // wait a bit for sidebar modules to load
-                await new Promise(resolve => setTimeout(resolve, 500));
-                if (typeof app.sidebar.initializeFlowchartDropdown === 'function') {
-                    await app.sidebar.initializeFlowchartDropdown();
-                } else {
-                    console.error('initializeFlowchartDropdown still not available after delay');
-                }
-            }
-            
-            // now load the initial data with correct flowchart
+            // load the initial data
             await app.loadInitialData();
             
             // set initial mode from url if provided (e.g., ?mode=run)

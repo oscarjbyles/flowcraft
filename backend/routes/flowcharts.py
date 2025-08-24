@@ -30,22 +30,37 @@ def save_flowchart_data():
     flowchart_name = request.json.get('flowchart_name', DEFAULT_FLOWCHART)
     force = bool(request.json.get('force', False))
     incoming = {k: v for k, v in data.items() if k != 'flowchart_name'}
+    
+    print(f"[DEBUG] Saving flowchart: {flowchart_name}, force: {force}")
+    print(f"[DEBUG] Incoming data keys: {list(incoming.keys())}")
+    print(f"[DEBUG] Incoming nodes count: {len(incoming.get('nodes', []))}")
+    
     # preserve executions array if client doesn't send it, to avoid wiping dashboard summaries
     try:
         existing = load_flowchart(flowchart_name)
-    except Exception:
+        print(f"[DEBUG] Existing nodes count: {len(existing.get('nodes', []))}")
+    except Exception as e:
+        print(f"[DEBUG] Failed to load existing flowchart: {e}")
         existing = {}
+    
     if 'executions' not in incoming and isinstance(existing, dict) and isinstance(existing.get('executions'), list):
         incoming['executions'] = existing.get('executions')
+    
     # detect destructive changes: >90% node drop
     try:
         existing_nodes = len(existing.get('nodes') or [])
         incoming_nodes = len(incoming.get('nodes') or [])
-        is_destructive = existing_nodes > 0 and incoming_nodes <= max(0, int(existing_nodes * 0.1))
-    except Exception:
+        # only consider it destructive if we have a significant number of existing nodes (>5)
+        # and the incoming nodes are <= 10% of existing nodes
+        is_destructive = (existing_nodes > 5 and 
+                         incoming_nodes <= max(0, int(existing_nodes * 0.1)))
+        print(f"[DEBUG] Destructive check: existing={existing_nodes}, incoming={incoming_nodes}, is_destructive={is_destructive}")
+    except Exception as e:
+        print(f"[DEBUG] Error in destructive check: {e}")
         is_destructive = False
 
     if is_destructive and not force:
+        print(f"[DEBUG] Blocking destructive change")
         # ensure a backup snapshot of current state before blocking
         try:
             write_backup_snapshot(flowchart_name, existing)
@@ -63,6 +78,7 @@ def save_flowchart_data():
             409,
         )
 
+    print(f"[DEBUG] Saving flowchart successfully")
     save_flowchart(incoming, flowchart_name)
     # optional: also snapshot accepted state to backups for recovery
     try:
@@ -100,20 +116,33 @@ def list_flowcharts():
 def create_flowchart():
     data = request.json
     flowchart_name = data.get('name', '').strip()
+    print(f"[DEBUG] Creating flowchart with name: '{flowchart_name}'")
+    
     if not flowchart_name:
         return jsonify({"status": "error", "message": "flowchart name is required"}), 400
+    
     flowchart_name = "".join(c for c in flowchart_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
     flowchart_name = flowchart_name.replace(' ', '_').lower()
+    print(f"[DEBUG] Sanitized flowchart name: '{flowchart_name}'")
+    
     if not flowchart_name:
         return jsonify({"status": "error", "message": "invalid flowchart name"}), 400
+    
     flowchart_path = get_flowchart_path(flowchart_name)
+    print(f"[DEBUG] Flowchart path: {flowchart_path}")
+    print(f"[DEBUG] Path exists: {os.path.exists(flowchart_path)}")
+    
     if os.path.exists(flowchart_path):
+        print(f"[DEBUG] Flowchart already exists, returning 409")
         return jsonify({"status": "error", "message": "flowchart already exists"}), 409
+    
     try:
         empty_flowchart = {"nodes": [], "links": [], "groups": [], "executions": []}
         save_flowchart(empty_flowchart, flowchart_name + '.json')
+        print(f"[DEBUG] Successfully created flowchart")
         return jsonify({"status": "success", "message": f"created flowchart: {flowchart_name}", "flowchart": {"name": flowchart_name, "filename": flowchart_name + '.json'}})
     except Exception as e:
+        print(f"[DEBUG] Error creating flowchart: {e}")
         return jsonify({"status": "error", "message": f"failed to create flowchart: {str(e)}"}), 500
 
 

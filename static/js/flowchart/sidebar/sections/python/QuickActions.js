@@ -1,38 +1,18 @@
-class QuickActionsSection extends BaseSection {
-    constructor(sidebar) {
-        super(sidebar);
-        this.element = document.getElementById('python_quick_actions');
+class QuickActionsSection {
+    constructor() {
+        // no longer needs sidebar reference or DOM element
     }
 
-    render(node) {
-        if (this.element) {
-            const shouldShow = this.shouldShowQuickActions(node);
-            this.element.style.display = shouldShow ? '' : 'none';
-        }
-    }
-
-    shouldShowQuickActions(node) {
-        const state = this.sidebar.state;
-        let alreadyHasIf = false;
-        let hasUpstreamIf = false;
-        let hasDownstreamIf = false;
-
-        try {
-            if (state && state.createNode && typeof state.createNode.getAssociatedIfForPython === 'function') {
-                alreadyHasIf = !!state.createNode.getAssociatedIfForPython(node.id);
-            }
-            if (state && state.createNode && typeof state.createNode.hasUpstreamIfSplitter === 'function') {
-                hasUpstreamIf = state.createNode.hasUpstreamIfSplitter(node.id);
-            }
-            if (state && state.createNode && typeof state.createNode.hasDownstreamIfSplitter === 'function') {
-                hasDownstreamIf = state.createNode.hasDownstreamIfSplitter(node.id);
-            }
-        } catch (_) {
-            alreadyHasIf = false;
-            hasUpstreamIf = false;
-            hasDownstreamIf = false;
-        }
-
-        return !state.isRunMode && !alreadyHasIf && hasUpstreamIf && !hasDownstreamIf;
+    render(nodeData) {
+        return `
+            <div class="form_group" id="python_quick_actions">
+                <button class="btn btn_primary" id="add_if_condition_btn" style="width: 100%;">
+                    <span class="material-icons">alt_route</span>
+                    <span class="btn_label">+ if condition</span>
+                </button>
+            </div>
+        `;
     }
 }
+
+window.QuickActionsSection = QuickActionsSection;
